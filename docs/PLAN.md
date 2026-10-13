@@ -34,6 +34,7 @@
 | D8  | Max 8 viewports; hidden viewports don't load                                                                             | Each preview is a full page load (memory/CPU)                                                                                                                       | Performance data says otherwise                                                      |
 | D9  | Product name **Breakpointer** (working title was ViewportLab), tagline "Find where your layout breaks"                   | Owner chose it (2026-10-13): instantly clear to frontend developers and designers (breakpoint + pointer), memorable, distinctive; no extension with this name found | Before store submission, re-check trademarks; a small npm library uses the same name |
 | D10 | Address-bar keyword `bpt` instead of `vp`                                                                                | A common word or abbreviation would capture ordinary searches (e.g. "vp bank")                                                                                      | User feedback                                                                        |
+| D11 | Public GitHub repository                                                                                                 | Owner decision (2026-10-13); hosts the privacy policy, issues and feedback for the store listing                                                                    | Choose a license before inviting contributions                                       |
 
 ---
 
@@ -116,7 +117,9 @@ No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justificati
 5. Provide a support contact (email or GitHub issues).
 6. Submit for review; publish as **unlisted** first for the M4 test group, then public.
 
-**Owner decisions still needed:** license, support email, publisher account, public vs. unlisted launch, whether the repository becomes public (needed if the privacy policy is linked from GitHub).
+**Owner decisions still needed:** license (the repository is public but has no license yet, so all rights are reserved), support email, publisher account, unlisted-first vs. public launch.
+
+**Links for the store:** privacy policy https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md · support https://github.com/Tanx-1811/breakpointer/issues · homepage https://github.com/Tanx-1811/breakpointer
 
 ---
 

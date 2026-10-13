@@ -97,9 +97,9 @@ Breakpointer thay đổi kích thước viewport; không giả lập user agent,
 
 **Data usage:** The extension does not collect or transmit any user data. (Check: none of the data categories apply.) Certify: not sold to third parties; not used for unrelated purposes; not used for creditworthiness or lending.
 
-**Privacy policy URL:** host `docs/PRIVACY.md` publicly (e.g. GitHub Pages or the public repository) and paste the link.
+**Privacy policy URL:** https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md
 
 ## Support
 
-- Support URL: the repository's Issues page (once public) or a support email.
-- Homepage: the repository or a landing page.
+- Support URL: https://github.com/Tanx-1811/breakpointer/issues (or a support email, if you prefer).
+- Homepage: https://github.com/Tanx-1811/breakpointer

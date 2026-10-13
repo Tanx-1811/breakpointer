@@ -1,6 +1,10 @@
 <p align="center"><img src="brand/social/readme-banner-1600x500.png" alt="Breakpointer — Find where your layout breaks." width="100%"></p>
 
 <p align="center">
+  <a href="https://github.com/Tanx-1811/breakpointer/actions/workflows/ci.yml"><img src="https://github.com/Tanx-1811/breakpointer/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
+</p>
+
+<p align="center">
   <b>Preview websites at multiple viewport sizes and check responsive layouts directly in Chrome.</b><br>
   <a href="#install">Install</a> · <a href="#features">Features</a> · <a href="#keyboard-shortcuts">Shortcuts</a> · <a href="docs/PLAN.md">Plan</a> · <a href="docs/ARCHITECTURE.md">Architecture</a> · <a href="docs/PRIVACY.md">Privacy</a> · <a href="#tiếng-việt">Tiếng Việt</a>
 </p>

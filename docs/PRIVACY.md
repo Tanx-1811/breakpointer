@@ -53,7 +53,7 @@ If this policy changes, the new version will be published with the extension and
 
 ## Contact
 
-Questions or concerns: open an issue in the project repository or contact the publisher listed on the Chrome Web Store page.
+Questions or concerns: open an issue at https://github.com/Tanx-1811/breakpointer/issues or contact the publisher listed on the Chrome Web Store page.
 
 ---
 
