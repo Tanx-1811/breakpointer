@@ -25,8 +25,10 @@ async function openPopup(context: BrowserContext, extensionId: string): Promise<
 test.describe('popup', () => {
   test('opens a valid address in the workspace', async ({ context, extensionId, server }) => {
     const popup = await openPopup(context, extensionId);
-    // Opened as a tab, the "current tab" is the popup itself, which can't be previewed.
-    await expect(popup.getByText('This page can’t be previewed')).toBeVisible();
+    // Opened as a tab, the "current tab" is the popup or the welcome workspace —
+    // neither can be previewed, so there is no "Preview this page" button.
+    await expect(popup.getByRole('button', { name: 'Open workspace' })).toBeVisible();
+    await expect(popup.getByRole('button', { name: 'Preview this page' })).toHaveCount(0);
 
     const input = popup.getByRole('textbox', { name: 'Preview another address' });
     await input.fill('chrome://flags');
@@ -65,6 +67,33 @@ test.describe('popup', () => {
     await workspaceTab(context, (url) => url.searchParams.get('url') === server.url('/demo'));
     expect(countWorkspaces()).toBe(before);
   });
+
+  for (const [where, url, message] of [
+    ['the workspace itself', 'viewer', 'You’re in the Breakpointer workspace'],
+    [
+      'the Chrome Web Store',
+      'https://chromewebstore.google.com/detail/abc',
+      'Chrome doesn’t let extensions show the Chrome Web Store',
+    ],
+  ] as const) {
+    test(`explains when it is opened on ${where}`, async ({ context, extensionId }) => {
+      const popup = await context.newPage();
+      // As if opened from the toolbar on that tab (activeTab).
+      await popup.addInitScript(
+        ([tabUrl]) => {
+          chrome.tabs.query = (async () => [{ url: tabUrl }]) as unknown as typeof chrome.tabs.query;
+        },
+        [
+          url === 'viewer'
+            ? `chrome-extension://${extensionId}/viewer/viewer.html?url=https%3A%2F%2Fexample.com%2F`
+            : url,
+        ],
+      );
+      await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+      await expect(popup.getByText(message)).toBeVisible();
+      await expect(popup.getByRole('button', { name: 'Preview this page' })).toHaveCount(0);
+    });
+  }
 
   test('opens the workspace with a chosen group', async ({ context, extensionId }) => {
     const popup = await openPopup(context, extensionId);
