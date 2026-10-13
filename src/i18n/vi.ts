@@ -161,8 +161,8 @@ export const vi: Record<MessageKey, string> = {
 
   'access.title': 'Quyền truy cập trang',
   'access.description':
-    'Nhiều trang yêu cầu trình duyệt không hiển thị chúng bên trong trang khác. Khi bạn cho phép ViewportLab trên một trang, bản xem trước của trang đó sẽ bỏ qua giới hạn này — chỉ bên trong khung xem trước của ViewportLab.',
-  'access.privacy': 'ViewportLab không bao giờ đọc, lưu hay gửi nội dung các trang bạn xem trước.',
+    'Nhiều trang yêu cầu trình duyệt không hiển thị chúng bên trong trang khác. Khi bạn cho phép Breakpointer trên một trang, bản xem trước của trang đó sẽ bỏ qua giới hạn này — chỉ bên trong khung xem trước của Breakpointer.',
+  'access.privacy': 'Breakpointer không bao giờ đọc, lưu hay gửi nội dung các trang bạn xem trước.',
   'access.currentSite': 'Trang hiện tại',
   'access.allowed': 'Đã cho phép',
   'access.notAllowed': 'Chưa cho phép',
@@ -210,12 +210,12 @@ export const vi: Record<MessageKey, string> = {
   'empty.allHiddenBody': 'Hiện lại chúng từ thanh viewport phía trên.',
   'empty.showAll': 'Hiện tất cả',
   'empty.applyBasics': 'Dùng “Responsive cơ bản”',
-  'welcome.title': 'Xem mọi kích thước màn hình cùng lúc',
+  'welcome.title': 'Tìm chỗ bố cục bị vỡ, ở mọi kích thước',
   'welcome.body':
     'Nhập địa chỉ ở trên để xem trang trong tất cả viewport cạnh nhau. Mỗi bản xem trước có chiều rộng dàn trang thật, nên media query phản hồi đúng như trong cửa sổ cùng kích thước.',
   'welcome.step1Title': 'Xem trước',
   'welcome.step1Body':
-    'Nhập địa chỉ, hoặc bấm biểu tượng ViewportLab trên bất kỳ trang nào và chọn “Xem trước trang này”.',
+    'Nhập địa chỉ, hoặc bấm biểu tượng Breakpointer trên bất kỳ trang nào và chọn “Xem trước trang này”.',
   'welcome.step2Title': 'Sắp xếp',
   'welcome.step2Body': 'Thêm kích thước có sẵn hoặc tùy chỉnh, xoay, thu phóng và lưu bố cục thành nhóm.',
   'welcome.step3Title': 'Kiểm tra',
@@ -247,7 +247,7 @@ export const vi: Record<MessageKey, string> = {
   'settings.import': 'Nhập cài đặt',
   'settings.dataHelp': 'Xuất viewport, nhóm và tùy chọn ra file JSON để sao lưu hoặc chia sẻ với nhóm của bạn.',
   'settings.imported': 'Đã nhập cài đặt',
-  'settings.importFailed': 'File này không phải file cài đặt ViewportLab.',
+  'settings.importFailed': 'File này không phải file cài đặt Breakpointer.',
   'settings.reset': 'Đặt lại vùng làm việc',
   'settings.resetButton': 'Đặt lại',
   'settings.resetHelp': 'Khôi phục các viewport mặc định. Các nhóm đã lưu được giữ nguyên.',
@@ -255,7 +255,7 @@ export const vi: Record<MessageKey, string> = {
   'settings.privacyBody': 'Không tài khoản, không theo dõi, không máy chủ. Cài đặt chỉ nằm trong trình duyệt này.',
   'settings.manageAccess': 'Quản lý quyền truy cập trang',
   'settings.shortcuts': 'Tùy chỉnh phím tắt Chrome',
-  'settings.version': 'ViewportLab {version}',
+  'settings.version': 'Breakpointer {version}',
 
   'help.title': 'Trợ giúp & phím tắt',
   'help.shortcuts': 'Trong vùng làm việc',
@@ -272,10 +272,10 @@ export const vi: Record<MessageKey, string> = {
   'help.capture': 'Chụp vùng làm việc đang hiển thị',
   'help.groups': 'Mở danh sách nhóm',
   'help.help': 'Hiện trợ giúp này',
-  'help.openExtension': 'Mở ViewportLab',
+  'help.openExtension': 'Mở Breakpointer',
   'help.previewPage': 'Xem trước trang hiện tại',
   'help.omnibox': 'Gõ {keyword} và dấu cách trên thanh địa chỉ, rồi nhập URL',
-  'help.contextMenu': 'Chuột phải vào trang hoặc liên kết → Xem trước bằng ViewportLab',
+  'help.contextMenu': 'Chuột phải vào trang hoặc liên kết → Xem trước bằng Breakpointer',
   'help.how': 'Cách bản xem trước hoạt động',
   'help.how1':
     'Mỗi bản xem trước là một khung có viewport dàn trang thật đúng kích thước hiển thị, nên media query và bố cục CSS phản hồi theo đúng chiều rộng, chiều cao đó.',
@@ -283,7 +283,7 @@ export const vi: Record<MessageKey, string> = {
   'help.how3':
     'Bản xem trước không giả lập thiết bị: user agent, mật độ điểm ảnh, cảm ứng và nhân trình duyệt vẫn là của Chrome bạn đang dùng.',
   'help.how4':
-    'Một số trang chặn hiển thị trong khung. Hãy cho phép ViewportLab trên trang đó, hoặc mở trong tab mới hay cửa sổ đúng kích thước.',
+    'Một số trang chặn hiển thị trong khung. Hãy cho phép Breakpointer trên trang đó, hoặc mở trong tab mới hay cửa sổ đúng kích thước.',
   'help.how5': 'Trạng thái đăng nhập và cookie bên thứ ba có thể hoạt động khác khi ở trong khung.',
 
   'popup.currentTab': 'Tab hiện tại',

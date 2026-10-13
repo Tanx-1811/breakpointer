@@ -1,5 +1,5 @@
 // Chrome Web Store marquee promo tile, 1400 × 560 (English and Vietnamese).
-import { COPY, device, FONTS, nightBackgroundCss, page } from './shared.mjs';
+import { COPY, device, FONTS, NAME, nightBackgroundCss, page } from './shared.mjs';
 
 export const width = 1400;
 export const height = 560;
@@ -29,7 +29,7 @@ ${nightBackgroundCss({ glowX: '74%', glowY: '42%' })}
 
   const body = `<div class="bg"></div>
 <div class="copy-block">
-  <img class="lockup" src="${lockup.indigo.src}" alt="ViewportLab">
+  <img class="lockup" src="${lockup.indigo.src}" alt="${NAME}">
   <h1 class="headline">${copy.taglineTwoLines}</h1>
   <p class="sub">${copy.pitchTwoLines}</p>
   <div class="chips">${copy.chips.map((chip) => `<span class="chip">${chip}</span>`).join('')}</div>

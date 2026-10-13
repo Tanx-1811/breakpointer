@@ -1,6 +1,6 @@
 {
   "extName": {
-    "message": "ViewportLab — Responsive Viewport Tester",
+    "message": "Breakpointer — Responsive Viewport Tester",
     "description": "Extension name shown in Chrome and the Chrome Web Store."
   },
   "extDescription": {
@@ -8,23 +8,23 @@
     "description": "Short description (max 132 characters)."
   },
   "actionTitle": {
-    "message": "ViewportLab — preview at multiple screen sizes",
+    "message": "Breakpointer — preview at multiple screen sizes",
     "description": "Toolbar button tooltip."
   },
   "commandOpen": {
-    "message": "Open ViewportLab",
+    "message": "Open Breakpointer",
     "description": "Keyboard command that opens the popup."
   },
   "commandPreview": {
-    "message": "Preview the current page in ViewportLab",
+    "message": "Preview the current page in Breakpointer",
     "description": "Keyboard command that previews the active tab."
   },
   "menuPreviewPage": {
-    "message": "Preview this page in ViewportLab",
+    "message": "Preview this page in Breakpointer",
     "description": "Context menu item on a page."
   },
   "menuPreviewLink": {
-    "message": "Preview link in ViewportLab",
+    "message": "Preview link in Breakpointer",
     "description": "Context menu item on a link."
   },
   "omniboxDefault": {

@@ -163,8 +163,8 @@ export const en = {
 
   'access.title': 'Site access',
   'access.description':
-    'Many sites tell browsers not to show them inside other pages. When you allow ViewportLab on a site, previews of that site ignore this restriction — only inside ViewportLab’s own preview frames.',
-  'access.privacy': 'ViewportLab never reads, stores or sends the content of the pages you preview.',
+    'Many sites tell browsers not to show them inside other pages. When you allow Breakpointer on a site, previews of that site ignore this restriction — only inside Breakpointer’s own preview frames.',
+  'access.privacy': 'Breakpointer never reads, stores or sends the content of the pages you preview.',
   'access.currentSite': 'Current site',
   'access.allowed': 'Allowed',
   'access.notAllowed': 'Not allowed',
@@ -211,11 +211,11 @@ export const en = {
   'empty.allHiddenBody': 'Show them again from the viewport bar above.',
   'empty.showAll': 'Show all',
   'empty.applyBasics': 'Use “Responsive basics”',
-  'welcome.title': 'See every screen size at once',
+  'welcome.title': 'Find where your layout breaks',
   'welcome.body':
     'Enter an address above to preview it in all your viewports side by side. Each preview gets a real layout width, so media queries respond exactly as they would in a window that size.',
   'welcome.step1Title': 'Preview',
-  'welcome.step1Body': 'Type an address, or click the ViewportLab icon on any page and choose “Preview this page”.',
+  'welcome.step1Body': 'Type an address, or click the Breakpointer icon on any page and choose “Preview this page”.',
   'welcome.step2Title': 'Arrange',
   'welcome.step2Body': 'Add presets or custom sizes, rotate, zoom, and save your setup as a group.',
   'welcome.step3Title': 'Check',
@@ -248,7 +248,7 @@ export const en = {
   'settings.dataHelp':
     'Export your viewports, groups and preferences as a JSON file to back them up or share them with your team.',
   'settings.imported': 'Settings imported',
-  'settings.importFailed': 'That file isn’t a ViewportLab settings file.',
+  'settings.importFailed': 'That file isn’t a Breakpointer settings file.',
   'settings.reset': 'Reset workspace',
   'settings.resetButton': 'Reset',
   'settings.resetHelp': 'Restore the default viewports. Saved groups are kept.',
@@ -256,7 +256,7 @@ export const en = {
   'settings.privacyBody': 'No account, no analytics, no server. Your settings stay in this browser.',
   'settings.manageAccess': 'Manage site access',
   'settings.shortcuts': 'Customize Chrome shortcuts',
-  'settings.version': 'ViewportLab {version}',
+  'settings.version': 'Breakpointer {version}',
 
   'help.title': 'Help & keyboard shortcuts',
   'help.shortcuts': 'In the workspace',
@@ -273,10 +273,10 @@ export const en = {
   'help.capture': 'Capture visible workspace',
   'help.groups': 'Open groups',
   'help.help': 'Show this help',
-  'help.openExtension': 'Open ViewportLab',
+  'help.openExtension': 'Open Breakpointer',
   'help.previewPage': 'Preview the current page',
   'help.omnibox': 'Type {keyword} and a space in the address bar, then a URL',
-  'help.contextMenu': 'Right-click a page or link → Preview in ViewportLab',
+  'help.contextMenu': 'Right-click a page or link → Preview in Breakpointer',
   'help.how': 'How previews work',
   'help.how1':
     'Each preview is a frame with a real layout viewport of the size shown, so CSS media queries and layout respond to that width and height.',
@@ -284,7 +284,7 @@ export const en = {
   'help.how3':
     'Previews don’t emulate devices: the user agent, pixel density, touch input and browser engine are those of your Chrome.',
   'help.how4':
-    'Some sites block being shown in frames. Allow ViewportLab on that site, or open it in a new tab or an exact-size window.',
+    'Some sites block being shown in frames. Allow Breakpointer on that site, or open it in a new tab or an exact-size window.',
   'help.how5': 'Sign-in state and third-party cookies can behave differently inside frames.',
 
   'popup.currentTab': 'Current tab',

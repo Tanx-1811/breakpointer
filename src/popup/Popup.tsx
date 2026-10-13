@@ -6,7 +6,7 @@ import type { MessageKey } from '../i18n/en';
 import { resolveLanguage } from '../i18n/translate';
 import { openViewer } from '../shared/viewer-url';
 import { builtInGroupName } from '../state/groups';
-import type { ViewportLabSettings } from '../types';
+import type { BreakpointerSettings } from '../types';
 import { displayHost, parsePreviewUrl, type UrlParseError } from '../utils/url';
 import { Button } from '../components/Button/Button';
 import { Icon, Logo } from '../components/Icon/Icon';
@@ -19,7 +19,7 @@ const URL_ERRORS: Record<UrlParseError, MessageKey> = {
 };
 
 type Props = {
-  settings: ViewportLabSettings;
+  settings: BreakpointerSettings;
   /** The active tab's URL when it can be previewed (http/https). */
   tabUrl: URL | null;
   shortcut: string;
@@ -64,7 +64,7 @@ function Popup({ settings, tabUrl, shortcut }: Props) {
       <header className={styles.header}>
         <Logo size={28} />
         <div>
-          <h1 className={styles.title}>ViewportLab</h1>
+          <h1 className={styles.title}>Breakpointer</h1>
           <p className={styles.subtitle}>{t('welcome.title')}</p>
         </div>
       </header>

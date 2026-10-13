@@ -14,4 +14,4 @@ export const ZOOM_OPTIONS = [0.25, 0.33, 0.5, 0.67, 0.75, 1];
 export const DEFAULT_ZOOM = 0.5;
 
 /** Keyword registered for Chrome's address bar (manifest `omnibox.keyword`). */
-export const OMNIBOX_KEYWORD = 'vp';
+export const OMNIBOX_KEYWORD = 'bpt';

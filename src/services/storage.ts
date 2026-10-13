@@ -15,7 +15,7 @@ import type {
   ThemePreference,
   ViewportConfig,
   ViewportGroup,
-  ViewportLabSettings,
+  BreakpointerSettings,
   ViewportTemplate,
   WorkspaceLayout,
 } from '../types';
@@ -23,7 +23,7 @@ import { DEFAULT_ZOOM, MAX_GROUPS, MAX_RECENT_URLS, MAX_VIEWPORTS } from '../uti
 import { createId } from '../utils/id';
 import { toSafeHref } from '../utils/url';
 
-export const STORAGE_KEY = 'viewportlab.settings';
+export const STORAGE_KEY = 'breakpointer.settings';
 
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi'];
@@ -47,7 +47,7 @@ export function defaultViewports(name: PresetNamer = englishNamer): ViewportConf
   });
 }
 
-export function defaultSettings(name?: PresetNamer): ViewportLabSettings {
+export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
   return {
     version: 1,
     theme: 'system',
@@ -135,7 +135,7 @@ function parseRecentUrls(raw: unknown): string[] {
  * untrusted: it may be missing, malformed, or written by another version.
  * Every field falls back to a safe default independently.
  */
-export function parseSettings(raw: unknown, name?: PresetNamer): ViewportLabSettings {
+export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSettings {
   const defaults = defaultSettings(name);
   if (!isRecord(raw)) return defaults;
 
@@ -148,7 +148,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): ViewportLabSett
     : defaults.viewports;
 
   const rememberRecent = raw.rememberRecent === true;
-  const settings: ViewportLabSettings = {
+  const settings: BreakpointerSettings = {
     version: 1,
     theme: oneOf(raw.theme, THEMES, defaults.theme),
     language: oneOf(raw.language, LANGUAGES, defaults.language),
@@ -171,22 +171,22 @@ export async function readStoredSettings(): Promise<unknown> {
   return result[STORAGE_KEY];
 }
 
-export async function loadSettings(name?: PresetNamer): Promise<ViewportLabSettings> {
+export async function loadSettings(name?: PresetNamer): Promise<BreakpointerSettings> {
   try {
     return parseSettings(await readStoredSettings(), name);
   } catch (error) {
-    console.warn('[ViewportLab] Could not read settings, using defaults.', error);
+    console.warn('[Breakpointer] Could not read settings, using defaults.', error);
     return defaultSettings(name);
   }
 }
 
-export async function saveSettings(settings: ViewportLabSettings): Promise<void> {
+export async function saveSettings(settings: BreakpointerSettings): Promise<void> {
   await chrome.storage.local.set({ [STORAGE_KEY]: settings });
 }
 
 /* ---------- Export / import ---------- */
 
-const EXPORT_APP = 'ViewportLab';
+const EXPORT_APP = 'Breakpointer';
 const EXPORT_KIND = 'settings';
 
 export type SettingsExport = {
@@ -194,11 +194,11 @@ export type SettingsExport = {
   kind: typeof EXPORT_KIND;
   version: 1;
   exportedAt: string;
-  settings: Omit<ViewportLabSettings, 'recentUrls' | 'activeUrl' | 'rememberRecent'>;
+  settings: Omit<BreakpointerSettings, 'recentUrls' | 'activeUrl' | 'rememberRecent'>;
 };
 
 /** Browsing data (recent and last address) is never included in exports. */
-export function createSettingsExport(settings: ViewportLabSettings, now = new Date()): SettingsExport {
+export function createSettingsExport(settings: BreakpointerSettings, now = new Date()): SettingsExport {
   const { recentUrls: _recent, activeUrl: _active, rememberRecent: _remember, ...shareable } = settings;
   return { app: EXPORT_APP, kind: EXPORT_KIND, version: 1, exportedAt: now.toISOString(), settings: shareable };
 }
@@ -206,12 +206,12 @@ export function createSettingsExport(settings: ViewportLabSettings, now = new Da
 /**
  * Validates an imported file and merges it with the current settings. Local
  * browsing preferences (recent addresses) are kept. Returns null if the data
- * isn't a ViewportLab export.
+ * isn't a Breakpointer export.
  */
-export function parseSettingsImport(raw: unknown, current: ViewportLabSettings): ViewportLabSettings | null {
+export function parseSettingsImport(raw: unknown, current: BreakpointerSettings): BreakpointerSettings | null {
   if (!isRecord(raw) || raw.app !== EXPORT_APP || raw.kind !== EXPORT_KIND || !isRecord(raw.settings)) return null;
   const imported = parseSettings({ ...raw.settings, rememberRecent: false });
-  const merged: ViewportLabSettings = {
+  const merged: BreakpointerSettings = {
     ...imported,
     rememberRecent: current.rememberRecent,
     recentUrls: current.recentUrls,

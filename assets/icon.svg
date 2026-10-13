@@ -1,4 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- Breakpointer mark: a "B" made of a narrow block over a wide one, and an amber
+       breakpoint tag pointing where the narrow layout ends. Same geometry as brand/logo/mark.svg. -->
   <defs>
     <linearGradient id="bg" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
       <stop offset="0" stop-color="#6366F1"/>
@@ -6,7 +8,6 @@
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="28" fill="url(#bg)"/>
-  <rect x="20" y="30" width="70" height="48" rx="6" fill="none" stroke="#fff" stroke-width="8"/>
-  <path d="M55 80v14M44 96h22" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round"/>
-  <rect x="76" y="48" width="34" height="56" rx="7" fill="url(#bg)" stroke="#fff" stroke-width="8"/>
+  <path d="M24 28h28a16 16 0 0 1 0 32H24zM24 60h38a20 20 0 0 1 0 40H24z" fill="none" stroke="#fff" stroke-width="11" stroke-linejoin="round"/>
+  <path d="M107 30H89l-11 14 11 14h18z" fill="#FBBF24" stroke="#FBBF24" stroke-width="4" stroke-linejoin="round"/>
 </svg>

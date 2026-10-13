@@ -43,7 +43,7 @@ chrome.commands.onCommand.addListener((command, tab) => {
   void openViewer(url ? { url } : {}, tab?.index === undefined ? {} : { index: tab.index + 1, windowId: tab.windowId });
 });
 
-/* ---------- Address bar keyword: "vp example.com" ---------- */
+/* ---------- Address bar keyword: "bpt example.com" ---------- */
 
 chrome.omnibox.setDefaultSuggestion({ description: chrome.i18n.getMessage('omniboxDefault') });
 

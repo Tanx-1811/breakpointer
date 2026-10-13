@@ -7,7 +7,7 @@ const root = resolve(import.meta.dirname, 'src');
 
 function manifestPlugin(mode: string): Plugin {
   return {
-    name: 'viewportlab:manifest',
+    name: 'breakpointer:manifest',
     generateBundle() {
       this.emitFile({
         type: 'asset',

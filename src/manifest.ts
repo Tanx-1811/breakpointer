@@ -6,8 +6,8 @@ import pkg from '../package.json' with { type: 'json' };
  * Permissions are deliberately minimal; none of them shows a warning at install
  * (see docs/PRIVACY.md and docs/STORE_LISTING.md for the justifications):
  * - storage: saves viewports, groups and preferences locally.
- * - activeTab: reads the current tab's URL only when the user invokes ViewportLab.
- * - contextMenus: "Preview in ViewportLab" on pages and links.
+ * - activeTab: reads the current tab's URL only when the user invokes Breakpointer.
+ * - contextMenus: "Preview in Breakpointer" on pages and links.
  * - declarativeNetRequestWithHostAccess: lets previews of sites the user has
  *   explicitly allowed ignore frame-blocking headers, inside the viewer tab only.
  * Host access is optional and requested at runtime, per site or for all sites.
@@ -16,7 +16,7 @@ export function createManifest(mode: string): chrome.runtime.ManifestV3 {
   const manifest: chrome.runtime.ManifestV3 = {
     manifest_version: 3,
     name: '__MSG_extName__',
-    short_name: 'ViewportLab',
+    short_name: 'Breakpointer',
     version: pkg.version,
     description: '__MSG_extDescription__',
     default_locale: 'en',
@@ -41,7 +41,8 @@ export function createManifest(mode: string): chrome.runtime.ManifestV3 {
     },
     permissions: ['storage', 'activeTab', 'contextMenus', 'declarativeNetRequestWithHostAccess'],
     optional_host_permissions: ['<all_urls>'],
-    omnibox: { keyword: 'vp' },
+    // Kept unusual on purpose: a common word would hijack ordinary searches (e.g. "vp bank").
+    omnibox: { keyword: 'bpt' },
     commands: {
       _execute_action: {
         suggested_key: { default: 'Alt+Shift+V' },

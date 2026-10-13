@@ -1,4 +1,4 @@
-// Zips the production build (dist/) into release/viewportlab-<version>.zip for the Chrome Web Store.
+// Zips the production build (dist/) into release/breakpointer-<version>.zip for the Chrome Web Store.
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -19,7 +19,7 @@ if (manifest.host_permissions?.length) {
 
 const out = resolve(root, 'release');
 mkdirSync(out, { recursive: true });
-const file = resolve(out, `viewportlab-${manifest.version}.zip`);
+const file = resolve(out, `breakpointer-${manifest.version}.zip`);
 rmSync(file, { force: true });
 execFileSync('zip', ['-r', '-X', '-q', file, '.', '-x', '*.map', '-x', '.DS_Store'], { cwd: dist, stdio: 'inherit' });
 console.log(`Packaged ${file}`);

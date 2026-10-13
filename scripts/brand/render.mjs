@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Regenerates every ViewportLab brand asset from the sources in brand/templates.
+// Regenerates every Breakpointer brand asset from the sources in brand/templates.
 //
 //   node scripts/brand/render.mjs                 # everything
 //   node scripts/brand/render.mjs --only marquee  # one HTML template (by name)
@@ -14,7 +14,7 @@ import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from '@playwright/test';
 import { Resvg } from '@resvg/resvg-js';
-import { LOCKUP, lockupSourceSvg, markMonoSvg, markSvg, svgDataUri } from '../../brand/templates/shared.mjs';
+import { LOCKUP, lockupSourceSvg, markMonoSvg, markSvg, NAME, svgDataUri } from '../../brand/templates/shared.mjs';
 import * as githubSocial from '../../brand/templates/github-social.mjs';
 import * as marquee from '../../brand/templates/promo-marquee.mjs';
 import * as small from '../../brand/templates/promo-small.mjs';
@@ -65,7 +65,7 @@ function outlinedLockup(variant) {
     .toString()
     .trim()
     // resvg drops accessibility metadata; put it back.
-    .replace(/^<svg ([^>]*)>/, '<svg $1 role="img" aria-label="ViewportLab">\n    <title>ViewportLab</title>');
+    .replace(/^<svg ([^>]*)>/, `<svg $1 role="img" aria-label="${NAME}">\n    <title>${NAME}</title>`);
   if (outlined.includes('<text')) throw new Error('Wordmark was not converted to outlines');
   return { svg: `${outlined}\n`, width, height: LOCKUP.markSize };
 }
@@ -107,7 +107,7 @@ async function renderTemplates(lockups) {
         { src: svgDataUri(lockup.svg), ratio: lockup.width / lockup.height },
       ]),
     ),
-    mark: svgDataUri(markSvg({ id: 'vl-mark-img' })),
+    mark: svgDataUri(markSvg({ id: 'bp-mark-img' })),
   };
 
   const browser = await chromium.launch();

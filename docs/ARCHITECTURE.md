@@ -1,6 +1,6 @@
 # Architecture
 
-This document records how ViewportLab renders previews, why, and how the pieces fit together. Start here before changing the preview mechanism, permissions or storage.
+This document records how Breakpointer renders previews, why, and how the pieces fit together. Start here before changing the preview mechanism, permissions or storage.
 
 ## ADR-001: How a page is rendered at a viewport size
 
@@ -72,7 +72,7 @@ Notes from the spike:
 ```
 src/
   manifest.ts              Manifest generated at build time (version from package.json)
-  background/              Service worker: context menus, omnibox "vp", commands,
+  background/              Service worker: context menus, omnibox "bpt", commands,
                            first-run welcome, embedding-rule cleanup
   popup/                   Toolbar popup: preview current tab, pick a group, recent addresses
   viewer/                  The workspace page (Viewer.tsx composes everything)
@@ -94,7 +94,7 @@ Data flows one way: `Viewer` owns the settings via `useReducer` (`state/settings
 
 ## Settings and storage
 
-- One key, `viewportlab.settings`, in `chrome.storage.local`. Shape: `ViewportLabSettings` in `src/types/index.ts` (`version: 1`).
+- One key, `breakpointer.settings`, in `chrome.storage.local`. Shape: `BreakpointerSettings` in `src/types/index.ts` (`version: 1`).
 - Everything read from storage or an imported file goes through `parseSettings`, which validates each field independently, clamps numbers, drops invalid entries, de-duplicates ids, caps list sizes and falls back to defaults. Unknown or older versions are read leniently.
 - Recent addresses are stored only when the user turns on "Remember recent addresses" (off by default) and are cleared when it is turned off. Exports never include recent or last addresses.
 - Two open workspace tabs each keep their own state; the last change saved wins.

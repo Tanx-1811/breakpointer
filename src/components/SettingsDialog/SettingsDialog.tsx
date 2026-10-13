@@ -1,6 +1,6 @@
 import { useId, useRef, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
-import type { BreakpointSetId, LanguagePreference, ThemePreference, ViewportLabSettings } from '../../types';
+import type { BreakpointSetId, LanguagePreference, ThemePreference, BreakpointerSettings } from '../../types';
 import { MAX_RECENT_URLS } from '../../utils/constants';
 import { Button } from '../Button/Button';
 import { Dialog } from '../Dialog/Dialog';
@@ -10,7 +10,7 @@ import styles from './SettingsDialog.module.css';
 
 type Props = {
   open: boolean;
-  settings: ViewportLabSettings;
+  settings: BreakpointerSettings;
   version: string;
   onTheme: (theme: ThemePreference) => void;
   onLanguage: (language: LanguagePreference) => void;

@@ -1,6 +1,6 @@
 // Chrome Web Store small promo tile, 440 × 280 (English and Vietnamese).
 // Kept simple: it is often shown at its native size.
-import { COPY, device, FONTS, nightBackgroundCss, page } from './shared.mjs';
+import { COPY, device, FONTS, NAME, nightBackgroundCss, page } from './shared.mjs';
 
 export const width = 440;
 export const height = 280;
@@ -57,8 +57,8 @@ ${nightBackgroundCss({ glowX: '50%', glowY: '80%', gridFadeFrom: 'center' })}
 
   const body = `<div class="bg"></div>
 <div class="top">
-  <img class="lockup" src="${lockup.indigo.src}" alt="ViewportLab">
-  <p class="tagline">${copy.tagline}</p>
+  <img class="lockup" src="${lockup.indigo.src}" alt="${NAME}">
+  <p class="tagline">${copy.taglineShort}</p>
 </div>
 ${laptop.html}
 ${tablet.html}

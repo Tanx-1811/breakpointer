@@ -1,5 +1,5 @@
 {
-  "name": "viewportlab",
+  "name": "breakpointer",
   "private": true,
   "version": "0.1.0",
   "description": "Preview websites at multiple viewport sizes and check responsive layouts directly in Chrome.",

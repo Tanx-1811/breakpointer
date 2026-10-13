@@ -5,7 +5,7 @@ import type {
   ThemePreference,
   ViewportConfig,
   ViewportGroup,
-  ViewportLabSettings,
+  BreakpointerSettings,
   WorkspaceLayout,
 } from '../types';
 import { deleteGroup, renameGroup, replaceGroupViewports, saveGroup } from './groups';
@@ -48,9 +48,9 @@ export type SettingsAction =
   | { type: 'updateGroupViewports'; id: string }
   | { type: 'deleteGroup'; id: string }
   | { type: 'replaceGroups'; groups: ViewportGroup[] }
-  | { type: 'replaceSettings'; settings: ViewportLabSettings };
+  | { type: 'replaceSettings'; settings: BreakpointerSettings };
 
-export function settingsReducer(state: ViewportLabSettings, action: SettingsAction): ViewportLabSettings {
+export function settingsReducer(state: BreakpointerSettings, action: SettingsAction): BreakpointerSettings {
   switch (action.type) {
     case 'setTheme':
       return { ...state, theme: action.theme };

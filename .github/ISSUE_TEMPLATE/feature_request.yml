@@ -1,5 +1,5 @@
 name: Feature request or feedback
-description: Ideas, missing features, or how you use ViewportLab
+description: Ideas, missing features, or how you use Breakpointer
 labels: [feedback]
 body:
   - type: textarea

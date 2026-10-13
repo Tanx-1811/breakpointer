@@ -27,7 +27,7 @@ import { fitZoomForAll } from '../state/fit';
 import { createGroup, findGroupTemplates } from '../state/groups';
 import type { SettingsAction } from '../state/settings-reducer';
 import { canAddViewport, fromTemplates, setZoomForAll, stepZoom } from '../state/viewports';
-import type { ThemePreference, ViewportConfig, ViewportLabSettings } from '../types';
+import type { ThemePreference, ViewportConfig, BreakpointerSettings } from '../types';
 import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
 import { displayHost, parsePreviewUrl, type UrlParseError } from '../utils/url';
 import { TopBar } from './TopBar';
@@ -49,7 +49,7 @@ type DialogName = 'add' | 'saveGroup' | 'manageGroups' | 'access' | 'capture' | 
 type ProbeState = 'idle' | 'checking' | 'reachable' | 'unreachable' | 'unknown';
 
 export type ViewerProps = {
-  initialSettings: ViewportLabSettings;
+  initialSettings: BreakpointerSettings;
   initialUrl: URL | null;
   initialInput: string;
   initialError: UrlParseError | null;
@@ -74,7 +74,7 @@ export function ViewerApp(props: ViewerProps) {
 }
 
 type WorkspaceProps = ViewerProps & {
-  settings: ViewportLabSettings;
+  settings: BreakpointerSettings;
   dispatch: (action: SettingsAction) => void;
 };
 
@@ -137,7 +137,7 @@ function Workspace({
   );
 
   useEffect(() => {
-    document.title = host ? `${host} — ViewportLab` : 'ViewportLab';
+    document.title = host ? `${host} — Breakpointer` : 'Breakpointer';
   }, [host]);
 
   // Reachability of the current address; a new address or retry starts a new check.
@@ -275,7 +275,7 @@ function Workspace({
   /* ---------- Screenshots ---------- */
 
   const runCapture = async (element: HTMLElement, label: string[]) => {
-    const parts = ['viewportlab', host ?? 'page', ...label].map(fileNamePart);
+    const parts = ['breakpointer', host ?? 'page', ...label].map(fileNamePart);
     const fileName = `${parts.join('_')}_${timestamp()}.png`;
     const result = await captureElement(element, fileName);
     if (!result.ok) toast({ message: t('capture.failed'), tone: 'error' });
@@ -316,13 +316,13 @@ function Workspace({
 
   const exportSettings = () => {
     const data = JSON.stringify(createSettingsExport(settings), null, 2);
-    downloadBlob(new Blob([data], { type: 'application/json' }), `viewportlab-settings_${timestamp()}.json`);
+    downloadBlob(new Blob([data], { type: 'application/json' }), `breakpointer-settings_${timestamp()}.json`);
   };
 
   const importSettings = async (file: File) => {
     try {
       const imported = parseSettingsImport(JSON.parse(await file.text()), settings);
-      if (!imported) throw new Error('Not a ViewportLab export');
+      if (!imported) throw new Error('Not a Breakpointer export');
       const previous = settings;
       dispatch({ type: 'replaceSettings', settings: imported });
       withUndo(t('settings.imported'), () => dispatch({ type: 'replaceSettings', settings: previous }));

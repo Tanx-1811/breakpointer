@@ -115,7 +115,7 @@ describe('export and import', () => {
     };
     const exported = createSettingsExport(settings, new Date('2026-01-02T03:04:05Z'));
     expect(exported).toMatchObject({
-      app: 'ViewportLab',
+      app: 'Breakpointer',
       kind: 'settings',
       version: 1,
       exportedAt: '2026-01-02T03:04:05.000Z',

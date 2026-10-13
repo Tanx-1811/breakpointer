@@ -1,14 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ViewportLab">
-  <title>ViewportLab</title>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Breakpointer">
+  <title>Breakpointer</title>
   <defs>
-    <mask id="vl-mark-mono" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
+    <mask id="bp-mark-mono" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
       <rect width="128" height="128" rx="28" fill="#FFFFFF"/>
-      <g fill="none" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="20" y="30" width="70" height="48" rx="6"/>
-        <path d="M55 80v14M44 96h22"/>
-      </g>
-      <rect x="76" y="48" width="34" height="56" rx="7" fill="#FFFFFF" stroke="#000000" stroke-width="8"/>
+      <path d="M24 28h28a16 16 0 0 1 0 32H24zM24 60h38a20 20 0 0 1 0 40H24z" fill="none" stroke="#000000" stroke-width="11" stroke-linejoin="round"/>
+      <path d="M107 30H89l-11 14 11 14h18z" fill="#000000" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
     </mask>
   </defs>
-  <rect width="128" height="128" rx="28" fill="#FFFFFF" mask="url(#vl-mark-mono)"/>
+  <rect width="128" height="128" rx="28" fill="#FFFFFF" mask="url(#bp-mark-mono)"/>
 </svg>

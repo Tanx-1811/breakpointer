@@ -20,6 +20,6 @@ export function card(page: Page, name: string) {
 export async function storedSettings(page: Page): Promise<Record<string, unknown> | undefined> {
   return page.evaluate(
     async () =>
-      (await chrome.storage.local.get('viewportlab.settings'))['viewportlab.settings'] as Record<string, unknown>,
+      (await chrome.storage.local.get('breakpointer.settings'))['breakpointer.settings'] as Record<string, unknown>,
   );
 }

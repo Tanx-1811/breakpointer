@@ -17,7 +17,7 @@ body:
   - type: input
     id: versions
     attributes:
-      label: ViewportLab and Chrome versions
-      placeholder: ViewportLab 0.1.0, Chrome 140 on macOS
+      label: Breakpointer and Chrome versions
+      placeholder: Breakpointer 0.1.0, Chrome 140 on macOS
     validations:
       required: true

@@ -75,7 +75,7 @@ test.describe('address bar', () => {
     await input.press('Enter');
     await expect(page.getByTestId('preview-frame')).toHaveCount(3);
     expect(new URL(page.url()).searchParams.get('url')).toBe(server.url('/demo'));
-    await expect(page).toHaveTitle(/127\.0\.0\.1 — ViewportLab/);
+    await expect(page).toHaveTitle(/127\.0\.0\.1 — Breakpointer/);
   });
 });
 
@@ -219,7 +219,7 @@ test.describe('settings', () => {
     const page = await openViewer();
     await page.evaluate(() =>
       chrome.storage.local.set({
-        'viewportlab.settings': {
+        'breakpointer.settings': {
           theme: 42,
           viewports: [{ width: 'wide' }, { width: 500, height: 99999, zoom: 9 }],
           groups: 'x',
@@ -229,7 +229,7 @@ test.describe('settings', () => {
     await page.reload();
     await expect(page.getByTestId('viewport-card')).toHaveCount(1);
     await expect(page.getByRole('spinbutton', { name: 'Height in pixels' })).toHaveValue('3840');
-    await page.evaluate(() => chrome.storage.local.set({ 'viewportlab.settings': 'garbage' }));
+    await page.evaluate(() => chrome.storage.local.set({ 'breakpointer.settings': 'garbage' }));
     await page.reload();
     await expect(page.getByTestId('viewport-card')).toHaveCount(3);
   });
@@ -271,7 +271,7 @@ test.describe('settings', () => {
     const file = testInfo.outputPath('settings.json');
     await (await download).saveAs(file);
     const exported = JSON.parse(await readFile(file, 'utf8'));
-    expect(exported).toMatchObject({ app: 'ViewportLab', kind: 'settings', version: 1 });
+    expect(exported).toMatchObject({ app: 'Breakpointer', kind: 'settings', version: 1 });
     expect(exported.settings.viewports).toHaveLength(4);
     expect(exported.settings).not.toHaveProperty('recentUrls');
 
@@ -287,7 +287,7 @@ test.describe('settings', () => {
     await page
       .getByTestId('import-input')
       .setInputFiles({ name: 'x.json', mimeType: 'application/json', buffer: Buffer.from('{"a":1}') });
-    await expect(page.getByText('isn’t a ViewportLab settings file')).toBeVisible();
+    await expect(page.getByText('isn’t a Breakpointer settings file')).toBeVisible();
   });
 
   test('remember recent addresses only when enabled', async ({ openViewer, server }) => {
@@ -323,7 +323,7 @@ test.describe('tools', () => {
     const download = page.waitForEvent('download');
     await card(page, 'Phone').getByRole('button', { name: 'Screenshot of Phone' }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^viewportlab_127.0.0.1_phone_375x667_\d{8}-\d{6}\.png$/);
+    expect(file.suggestedFilename()).toMatch(/^breakpointer_127.0.0.1_phone_375x667_\d{8}-\d{6}\.png$/);
     await expect(page.getByText(/Screenshot saved as/)).toBeVisible();
   });
 

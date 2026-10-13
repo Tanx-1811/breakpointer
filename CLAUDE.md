@@ -1,4 +1,4 @@
-# ViewportLab — notes for AI assistants
+# Breakpointer — notes for AI assistants
 
 Chrome extension (MV3) that previews a page at several real viewport sizes. React 19 + TypeScript + Vite 8 (multi-entry: `src/popup`, `src/viewer`, `src/background`). Read `docs/ARCHITECTURE.md` before touching rendering, permissions or storage; scope and decisions are in `docs/PLAN.md`.
 

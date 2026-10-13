@@ -83,7 +83,7 @@ export async function captureElement(element: HTMLElement, fileName: string): Pr
     downloadBlob(blob, fileName);
     return { ok: true, fileName, partial: clipped || scrollable };
   } catch (error) {
-    console.warn('[ViewportLab] Screenshot failed.', error);
+    console.warn('[Breakpointer] Screenshot failed.', error);
     return { ok: false };
   } finally {
     delete root.dataset.capturing;

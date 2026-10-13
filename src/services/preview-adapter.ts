@@ -58,7 +58,7 @@ export function createIframePreviewAdapter(): PreviewAdapter {
         await enableEmbeddingForTab(tabId);
         return true;
       } catch (error) {
-        console.warn('[ViewportLab] Could not enable the embedding helper.', error);
+        console.warn('[Breakpointer] Could not enable the embedding helper.', error);
         return false;
       }
     },

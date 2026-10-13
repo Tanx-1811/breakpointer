@@ -1,4 +1,4 @@
-// Shared building blocks for every ViewportLab brand image.
+// Shared building blocks for every Breakpointer brand image.
 // Everything here is plain strings (SVG / HTML / CSS) so the templates stay
 // self-contained: no network, no external files, only fonts installed with macOS.
 
@@ -16,6 +16,8 @@ export const PALETTE = {
   indigo300: '#A5B4FC',
   indigo200: '#C7D2FE',
   indigo100: '#E0E7FF',
+  // Breakpoint amber: only for the breakpoint marker (mark, size pills, guides).
+  breakpoint: '#FBBF24',
   // Neutrals (match src/styles/global.css)
   ink: '#171A1F',
   muted: '#59626F',
@@ -37,7 +39,15 @@ export const FONTS = {
   mono: "ui-monospace, 'SF Mono', Menlo, Consolas, monospace",
 };
 
+export const NAME = 'Breakpointer';
+export const DESCRIPTOR = 'Responsive Viewport Tester';
+
+/** Primary tagline (the name's promise) and the secondary line (how it delivers it). */
 export const TAGLINE = {
+  en: 'Find where your layout breaks.',
+  vi: 'Tìm chỗ bố cục bị vỡ, ở mọi kích thước.',
+};
+export const SECONDARY = {
   en: 'See every screen size at once.',
   vi: 'Xem mọi kích thước màn hình cùng lúc.',
 };
@@ -46,17 +56,20 @@ export const TAGLINE = {
 export const COPY = {
   en: {
     tagline: TAGLINE.en,
-    taglineTwoLines: 'See every screen<br>size at once.',
-    pitch: 'Preview any website at several viewport sizes, side by side, right in Chrome.',
-    // Same text with a phrase-aware line break, for two-line layouts.
-    pitchTwoLines: 'Preview any website at several viewport sizes,<br>side by side, right in Chrome.',
+    taglineTwoLines: 'Find where your<br>layout breaks.',
+    // For the 440 px tile, where space is tight.
+    taglineShort: TAGLINE.en,
+    secondary: SECONDARY.en,
+    // Same idea with a phrase-aware line break, for two-line layouts.
+    pitchTwoLines: 'See every screen size at once —<br>side by side, right in Chrome.',
     chips: ['Side-by-side previews', 'Custom sizes', 'Saved groups'],
   },
   vi: {
     tagline: TAGLINE.vi,
-    taglineTwoLines: 'Xem mọi kích thước<br>màn hình cùng lúc.',
-    pitch: 'Xem trước website ở nhiều kích thước viewport, đặt cạnh nhau, ngay trong Chrome.',
-    pitchTwoLines: 'Xem trước website ở nhiều kích thước viewport,<br>đặt cạnh nhau, ngay trong Chrome.',
+    taglineTwoLines: 'Tìm chỗ bố cục bị vỡ,<br>ở mọi kích thước.',
+    taglineShort: 'Tìm chỗ bố cục bị vỡ.',
+    secondary: SECONDARY.vi,
+    pitchTwoLines: 'Xem mọi kích thước màn hình cùng lúc —<br>đặt cạnh nhau, ngay trong Chrome.',
     chips: ['Xem song song', 'Kích thước tùy chỉnh', 'Lưu nhóm viewport'],
   },
 };
@@ -69,44 +82,49 @@ export const SHORT_DESCRIPTION =
 /* ------------------------------------------------------------------ */
 
 // Geometry of the mark on a 128 × 128 grid (identical to assets/icon.svg).
-const MONITOR = '<rect x="20" y="30" width="70" height="48" rx="6"/>';
-const STAND = '<path d="M55 80v14M44 96h22"/>';
+// A "B" built from two width blocks — a narrow layout over a wide one — and an
+// amber breakpoint tag pointing at the spot where the narrow layout ends.
+const B_BLOCKS = 'M24 28h28a16 16 0 0 1 0 32H24zM24 60h38a20 20 0 0 1 0 40H24z';
+const B_STROKE = 11;
+const TAG = 'M107 30H89l-11 14 11 14h18z';
+
+function markShapes(gradientId) {
+  return `<rect width="128" height="128" rx="28" fill="url(#${gradientId})"/>
+  <path d="${B_BLOCKS}" fill="none" stroke="#FFFFFF" stroke-width="${B_STROKE}" stroke-linejoin="round"/>
+  <path d="${TAG}" fill="${PALETTE.breakpoint}" stroke="${PALETTE.breakpoint}" stroke-width="4" stroke-linejoin="round"/>`;
+}
+
+function markGradient(id) {
+  return `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="${PALETTE.indigo500}"/>
+      <stop offset="1" stop-color="${PALETTE.indigo700}"/>
+    </linearGradient>`;
+}
 
 /** Full-colour mark. `id` keeps gradient ids unique when several marks share a document. */
-export function markSvg({ id = 'vl-mark', title = 'ViewportLab' } = {}) {
+export function markSvg({ id = 'bp-mark', title = NAME } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="${title}">
   <title>${title}</title>
   <defs>
-    <linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
-      <stop offset="0" stop-color="${PALETTE.indigo500}"/>
-      <stop offset="1" stop-color="${PALETTE.indigo700}"/>
-    </linearGradient>
+    ${markGradient(id)}
   </defs>
-  <rect width="128" height="128" rx="28" fill="url(#${id})"/>
-  <g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    ${MONITOR}
-    ${STAND}
-  </g>
-  <rect x="76" y="48" width="34" height="56" rx="7" fill="url(#${id})" stroke="#FFFFFF" stroke-width="8"/>
+  ${markShapes(id)}
 </svg>
 `;
 }
 
 /**
- * Single-colour mark: the tile is solid `color` and the device outlines are
- * cut out (transparent), so it works on photos and coloured backgrounds.
+ * Single-colour mark: the tile is solid `color` and the B and the tag are cut
+ * out (transparent), so it works on photos and coloured backgrounds.
  */
-export function markMonoSvg({ color, id = 'vl-mark-mono', title = 'ViewportLab' }) {
+export function markMonoSvg({ color, id = 'bp-mark-mono', title = NAME }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="${title}">
   <title>${title}</title>
   <defs>
     <mask id="${id}" maskUnits="userSpaceOnUse" x="0" y="0" width="128" height="128">
       <rect width="128" height="128" rx="28" fill="#FFFFFF"/>
-      <g fill="none" stroke="#000000" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-        ${MONITOR}
-        ${STAND}
-      </g>
-      <rect x="76" y="48" width="34" height="56" rx="7" fill="#FFFFFF" stroke="#000000" stroke-width="8"/>
+      <path d="${B_BLOCKS}" fill="none" stroke="#000000" stroke-width="${B_STROKE}" stroke-linejoin="round"/>
+      <path d="${TAG}" fill="#000000" stroke="#000000" stroke-width="4" stroke-linejoin="round"/>
     </mask>
   </defs>
   <rect width="128" height="128" rx="28" fill="${color}" mask="url(#${id})"/>
@@ -121,11 +139,12 @@ export function markMonoSvg({ color, id = 'vl-mark-mono', title = 'ViewportLab' 
 // Proportions on a 128-unit mark: wordmark size 0.625 × mark, gap 0.27 × mark.
 export const LOCKUP = { markSize: 128, gap: 35, fontSize: 80, baseline: 92, letterSpacing: -0.6 };
 
+// "Break" takes the text colour, "pointer" the accent.
 export const LOCKUP_COLORS = {
-  light: { viewport: PALETTE.ink, lab: PALETTE.accent },
-  dark: { viewport: PALETTE.white, lab: PALETTE.accentDark },
+  light: { first: PALETTE.ink, second: PALETTE.accent },
+  dark: { first: PALETTE.white, second: PALETTE.accentDark },
   // Used on the deep-indigo promo backgrounds, where the UI accent lacks contrast.
-  indigo: { viewport: PALETTE.white, lab: PALETTE.indigo300 },
+  indigo: { first: PALETTE.white, second: PALETTE.indigo300 },
 };
 
 /**
@@ -135,21 +154,13 @@ export const LOCKUP_COLORS = {
 export function lockupSourceSvg({ variant, width = 1000 }) {
   const colors = LOCKUP_COLORS[variant];
   const { markSize, gap, fontSize, baseline, letterSpacing } = LOCKUP;
-  const id = `vl-lockup-${variant}`;
+  const id = `bp-lockup-${variant}`;
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${markSize}" viewBox="0 0 ${width} ${markSize}">
   <defs>
-    <linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
-      <stop offset="0" stop-color="${PALETTE.indigo500}"/>
-      <stop offset="1" stop-color="${PALETTE.indigo700}"/>
-    </linearGradient>
+    ${markGradient(id)}
   </defs>
-  <rect width="128" height="128" rx="28" fill="url(#${id})"/>
-  <g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
-    ${MONITOR}
-    ${STAND}
-  </g>
-  <rect x="76" y="48" width="34" height="56" rx="7" fill="url(#${id})" stroke="#FFFFFF" stroke-width="8"/>
-  <text x="${markSize + gap}" y="${baseline}" font-family="Avenir Next" font-weight="600" font-size="${fontSize}" letter-spacing="${letterSpacing}" fill="${colors.viewport}">Viewport<tspan fill="${colors.lab}">Lab</tspan></text>
+  ${markShapes(id)}
+  <text x="${markSize + gap}" y="${baseline}" font-family="Avenir Next" font-weight="600" font-size="${fontSize}" letter-spacing="${letterSpacing}" fill="${colors.first}">Break<tspan fill="${colors.second}">pointer</tspan></text>
 </svg>
 `;
 }
@@ -274,8 +285,9 @@ export const DEVICE_CSS = `
   box-shadow: inset 0 0 0 1px rgba(165, 180, 252, .32), 0 6px 16px -6px rgba(4, 3, 24, .6); }
 .dim.start { left: 0; transform: none; }
 .dim.end { left: auto; right: 0; transform: none; }
-.dim::before { content: ''; display: inline-block; width: 6px; height: 6px; margin-right: 7px; border-radius: 50%;
-  background: ${PALETTE.indigo300}; vertical-align: 1px; }
+/* A tiny breakpoint tag, the same shape as the one in the mark. */
+.dim::before { content: ''; display: inline-block; width: 9px; height: 8px; margin-right: 7px;
+  background: ${PALETTE.breakpoint}; clip-path: polygon(0 0, 60% 0, 100% 50%, 60% 100%, 0 100%); vertical-align: 0; }
 
 .bezel { position: relative; background: linear-gradient(160deg, #2B2F39 0%, #15171D 55%, #0E1014 100%);
   box-shadow: 0 34px 60px -18px rgba(4, 3, 24, .75), 0 14px 26px -12px rgba(4, 3, 24, .6), inset 0 0 0 1px rgba(255,255,255,.10), inset 0 1px 0 rgba(255,255,255,.14); }

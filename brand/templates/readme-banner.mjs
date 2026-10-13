@@ -1,6 +1,6 @@
 // README header banner, 1600 × 500. Self-contained background with rounded,
 // transparent corners so it sits well on GitHub's light and dark themes.
-import { device, FONTS, nightBackgroundCss, page, TAGLINE } from './shared.mjs';
+import { device, FONTS, NAME, nightBackgroundCss, page, SECONDARY, TAGLINE } from './shared.mjs';
 
 export const width = 1600;
 export const height = 500;
@@ -26,9 +26,9 @@ ${nightBackgroundCss({ glowX: '78%', glowY: '45%' })}
   const body = `<div class="frame">
 <div class="bg"></div>
 <div class="copy-block">
-  <img class="lockup" src="${lockup.indigo.src}" alt="ViewportLab">
+  <img class="lockup" src="${lockup.indigo.src}" alt="${NAME}">
   <h1 class="headline">${TAGLINE.en}</h1>
-  <p class="sub">Preview websites at multiple viewport sizes and check<br>responsive layouts directly in Chrome.</p>
+  <p class="sub">${SECONDARY.en} Preview websites at multiple viewport sizes<br>and check responsive layouts directly in Chrome.</p>
 </div>
 ${laptop.html}
 ${tablet.html}

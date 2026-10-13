@@ -78,20 +78,28 @@ export function Icon({ name, size = 16, ...rest }: Props) {
   );
 }
 
-/** Product mark, matching the extension icon. */
+/**
+ * Product mark, matching the extension icon: a "B" made of a narrow block over a
+ * wide one, and an amber breakpoint tag pointing where the narrow layout ends.
+ */
 export function Logo({ size = 24 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 128 128" aria-hidden="true" focusable="false">
       <defs>
-        <linearGradient id="vl-logo" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+        <linearGradient id="bp-logo-tile" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
           <stop offset="0" stopColor="#6366F1" />
           <stop offset="1" stopColor="#4338CA" />
         </linearGradient>
       </defs>
-      <rect width="128" height="128" rx="28" fill="url(#vl-logo)" />
-      <rect x="20" y="30" width="70" height="48" rx="6" fill="none" stroke="#fff" strokeWidth="8" />
-      <path d="M55 80v14M44 96h22" fill="none" stroke="#fff" strokeWidth="8" strokeLinecap="round" />
-      <rect x="76" y="48" width="34" height="56" rx="7" fill="url(#vl-logo)" stroke="#fff" strokeWidth="8" />
+      <rect width="128" height="128" rx="28" fill="url(#bp-logo-tile)" />
+      <path
+        d="M24 28h28a16 16 0 0 1 0 32H24zM24 60h38a20 20 0 0 1 0 40H24z"
+        fill="none"
+        stroke="#fff"
+        strokeWidth="11"
+        strokeLinejoin="round"
+      />
+      <path d="M107 30H89l-11 14 11 14h18z" fill="#FBBF24" stroke="#FBBF24" strokeWidth="4" strokeLinejoin="round" />
     </svg>
   );
 }

@@ -31,7 +31,7 @@ Run on a clean Chrome profile with the packaged build (`npm run package`, then l
 | 8   | Unreachable host              | https://does-not-exist.invalid                     | "Can't reach …" with Try again / Open in new tab / Show anyway                                           |
 | 9   | Exact-size window             | card menu → "Open in a window of this size"        | Content area matches (or a toast says how Chrome limited it)                                             |
 | 10  | Screenshots                   | camera on a card; `S` for workspace                | First time: explanation → Chrome prompt; PNG downloads                                                   |
-| 11  | Context menu & omnibox        | right-click a link; type `vp example.com`          | Opens the workspace with that address                                                                    |
+| 11  | Context menu & omnibox        | right-click a link; type `bpt example.com`         | Opens the workspace with that address                                                                    |
 | 12  | Shortcuts                     | `Alt+Shift+V`, `Alt+Shift+P`, `?` in the workspace | Popup opens; current page previews; help opens                                                           |
 | 13  | Language                      | Settings → Tiếng Việt                              | Entire UI in Vietnamese                                                                                  |
 | 14  | Persistence                   | change layout, close and reopen                    | Same workspace                                                                                           |

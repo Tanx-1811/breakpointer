@@ -32,7 +32,7 @@ export type ViewportGroup = {
   viewports: ViewportTemplate[];
 };
 
-export type ViewportLabSettings = {
+export type BreakpointerSettings = {
   version: 1;
   theme: ThemePreference;
   language: LanguagePreference;

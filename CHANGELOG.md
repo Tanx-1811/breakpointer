@@ -15,7 +15,7 @@ First release (V1 / MVP).
 - Breakpoint labels (Tailwind, Bootstrap) and pixel rulers.
 - Screenshots of one preview or the visible workspace; open a preview in a new tab or in a window of the exact size.
 - Opt-in site access to show sites that block framing (per site or all sites), with a manager to review and revoke access.
-- Toolbar popup (preview the current tab, choose a group, recent addresses), context menu, address-bar keyword `vp`, commands `Alt+Shift+V` and `Alt+Shift+P`, workspace shortcuts and a help dialog.
+- Toolbar popup (preview the current tab, choose a group, recent addresses), context menu, address-bar keyword `bpt`, commands `Alt+Shift+V` and `Alt+Shift+P`, workspace shortcuts and a help dialog.
 - Light, dark and system themes; English and Vietnamese.
 - Settings saved locally with validation and safe defaults; export/import as JSON (browsing data excluded); opt-in recent addresses.
 - Brand kit, store assets and screenshots; documentation (plan, architecture, privacy, store listing, testing).

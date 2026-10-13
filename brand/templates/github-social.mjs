@@ -1,5 +1,5 @@
 // GitHub repository social preview, 1280 × 640 (content kept inside a 40 px safe area).
-import { COPY, device, FONTS, nightBackgroundCss, page } from './shared.mjs';
+import { COPY, device, FONTS, NAME, nightBackgroundCss, page } from './shared.mjs';
 
 export const width = 1280;
 export const height = 640;
@@ -26,9 +26,9 @@ ${nightBackgroundCss({ glowX: '50%', glowY: '85%', gridFadeFrom: 'center' })}
 
   const body = `<div class="bg"></div>
 <div class="top">
-  <img class="lockup" src="${lockup.indigo.src}" alt="ViewportLab">
+  <img class="lockup" src="${lockup.indigo.src}" alt="${NAME}">
   <h1 class="headline">${copy.tagline}</h1>
-  <p class="sub">A Chrome extension for checking responsive layouts at real viewport widths.</p>
+  <p class="sub">${copy.secondary} A Chrome extension for checking responsive layouts at real viewport widths.</p>
 </div>
 ${laptop.html}
 ${tablet.html}

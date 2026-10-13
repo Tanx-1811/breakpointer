@@ -31,7 +31,7 @@ async function seed(page: Page, viewerUrl: (p?: Record<string, string>) => strin
   await page.setViewportSize(SIZE);
   await page.goto(viewerUrl());
   await page.locator('html[data-ready]').waitFor({ state: 'attached' });
-  await page.evaluate((value) => chrome.storage.local.set({ 'viewportlab.settings': value }), settings);
+  await page.evaluate((value) => chrome.storage.local.set({ 'breakpointer.settings': value }), settings);
 }
 
 async function show(page: Page, viewerUrl: (p?: Record<string, string>) => string, widths: number) {
@@ -126,7 +126,7 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.evaluate(
         (language) =>
           chrome.storage.local.set({
-            'viewportlab.settings': {
+            'breakpointer.settings': {
               version: 1,
               language,
               rememberRecent: true,

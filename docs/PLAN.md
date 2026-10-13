@@ -1,4 +1,4 @@
-# ViewportLab — Product & Delivery Plan
+# Breakpointer — Product & Delivery Plan
 
 > **Version:** 0.1.0 (V1 / MVP) · **Status:** MVP built and tested; ready for store preparation
 > **Source:** refines the original planning brief (`plan.md`) into a delivery plan with decisions, status and acceptance criteria.
@@ -22,16 +22,18 @@
 
 ## 2. Decisions made
 
-| #   | Decision                                                                                                                 | Why                                                                          | Revisit when                                         |
-| --- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ---------------------------------------------------- |
-| D1  | Render each viewport in an iframe sized to the real viewport; zoom with CSS transform                                    | Only option giving real layout for several sizes at once with public APIs    | A supported API for multi-viewport rendering appears |
-| D2  | Blocked sites: **opt-in** host access (per site or all sites) + DNR session rule scoped to the viewer tab and sub-frames | Works for most sites without install-time permissions; user stays in control | Chrome changes DNR/permission behaviour              |
-| D3  | Fallbacks: open in a new tab, or in a real window sized to the viewport                                                  | Some sites still won't render in frames; the user always has a path          | —                                                    |
-| D4  | No backend, accounts, analytics or AI in V1                                                                              | Plan non-goals; privacy and trust                                            | Validated demand for sync/teams (V4)                 |
-| D5  | Screenshots via `captureVisibleTab`, which needs "all sites" access; ask only when used, explain first                   | Chrome requires `<all_urls>` for capture; keep install permissions minimal   | —                                                    |
-| D6  | React + TypeScript + Vite (multi-entry MV3 build), CSS Modules, Vitest, Playwright, ESLint + Prettier                    | Plan stack; no extra runtime dependencies beyond React                       | —                                                    |
-| D7  | English + Vietnamese UI from day one                                                                                     | Owner's market; i18n is cheap to add early and costly later                  | Add languages on demand                              |
-| D8  | Max 8 viewports; hidden viewports don't load                                                                             | Each preview is a full page load (memory/CPU)                                | Performance data says otherwise                      |
+| #   | Decision                                                                                                                 | Why                                                                                                                                                                 | Revisit when                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| D1  | Render each viewport in an iframe sized to the real viewport; zoom with CSS transform                                    | Only option giving real layout for several sizes at once with public APIs                                                                                           | A supported API for multi-viewport rendering appears                                 |
+| D2  | Blocked sites: **opt-in** host access (per site or all sites) + DNR session rule scoped to the viewer tab and sub-frames | Works for most sites without install-time permissions; user stays in control                                                                                        | Chrome changes DNR/permission behaviour                                              |
+| D3  | Fallbacks: open in a new tab, or in a real window sized to the viewport                                                  | Some sites still won't render in frames; the user always has a path                                                                                                 | —                                                                                    |
+| D4  | No backend, accounts, analytics or AI in V1                                                                              | Plan non-goals; privacy and trust                                                                                                                                   | Validated demand for sync/teams (V4)                                                 |
+| D5  | Screenshots via `captureVisibleTab`, which needs "all sites" access; ask only when used, explain first                   | Chrome requires `<all_urls>` for capture; keep install permissions minimal                                                                                          | —                                                                                    |
+| D6  | React + TypeScript + Vite (multi-entry MV3 build), CSS Modules, Vitest, Playwright, ESLint + Prettier                    | Plan stack; no extra runtime dependencies beyond React                                                                                                              | —                                                                                    |
+| D7  | English + Vietnamese UI from day one                                                                                     | Owner's market; i18n is cheap to add early and costly later                                                                                                         | Add languages on demand                                                              |
+| D8  | Max 8 viewports; hidden viewports don't load                                                                             | Each preview is a full page load (memory/CPU)                                                                                                                       | Performance data says otherwise                                                      |
+| D9  | Product name **Breakpointer** (working title was ViewportLab), tagline "Find where your layout breaks"                   | Owner chose it (2026-10-13): instantly clear to frontend developers and designers (breakpoint + pointer), memorable, distinctive; no extension with this name found | Before store submission, re-check trademarks; a small npm library uses the same name |
+| D10 | Address-bar keyword `bpt` instead of `vp`                                                                                | A common word or abbreviation would capture ordinary searches (e.g. "vp bank")                                                                                      | User feedback                                                                        |
 
 ---
 
@@ -39,8 +41,8 @@
 
 ### P0 (required for the first usable release) — all done
 
-- [x] Open ViewportLab from the Chrome toolbar (popup, `Alt+Shift+V`).
-- [x] Preview a typed URL or the current tab's URL (popup "Preview this page", context menu, `Alt+Shift+P`, address-bar keyword `vp`).
+- [x] Open Breakpointer from the Chrome toolbar (popup, `Alt+Shift+V`).
+- [x] Preview a typed URL or the current tab's URL (popup "Preview this page", context menu, `Alt+Shift+P`, address-bar keyword `bpt`).
 - [x] Multiple viewport previews in one workspace (wrap or single-row layout).
 - [x] Presets for mobile, tablet, laptop and desktop (15 sizes, named by size class — no device-emulation claims).
 - [x] Custom viewport by width × height, validated (200–3840 px).
@@ -83,8 +85,8 @@ No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise t
 | Permission                            | When                     | Install warning              | Why                                                                                     |
 | ------------------------------------- | ------------------------ | ---------------------------- | --------------------------------------------------------------------------------------- |
 | `storage`                             | Install                  | None                         | Save viewports, groups and preferences locally                                          |
-| `activeTab`                           | Install                  | None                         | Read the current tab's URL only when the user invokes ViewportLab                       |
-| `contextMenus`                        | Install                  | None                         | "Preview in ViewportLab" on pages and links                                             |
+| `activeTab`                           | Install                  | None                         | Read the current tab's URL only when the user invokes Breakpointer                      |
+| `contextMenus`                        | Install                  | None                         | "Preview in Breakpointer" on pages and links                                            |
 | `declarativeNetRequestWithHostAccess` | Install                  | None                         | Let previews of **allowed** sites ignore frame-blocking headers, in the viewer tab only |
 | Host access (`<all_urls>` subset)     | **Optional**, at runtime | Chrome prompt when requested | Per site: show blocked sites. All sites: also enables screenshots                       |
 
@@ -107,7 +109,7 @@ No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justificati
 
 ## 6. Release plan (M3 → store)
 
-1. `npm run package` → `release/viewportlab-0.1.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
+1. `npm run package` → `release/breakpointer-0.1.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
 2. Create the Chrome Web Store item; upload the zip.
 3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/1–5`, promo tiles `brand/store/promo-*.png`.
 4. Privacy tab: single purpose, permission justifications, "does not collect user data", link to a hosted copy of [PRIVACY.md](PRIVACY.md).

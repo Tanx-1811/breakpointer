@@ -76,7 +76,7 @@ export function TopBar(props: Props) {
     <header className={styles.topBar}>
       <div className={styles.brand}>
         <Logo size={26} />
-        <span className={styles.brandName}>ViewportLab</span>
+        <span className={styles.brandName}>Breakpointer</span>
       </div>
 
       <div className={styles.addressArea}>
