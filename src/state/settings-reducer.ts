@@ -50,6 +50,7 @@ export type SettingsAction =
   | { type: 'updateGroupViewports'; id: string }
   | { type: 'deleteGroup'; id: string }
   | { type: 'restoreGroup'; group: ViewportGroup; index: number }
+  | { type: 'replaceGroup'; group: ViewportGroup }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
 
 export function settingsReducer(state: BreakpointerSettings, action: SettingsAction): BreakpointerSettings {
@@ -110,6 +111,11 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, groups: replaceGroupViewports(state.groups, action.id, state.viewports) };
     case 'deleteGroup':
       return { ...state, groups: deleteGroup(state.groups, action.id) };
+    case 'replaceGroup':
+      return {
+        ...state,
+        groups: state.groups.map((group) => (group.id === action.group.id ? action.group : group)),
+      };
     case 'restoreGroup':
       return { ...state, groups: restoreGroup(state.groups, action.group, action.index) };
     case 'replaceSettings':

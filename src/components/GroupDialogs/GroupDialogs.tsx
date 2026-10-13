@@ -61,7 +61,7 @@ function SaveGroupForm({ viewportCount, groupCount, onSave, onClose }: Omit<Save
         value={name}
         maxLength={MAX_NAME_LENGTH}
         placeholder={t('groups.namePlaceholder')}
-        autoFocus
+        data-autofocus
         aria-invalid={error ? true : undefined}
         aria-describedby={error || atLimit || empty ? errorId : undefined}
         onChange={(event) => setName(event.target.value)}

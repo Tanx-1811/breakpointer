@@ -44,9 +44,14 @@ describe('toSafeHref', () => {
 });
 
 describe('siteAccessPattern', () => {
-  it('covers the site and its subdomains, ignoring www', () => {
+  it('covers the whole registrable domain, so redirects between subdomains keep working', () => {
     expect(siteAccessPattern(new URL('https://www.example.com/a'))).toBe('*://*.example.com/*');
-    expect(siteAccessPattern(new URL('https://shop.example.com'))).toBe('*://*.shop.example.com/*');
+    expect(siteAccessPattern(new URL('https://shop.example.com'))).toBe('*://*.example.com/*');
+    expect(siteAccessPattern(new URL('https://dantri.com.vn'))).toBe('*://*.dantri.com.vn/*');
+    expect(siteAccessPattern(new URL('https://m.dantri.com.vn'))).toBe('*://*.dantri.com.vn/*');
+    expect(siteAccessPattern(new URL('https://www.bbc.co.uk'))).toBe('*://*.bbc.co.uk/*');
+    expect(siteAccessPattern(new URL('https://someone.github.io/app'))).toBe('*://*.someone.github.io/*');
+    expect(siteAccessPattern(new URL('http://myapp.localhost:3000'))).toBe('*://myapp.localhost/*');
   });
 
   it('uses the exact host for IP addresses and localhost', () => {

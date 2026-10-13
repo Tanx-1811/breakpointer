@@ -15,6 +15,7 @@ export function downloadBlob(blob: Blob, fileName: string): void {
 export function fileNamePart(value: string): string {
   return (
     value
+      .replace(/[đĐ]/g, 'd')
       .normalize('NFKD')
       .replace(/[̀-ͯ]/g, '')
       .replace(/[^a-zA-Z0-9.-]+/g, '-')

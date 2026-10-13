@@ -16,8 +16,9 @@ export type Area = { width: number; height: number };
 
 function cardSize(vp: ViewportConfig, zoom: number, metrics: CardMetrics) {
   return {
-    width: Math.max(metrics.minCardWidth, vp.width * zoom + metrics.chromeWidth),
-    height: vp.height * zoom + metrics.stageExtraHeight + metrics.chromeHeight,
+    // Cards round their scaled size; round up here so a fit never overflows by a sub-pixel.
+    width: Math.max(metrics.minCardWidth, Math.ceil(vp.width * zoom) + metrics.chromeWidth),
+    height: Math.ceil(vp.height * zoom) + metrics.stageExtraHeight + metrics.chromeHeight,
   };
 }
 

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import styles from './PreviewFrame.module.css';
 
@@ -32,6 +32,8 @@ type Props = {
   height: number;
   zoom: number;
   title: string;
+  /** Called from the "navigated away" chip to show the original page again. */
+  onBack?: () => void;
 };
 
 /**
@@ -43,9 +45,13 @@ type Props = {
  * their `load` event (which waits for every ad and tracker), so the preview
  * stays visible while a thin bar and a small badge show progress.
  */
-export function PreviewFrame({ src, width, height, zoom, title }: Props) {
+export function PreviewFrame({ src, width, height, zoom, title, onBack }: Props) {
   const { t } = useI18n();
   const [status, setStatus] = useState<Status>('loading');
+  // A second load event means the page inside navigated (e.g. a clicked link);
+  // the frame no longer shows the address in the workspace's address bar.
+  const loads = useRef(0);
+  const [navigated, setNavigated] = useState(false);
 
   useEffect(() => {
     if (status !== 'loading') return;
@@ -65,11 +71,20 @@ export function PreviewFrame({ src, width, height, zoom, title }: Props) {
         sandbox={SANDBOX}
         allow={ALLOW}
         referrerPolicy="strict-origin-when-cross-origin"
-        onLoad={() => setStatus('loaded')}
+        onLoad={() => {
+          loads.current += 1;
+          if (loads.current > 1) setNavigated(true);
+          setStatus('loaded');
+        }}
         data-testid="preview-frame"
         data-viewport-width={width}
         data-viewport-height={height}
       />
+      {navigated && onBack && (
+        <button type="button" className={styles.navigated} onClick={onBack} title={t('frame.navigatedHint')}>
+          {t('frame.navigated')}
+        </button>
+      )}
       {status !== 'loaded' && (
         <>
           <span className={styles.progress} aria-hidden="true" />

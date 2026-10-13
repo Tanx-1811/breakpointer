@@ -35,7 +35,8 @@ function renderCard(overrides: Partial<Parameters<typeof ViewportCard>[0]> = {},
     <ViewportCard
       viewport={viewport}
       src="https://example.com/"
-      reloadKey={0}
+      reloadKey="0"
+      order={0}
       index={0}
       count={2}
       canDuplicate

@@ -30,10 +30,13 @@ async function bootstrap() {
 
   // ?group= applies a group once (from the popup), then is dropped from the URL.
   const groupId = params.get('group');
+  let fitGroup = false;
   if (groupId) {
     const group = findGroupTemplates(groupId, settings.groups, t);
     if (group) {
       settings = { ...settings, viewports: fromTemplates(group.viewports) };
+      // Built-in groups are fitted to this screen, like when applied in the workspace.
+      fitGroup = groupId.startsWith('builtin:');
       await saveSettings(settings).catch(() => {});
     }
     params.delete('group');
@@ -73,7 +76,7 @@ async function bootstrap() {
         initialError={initialError}
         adapter={adapter}
         version={chrome.runtime.getManifest().version}
-        firstRun={stored === undefined}
+        autoFit={fitGroup ? 'now' : stored === undefined ? 'afterFirstPage' : 'none'}
       />
     </StrictMode>,
   );

@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../styles/global.css';
 import { loadSettings } from '../services/storage';
-import { toSafeHref } from '../utils/url';
+import { isRestrictedHost, toSafeHref } from '../utils/url';
 import { PopupApp } from './Popup';
 
 async function bootstrap() {
@@ -13,11 +13,17 @@ async function bootstrap() {
     chrome.commands.getAll().catch(() => []),
   ]);
   const href = toSafeHref(tabs[0]?.url);
+  const tabUrl = href ? new URL(href) : null;
   const shortcut = commands.find((command) => command.name === '_execute_action')?.shortcut ?? '';
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <PopupApp settings={settings} tabUrl={href ? new URL(href) : null} shortcut={shortcut} />
+      <PopupApp
+        settings={settings}
+        tabUrl={tabUrl && !isRestrictedHost(tabUrl) ? tabUrl : null}
+        restricted={Boolean(tabUrl && isRestrictedHost(tabUrl))}
+        shortcut={shortcut}
+      />
     </StrictMode>,
   );
 }

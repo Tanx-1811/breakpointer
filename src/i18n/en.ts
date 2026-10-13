@@ -34,6 +34,7 @@ export const en = {
   'url.error.unsupported': 'Only http:// and https:// pages can be previewed.',
   'url.error.invalid': 'That doesn’t look like a website address. Try something like example.com.',
 
+  'url.hint.localPort': 'Tip: add your dev server’s port, for example {host}:5173.',
   'url.error.credentials':
     'Addresses with a username or password (user:pass@) can’t be previewed. Remove that part and try again.',
 
@@ -43,7 +44,8 @@ export const en = {
   'toolbar.siteAccessOn': 'Site access: previews of this site are allowed',
   'toolbar.siteAccessOff': 'Site access: this site may block previews',
   'toolbar.siteAccess': 'Site access',
-  'toolbar.theme': 'Theme: {theme} — click to switch',
+  'toolbar.themeToDark': 'Switch to dark theme',
+  'toolbar.themeToLight': 'Switch to light theme',
   'toolbar.settings': 'Settings',
   'toolbar.help': 'Help & keyboard shortcuts',
 
@@ -85,6 +87,8 @@ export const en = {
   'card.menuRemove': 'Remove',
   'card.placeholder': 'Enter an address to preview',
   'frame.title': '{name} preview, {width} × {height}',
+  'frame.navigated': '↩ Navigated away · Back',
+  'frame.navigatedHint': 'This preview followed a link. Click to show the original address again.',
   'frame.loading': 'Loading…',
   'frame.slowShort': 'Still loading…',
   'frame.slow': 'Still loading… If nothing appears, the site may block previews.',
@@ -184,7 +188,8 @@ export const en = {
   'access.none': 'No sites allowed yet.',
   'access.revoke': 'Remove access to {pattern}',
   'access.noUrl': 'Enter an address to manage access for that site.',
-  'access.notice': 'Blank preview or “refused to connect”? {host} may block being shown inside other pages.',
+  'access.notice':
+    'If a preview stays blank or says “refused to connect”, {host} doesn’t allow being shown inside other pages.',
   'access.noticeAllow': 'Allow on {host}',
   'access.noticeOpen': 'Open in new tab',
   'access.noticeNever': 'Don’t show again',
@@ -209,7 +214,6 @@ export const en = {
   'error.unreachableTitle': 'Can’t reach {host}',
   'error.unreachableBody': 'Check the address and your connection, or whether the site is down.',
   'error.retry': 'Try again',
-  'error.showAnyway': 'Show previews anyway',
   'empty.noViewportsTitle': 'No viewports',
   'empty.noViewportsBody': 'Add a viewport or apply a group to start comparing sizes.',
   'empty.allHiddenTitle': 'All viewports are hidden',
@@ -290,11 +294,13 @@ export const en = {
     'Previews don’t emulate devices: the user agent, pixel density, touch input and browser engine are those of your Chrome.',
   'help.how4':
     'Some sites block being shown in frames. Allow Breakpointer on that site, or open it in a new tab or an exact-size window.',
-  'help.how5': 'Sign-in state and third-party cookies can behave differently inside frames.',
+  'help.how5':
+    'Sign-in, cookie banners and bot checks can behave differently inside frames. If a site misbehaves, open it in a window of the exact size.',
 
   'popup.currentTab': 'Current tab',
   'popup.previewThis': 'Preview this page',
   'popup.cannotPreview': 'This page can’t be previewed. Only http:// and https:// pages are supported.',
+  'popup.cannotPreviewStore': 'Chrome doesn’t let extensions show the Chrome Web Store.',
   'popup.openWith': 'Viewports',
   'popup.openWithCurrent': 'Current workspace',
   'popup.another': 'Preview another address',

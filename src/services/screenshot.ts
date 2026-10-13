@@ -17,7 +17,12 @@ export function requestCapturePermission(): Promise<boolean> {
 
 export type CaptureResult = { ok: true; fileName: string; partial: boolean } | { ok: false };
 
-const nextFrame = () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+/** Waits for the next paint; falls back to a timer because hidden tabs don't paint. */
+const nextFrame = () =>
+  new Promise<void>((resolve) => {
+    requestAnimationFrame(() => resolve());
+    setTimeout(resolve, 100);
+  });
 
 async function dataUrlToBitmap(dataUrl: string): Promise<ImageBitmap> {
   const blob = await (await fetch(dataUrl)).blob();
@@ -41,20 +46,31 @@ export async function captureElement(element: HTMLElement, fileName: string): Pr
     await nextFrame();
 
     const rect = element.getBoundingClientRect();
-    const left = Math.max(0, rect.left);
-    const top = Math.max(0, rect.top);
-    const right = Math.min(window.innerWidth, rect.right);
-    const bottom = Math.min(window.innerHeight, rect.bottom);
+    // Only what is visible inside the scrolling workspace (not under the toolbars).
+    const viewport =
+      element.closest('main')?.getBoundingClientRect() ?? new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+    const left = Math.max(viewport.left, rect.left, 0);
+    const top = Math.max(viewport.top, rect.top, 0);
+    const right = Math.min(viewport.right, rect.right, window.innerWidth);
+    const bottom = Math.min(viewport.bottom, rect.bottom, window.innerHeight);
     if (right - left < 1 || bottom - top < 1) return { ok: false };
 
     const scrollable = element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
     const clipped =
-      rect.left < -0.5 ||
-      rect.top < -0.5 ||
-      rect.right > window.innerWidth + 0.5 ||
-      rect.bottom > window.innerHeight + 0.5;
+      rect.left < left - 0.5 || rect.top < top - 0.5 || rect.right > right + 0.5 || rect.bottom > bottom + 0.5;
 
-    const dataUrl = await chrome.tabs.captureVisibleTab({ format: 'png' });
+    // captureVisibleTab captures the active tab of a window: make sure that is
+    // this workspace tab (e.g. after the user switched tabs during a prompt).
+    const tab = await chrome.tabs.getCurrent();
+    if (tab?.id !== undefined && !tab.active) {
+      await chrome.tabs.update(tab.id, { active: true });
+      await nextFrame();
+      await nextFrame();
+    }
+    const dataUrl =
+      tab?.windowId !== undefined
+        ? await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
+        : await chrome.tabs.captureVisibleTab({ format: 'png' });
     delete root.dataset.capturing;
     const bitmap = await dataUrlToBitmap(dataUrl);
     const scaleX = bitmap.width / window.innerWidth;

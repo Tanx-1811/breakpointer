@@ -26,7 +26,8 @@ export function WorkspaceBar(props: Props) {
   const { viewports, layout, breakpoints, showRulers } = props;
   const { t } = useI18n();
   const [dragId, setDragId] = useState<string | null>(null);
-  const [dropIndex, setDropIndex] = useState<number | null>(null);
+  /** Insertion slot while dragging: 0 = before the first chip, n = after the last. */
+  const [dropSlot, setDropSlot] = useState<number | null>(null);
 
   const visible = viewports.filter((vp) => !vp.hidden);
   const zooms = [...new Set(visible.map((vp) => vp.zoom))];
@@ -36,18 +37,36 @@ export function WorkspaceBar(props: Props) {
       ? ZOOM_OPTIONS
       : [...ZOOM_OPTIONS, commonZoom].sort((a, b) => a - b);
 
-  const onDragOver = (event: DragEvent, index: number) => {
+  const onDragOver = (event: DragEvent<HTMLLIElement>, index: number) => {
     if (!dragId) return;
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
-    setDropIndex(index);
+    // Drop before or after this chip depending on which half the pointer is over.
+    const rect = event.currentTarget.getBoundingClientRect();
+    setDropSlot(index + (event.clientX > rect.left + rect.width / 2 ? 1 : 0));
   };
 
-  const onDrop = (event: DragEvent, index: number) => {
-    event.preventDefault();
-    if (dragId) props.onMoveTo(dragId, index);
+  const endDrag = () => {
     setDragId(null);
-    setDropIndex(null);
+    setDropSlot(null);
+  };
+
+  const onDrop = (event: DragEvent) => {
+    event.preventDefault();
+    const from = viewports.findIndex((vp) => vp.id === dragId);
+    if (dragId && from >= 0 && dropSlot !== null) {
+      // The slot counts the dragged chip itself; removing it first shifts later slots.
+      const to = from < dropSlot ? dropSlot - 1 : dropSlot;
+      if (to !== from) props.onMoveTo(dragId, to);
+    }
+    endDrag();
+  };
+
+  const dropMarker = (index: number): 'before' | 'after' | undefined => {
+    if (dropSlot === null || !dragId) return undefined;
+    if (dropSlot === index) return 'before';
+    if (dropSlot === viewports.length && index === viewports.length - 1) return 'after';
+    return undefined;
   };
 
   const onChipKeyDown = (event: KeyboardEvent<HTMLButtonElement>, vp: ViewportConfig, index: number) => {
@@ -72,9 +91,9 @@ export function WorkspaceBar(props: Props) {
             <li
               key={vp.id}
               className={styles.chipItem}
-              data-drop={dropIndex === index && dragId !== vp.id ? true : undefined}
+              data-drop={dropMarker(index)}
               onDragOver={(event) => onDragOver(event, index)}
-              onDrop={(event) => onDrop(event, index)}
+              onDrop={onDrop}
             >
               <button
                 type="button"
@@ -90,10 +109,7 @@ export function WorkspaceBar(props: Props) {
                   event.dataTransfer.effectAllowed = 'move';
                   event.dataTransfer.setData('text/plain', vp.id);
                 }}
-                onDragEnd={() => {
-                  setDragId(null);
-                  setDropIndex(null);
-                }}
+                onDragEnd={endDrag}
                 onClick={() => props.onToggleVisible(vp.id)}
                 onKeyDown={(event) => onChipKeyDown(event, vp, index)}
               >

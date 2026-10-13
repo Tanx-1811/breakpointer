@@ -32,6 +32,7 @@ export const vi: Record<MessageKey, string> = {
   'url.error.unsupported': 'Chỉ xem trước được trang http:// và https://.',
   'url.error.invalid': 'Địa chỉ này có vẻ không hợp lệ. Hãy thử dạng example.com.',
 
+  'url.hint.localPort': 'Mẹo: thêm cổng của server dev, ví dụ {host}:5173.',
   'url.error.credentials':
     'Không xem trước được địa chỉ có tên đăng nhập hoặc mật khẩu (user:pass@). Hãy bỏ phần đó rồi thử lại.',
 
@@ -41,7 +42,8 @@ export const vi: Record<MessageKey, string> = {
   'toolbar.siteAccessOn': 'Quyền truy cập: trang này đã được phép xem trước',
   'toolbar.siteAccessOff': 'Quyền truy cập: trang này có thể chặn xem trước',
   'toolbar.siteAccess': 'Quyền truy cập trang',
-  'toolbar.theme': 'Giao diện: {theme} — bấm để đổi',
+  'toolbar.themeToDark': 'Chuyển sang giao diện tối',
+  'toolbar.themeToLight': 'Chuyển sang giao diện sáng',
   'toolbar.settings': 'Cài đặt',
   'toolbar.help': 'Trợ giúp & phím tắt',
 
@@ -83,6 +85,8 @@ export const vi: Record<MessageKey, string> = {
   'card.menuRemove': 'Xóa',
   'card.placeholder': 'Nhập địa chỉ để xem trước',
   'frame.title': 'Bản xem trước {name}, {width} × {height}',
+  'frame.navigated': '↩ Đã chuyển trang · Quay lại',
+  'frame.navigatedHint': 'Bản xem trước này đã đi theo một liên kết. Bấm để hiện lại địa chỉ ban đầu.',
   'frame.loading': 'Đang tải…',
   'frame.slowShort': 'Vẫn đang tải…',
   'frame.slow': 'Vẫn đang tải… Nếu không hiện gì, có thể trang chặn xem trước.',
@@ -183,7 +187,7 @@ export const vi: Record<MessageKey, string> = {
   'access.revoke': 'Gỡ quyền của {pattern}',
   'access.noUrl': 'Nhập một địa chỉ để quản lý quyền cho trang đó.',
   'access.notice':
-    'Bản xem trước trống hoặc báo “refused to connect”? {host} có thể chặn hiển thị bên trong trang khác.',
+    'Nếu bản xem trước trống hoặc báo “refused to connect”, {host} không cho phép hiển thị bên trong trang khác.',
   'access.noticeAllow': 'Cho phép trên {host}',
   'access.noticeOpen': 'Mở trong tab mới',
   'access.noticeNever': 'Không hiện lại',
@@ -208,7 +212,6 @@ export const vi: Record<MessageKey, string> = {
   'error.unreachableTitle': 'Không kết nối được tới {host}',
   'error.unreachableBody': 'Hãy kiểm tra địa chỉ, kết nối mạng, hoặc trang có đang hoạt động không.',
   'error.retry': 'Thử lại',
-  'error.showAnyway': 'Vẫn hiển thị bản xem trước',
   'empty.noViewportsTitle': 'Chưa có viewport',
   'empty.noViewportsBody': 'Thêm viewport hoặc áp dụng một nhóm để bắt đầu so sánh các kích thước.',
   'empty.allHiddenTitle': 'Tất cả viewport đang bị ẩn',
@@ -289,11 +292,13 @@ export const vi: Record<MessageKey, string> = {
     'Bản xem trước không giả lập thiết bị: user agent, mật độ điểm ảnh, cảm ứng và nhân trình duyệt vẫn là của Chrome bạn đang dùng.',
   'help.how4':
     'Một số trang chặn hiển thị trong khung. Hãy cho phép Breakpointer trên trang đó, hoặc mở trong tab mới hay cửa sổ đúng kích thước.',
-  'help.how5': 'Trạng thái đăng nhập và cookie bên thứ ba có thể hoạt động khác khi ở trong khung.',
+  'help.how5':
+    'Đăng nhập, banner cookie và bước kiểm tra chống bot có thể hoạt động khác khi ở trong khung. Nếu trang chạy không đúng, hãy mở nó trong cửa sổ đúng kích thước.',
 
   'popup.currentTab': 'Tab hiện tại',
   'popup.previewThis': 'Xem trước trang này',
   'popup.cannotPreview': 'Không xem trước được trang này. Chỉ hỗ trợ trang http:// và https://.',
+  'popup.cannotPreviewStore': 'Chrome không cho tiện ích hiển thị Chrome Web Store.',
   'popup.openWith': 'Viewport',
   'popup.openWithCurrent': 'Vùng làm việc hiện tại',
   'popup.another': 'Xem trước địa chỉ khác',

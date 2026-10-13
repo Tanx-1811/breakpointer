@@ -6,7 +6,7 @@ test.describe('without site access', () => {
   test('blocked sites show the explanation and fallbacks', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/xfo-deny') });
     const notice = page.getByTestId('embed-notice');
-    await expect(notice).toContainText('127.0.0.1 may block being shown inside other pages');
+    await expect(notice).toContainText('127.0.0.1 doesn’t allow being shown inside other pages');
     await expect(notice.getByRole('button', { name: 'Allow on 127.0.0.1' })).toBeVisible();
     await expect(notice.getByRole('button', { name: 'Open in new tab' })).toBeVisible();
     // Chrome refuses to frame the page without access.

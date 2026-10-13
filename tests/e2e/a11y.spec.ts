@@ -17,8 +17,9 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
     test(`workspace and dialogs in ${theme} theme`, async ({ openViewer, server }) => {
       const page = await openViewer({ url: server.url('/demo') });
       // "T" cycles system → light → dark (the test browser's system theme is light).
+      // "T" switches light ↔ dark (the test browser's system theme is light).
       await page.keyboard.press('t');
-      if (theme === 'dark') await page.keyboard.press('t');
+      if (theme === 'light') await page.keyboard.press('t');
       await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
       // Let colour transitions finish so axe measures the final colours.
       await page.waitForTimeout(400);

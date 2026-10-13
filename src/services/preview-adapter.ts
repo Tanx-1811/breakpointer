@@ -18,8 +18,11 @@ export interface PreviewAdapter {
   start(): Promise<boolean>;
   /** Undoes `start`. Safe to call more than once. */
   stop(): Promise<void>;
-  /** Best-effort check that the site can be reached at all. Never rejects. */
-  probe(url: URL, timeoutMs?: number): Promise<ProbeResult>;
+  /**
+   * Best-effort check that the site can be reached at all. Never rejects.
+   * Only conclusive with host access to the site; otherwise resolves "unknown".
+   */
+  probe(url: URL, options: { hasAccess: boolean; timeoutMs?: number }): Promise<ProbeResult>;
   /** Fallback for pages that can't be framed: open them as a normal tab. */
   openInTab(url: string): Promise<void>;
   /**
@@ -74,10 +77,13 @@ export function createIframePreviewAdapter(): PreviewAdapter {
       }
     },
 
-    async probe(url, timeoutMs = 8000) {
-      // Fetches to local servers can be subject to Chrome's local network access
-      // rules; let the frames load and speak for themselves instead.
-      if (isLocalNetworkHost(url.hostname)) return { kind: 'unknown' };
+    async probe(url, { hasAccess, timeoutMs = 8000 }) {
+      // Without host access an extension page can't tell "down" from "up but
+      // restricted": a no-cors request also fails for sites that send
+      // Cross-Origin-Resource-Policy (x.com, stackoverflow.com…). Never block
+      // previews on a guess — Chrome shows its own error inside each frame.
+      // Local servers are skipped too (local network access rules).
+      if (!hasAccess || isLocalNetworkHost(url.hostname)) return { kind: 'unknown' };
 
       const controller = new AbortController();
       let timedOut = false;
@@ -86,22 +92,23 @@ export function createIframePreviewAdapter(): PreviewAdapter {
         controller.abort();
       }, timeoutMs);
       try {
-        // An opaque no-cors GET (some servers and firewalls reject HEAD): it only
-        // tells whether the host answered. No cookies are sent, nothing is read,
-        // and the download stops as soon as the response headers arrive.
-        await fetch(url.href, {
+        // With host access the request is exempt from CORS: any HTTP response
+        // (even 403/404) means the host answered; only DNS, TLS or connection
+        // failures reject. No cookies are sent and the body isn't downloaded.
+        const response = await fetch(url.href, {
           method: 'GET',
-          mode: 'no-cors',
+          mode: 'cors',
           credentials: 'omit',
           cache: 'no-store',
+          redirect: 'follow',
           signal: controller.signal,
         });
+        void response.body?.cancel().catch(() => {});
         return { kind: 'reachable' };
       } catch {
         return timedOut ? { kind: 'unknown' } : { kind: 'unreachable' };
       } finally {
         clearTimeout(timer);
-        controller.abort();
       }
     },
 

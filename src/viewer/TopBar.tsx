@@ -2,14 +2,12 @@ import type { Ref } from 'react';
 import { BUILT_IN_GROUPS } from '../data/groups';
 import { useI18n } from '../i18n/I18nProvider';
 import { builtInGroupName } from '../state/groups';
-import type { ThemePreference, ViewportGroup } from '../types';
+import type { ViewportGroup } from '../types';
 import { Button, IconButton } from '../components/Button/Button';
 import { AddressBar } from '../components/AddressBar/AddressBar';
-import { Icon, Logo, type IconName } from '../components/Icon/Icon';
+import { Icon, Logo } from '../components/Icon/Icon';
 import { Menu, type MenuEntry } from '../components/Menu/Menu';
 import styles from './Viewer.module.css';
-
-const THEME_ICONS: Record<ThemePreference, IconName> = { system: 'system', light: 'sun', dark: 'moon' };
 
 type Props = {
   address: string;
@@ -19,7 +17,6 @@ type Props = {
   hasUrl: boolean;
   secure: boolean | null;
   siteAllowed: boolean | null;
-  theme: ThemePreference;
   groups: ViewportGroup[];
   canAddViewport: boolean;
   onAddressChange: (value: string) => void;
@@ -32,7 +29,8 @@ type Props = {
   onAddViewport: () => void;
   onCapture: () => void;
   onSiteAccess: () => void;
-  onCycleTheme: () => void;
+  onToggleTheme: () => void;
+  resolvedTheme: 'light' | 'dark';
   onSettings: () => void;
   onHelp: () => void;
 };
@@ -70,7 +68,7 @@ export function TopBar(props: Props) {
     },
   ];
 
-  const themeLabel = t('toolbar.theme', { theme: t(`theme.${props.theme}`) });
+  const themeLabel = props.resolvedTheme === 'dark' ? t('toolbar.themeToLight') : t('toolbar.themeToDark');
 
   return (
     <header className={styles.topBar}>
@@ -149,7 +147,11 @@ export function TopBar(props: Props) {
           onClick={props.onSiteAccess}
           className={props.siteAllowed ? styles.accessOn : undefined}
         />
-        <IconButton icon={THEME_ICONS[props.theme]} label={`${themeLabel} (T)`} onClick={props.onCycleTheme} />
+        <IconButton
+          icon={props.resolvedTheme === 'dark' ? 'sun' : 'moon'}
+          label={`${themeLabel} (T)`}
+          onClick={props.onToggleTheme}
+        />
         <IconButton icon="settings" label={t('toolbar.settings')} onClick={props.onSettings} />
         <IconButton icon="help" label={`${t('toolbar.help')} (?)`} onClick={props.onHelp} />
       </div>

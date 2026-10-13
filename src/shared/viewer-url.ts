@@ -58,5 +58,10 @@ export async function openViewer(params: ViewerParams = {}, placement: ViewerPla
     return;
   }
   const { newTab: _newTab, ...where } = placement;
-  await chrome.tabs.create({ url: viewerUrl(params), ...where });
+  try {
+    await chrome.tabs.create({ url: viewerUrl(params), ...where });
+  } catch {
+    // e.g. the requested window is a popup window, which can't hold more tabs.
+    await chrome.tabs.create({ url: viewerUrl(params) });
+  }
 }

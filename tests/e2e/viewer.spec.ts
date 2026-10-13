@@ -1,6 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { expect, test } from './fixtures';
-import { card, previewFrames, previewWidths, storedSettings } from './helpers';
+import { card, previewFrames, previewWidths, storedSettings, visualCardNames } from './helpers';
 
 test.describe('previews', () => {
   test('render each page at the real viewport width', async ({ openViewer, server }) => {
@@ -47,6 +47,29 @@ test.describe('previews', () => {
     const card = (await page.getByTestId('preview-frame').first().boundingBox())!;
     expect(badge.width * badge.height).toBeLessThan((card.width * card.height) / 10);
     await expect(badges).toHaveCount(0, { timeout: 10_000 });
+  });
+
+  test('flag a preview that navigated away and bring it back', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/demo') });
+    await expect.poll(() => previewWidths(page, '/demo')).toEqual([375, 768, 1366]);
+    // Navigate inside the phone preview only, as a clicked link would.
+    const frames = previewFrames(page, '/demo');
+    const widths = await Promise.all(frames.map((frame) => frame.evaluate(() => window.innerWidth)));
+    await frames[widths.indexOf(375)]!.evaluate(() => location.assign('/responsive'));
+    const chip = card(page, 'Phone').getByRole('button', { name: /Navigated away/ });
+    await expect(chip).toBeVisible();
+    await expect(page.getByRole('button', { name: /Navigated away/ })).toHaveCount(1);
+    await chip.click();
+    await expect(chip).toBeHidden();
+    await expect.poll(() => previewWidths(page, '/demo')).toEqual([375, 768, 1366]);
+  });
+
+  test('an unreachable site shows a banner and keeps the previews', async ({ openViewer }) => {
+    const page = await openViewer({ url: 'https://does-not-exist.invalid/' });
+    const banner = page.getByTestId('unreachable-banner');
+    await expect(banner).toContainText('Can’t reach does-not-exist.invalid', { timeout: 15_000 });
+    await expect(page.getByTestId('preview-frame')).toHaveCount(3);
+    await expect(banner.getByRole('button', { name: 'Try again' })).toBeVisible();
   });
 
   test('reload a single preview', async ({ openViewer, server }) => {
@@ -182,7 +205,35 @@ test.describe('viewports', () => {
     await page.getByRole('button', { name: /^Phone, 375 × 667$/ }).focus();
     await page.keyboard.press('Alt+ArrowRight');
     await expect(page.getByTestId('viewport-chip').first()).toContainText('Tablet');
-    await expect(page.getByTestId('viewport-card').first()).toHaveAttribute('aria-label', /^Tablet/);
+    await expect.poll(() => visualCardNames(page)).toEqual(['Tablet', 'Phone', 'Laptop']);
+  });
+
+  test('reorder chips by drag and drop, including to the end', async ({ openViewer }) => {
+    const page = await openViewer();
+    const chips = page.getByTestId('viewport-chip');
+    const rightHalf = async (index: number) => {
+      const box = (await chips.nth(index).boundingBox())!;
+      return { x: box.width - 4, y: box.height / 2 };
+    };
+    await chips.nth(0).dragTo(chips.nth(1), { targetPosition: await rightHalf(1) });
+    await expect(chips).toContainText(['Tablet', 'Phone', 'Laptop']);
+    await chips.nth(1).dragTo(chips.nth(2), { targetPosition: await rightHalf(2) });
+    await expect(chips).toContainText(['Tablet', 'Laptop', 'Phone']);
+    await expect.poll(() => visualCardNames(page)).toEqual(['Tablet', 'Laptop', 'Phone']);
+  });
+
+  test('moving a card does not reload its preview', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/counter') });
+    await expect.poll(() => previewFrames(page, '/counter').length).toBe(3);
+    const titles = async () =>
+      (await Promise.all(previewFrames(page, '/counter').map((frame) => frame.locator('h1').textContent()))).sort();
+    await expect.poll(async () => (await titles()).every((title) => title?.startsWith('Load'))).toBe(true);
+    const before = await titles();
+    await card(page, 'Phone').getByRole('button', { name: 'More actions for Phone' }).click();
+    await page.getByRole('menuitem', { name: 'Move right' }).click();
+    await expect.poll(() => visualCardNames(page)).toEqual(['Tablet', 'Phone', 'Laptop']);
+    await page.waitForTimeout(500);
+    expect(await titles()).toEqual(before);
   });
 
   test('fit makes every viewport visible at once', async ({ openViewer, server }) => {
@@ -194,6 +245,34 @@ test.describe('viewports', () => {
       expect(box!.x + box!.width).toBeLessThanOrEqual(viewport.width);
       expect(box!.y + box!.height).toBeLessThanOrEqual(viewport.height);
     }
+  });
+});
+
+test.describe('dialogs', () => {
+  test('Settings → Manage site access opens and stays open', async ({ openViewer }) => {
+    const page = await openViewer();
+    await page.getByRole('button', { name: 'Settings' }).click();
+    await page.getByRole('button', { name: 'Manage site access' }).click();
+    const access = page.getByRole('dialog', { name: 'Site access' });
+    await expect(access).toBeVisible();
+    await page.waitForTimeout(300);
+    await expect(access).toBeVisible();
+  });
+
+  test('toasts and their Undo work while a dialog is open', async ({ openViewer }) => {
+    const page = await openViewer();
+    await page.keyboard.press('g');
+    await page.getByRole('menuitem', { name: 'Save current as group…' }).click();
+    // The name field has focus as soon as the dialog opens.
+    await page.keyboard.type('Checkout QA');
+    await page.keyboard.press('Enter');
+    await page.keyboard.press('g');
+    await page.getByRole('menuitem', { name: 'Manage groups…' }).click();
+    const dialog = page.getByRole('dialog', { name: 'Manage groups' });
+    await dialog.getByRole('button', { name: 'Delete Checkout QA' }).click();
+    await expect(dialog).toContainText('No saved groups yet');
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(dialog.getByRole('textbox', { name: 'Name of group Checkout QA' })).toBeVisible();
   });
 });
 
@@ -256,7 +335,7 @@ test.describe('settings', () => {
     await page.getByRole('button', { name: 'Undo' }).click();
     await expect(page.getByTestId('viewport-card')).toHaveCount(3);
     await expect(card(page, 'Laptop renamed')).toBeVisible();
-    await expect(page.getByTestId('viewport-card').nth(1)).toHaveAttribute('aria-label', /^Tablet/);
+    await expect.poll(() => visualCardNames(page)).toEqual(['Phone', 'Tablet', 'Laptop renamed']);
   });
 
   test('persist across reloads', async ({ openViewer }) => {
@@ -302,10 +381,11 @@ test.describe('settings', () => {
   test('theme, breakpoint labels and rulers', async ({ openViewer }) => {
     const page = await openViewer();
     const html = page.locator('html');
-    await page.keyboard.press('t');
-    await expect(html).toHaveAttribute('data-theme', 'light');
+    // The system theme is light here, so "T" goes to dark, then back to light.
     await page.keyboard.press('t');
     await expect(html).toHaveAttribute('data-theme', 'dark');
+    await page.keyboard.press('t');
+    await expect(html).toHaveAttribute('data-theme', 'light');
 
     await page.getByRole('combobox', { name: 'Breakpoints' }).selectOption('tailwind');
     await expect(page.getByTestId('breakpoint-badge')).toHaveText(['base', 'md', 'xl']);

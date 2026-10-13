@@ -1,4 +1,4 @@
-import type { SVGProps } from 'react';
+import { useId, type SVGProps } from 'react';
 
 /** 24×24 stroke icons. Dots use zero-length segments drawn with a wider stroke. */
 const PATHS = {
@@ -83,15 +83,16 @@ export function Icon({ name, size = 16, ...rest }: Props) {
  * wide one, and an amber breakpoint tag pointing where the narrow layout ends.
  */
 export function Logo({ size = 24 }: { size?: number }) {
+  const gradientId = useId();
   return (
     <svg width={size} height={size} viewBox="0 0 128 128" aria-hidden="true" focusable="false">
       <defs>
-        <linearGradient id="bp-logo-tile" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+        <linearGradient id={gradientId} gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
           <stop offset="0" stopColor="#6366F1" />
           <stop offset="1" stopColor="#4338CA" />
         </linearGradient>
       </defs>
-      <rect width="128" height="128" rx="28" fill="url(#bp-logo-tile)" />
+      <rect width="128" height="128" rx="28" fill={`url(#${gradientId})`} />
       <path
         d="M24 28h28a16 16 0 0 1 0 32H24zM24 60h38a20 20 0 0 1 0 40H24z"
         fill="none"

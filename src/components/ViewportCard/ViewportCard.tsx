@@ -32,9 +32,11 @@ export type ViewportCardActions = {
 
 type Props = ViewportCardActions & {
   viewport: ViewportConfig;
+  /** Visual position (CSS order); the DOM order stays stable so frames don't reload. */
+  order: number;
   /** Page to show; null shows an empty placeholder of the right size. */
   src: string | null;
-  reloadKey: number;
+  reloadKey: string;
   index: number;
   count: number;
   canDuplicate: boolean;
@@ -87,7 +89,7 @@ export function ViewportCard(props: Props) {
   return (
     <section
       className={styles.card}
-      style={{ width: Math.max(MIN_CARD_WIDTH, contentWidth + CARD_CHROME_WIDTH) }}
+      style={{ width: Math.max(MIN_CARD_WIDTH, contentWidth + CARD_CHROME_WIDTH), order: props.order }}
       aria-label={t('card.label', { name, width, height })}
       data-testid="viewport-card"
       data-viewport-id={viewport.id}
@@ -200,6 +202,7 @@ export function ViewportCard(props: Props) {
                 height={height}
                 zoom={zoom}
                 title={t('frame.title', { name, width, height })}
+                onBack={props.onReload}
               />
             ) : (
               <div className={styles.placeholder} style={{ width: width * zoom, height: height * zoom }}>
