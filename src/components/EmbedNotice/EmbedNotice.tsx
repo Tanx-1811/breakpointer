@@ -1,0 +1,39 @@
+import { useI18n } from '../../i18n/I18nProvider';
+import { Button, IconButton } from '../Button/Button';
+import { Icon } from '../Icon/Icon';
+import styles from './EmbedNotice.module.css';
+
+type Props = {
+  host: string;
+  onAllow: () => void;
+  onOpenInTab: () => void;
+  onDismiss: () => void;
+  onNeverShow: () => void;
+};
+
+/**
+ * Shown while the current site hasn't been allowed. Chrome doesn't tell the
+ * embedding page when a frame was blocked, so this explains the likely cause
+ * and offers both fixes up front.
+ */
+export function EmbedNotice({ host, onAllow, onOpenInTab, onDismiss, onNeverShow }: Props) {
+  const { t } = useI18n();
+  return (
+    <div className={styles.notice} role="note" data-testid="embed-notice">
+      <Icon name="shield" size={16} className={styles.icon} />
+      <p className={styles.text}>{t('access.notice', { host })}</p>
+      <div className={styles.actions}>
+        <Button size="sm" variant="primary" onClick={onAllow}>
+          {t('access.noticeAllow', { host })}
+        </Button>
+        <Button size="sm" icon="external" onClick={onOpenInTab}>
+          {t('access.noticeOpen')}
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onNeverShow}>
+          {t('access.noticeNever')}
+        </Button>
+        <IconButton icon="close" size="sm" label={t('common.dismiss')} onClick={onDismiss} />
+      </div>
+    </div>
+  );
+}

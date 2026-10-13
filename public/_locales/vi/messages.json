@@ -1,0 +1,34 @@
+{
+  "extName": {
+    "message": "ViewportLab — Kiểm tra giao diện responsive",
+    "description": "Tên tiện ích hiển thị trong Chrome và Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Xem trước website ở nhiều kích thước viewport và kiểm tra bố cục responsive ngay trong Chrome.",
+    "description": "Mô tả ngắn (tối đa 132 ký tự)."
+  },
+  "actionTitle": {
+    "message": "ViewportLab — xem trước ở nhiều kích thước màn hình",
+    "description": "Chú thích nút trên thanh công cụ."
+  },
+  "commandOpen": {
+    "message": "Mở ViewportLab",
+    "description": "Phím tắt mở popup."
+  },
+  "commandPreview": {
+    "message": "Xem trước trang hiện tại bằng ViewportLab",
+    "description": "Phím tắt xem trước tab đang mở."
+  },
+  "menuPreviewPage": {
+    "message": "Xem trước trang này bằng ViewportLab",
+    "description": "Mục menu chuột phải trên trang."
+  },
+  "menuPreviewLink": {
+    "message": "Xem trước liên kết bằng ViewportLab",
+    "description": "Mục menu chuột phải trên liên kết."
+  },
+  "omniboxDefault": {
+    "message": "Xem trước <match>%s</match> ở nhiều kích thước màn hình",
+    "description": "Gợi ý trên thanh địa chỉ sau khi gõ từ khóa."
+  }
+}

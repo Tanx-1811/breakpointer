@@ -1,0 +1,34 @@
+{
+  "extName": {
+    "message": "ViewportLab — Responsive Viewport Tester",
+    "description": "Extension name shown in Chrome and the Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Preview websites at multiple viewport sizes and check responsive layouts directly in Chrome.",
+    "description": "Short description (max 132 characters)."
+  },
+  "actionTitle": {
+    "message": "ViewportLab — preview at multiple screen sizes",
+    "description": "Toolbar button tooltip."
+  },
+  "commandOpen": {
+    "message": "Open ViewportLab",
+    "description": "Keyboard command that opens the popup."
+  },
+  "commandPreview": {
+    "message": "Preview the current page in ViewportLab",
+    "description": "Keyboard command that previews the active tab."
+  },
+  "menuPreviewPage": {
+    "message": "Preview this page in ViewportLab",
+    "description": "Context menu item on a page."
+  },
+  "menuPreviewLink": {
+    "message": "Preview link in ViewportLab",
+    "description": "Context menu item on a link."
+  },
+  "omniboxDefault": {
+    "message": "Preview <match>%s</match> at multiple screen sizes",
+    "description": "Address bar suggestion after typing the keyword."
+  }
+}

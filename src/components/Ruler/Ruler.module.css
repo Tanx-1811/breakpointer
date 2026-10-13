@@ -1,0 +1,55 @@
+.ruler {
+  --tick: var(--text-subtle);
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  background-color: var(--surface);
+  background-repeat: repeat-x, repeat-x;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  user-select: none;
+}
+
+.horizontal {
+  height: 20px;
+  border-bottom: 1px solid var(--border);
+  background-image:
+    linear-gradient(to right, var(--tick) 1px, transparent 1px),
+    linear-gradient(to right, var(--border-strong) 1px, transparent 1px);
+  background-position:
+    0 100%,
+    0 100%;
+}
+
+.vertical {
+  width: 20px;
+  border-right: 1px solid var(--border);
+  background-repeat: repeat-y, repeat-y;
+  background-image:
+    linear-gradient(to bottom, var(--tick) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--border-strong) 1px, transparent 1px);
+  background-position:
+    100% 0,
+    100% 0;
+}
+
+.label {
+  position: absolute;
+  white-space: nowrap;
+}
+
+.horizontal .label {
+  top: 3px;
+  padding-left: 3px;
+}
+
+.vertical .label {
+  left: 2px;
+  padding-top: 3px;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  transform-origin: center;
+  translate: 0 0;
+}

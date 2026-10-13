@@ -1,0 +1,113 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ---------- Top bar ---------- */
+
+.topBar {
+  display: flex;
+  align-items: center;
+  gap: 10px 16px;
+  flex-wrap: wrap;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: none;
+}
+
+.brandName {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.addressArea {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  margin-left: auto;
+}
+
+.menuButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  font-weight: 500;
+}
+
+.menuButton:hover,
+.menuButton[aria-expanded='true'] {
+  background: var(--surface-hover);
+}
+
+.separator {
+  width: 1px;
+  height: 22px;
+  margin: 0 4px;
+  background: var(--border);
+}
+
+.accessOn {
+  color: var(--success) !important;
+}
+
+@media (max-width: 1180px) {
+  .collapsible {
+    display: none;
+  }
+
+  .brandName {
+    display: none;
+  }
+}
+
+/* ---------- Workspace ---------- */
+
+.workspace {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 24px;
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.cards {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.cards[data-layout='wrap'] {
+  flex-wrap: wrap;
+}
+
+.cards[data-layout='row'] {
+  flex-wrap: nowrap;
+  width: max-content;
+}

@@ -1,0 +1,16 @@
+.body {
+  margin: 0 0 10px;
+}
+
+.privacy {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}

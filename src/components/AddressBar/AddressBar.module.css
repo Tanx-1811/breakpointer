@@ -1,0 +1,88 @@
+.form {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 220px;
+  max-width: 760px;
+}
+
+.inputWrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  height: 34px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--surface-2);
+  transition:
+    border-color 120ms ease,
+    background-color 120ms ease;
+}
+
+.inputWrap:hover {
+  border-color: var(--text-subtle);
+}
+
+.inputWrap:focus-within {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.inputWrap[data-invalid] {
+  border-color: var(--danger);
+}
+
+.leading {
+  flex: none;
+  margin: 0 8px 0 12px;
+  color: var(--text-subtle);
+}
+
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+}
+
+.input:focus-visible {
+  box-shadow: none;
+}
+
+.input::placeholder {
+  color: var(--text-subtle);
+}
+
+.kbd {
+  margin-right: 10px;
+}
+
+.inputWrap:focus-within .kbd {
+  visibility: hidden;
+}
+
+.error {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13px;
+  box-shadow: var(--shadow-card);
+}

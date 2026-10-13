@@ -1,0 +1,87 @@
+.panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 32px;
+  padding: 5px 10px 5px 8px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  text-align: left;
+}
+
+.item:hover:not(:disabled),
+.item:focus-visible {
+  background: var(--surface-hover);
+  box-shadow: none;
+}
+
+.item:disabled {
+  color: var(--text-subtle);
+}
+
+.itemIcon {
+  display: inline-flex;
+  width: 16px;
+  flex: none;
+  color: var(--text-muted);
+}
+
+.itemLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.hint {
+  flex: none;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.danger {
+  color: var(--danger);
+}
+
+.danger .itemIcon {
+  color: inherit;
+}
+
+.heading {
+  padding: 8px 10px 4px;
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.note {
+  padding: 4px 10px 8px 34px;
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.separator {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--border);
+}

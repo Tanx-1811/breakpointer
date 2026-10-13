@@ -1,0 +1,9 @@
+dist
+dist-e2e
+release
+test-results
+playwright-report
+package-lock.json
+brand/**/*.svg
+brand/**/*.png
+public/icons

@@ -1,0 +1,70 @@
+.section + .section {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.heading {
+  margin: 0 0 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.rowText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rowLabel {
+  font-weight: 500;
+}
+
+.rowHelp,
+.help {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.help {
+  margin: 0;
+}
+
+.rowControl {
+  flex: none;
+}
+
+.rowControl select {
+  min-width: 160px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.version {
+  margin: 18px 0 0;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-align: right;
+}
