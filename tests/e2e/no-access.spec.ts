@@ -37,6 +37,23 @@ test.describe('without site access', () => {
     await expect.poll(() => page.frames().filter((frame) => frame.url() === server.url('/demo')).length).toBe(3);
   });
 
+  test('tools that run inside previews offer to allow the site', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/demo') });
+    await expect.poll(() => page.frames().filter((frame) => frame.url() === server.url('/demo')).length).toBe(3);
+    await page.getByRole('button', { name: 'Tools' }).click();
+    const menu = page.getByRole('menu', { name: 'Tools' });
+    await expect(menu).toContainText('work on sites you allow');
+    await expect(menu.getByRole('menuitem', { name: 'Allow 127.0.0.1…' })).toBeVisible();
+    await menu.getByRole('menuitemcheckbox', { name: 'Layout outlines' }).click();
+    await page.keyboard.press('Escape');
+    const toast = page.getByText('Layout outlines works on sites you allow. Allow 127.0.0.1?');
+    await expect(toast).toBeVisible();
+    // No agent runs without access: no checks, and the page is untouched.
+    await expect(page.getByTestId('checks-badge')).toHaveCount(0);
+    const frame = page.frames().find((item) => item.url() === server.url('/demo'))!;
+    expect(await frame.evaluate(() => document.getElementById('bp-outlines'))).toBeNull();
+  });
+
   test('screenshots explain the permission first', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/demo') });
     await card(page, 'Phone').getByRole('button', { name: 'Screenshot of Phone' }).click();
@@ -55,6 +72,7 @@ test.describe('without site access', () => {
       'activeTab',
       'contextMenus',
       'declarativeNetRequestWithHostAccess',
+      'scripting',
     ]);
     const granted = await page.evaluate(() => chrome.permissions.getAll());
     expect(granted.origins ?? []).toEqual([]);

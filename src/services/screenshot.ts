@@ -29,12 +29,33 @@ async function dataUrlToBitmap(dataUrl: string): Promise<ImageBitmap> {
   return createImageBitmap(blob);
 }
 
+/** Chrome allows two captureVisibleTab calls per second. */
+const CAPTURE_INTERVAL_MS = 600;
+let lastCaptureAt = 0;
+
+async function captureVisibleTab(windowId: number | undefined): Promise<string> {
+  const wait = lastCaptureAt + CAPTURE_INTERVAL_MS - Date.now();
+  if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+  try {
+    return windowId !== undefined
+      ? await chrome.tabs.captureVisibleTab(windowId, { format: 'png' })
+      : await chrome.tabs.captureVisibleTab({ format: 'png' });
+  } finally {
+    lastCaptureAt = Date.now();
+  }
+}
+
+export type ElementImage = { blob: Blob; partial: boolean };
+
 /**
- * Saves a PNG of `element` as it currently appears on screen. The visible tab
- * is captured and cropped to the element; anything scrolled out of view can't
- * be captured, which is reported as `partial`.
+ * An image of `element` as it currently appears on screen. The visible tab is
+ * captured and cropped to the element; anything scrolled out of view can't be
+ * captured, which is reported as `partial`.
  */
-export async function captureElement(element: HTMLElement, fileName: string): Promise<CaptureResult> {
+export async function captureElementImage(
+  element: HTMLElement,
+  type: 'image/png' | 'image/jpeg' = 'image/png',
+): Promise<ElementImage | null> {
   const root = document.documentElement;
   const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   try {
@@ -53,7 +74,7 @@ export async function captureElement(element: HTMLElement, fileName: string): Pr
     const top = Math.max(viewport.top, rect.top, 0);
     const right = Math.min(viewport.right, rect.right, window.innerWidth);
     const bottom = Math.min(viewport.bottom, rect.bottom, window.innerHeight);
-    if (right - left < 1 || bottom - top < 1) return { ok: false };
+    if (right - left < 1 || bottom - top < 1) return null;
 
     const scrollable = element.scrollWidth > element.clientWidth + 1 || element.scrollHeight > element.clientHeight + 1;
     const clipped =
@@ -67,10 +88,7 @@ export async function captureElement(element: HTMLElement, fileName: string): Pr
       await nextFrame();
       await nextFrame();
     }
-    const dataUrl =
-      tab?.windowId !== undefined
-        ? await chrome.tabs.captureVisibleTab(tab.windowId, { format: 'png' })
-        : await chrome.tabs.captureVisibleTab({ format: 'png' });
+    const dataUrl = await captureVisibleTab(tab?.windowId);
     delete root.dataset.capturing;
     const bitmap = await dataUrlToBitmap(dataUrl);
     const scaleX = bitmap.width / window.innerWidth;
@@ -80,7 +98,12 @@ export async function captureElement(element: HTMLElement, fileName: string): Pr
     canvas.width = Math.round((right - left) * scaleX);
     canvas.height = Math.round((bottom - top) * scaleY);
     const context = canvas.getContext('2d');
-    if (!context) return { ok: false };
+    if (!context) return null;
+    if (type === 'image/jpeg') {
+      // JPEG has no transparency.
+      context.fillStyle = '#fff';
+      context.fillRect(0, 0, canvas.width, canvas.height);
+    }
     context.drawImage(
       bitmap,
       Math.round(left * scaleX),
@@ -94,15 +117,30 @@ export async function captureElement(element: HTMLElement, fileName: string): Pr
     );
     bitmap.close();
 
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
-    if (!blob) return { ok: false };
-    downloadBlob(blob, fileName);
-    return { ok: true, fileName, partial: clipped || scrollable };
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, type, 0.86));
+    return blob ? { blob, partial: clipped || scrollable } : null;
   } catch (error) {
     console.warn('[Breakpointer] Screenshot failed.', error);
-    return { ok: false };
+    return null;
   } finally {
     delete root.dataset.capturing;
     previouslyFocused?.focus({ preventScroll: true });
   }
+}
+
+/** Saves a PNG of `element` as it currently appears on screen. */
+export async function captureElement(element: HTMLElement, fileName: string): Promise<CaptureResult> {
+  const image = await captureElementImage(element);
+  if (!image) return { ok: false };
+  downloadBlob(image.blob, fileName);
+  return { ok: true, fileName, partial: image.partial };
+}
+
+export function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error('Could not read the image'));
+    reader.readAsDataURL(blob);
+  });
 }

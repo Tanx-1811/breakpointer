@@ -10,7 +10,10 @@ import {
   suggestedZoom,
 } from '../state/viewports';
 import type {
+  Breakpoint,
   BreakpointSetId,
+  GridColumns,
+  GridSettings,
   LanguagePreference,
   ThemePreference,
   ViewportConfig,
@@ -19,7 +22,17 @@ import type {
   ViewportTemplate,
   WorkspaceLayout,
 } from '../types';
-import { DEFAULT_ZOOM, MAX_GROUPS, MAX_RECENT_URLS, MAX_VIEWPORTS } from '../utils/constants';
+import {
+  DEFAULT_ZOOM,
+  GRID_COLUMN_OPTIONS,
+  MAX_BREAKPOINT_NAME,
+  MAX_CUSTOM_BREAKPOINTS,
+  MAX_GRID_SPACING,
+  MAX_GROUPS,
+  MAX_RECENT_URLS,
+  MAX_SAVED_PAGES,
+  MAX_VIEWPORTS,
+} from '../utils/constants';
 import { createId } from '../utils/id';
 import { toSafeHref } from '../utils/url';
 
@@ -28,7 +41,7 @@ export const STORAGE_KEY = 'breakpointer.settings';
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi'];
 const LAYOUTS: readonly WorkspaceLayout[] = ['wrap', 'row'];
-const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', 'tailwind', 'bootstrap'];
+const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', 'tailwind', 'bootstrap', 'custom'];
 
 /** Names default viewports; lets callers create them in the user's language. */
 export type PresetNamer = (presetId: string) => string;
@@ -54,14 +67,27 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     language: 'auto',
     layout: 'wrap',
     breakpoints: 'none',
+    customBreakpoints: DEFAULT_CUSTOM_BREAKPOINTS.map((breakpoint) => ({ ...breakpoint })),
     showRulers: false,
+    grid: { ...DEFAULT_GRID },
+    sync: { scroll: true, navigation: true },
+    checks: true,
     embedHints: true,
     viewports: defaultViewports(name),
     groups: [],
     rememberRecent: false,
     recentUrls: [],
+    savedPages: [],
   };
 }
+
+export const DEFAULT_GRID: GridSettings = { show: false, columns: 'auto', gutter: 24, margin: 16 };
+export const DEFAULT_CUSTOM_BREAKPOINTS: Breakpoint[] = [
+  { name: 'sm', min: 640 },
+  { name: 'md', min: 768 },
+  { name: 'lg', min: 1024 },
+  { name: 'xl', min: 1280 },
+];
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -87,11 +113,15 @@ function parseTemplate(raw: unknown): ViewportTemplate | null {
   };
 }
 
+/** Ids end up in DOM attributes, selectors and frame names: letters, digits, _ and - only. */
+const SAFE_ID = /^[\w-]{1,64}$/;
+const safeId = (value: unknown) => (typeof value === 'string' && SAFE_ID.test(value) ? value : '');
+
 function parseViewport(raw: unknown, seenIds: Set<string>): ViewportConfig | null {
   const template = parseTemplate(raw);
   if (!template || !isRecord(raw)) return null;
 
-  let id = typeof raw.id === 'string' && raw.id.length > 0 && raw.id.length <= 64 ? raw.id : '';
+  let id = safeId(raw.id);
   if (!id || seenIds.has(id)) id = createId();
   seenIds.add(id);
 
@@ -115,8 +145,8 @@ function parseGroups(raw: unknown): ViewportGroup[] {
       .filter((vp): vp is ViewportTemplate => vp !== null)
       .slice(0, MAX_VIEWPORTS);
     if (!name || viewports.length === 0) continue;
-    let id = typeof item.id === 'string' && item.id.length > 0 && item.id.length <= 64 ? item.id : '';
-    if (!id || seenIds.has(id) || id.startsWith('builtin:')) id = createId();
+    let id = safeId(item.id);
+    if (!id || seenIds.has(id)) id = createId();
     seenIds.add(id);
     groups.push({ id, name, viewports });
     if (groups.length === MAX_GROUPS) break;
@@ -124,10 +154,47 @@ function parseGroups(raw: unknown): ViewportGroup[] {
   return groups;
 }
 
-function parseRecentUrls(raw: unknown): string[] {
+function parseUrlList(raw: unknown, max: number): string[] {
   if (!Array.isArray(raw)) return [];
   const urls = raw.map(toSafeHref).filter((url): url is string => url !== undefined);
-  return [...new Set(urls)].slice(0, MAX_RECENT_URLS);
+  return [...new Set(urls)].slice(0, max);
+}
+
+function parseRecentUrls(raw: unknown): string[] {
+  return parseUrlList(raw, MAX_RECENT_URLS);
+}
+
+/** Valid, de-duplicated breakpoints sorted by width; null if the value isn't a list. */
+export function parseBreakpoints(raw: unknown): Breakpoint[] | null {
+  if (!Array.isArray(raw)) return null;
+  const seen = new Set<number>();
+  const names = new Set<string>();
+  const list: Breakpoint[] = [];
+  for (const item of raw) {
+    if (!isRecord(item) || !isFiniteNumber(item.min) || typeof item.name !== 'string') continue;
+    const name = item.name.trim().slice(0, MAX_BREAKPOINT_NAME);
+    const min = clampDimension(item.min);
+    if (!name || seen.has(min) || names.has(name.toLowerCase())) continue;
+    seen.add(min);
+    names.add(name.toLowerCase());
+    list.push({ name, min });
+  }
+  return list.sort((a, b) => a.min - b.min).slice(0, MAX_CUSTOM_BREAKPOINTS);
+}
+
+function parseGrid(raw: unknown): GridSettings {
+  if (!isRecord(raw)) return { ...DEFAULT_GRID };
+  const columns = GRID_COLUMN_OPTIONS.includes(raw.columns as GridColumns)
+    ? (raw.columns as GridColumns)
+    : DEFAULT_GRID.columns;
+  const spacing = (value: unknown, fallback: number) =>
+    isFiniteNumber(value) ? Math.min(MAX_GRID_SPACING, Math.max(0, Math.round(value))) : fallback;
+  return {
+    show: raw.show === true,
+    columns,
+    gutter: spacing(raw.gutter, DEFAULT_GRID.gutter),
+    margin: spacing(raw.margin, DEFAULT_GRID.margin),
+  };
 }
 
 /**
@@ -154,12 +221,20 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     language: oneOf(raw.language, LANGUAGES, defaults.language),
     layout: oneOf(raw.layout, LAYOUTS, defaults.layout),
     breakpoints: oneOf(raw.breakpoints, BREAKPOINT_SETS, defaults.breakpoints),
+    customBreakpoints: parseBreakpoints(raw.customBreakpoints) ?? defaults.customBreakpoints,
     showRulers: raw.showRulers === true,
+    grid: parseGrid(raw.grid),
+    sync: {
+      scroll: isRecord(raw.sync) ? raw.sync.scroll !== false : true,
+      navigation: isRecord(raw.sync) ? raw.sync.navigation !== false : true,
+    },
+    checks: raw.checks !== false,
     embedHints: raw.embedHints !== false,
     viewports,
     groups: parseGroups(raw.groups),
     rememberRecent,
     recentUrls: rememberRecent ? parseRecentUrls(raw.recentUrls) : [],
+    savedPages: parseUrlList(raw.savedPages, MAX_SAVED_PAGES),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;
@@ -214,11 +289,6 @@ export function createSettingsExport(settings: BreakpointerSettings, now = new D
   return { app: EXPORT_APP, kind: EXPORT_KIND, version: 1, exportedAt: now.toISOString(), settings: shareable };
 }
 
-/**
- * Validates an imported file and merges it with the current settings. Local
- * browsing preferences (recent addresses) are kept. Returns null if the data
- * isn't a Breakpointer export.
- */
 /** Parses the text of an exported file (tolerating a byte order mark); null if it isn't one. */
 export function parseSettingsFile(text: string, current: BreakpointerSettings): BreakpointerSettings | null {
   try {
@@ -228,16 +298,27 @@ export function parseSettingsFile(text: string, current: BreakpointerSettings): 
   }
 }
 
+/**
+ * Validates an imported file and merges it with the current settings. Local
+ * browsing preferences (recent addresses) are kept, and so is anything the
+ * file doesn't contain. Returns null if the data isn't a Breakpointer export.
+ */
 export function parseSettingsImport(raw: unknown, current: BreakpointerSettings): BreakpointerSettings | null {
   if (!isRecord(raw) || !IMPORTABLE_APPS.includes(raw.app) || raw.kind !== EXPORT_KIND || !isRecord(raw.settings)) {
     return null;
   }
-  const imported = parseSettings({ ...raw.settings, rememberRecent: false });
+  const provided = raw.settings;
+  const imported = parseSettings({ ...provided, rememberRecent: false });
   const merged: BreakpointerSettings = {
     ...imported,
     rememberRecent: current.rememberRecent,
     recentUrls: current.recentUrls,
   };
+  // A file from an older version lacks newer settings (e.g. saved pages): keep the current ones.
+  const keep = merged as Record<keyof BreakpointerSettings, unknown>;
+  for (const key of Object.keys(current) as (keyof BreakpointerSettings)[]) {
+    if (!(key in provided) && key !== 'activeUrl') keep[key] = current[key];
+  }
   if (current.activeUrl) merged.activeUrl = current.activeUrl;
   return merged;
 }

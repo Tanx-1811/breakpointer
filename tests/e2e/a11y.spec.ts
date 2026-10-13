@@ -34,7 +34,23 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
         expect(await seriousViolations(page)).toEqual([]);
         await page.keyboard.press('Escape');
       }
+      // Inspection tools: the menu, a checks panel, live CSS, the grid and custom breakpoints.
+      await page.getByRole('button', { name: 'Grid', exact: true }).click();
+      await page.getByRole('combobox', { name: 'Breakpoints' }).selectOption('custom');
+      await page.getByRole('button', { name: 'Tools' }).click();
+      await expect(page.getByRole('menu', { name: 'Tools' })).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.getByRole('menuitem', { name: 'Live CSS…' }).click();
+      await expect(page.getByRole('dialog', { name: 'Live CSS' })).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+      await page.getByTestId('checks-badge').first().click();
+      await expect(page.getByRole('dialog', { name: /Responsive checks/ })).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+
       await page.getByRole('button', { name: 'Settings' }).click();
+      await expect(page.getByRole('dialog', { name: 'Settings' }).getByTestId('breakpoint-name').first()).toBeVisible();
       expect(await seriousViolations(page)).toEqual([]);
     });
   }

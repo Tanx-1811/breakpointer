@@ -1,11 +1,10 @@
-import type { BreakpointSetId } from '../types';
-
-type Breakpoint = { name: string; min: number };
+import type { Breakpoint, BreakpointSetId } from '../types';
+import { MAX_DIMENSION, MIN_DIMENSION } from '../utils/constants';
 
 type BreakpointSet = { base: string; breakpoints: Breakpoint[] };
 
 /** Default min-width breakpoints of popular CSS frameworks. */
-export const BREAKPOINT_SETS: Record<Exclude<BreakpointSetId, 'none'>, BreakpointSet> = {
+export const FRAMEWORK_BREAKPOINTS: Record<'tailwind' | 'bootstrap', BreakpointSet> = {
   tailwind: {
     base: 'base',
     breakpoints: [
@@ -28,13 +27,46 @@ export const BREAKPOINT_SETS: Record<Exclude<BreakpointSetId, 'none'>, Breakpoin
   },
 };
 
-/** The active breakpoint for a viewport width, e.g. "md", or null when disabled. */
-export function breakpointFor(set: BreakpointSetId, width: number): string | null {
+/** The breakpoints in use, or null when labels are off. `custom` is the user's own list. */
+export function breakpointSet(set: BreakpointSetId, custom: Breakpoint[] = []): BreakpointSet | null {
   if (set === 'none') return null;
-  const { base, breakpoints } = BREAKPOINT_SETS[set];
-  let active = base;
-  for (const breakpoint of breakpoints) {
-    if (width >= breakpoint.min) active = breakpoint.name;
+  if (set === 'custom') return { base: 'base', breakpoints: [...custom].sort((a, b) => a.min - b.min) };
+  return FRAMEWORK_BREAKPOINTS[set];
+}
+
+/** The active breakpoint for a viewport width, e.g. "md", or null when disabled. */
+export function breakpointFor(set: BreakpointSetId, width: number, custom: Breakpoint[] = []): string | null {
+  const active = breakpointSet(set, custom);
+  if (!active) return null;
+  let name = active.base;
+  for (const breakpoint of active.breakpoints) {
+    if (width >= breakpoint.min) name = breakpoint.name;
   }
-  return active;
+  return name;
+}
+
+/**
+ * Viewports on both sides of each breakpoint (e.g. 767 and 768), the widths
+ * where layouts most often break. Uses Tailwind's when labels are off; at most
+ * `limit` viewports, all within the allowed viewport widths.
+ */
+export function breakpointEdges(
+  set: BreakpointSetId,
+  custom: Breakpoint[],
+  limit: number,
+): { name: string; width: number }[] {
+  const active = breakpointSet(set === 'none' ? 'tailwind' : set, custom);
+  const edges: { name: string; width: number }[] = [];
+  for (const breakpoint of active?.breakpoints ?? []) {
+    const below = breakpoint.min - 1;
+    const pair = [
+      ...(below >= MIN_DIMENSION ? [{ name: `< ${breakpoint.name} · ${below}`, width: below }] : []),
+      ...(breakpoint.min <= MAX_DIMENSION
+        ? [{ name: `${breakpoint.name} · ${breakpoint.min}`, width: breakpoint.min }]
+        : []),
+    ];
+    if (edges.length + pair.length > limit) break;
+    edges.push(...pair);
+  }
+  return edges;
 }

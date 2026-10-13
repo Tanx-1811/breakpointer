@@ -52,6 +52,9 @@ test.describe('previews', () => {
   test('flag a preview that navigated away and bring it back', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/demo') });
     await expect.poll(() => previewWidths(page, '/demo')).toEqual([375, 768, 1366]);
+    // With sync off, a link followed in one preview stays in that preview.
+    await page.getByRole('button', { name: 'Sync', exact: true }).click();
+    await expect(page.getByRole('button', { name: 'Sync', exact: true })).toHaveAttribute('aria-pressed', 'false');
     // Navigate inside the phone preview only, as a clicked link would.
     const frames = previewFrames(page, '/demo');
     const widths = await Promise.all(frames.map((frame) => frame.evaluate(() => window.innerWidth)));

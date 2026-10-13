@@ -1,8 +1,18 @@
-import { useId, useRef, type ReactNode } from 'react';
+import { useId, useRef, useState, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
-import type { BreakpointSetId, LanguagePreference, ThemePreference, BreakpointerSettings } from '../../types';
-import { MAX_RECENT_URLS } from '../../utils/constants';
-import { Button } from '../Button/Button';
+import type {
+  Breakpoint,
+  BreakpointSetId,
+  BreakpointerSettings,
+  GridColumns,
+  GridSettings,
+  LanguagePreference,
+  SyncSettings,
+  ThemePreference,
+} from '../../types';
+import { GRID_COLUMN_OPTIONS, MAX_GRID_SPACING, MAX_RECENT_URLS } from '../../utils/constants';
+import { Button, IconButton } from '../Button/Button';
+import { BreakpointEditor } from './BreakpointEditor';
 import { Dialog } from '../Dialog/Dialog';
 import { Segmented } from '../Segmented/Segmented';
 import { Switch } from '../Switch/Switch';
@@ -15,6 +25,12 @@ type Props = {
   onTheme: (theme: ThemePreference) => void;
   onLanguage: (language: LanguagePreference) => void;
   onBreakpoints: (set: BreakpointSetId) => void;
+  onCustomBreakpoints: (breakpoints: Breakpoint[]) => void;
+  onSync: (sync: Partial<SyncSettings>) => void;
+  onChecks: (on: boolean) => void;
+  onGrid: (grid: Partial<GridSettings>) => void;
+  onOpenSaved: (url: string) => void;
+  onRemoveSaved: (url: string) => void;
   onRulers: (show: boolean) => void;
   onEmbedHints: (show: boolean) => void;
   onRememberRecent: (remember: boolean) => void;
@@ -58,6 +74,7 @@ export function SettingsDialog(props: Props) {
   const { open, settings, version, onClose } = props;
   const { t } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
+  const customId = useId();
 
   return (
     <Dialog open={open} title={t('settings.title')} onClose={onClose} width={620}>
@@ -100,8 +117,18 @@ export function SettingsDialog(props: Props) {
             <option value="none">{t('breakpoints.none')}</option>
             <option value="tailwind">{t('breakpoints.tailwind')}</option>
             <option value="bootstrap">{t('breakpoints.bootstrap')}</option>
+            <option value="custom">{t('breakpoints.custom')}</option>
           </select>
         </Row>
+        {settings.breakpoints === 'custom' && (
+          <div className={styles.subsection} role="group" aria-labelledby={customId}>
+            <span id={customId} className={styles.rowLabel}>
+              {t('settings.customBreakpoints')}
+            </span>
+            <span className={styles.rowHelp}>{t('settings.customBreakpointsHelp')}</span>
+            <BreakpointEditor breakpoints={settings.customBreakpoints} onChange={props.onCustomBreakpoints} />
+          </div>
+        )}
         <Switch
           checked={settings.showRulers}
           onChange={props.onRulers}
@@ -126,6 +153,97 @@ export function SettingsDialog(props: Props) {
               {t('settings.clearRecent')}
             </Button>
           </div>
+        )}
+      </Section>
+
+      <Section title={t('settings.tools')}>
+        <p className={styles.help}>{t('settings.toolsHelp')}</p>
+        <Switch
+          checked={settings.sync.scroll}
+          onChange={(scroll) => props.onSync({ scroll })}
+          label={t('tools.syncScroll')}
+          description={t('settings.syncScrollHelp')}
+        />
+        <Switch
+          checked={settings.sync.navigation}
+          onChange={(navigation) => props.onSync({ navigation })}
+          label={t('tools.syncNavigation')}
+          description={t('settings.syncNavigationHelp')}
+        />
+        <Switch
+          checked={settings.checks}
+          onChange={props.onChecks}
+          label={t('tools.checks')}
+          description={t('settings.checksHelp')}
+        />
+        <Switch
+          checked={settings.grid.show}
+          onChange={(show) => props.onGrid({ show })}
+          label={t('settings.grid')}
+          description={t('settings.gridHelp')}
+        />
+        <div className={styles.gridOptions}>
+          <label className={styles.inlineField}>
+            <span>{t('settings.gridColumns')}</span>
+            <select
+              className="field"
+              value={String(settings.grid.columns)}
+              onChange={(event) => {
+                const value = event.target.value;
+                props.onGrid({ columns: (value === 'auto' ? 'auto' : Number(value)) as GridColumns });
+              }}
+            >
+              {GRID_COLUMN_OPTIONS.map((option) => (
+                <option key={option} value={String(option)}>
+                  {option === 'auto' ? t('settings.gridAuto') : option}
+                </option>
+              ))}
+            </select>
+          </label>
+          <NumberField
+            label={t('settings.gridGutter')}
+            value={settings.grid.gutter}
+            max={MAX_GRID_SPACING}
+            onCommit={(gutter) => props.onGrid({ gutter })}
+          />
+          <NumberField
+            label={t('settings.gridMargin')}
+            value={settings.grid.margin}
+            max={MAX_GRID_SPACING}
+            onCommit={(margin) => props.onGrid({ margin })}
+          />
+        </div>
+      </Section>
+
+      <Section title={t('settings.savedPages')}>
+        <p className={styles.help}>{t('settings.savedPagesHelp')}</p>
+        {settings.savedPages.length === 0 ? (
+          <p className={styles.empty}>{t('settings.savedPagesEmpty')}</p>
+        ) : (
+          <ul className={styles.savedList} data-testid="saved-pages">
+            {settings.savedPages.map((url) => (
+              <li key={url} className={styles.savedRow}>
+                <span className={styles.savedUrl} title={url}>
+                  {url}
+                </span>
+                <Button
+                  size="sm"
+                  icon="external"
+                  onClick={() => props.onOpenSaved(url)}
+                  aria-label={t('settings.openSavedLabel', { url })}
+                >
+                  {t('settings.openSaved')}
+                </Button>
+                <IconButton
+                  icon="trash"
+                  size="sm"
+                  tone="danger"
+                  label={t('settings.removeSaved', { url })}
+                  onClick={() => props.onRemoveSaved(url)}
+                />
+              </li>
+            ))}
+          </ul>
         )}
       </Section>
 
@@ -172,5 +290,52 @@ export function SettingsDialog(props: Props) {
 
       <p className={styles.version}>{t('settings.version', { version })}</p>
     </Dialog>
+  );
+}
+
+/** A whole number from 0 to `max`, saved on blur or Enter (empty or invalid input goes back). */
+function NumberField({
+  label,
+  value,
+  max,
+  onCommit,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  onCommit: (value: number) => void;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    const number = Number(draft);
+    setDraft(null);
+    if (draft.trim() === '' || !Number.isFinite(number)) return;
+    const next = Math.min(max, Math.max(0, Math.round(number)));
+    if (next !== value) onCommit(next);
+  };
+  return (
+    <label className={styles.inlineField}>
+      <span>{label}</span>
+      <input
+        className={`field ${styles.numberField}`}
+        type="number"
+        inputMode="numeric"
+        min={0}
+        max={max}
+        step={1}
+        value={draft ?? String(value)}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit();
+          // Escape first undoes the edit; a second press closes the dialog.
+          if (event.key === 'Escape' && draft !== null) {
+            event.preventDefault();
+            setDraft(null);
+          }
+        }}
+      />
+    </label>
   );
 }

@@ -56,7 +56,11 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
     void open(result.url.href);
   };
 
-  const recent = settings.rememberRecent ? settings.recentUrls.slice(0, 4) : [];
+  const saved = settings.savedPages.slice(0, 4);
+  const recent = settings.rememberRecent
+    ? settings.recentUrls.filter((url) => !settings.savedPages.includes(url)).slice(0, 4)
+    : [];
+  const shortUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
   return (
     <div className={styles.popup}>
@@ -169,6 +173,24 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
         )}
       </form>
 
+      {saved.length > 0 && (
+        <section aria-labelledby="saved" className={styles.field}>
+          <h2 id="saved" className={styles.label}>
+            {t('popup.saved')}
+          </h2>
+          <ul className={styles.recent} data-testid="popup-saved">
+            {saved.map((url) => (
+              <li key={url}>
+                <button type="button" className={styles.recentItem} onClick={() => void open(url)} title={url}>
+                  <Icon name="star" size={13} />
+                  <span>{shortUrl(url)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {recent.length > 0 && (
         <section aria-labelledby="recent" className={styles.field}>
           <h2 id="recent" className={styles.label}>
@@ -179,7 +201,7 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
               <li key={url}>
                 <button type="button" className={styles.recentItem} onClick={() => void open(url)} title={url}>
                   <Icon name="globe" size={13} />
-                  <span>{url.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                  <span>{shortUrl(url)}</span>
                 </button>
               </li>
             ))}

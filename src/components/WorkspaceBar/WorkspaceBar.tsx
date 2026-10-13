@@ -13,6 +13,9 @@ type Props = {
   layout: WorkspaceLayout;
   breakpoints: BreakpointSetId;
   showRulers: boolean;
+  /** Scroll or navigation sync is on. */
+  sync: boolean;
+  showGrid: boolean;
   onToggleVisible: (id: string) => void;
   onMoveTo: (id: string, index: number) => void;
   onZoomAll: (zoom: number) => void;
@@ -20,10 +23,12 @@ type Props = {
   onLayout: (layout: WorkspaceLayout) => void;
   onBreakpoints: (set: BreakpointSetId) => void;
   onRulers: (show: boolean) => void;
+  onSync: (on: boolean) => void;
+  onGrid: (show: boolean) => void;
 };
 
 export function WorkspaceBar(props: Props) {
-  const { viewports, layout, breakpoints, showRulers } = props;
+  const { viewports, layout, breakpoints, showRulers, sync, showGrid } = props;
   const { t } = useI18n();
   const [dragId, setDragId] = useState<string | null>(null);
   /** Insertion slot while dragging: 0 = before the first chip, n = after the last. */
@@ -135,6 +140,7 @@ export function WorkspaceBar(props: Props) {
             <option value="none">{t('breakpoints.none')}</option>
             <option value="tailwind">{t('breakpoints.tailwind')}</option>
             <option value="bootstrap">{t('breakpoints.bootstrap')}</option>
+            <option value="custom">{t('breakpoints.custom')}</option>
           </select>
         </label>
 
@@ -142,11 +148,36 @@ export function WorkspaceBar(props: Props) {
           type="button"
           className={styles.toggle}
           aria-pressed={showRulers}
+          aria-label={t('workspace.rulers')}
           onClick={() => props.onRulers(!showRulers)}
           title={`${t('workspace.rulers')} (M)`}
         >
           <Icon name="ruler" size={15} />
-          <span>{t('workspace.rulers')}</span>
+          <span className={styles.toggleLabel}>{t('workspace.rulers')}</span>
+        </button>
+        <button
+          type="button"
+          className={styles.toggle}
+          aria-pressed={showGrid}
+          aria-label={t('workspace.grid')}
+          onClick={() => props.onGrid(!showGrid)}
+          title={t('workspace.gridHint')}
+          data-testid="grid-toggle"
+        >
+          <Icon name="columns" size={15} />
+          <span className={styles.toggleLabel}>{t('workspace.grid')}</span>
+        </button>
+        <button
+          type="button"
+          className={styles.toggle}
+          aria-pressed={sync}
+          aria-label={t('workspace.sync')}
+          onClick={() => props.onSync(!sync)}
+          title={t('workspace.syncHint')}
+          data-testid="sync-toggle"
+        >
+          <Icon name="link" size={15} />
+          <span className={styles.toggleLabel}>{t('workspace.sync')}</span>
         </button>
 
         <span className={styles.divider} aria-hidden="true" />
@@ -155,6 +186,7 @@ export function WorkspaceBar(props: Props) {
           <span className={styles.controlLabel}>{t('workspace.zoom')}</span>
           <select
             className={`field ${styles.zoomSelect}`}
+            data-mixed={visible.length > 0 && commonZoom === null ? '' : undefined}
             value={visible.length === 0 ? 'none' : (commonZoom ?? 'mixed')}
             onChange={(event) => props.onZoomAll(Number(event.target.value))}
             disabled={visible.length === 0}

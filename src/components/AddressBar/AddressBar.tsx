@@ -8,14 +8,25 @@ type Props = {
   value: string;
   error: string | null;
   recentUrls: string[];
+  /** Pages the user starred; suggested first. */
+  savedPages: string[];
+  /** The page on show is starred. */
+  saved: boolean;
+  canSave: boolean;
+  onToggleSaved: () => void;
   secure: boolean | null;
   inputRef: Ref<HTMLInputElement>;
   onChange: (value: string) => void;
   onSubmit: () => void;
 };
 
-export function AddressBar({ value, error, recentUrls, secure, inputRef, onChange, onSubmit }: Props) {
+export function AddressBar(props: Props) {
+  const { value, error, recentUrls, savedPages, secure, inputRef, onChange, onSubmit } = props;
   const { t } = useI18n();
+  const suggestions = [
+    ...savedPages.map((url) => ({ url, label: t('address.savedLabel') })),
+    ...recentUrls.filter((url) => !savedPages.includes(url)).map((url) => ({ url, label: t('address.recentLabel') })),
+  ];
   const errorId = useId();
   const listId = useId();
   const selectOnFocus = useRef(false);
@@ -40,7 +51,7 @@ export function AddressBar({ value, error, recentUrls, secure, inputRef, onChang
           aria-label={t('address.label')}
           placeholder={t('address.placeholder')}
           value={value}
-          list={recentUrls.length ? listId : undefined}
+          list={suggestions.length ? listId : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           onChange={(event) => onChange(event.target.value)}
@@ -61,10 +72,23 @@ export function AddressBar({ value, error, recentUrls, secure, inputRef, onChang
         <kbd className={styles.kbd} aria-hidden="true">
           /
         </kbd>
-        {recentUrls.length > 0 && (
+        {props.canSave && (
+          <button
+            type="button"
+            className={styles.star}
+            aria-pressed={props.saved}
+            aria-label={t('address.save')}
+            title={t('address.save')}
+            onClick={props.onToggleSaved}
+            data-testid="save-page"
+          >
+            <Icon name="star" size={15} />
+          </button>
+        )}
+        {suggestions.length > 0 && (
           <datalist id={listId}>
-            {recentUrls.map((url) => (
-              <option key={url} value={url} />
+            {suggestions.map((item) => (
+              <option key={item.url} value={item.url} label={item.label} />
             ))}
           </datalist>
         )}

@@ -111,3 +111,15 @@
   flex-wrap: nowrap;
   width: max-content;
 }
+
+/* Space + drag: covers the workspace so preview frames don't take the pointer. */
+.panLayer {
+  position: fixed;
+  z-index: 30;
+  cursor: grab;
+  touch-action: none;
+}
+
+.panLayer[data-dragging] {
+  cursor: grabbing;
+}

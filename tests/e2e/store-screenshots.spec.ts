@@ -13,8 +13,10 @@ const SIZE = { width: 1280, height: 800 };
 /** A reserved .example domain, served from the local demo page. */
 const DEMO_URL = 'https://brightside.example/';
 
-async function serveDemo(context: BrowserContext) {
-  const body = await readFile(resolve(import.meta.dirname, 'fixtures/demo.html'), 'utf8');
+/** `bug` adds a typical responsive bug: a board with a fixed minimum width. */
+async function serveDemo(context: BrowserContext, bug = false) {
+  let body = await readFile(resolve(import.meta.dirname, 'fixtures/demo.html'), 'utf8');
+  if (bug) body = body.replace('</head>', '<style>.board { min-width: 520px; }</style></head>');
   await context.route('https://brightside.example/**', (route) =>
     route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body }),
   );
@@ -23,8 +25,8 @@ async function serveDemo(context: BrowserContext) {
 type Lang = 'en' | 'vi';
 
 const TEXT = {
-  en: { groups: /Groups/, addViewport: 'Add viewport', settings: 'Settings', mobileQa: /Mobile QA/ },
-  vi: { groups: /Nhóm/, addViewport: 'Thêm viewport', settings: 'Cài đặt', mobileQa: /Kiểm thử điện thoại/ },
+  en: { groups: /Groups/, addViewport: 'Add viewport', mobileQa: /Mobile QA/, highlight: 'Highlight' },
+  vi: { groups: /Nhóm/, addViewport: 'Thêm viewport', mobileQa: /Kiểm thử điện thoại/, highlight: 'Đánh dấu' },
 } as const;
 
 async function seed(page: Page, viewerUrl: (p?: Record<string, string>) => string, settings: Record<string, unknown>) {
@@ -36,8 +38,8 @@ async function seed(page: Page, viewerUrl: (p?: Record<string, string>) => strin
   await page.evaluate((value) => chrome.storage.local.set({ 'breakpointer.settings': value }), settings);
 }
 
-async function show(page: Page, viewerUrl: (p?: Record<string, string>) => string, widths: number) {
-  await serveDemo(page.context());
+async function show(page: Page, viewerUrl: (p?: Record<string, string>) => string, widths: number, bug = false) {
+  await serveDemo(page.context(), bug);
   await page.goto(viewerUrl({ url: DEMO_URL }));
   await page.locator('html[data-ready]').waitFor({ state: 'attached' });
   await expect.poll(async () => (await previewWidths(page, 'brightside.example')).length).toBe(widths);
@@ -108,13 +110,26 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.screenshot({ path: resolve(OUT, lang, '4-dark-rulers.png') });
     });
 
-    test('settings', async ({ context, viewerUrl }) => {
+    test('responsive checks', async ({ context, viewerUrl }) => {
       const page = context.pages()[0]!;
-      await seed(page, viewerUrl, { version: 1, language: lang, theme: 'light', rememberRecent: true });
-      await show(page, viewerUrl, 3);
-      await page.getByRole('button', { name: TEXT[lang].settings }).click();
-      await page.waitForTimeout(300);
-      await page.screenshot({ path: resolve(OUT, lang, '5-settings.png') });
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.62 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.46 },
+          { id: 'l', name: 'Laptop', width: 1440, height: 900, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3, true);
+      const badges = page.getByTestId('checks-badge');
+      await expect(badges).toHaveCount(3);
+      await badges.first().click();
+      await page.getByRole('button', { name: TEXT[lang].highlight }).first().click();
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '5-checks.png') });
     });
 
     test('popup', async ({ context, extensionId }) => {

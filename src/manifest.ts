@@ -39,7 +39,7 @@ export function createManifest(mode: string): chrome.runtime.ManifestV3 {
       service_worker: 'service-worker.js',
       type: 'module',
     },
-    permissions: ['storage', 'activeTab', 'contextMenus', 'declarativeNetRequestWithHostAccess'],
+    permissions: ['storage', 'activeTab', 'contextMenus', 'declarativeNetRequestWithHostAccess', 'scripting'],
     optional_host_permissions: ['<all_urls>'],
     // Kept unusual on purpose: a common word would hijack ordinary searches (e.g. "vp bank").
     omnibox: { keyword: 'bpt' },

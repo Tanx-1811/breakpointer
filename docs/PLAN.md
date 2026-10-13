@@ -1,6 +1,6 @@
 # Breakpointer — Product & Delivery Plan
 
-> **Version:** 0.1.0 (V1 / MVP) · **Status:** MVP built and tested; ready for store preparation
+> **Version:** 0.2.0 · **Status:** V1 plus the v0.2 inspection toolkit, built and tested; ready for store preparation
 > **Source:** refines the original planning brief (`plan.md`) into a delivery plan with decisions, status and acceptance criteria.
 
 **Product goal:** help people check how a website looks at several viewport sizes, side by side, directly in Chrome — reliably, with minimal permissions, and honest about limits.
@@ -16,25 +16,30 @@
 | M1 — Technical spike           | Prove pages render at a real viewport; know what fails and the fallback                        | ✅ Done                            | [ARCHITECTURE.md — ADR-001](ARCHITECTURE.md), `tests/e2e/spike.spec.ts` |
 | M2 — Working MVP               | Toolbar, workspace, presets, custom sizes, add/remove/reload/rotate, zoom, persistence, errors | ✅ Done                            | `src/`, `tests/e2e/viewer.spec.ts`                                      |
 | M3 — Quality & packaging       | Tests, accessibility, permission review, store assets, packaged build                          | ✅ Done (store submission pending) | `tests/`, `brand/`, `docs/STORE_LISTING.md`, `npm run package`          |
+| v0.2 — Inspection toolkit      | Sync, responsive checks, outlines, live CSS, grid, custom breakpoints, saved pages, report     | ✅ Done                            | [§3](#v02--inspection-toolkit--delivered), `tests/e2e/tools.spec.ts`    |
 | M4 — Feedback-driven iteration | Small user group, privacy-respecting feedback, prioritise next features                        | ⏳ Next                            | [§8](#8-milestone-4--feedback-and-iteration)                            |
 
 ---
 
 ## 2. Decisions made
 
-| #   | Decision                                                                                                                 | Why                                                                                                                                                                 | Revisit when                                                                         |
-| --- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| D1  | Render each viewport in an iframe sized to the real viewport; zoom with CSS transform                                    | Only option giving real layout for several sizes at once with public APIs                                                                                           | A supported API for multi-viewport rendering appears                                 |
-| D2  | Blocked sites: **opt-in** host access (per site or all sites) + DNR session rule scoped to the viewer tab and sub-frames | Works for most sites without install-time permissions; user stays in control                                                                                        | Chrome changes DNR/permission behaviour                                              |
-| D3  | Fallbacks: open in a new tab, or in a real window sized to the viewport                                                  | Some sites still won't render in frames; the user always has a path                                                                                                 | —                                                                                    |
-| D4  | No backend, accounts, analytics or AI in V1                                                                              | Plan non-goals; privacy and trust                                                                                                                                   | Validated demand for sync/teams (V4)                                                 |
-| D5  | Screenshots via `captureVisibleTab`, which needs "all sites" access; ask only when used, explain first                   | Chrome requires `<all_urls>` for capture; keep install permissions minimal                                                                                          | —                                                                                    |
-| D6  | React + TypeScript + Vite (multi-entry MV3 build), CSS Modules, Vitest, Playwright, ESLint + Prettier                    | Plan stack; no extra runtime dependencies beyond React                                                                                                              | —                                                                                    |
-| D7  | English + Vietnamese UI from day one                                                                                     | Owner's market; i18n is cheap to add early and costly later                                                                                                         | Add languages on demand                                                              |
-| D8  | Max 8 viewports; hidden viewports don't load                                                                             | Each preview is a full page load (memory/CPU)                                                                                                                       | Performance data says otherwise                                                      |
-| D9  | Product name **Breakpointer** (working title was ViewportLab), tagline "Find where your layout breaks"                   | Owner chose it (2026-10-13): instantly clear to frontend developers and designers (breakpoint + pointer), memorable, distinctive; no extension with this name found | Before store submission, re-check trademarks; a small npm library uses the same name |
-| D10 | Address-bar keyword `bpt` instead of `vp`                                                                                | A common word or abbreviation would capture ordinary searches (e.g. "vp bank")                                                                                      | User feedback                                                                        |
-| D11 | Public GitHub repository                                                                                                 | Owner decision (2026-10-13); hosts the privacy policy, issues and feedback for the store listing                                                                    | Choose a license before inviting contributions                                       |
+| #   | Decision                                                                                                                             | Why                                                                                                                                                                     | Revisit when                                                                         |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| D1  | Render each viewport in an iframe sized to the real viewport; zoom with CSS transform                                                | Only option giving real layout for several sizes at once with public APIs                                                                                               | A supported API for multi-viewport rendering appears                                 |
+| D2  | Blocked sites: **opt-in** host access (per site or all sites) + DNR session rule scoped to the viewer tab and sub-frames             | Works for most sites without install-time permissions; user stays in control                                                                                            | Chrome changes DNR/permission behaviour                                              |
+| D3  | Fallbacks: open in a new tab, or in a real window sized to the viewport                                                              | Some sites still won't render in frames; the user always has a path                                                                                                     | —                                                                                    |
+| D4  | No backend, accounts, analytics or AI in V1                                                                                          | Plan non-goals; privacy and trust                                                                                                                                       | Validated demand for sync/teams (V4)                                                 |
+| D5  | Screenshots via `captureVisibleTab`, which needs "all sites" access; ask only when used, explain first                               | Chrome requires `<all_urls>` for capture; keep install permissions minimal                                                                                              | —                                                                                    |
+| D6  | React + TypeScript + Vite (multi-entry MV3 build), CSS Modules, Vitest, Playwright, ESLint + Prettier                                | Plan stack; no extra runtime dependencies beyond React                                                                                                                  | —                                                                                    |
+| D7  | English + Vietnamese UI from day one                                                                                                 | Owner's market; i18n is cheap to add early and costly later                                                                                                             | Add languages on demand                                                              |
+| D8  | Max 8 viewports; hidden viewports don't load                                                                                         | Each preview is a full page load (memory/CPU)                                                                                                                           | Performance data says otherwise                                                      |
+| D9  | Product name **Breakpointer** (working title was ViewportLab), tagline "Find where your layout breaks"                               | Owner chose it (2026-10-13): instantly clear to frontend developers and designers (breakpoint + pointer), memorable, distinctive; no extension with this name found     | Before store submission, re-check trademarks; a small npm library uses the same name |
+| D10 | Address-bar keyword `bpt` instead of `vp`                                                                                            | A common word or abbreviation would capture ordinary searches (e.g. "vp bank")                                                                                          | User feedback                                                                        |
+| D11 | Public GitHub repository                                                                                                             | Owner decision (2026-10-13); hosts the privacy policy, issues and feedback for the store listing                                                                        | Choose a license before inviting contributions                                       |
+| D12 | In-frame features use a small packaged "frame agent" content script, registered with `scripting` only while a workspace is open      | Sync, checks, outlines and live CSS need code inside the preview; `executeScript` can't reach frames of an extension page, a static content script would run everywhere | Chrome adds a supported way to script frames of extension pages                      |
+| D13 | The agent works only on sites the user allowed; it returns at once unless it is a preview frame directly in a Breakpointer workspace | No new install warning, no new host access; same consent as showing blocked sites                                                                                       | —                                                                                    |
+| D14 | Sync scrolling, sync navigation and responsive checks are on by default (switchable); outlines and live CSS last one session         | They help on every page and are cheap; injected styles shouldn't surprise users later                                                                                   | Feedback                                                                             |
+| D15 | Reports are a self-contained HTML file made in the browser (screenshots + checks), no scripts                                        | Shareable without a server; consistent with "nothing leaves your browser"                                                                                               | Demand for PDF or hosted reports                                                     |
 
 ---
 
@@ -75,6 +80,18 @@
 - [x] English and Vietnamese UI; Vietnamese store listing and promo images.
 - [x] First-run welcome; first page load auto-fits to the screen.
 
+### v0.2 — Inspection toolkit — delivered
+
+- [x] **Synced scrolling** and **synced navigation** across previews (links, forms, single-page-app routes; in-page `#anchors` are ignored).
+- [x] **Responsive checks** per preview: sideways overflow (with the outermost culprits), missing mobile viewport tag, text under 12 px, touch targets under 24×24 px — with highlight in the page.
+- [x] **Layout outlines** and **live CSS** applied to every preview at once (session only).
+- [x] **Column grid** overlay (auto 4/8/12 or fixed columns, gutter, margin).
+- [x] **Custom breakpoints** (editable list) and **Test breakpoint edges** (viewports on both sides of each breakpoint, fitted, with undo).
+- [x] **Rotate all**; **Ctrl/⌘ + wheel** zoom; **Space + drag** pan.
+- [x] **Saved pages** (star in the address bar, suggested first, managed in Settings, included in exports).
+- [x] **HTML report** with a screenshot and the checks of every visible viewport.
+- [x] More presets: compact phone, foldables (folded/open), 11″ pro tablet, 14″ laptop, ultrawide, 4K.
+
 ### Non-goals (unchanged)
 
 No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise that every site embeds, no claim of real-device emulation.
@@ -83,13 +100,14 @@ No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise t
 
 ## 4. Permissions and privacy
 
-| Permission                            | When                     | Install warning              | Why                                                                                     |
-| ------------------------------------- | ------------------------ | ---------------------------- | --------------------------------------------------------------------------------------- |
-| `storage`                             | Install                  | None                         | Save viewports, groups and preferences locally                                          |
-| `activeTab`                           | Install                  | None                         | Read the current tab's URL only when the user invokes Breakpointer                      |
-| `contextMenus`                        | Install                  | None                         | "Preview in Breakpointer" on pages and links                                            |
-| `declarativeNetRequestWithHostAccess` | Install                  | None                         | Let previews of **allowed** sites ignore frame-blocking headers, in the viewer tab only |
-| Host access (`<all_urls>` subset)     | **Optional**, at runtime | Chrome prompt when requested | Per site: show blocked sites. All sites: also enables screenshots                       |
+| Permission                            | When                     | Install warning              | Why                                                                                                                             |
+| ------------------------------------- | ------------------------ | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`                             | Install                  | None                         | Save viewports, groups and preferences locally                                                                                  |
+| `activeTab`                           | Install                  | None                         | Read the current tab's URL only when the user invokes Breakpointer                                                              |
+| `contextMenus`                        | Install                  | None                         | "Preview in Breakpointer" on pages and links                                                                                    |
+| `declarativeNetRequestWithHostAccess` | Install                  | None                         | Let previews of **allowed** sites ignore frame-blocking headers, in the viewer tab only                                         |
+| `scripting`                           | Install                  | None                         | Register the frame agent while a workspace is open; it only runs where host access was granted, and only acts in preview frames |
+| Host access (`<all_urls>` subset)     | **Optional**, at runtime | Chrome prompt when requested | Per site: show blocked sites. All sites: also enables screenshots                                                               |
 
 No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justifications: [STORE_LISTING.md](STORE_LISTING.md).
 
@@ -97,20 +115,20 @@ No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justificati
 
 ## 5. Quality
 
-| Area          | How it's covered                                                                                                                                                                                                                                                           |
-| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Logic         | 68 unit tests (URLs, viewport ops, fit, storage validation, groups, breakpoints, i18n completeness, reducer, DNR rule, components)                                                                                                                                         |
-| Behaviour     | 51 end-to-end tests in Chrome for Testing with the real extension: real viewport widths, blocked/allowed sites, frame-busting, add/resize/rotate/remove/undo, groups, persistence, malformed storage, language, theme, rulers, export/import, screenshots, popup, keyboard |
-| Accessibility | axe (WCAG 2.1 A/AA, serious+critical) on the workspace, dialogs and popup in light and dark                                                                                                                                                                                |
-| Permissions   | E2E asserts the production manifest's permissions and that no host access exists at install                                                                                                                                                                                |
-| CI            | GitHub Actions: lint, format, typecheck, unit, build, e2e, packaged zip artifact                                                                                                                                                                                           |
-| Manual        | [TESTING.md](TESTING.md) compatibility matrix and release checklist                                                                                                                                                                                                        |
+| Area          | How it's covered                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logic         | 89 unit tests (URLs, viewport ops, fit, storage validation and import, groups, breakpoints and edges, grid, saved pages, report HTML escaping, i18n completeness, reducer, DNR rule, components)                                                                                                                                                                                                                                               |
+| Behaviour     | 67 end-to-end tests in Chrome for Testing with the real extension: real viewport widths, blocked/allowed sites, frame-busting, add/resize/rotate/remove/undo, groups, persistence, malformed storage, language, theme, rulers, export/import, screenshots, popup, keyboard; synced scroll/navigation, checks and highlight, outlines, live CSS, grid, custom breakpoints, edges, saved pages, report, wheel zoom and pan, tools without access |
+| Accessibility | axe (WCAG 2.1 A/AA, serious+critical) on the workspace, dialogs, Tools menu, checks panel, live CSS, settings and popup in light and dark                                                                                                                                                                                                                                                                                                      |
+| Permissions   | E2E asserts the production manifest's permissions and that no host access exists at install                                                                                                                                                                                                                                                                                                                                                    |
+| CI            | GitHub Actions: lint, format, typecheck, unit, build, e2e, packaged zip artifact                                                                                                                                                                                                                                                                                                                                                               |
+| Manual        | [TESTING.md](TESTING.md) compatibility matrix and release checklist                                                                                                                                                                                                                                                                                                                                                                            |
 
 ---
 
 ## 6. Release plan (M3 → store)
 
-1. `npm run package` → `release/breakpointer-0.1.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
+1. `npm run package` → `release/breakpointer-0.2.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
 2. Create the Chrome Web Store item; upload the zip.
 3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/1–5`, promo tiles `brand/store/promo-*.png`.
 4. Privacy tab: single purpose, permission justifications, "does not collect user data", link to a hosted copy of [PRIVACY.md](PRIVACY.md).
@@ -153,18 +171,18 @@ Success signals (only from opt-in feedback): successful preview starts, how ofte
 
 ## 9. Roadmap after V1 (ideas, ordered by expected value)
 
-**v0.2 — polish from feedback**
+**Delivered in v0.2:** synchronized scrolling and navigation, custom breakpoints, overflow and other responsive checks, a simple report (see §3).
 
-- Synchronized scrolling and navigation across previews (requires a content script on allowed sites; opt-in).
-- Per-workspace custom breakpoint sets.
+**v0.3 — polish from feedback**
+
 - "Allow for this session" site access.
+- Per-group breakpoint sets; remember live CSS snippets.
 - More languages if requested.
 
 **V2 — Responsive Inspector**
 
-- Detect horizontal overflow per viewport (content script on allowed sites).
-- Inspect an element's box at each size.
-- Compare two viewport configurations; export a simple report.
+- Inspect an element's box at each size (click in one preview, highlight it in all).
+- Compare two viewport configurations side by side.
 
 **V3 — Visual regression**
 

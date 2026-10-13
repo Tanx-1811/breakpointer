@@ -1,0 +1,21 @@
+.panel {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-height: min(70vh, 560px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+}
+
+.panel:focus-visible {
+  box-shadow: var(--shadow-pop), var(--focus-ring);
+}
+
+:global(html[data-capturing]) .panel {
+  visibility: hidden;
+}

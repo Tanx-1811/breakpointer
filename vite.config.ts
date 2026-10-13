@@ -1,9 +1,10 @@
 import { resolve } from 'node:path';
 import react from '@vitejs/plugin-react';
-import { defineConfig, type Plugin } from 'vite';
+import { build, defineConfig, type Plugin } from 'vite';
 import { createManifest } from './src/manifest.ts';
 
 const root = resolve(import.meta.dirname, 'src');
+const outDirFor = (mode: string) => resolve(import.meta.dirname, mode === 'e2e' ? 'dist-e2e' : 'dist');
 
 function manifestPlugin(mode: string): Plugin {
   return {
@@ -18,14 +19,48 @@ function manifestPlugin(mode: string): Plugin {
   };
 }
 
+/**
+ * The frame agent is registered as a content script, which must be a classic
+ * script without imports, so it is bundled separately as an IIFE after the
+ * main build (also on every rebuild in watch mode).
+ */
+function agentPlugin(mode: string, outDir: string): Plugin {
+  return {
+    name: 'breakpointer:agent',
+    apply: 'build',
+    async closeBundle() {
+      await build({
+        configFile: false,
+        logLevel: 'warn',
+        mode,
+        publicDir: false,
+        build: {
+          outDir,
+          emptyOutDir: false,
+          copyPublicDir: false,
+          target: 'chrome116',
+          minify: mode === 'production',
+          sourcemap: false,
+          lib: {
+            entry: resolve(root, 'agent/frame-agent.ts'),
+            formats: ['iife'],
+            name: 'BreakpointerAgent',
+            fileName: () => 'frame-agent.js',
+          },
+        },
+      });
+    },
+  };
+}
+
 // Multi-entry extension build: popup page, viewer page and the MV3 service worker.
 export default defineConfig(({ mode }) => ({
   root,
   base: '',
   publicDir: resolve(import.meta.dirname, 'public'),
-  plugins: [react(), manifestPlugin(mode)],
+  plugins: [react(), manifestPlugin(mode), agentPlugin(mode, outDirFor(mode))],
   build: {
-    outDir: resolve(import.meta.dirname, mode === 'e2e' ? 'dist-e2e' : 'dist'),
+    outDir: outDirFor(mode),
     emptyOutDir: true,
     target: 'chrome116',
     sourcemap: mode !== 'production',

@@ -69,6 +69,34 @@
   visibility: hidden;
 }
 
+.star {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin-right: 3px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-subtle);
+}
+
+.star:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.star[aria-pressed='true'] {
+  color: var(--warning-text);
+}
+
+.star[aria-pressed='true'] svg {
+  fill: currentColor;
+}
+
 .error {
   position: absolute;
   top: calc(100% + 6px);

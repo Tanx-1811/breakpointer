@@ -135,6 +135,20 @@ describe('export and import', () => {
     });
   });
 
+  it('keeps settings that an older export does not contain', () => {
+    const current = {
+      ...defaultSettings(),
+      savedPages: ['https://saved.example/'],
+      customBreakpoints: [{ name: 'tab', min: 700 }],
+    };
+    const older = { app: 'Breakpointer', kind: 'settings', version: 1, settings: { theme: 'dark' } };
+    const imported = parseSettingsImport(older, current)!;
+    expect(imported.theme).toBe('dark');
+    expect(imported.savedPages).toEqual(['https://saved.example/']);
+    expect(imported.customBreakpoints).toEqual([{ name: 'tab', min: 700 }]);
+    expect(imported.viewports).toEqual(current.viewports);
+  });
+
   it('rejects anything else', () => {
     const current = defaultSettings();
     expect(parseSettingsImport({ app: 'Other', kind: 'settings', settings: {} }, current)).toBeNull();

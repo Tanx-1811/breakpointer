@@ -6,7 +6,30 @@ export type LanguagePreference = 'auto' | 'en' | 'vi';
 
 export type WorkspaceLayout = 'wrap' | 'row';
 
-export type BreakpointSetId = 'none' | 'tailwind' | 'bootstrap';
+export type BreakpointSetId = 'none' | 'tailwind' | 'bootstrap' | 'custom';
+
+/** A min-width breakpoint, e.g. { name: 'md', min: 768 }. */
+export type Breakpoint = { name: string; min: number };
+
+/** "auto" = 4 columns on phones, 8 on tablets, 12 from 1024px. */
+export type GridColumns = 'auto' | 4 | 6 | 8 | 12 | 16;
+
+export type GridSettings = {
+  show: boolean;
+  columns: GridColumns;
+  /** Space between columns, in CSS pixels. */
+  gutter: number;
+  /** Outer margin on each side, in CSS pixels. */
+  margin: number;
+};
+
+/** Features that need the in-frame agent (only on sites the user allowed). */
+export type SyncSettings = {
+  /** Scrolling one preview scrolls the others to the same relative position. */
+  scroll: boolean;
+  /** Following a link in one preview loads that page in all of them. */
+  navigation: boolean;
+};
 
 export type ViewportConfig = {
   id: string;
@@ -38,7 +61,13 @@ export type BreakpointerSettings = {
   language: LanguagePreference;
   layout: WorkspaceLayout;
   breakpoints: BreakpointSetId;
+  /** Used when `breakpoints` is "custom"; sorted by `min`. */
+  customBreakpoints: Breakpoint[];
   showRulers: boolean;
+  grid: GridSettings;
+  sync: SyncSettings;
+  /** Run responsive checks (overflow, viewport meta, small text, small targets) where possible. */
+  checks: boolean;
   /** Show the tip with fixes when the current site may block previews. */
   embedHints: boolean;
   viewports: ViewportConfig[];
@@ -47,10 +76,12 @@ export type BreakpointerSettings = {
   /** Opt-in: keep recently previewed addresses on this device. */
   rememberRecent: boolean;
   recentUrls: string[];
+  /** Addresses the user saved explicitly (star in the address bar). */
+  savedPages: string[];
   activeUrl?: string;
 };
 
-export type PresetCategory = 'mobile' | 'tablet' | 'laptop' | 'desktop';
+export type PresetCategory = 'mobile' | 'foldable' | 'tablet' | 'laptop' | 'desktop';
 
 export type ViewportPreset = {
   id: string;

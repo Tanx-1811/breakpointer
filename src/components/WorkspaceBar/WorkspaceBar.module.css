@@ -156,6 +156,11 @@
   font-family: var(--font-mono);
 }
 
+/* "Mixed" is a word, not a number. */
+.zoomSelect[data-mixed] {
+  font-family: inherit;
+}
+
 .toggle {
   display: inline-flex;
   align-items: center;
@@ -185,4 +190,14 @@
   width: 1px;
   height: 20px;
   background: var(--border);
+}
+
+@media (max-width: 1100px) {
+  .toggleLabel {
+    display: none;
+  }
+
+  .toggle {
+    padding: 0 7px;
+  }
 }

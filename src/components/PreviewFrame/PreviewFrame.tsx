@@ -34,6 +34,13 @@ type Props = {
   title: string;
   /** Called from the "navigated away" chip to show the original page again. */
   onBack?: () => void;
+  /** iframe name; the frame agent reports it so the workspace knows which card it is. */
+  name?: string;
+  /**
+   * Whether the page inside moved away from `src`, when known (from the frame
+   * agent). Otherwise a second `load` event is taken to mean it did.
+   */
+  navigatedAway?: boolean;
 };
 
 /**
@@ -45,7 +52,7 @@ type Props = {
  * their `load` event (which waits for every ad and tracker), so the preview
  * stays visible while a thin bar and a small badge show progress.
  */
-export function PreviewFrame({ src, width, height, zoom, title, onBack }: Props) {
+export function PreviewFrame({ src, width, height, zoom, title, onBack, name, navigatedAway }: Props) {
   const { t } = useI18n();
   const [status, setStatus] = useState<Status>('loading');
   // A second load event means the page inside navigated (e.g. a clicked link);
@@ -64,6 +71,7 @@ export function PreviewFrame({ src, width, height, zoom, title, onBack }: Props)
       <iframe
         className={styles.frame}
         src={src}
+        name={name}
         title={title}
         width={width}
         height={height}
@@ -80,7 +88,7 @@ export function PreviewFrame({ src, width, height, zoom, title, onBack }: Props)
         data-viewport-width={width}
         data-viewport-height={height}
       />
-      {navigated && onBack && (
+      {(navigatedAway ?? navigated) && onBack && (
         <button type="button" className={styles.navigated} onClick={onBack} title={t('frame.navigatedHint')}>
           {t('frame.navigated')}
         </button>

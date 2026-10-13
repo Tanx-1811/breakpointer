@@ -1,10 +1,13 @@
 import { useId, useRef, useState, type KeyboardEvent } from 'react';
+import type { CheckKind, CheckReport } from '../../agent/protocol';
 import { breakpointFor } from '../../data/breakpoints';
 import { useI18n } from '../../i18n/I18nProvider';
 import { isValidDimension } from '../../state/viewports';
-import type { BreakpointSetId, ViewportConfig } from '../../types';
+import type { Breakpoint, BreakpointSetId, GridSettings, ViewportConfig } from '../../types';
 import { MAX_DIMENSION, MAX_NAME_LENGTH, MIN_DIMENSION, ZOOM_OPTIONS } from '../../utils/constants';
 import { IconButton } from '../Button/Button';
+import { ChecksBadge } from '../Checks/ChecksBadge';
+import { GridOverlay } from '../GridOverlay/GridOverlay';
 import { Icon } from '../Icon/Icon';
 import { Menu, type MenuEntry } from '../Menu/Menu';
 import { PreviewFrame } from '../PreviewFrame/PreviewFrame';
@@ -34,6 +37,20 @@ type Props = ViewportCardActions & {
   viewport: ViewportConfig;
   /** Visual position (CSS order); the DOM order stays stable so frames don't reload. */
   order: number;
+  /** Name of the preview iframe (ties its agent to this card). */
+  frameName?: string;
+  /**
+   * The preview no longer shows the workspace's page, as reported by its agent.
+   * Undefined without an agent: the frame guesses from its load events.
+   */
+  navigatedAway?: boolean;
+  customBreakpoints?: Breakpoint[];
+  /** Column grid drawn over the preview when `grid.show` is on. */
+  grid?: GridSettings;
+  /** Responsive check results from the preview's agent (sites the user allowed). */
+  checks?: CheckReport | null;
+  highlighted?: CheckKind | null;
+  onHighlight?: (kind: CheckKind | null) => void;
   /** Page to show; null shows an empty placeholder of the right size. */
   src: string | null;
   reloadKey: string;
@@ -54,7 +71,7 @@ export function ViewportCard(props: Props) {
   const stageRef = useRef<HTMLDivElement>(null);
   const { name, width, height, zoom, orientation } = viewport;
   const zoomOptions = ZOOM_OPTIONS.includes(zoom) ? ZOOM_OPTIONS : [...ZOOM_OPTIONS, zoom].sort((a, b) => a - b);
-  const breakpoint = breakpointFor(breakpointSet, width);
+  const breakpoint = breakpointFor(breakpointSet, width, props.customBreakpoints);
   const rulerSize = showRulers ? RULER_SIZE : 0;
   const contentWidth = Math.round(width * zoom) + rulerSize;
 
@@ -158,6 +175,13 @@ export function ViewportCard(props: Props) {
                 {breakpoint}
               </span>
             )}
+            {props.checks && props.onHighlight && (
+              <ChecksBadge
+                report={props.checks}
+                highlighted={props.highlighted ?? null}
+                onHighlight={props.onHighlight}
+              />
+            )}
           </div>
           <label className="visually-hidden" htmlFor={`zoom-${viewport.id}`}>
             {t('card.zoomLabel', { name })}
@@ -193,7 +217,7 @@ export function ViewportCard(props: Props) {
               <Ruler orientation="vertical" length={height} zoom={zoom} />
             </>
           )}
-          <div ref={stageRef} className={styles.frameSlot}>
+          <div ref={stageRef} className={styles.frameSlot} data-stage>
             {src ? (
               <PreviewFrame
                 key={`${src}#${reloadKey}`}
@@ -203,6 +227,8 @@ export function ViewportCard(props: Props) {
                 zoom={zoom}
                 title={t('frame.title', { name, width, height })}
                 onBack={props.onReload}
+                name={props.frameName}
+                navigatedAway={props.navigatedAway}
               />
             ) : (
               <div className={styles.placeholder} style={{ width: width * zoom, height: height * zoom }}>
@@ -213,6 +239,7 @@ export function ViewportCard(props: Props) {
                 <span className={styles.placeholderHint}>{t('card.placeholder')}</span>
               </div>
             )}
+            {props.grid?.show && <GridOverlay grid={props.grid} width={width} height={height} zoom={zoom} />}
           </div>
         </div>
       </div>

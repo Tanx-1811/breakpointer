@@ -68,3 +68,114 @@
   font-size: 12px;
   text-align: right;
 }
+
+.subsection {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.breakpoints {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.bpHeader,
+.bpRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 120px 28px;
+  align-items: center;
+  gap: 8px;
+}
+
+.bpHeader {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.bpList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bpRow input {
+  height: 30px;
+  min-width: 0;
+}
+
+.bpMin,
+.numberField {
+  font-family: var(--font-mono);
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.gridOptions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  padding-left: 2px;
+}
+
+.inlineField {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.inlineField select,
+.inlineField input {
+  height: 30px;
+}
+
+.numberField {
+  width: 76px;
+}
+
+.empty {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+}
+
+.savedList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.savedRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.savedUrl {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

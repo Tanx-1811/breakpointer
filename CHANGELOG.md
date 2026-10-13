@@ -2,6 +2,32 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] — 2026-10-13
+
+The inspection toolkit: tools that work inside the previews, plus more ways to set up and share a check.
+
+### Added
+
+- **Tools menu** in the toolbar, and **Sync** and **Grid** switches above the previews.
+- **Synced scrolling**: scroll one preview and the others follow to the same relative position.
+- **Synced navigation**: a link, form or single-page-app route you open in one preview opens in all of them, and the address bar follows. Redirects a page makes by itself (e.g. to a mobile site), in-page `#anchors` and one-time links such as sign-in callbacks are not followed; the preview shows “Navigated away · Back” instead.
+- **Responsive checks** on every card (✓ or ⚠ n): sideways overflow with the elements causing it, a missing mobile viewport tag, text under 12 px, touch targets under 24×24 px. **Highlight** marks them in the page.
+- **Layout outlines** and **Live CSS** (try a fix in every preview at once; `Ctrl/⌘ + Enter` applies) for the current session.
+- **Column grid** overlay: automatic 4 / 8 / 12 columns or a fixed count, with gutter and margin in Settings.
+- **Custom breakpoints**: edit your own list in Settings and pick “Custom” as the breakpoint labels.
+- **Test breakpoint edges**: viewports on both sides of each breakpoint (e.g. 767 and 768), fitted to the screen, with undo.
+- **Rotate all** visible viewports, with undo.
+- **Saved pages**: star a page in the address bar; saved pages are suggested first, listed in the toolbar popup and managed in Settings.
+- **Export report**: a self-contained HTML file with a screenshot and the checks of every visible viewport.
+- **Ctrl/⌘ + wheel** (or a pinch) zooms all viewports — also over previews of sites you allowed, instead of zooming the whole tab; **hold Space and drag** to pan the workspace.
+- Seven presets: compact phone, foldable (folded and open), 11″ pro tablet, 14″ laptop, ultrawide and 4K desktop.
+
+### Changed
+
+- New permission `scripting` (no install warning) to run Breakpointer's packaged script inside previews of sites you allowed, only while a workspace is open. See the [privacy policy](docs/PRIVACY.md).
+- Toggle items in menus stay open so several tools can be switched in a row.
+- Importing settings only replaces what the file contains; an older export keeps your newer settings (such as saved pages).
+
 ## [0.1.1] — 2026-10-13
 
 Hardening after testing on 30 real websites, a full code review and a feature-by-feature QA pass.

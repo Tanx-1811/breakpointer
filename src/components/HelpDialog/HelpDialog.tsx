@@ -17,6 +17,8 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['M'], label: 'help.rulers' },
   { keys: ['S'], label: 'help.capture' },
   { keys: ['T'], label: 'help.theme' },
+  { keys: ['Space'], label: 'help.pan' },
+  { keys: ['Ctrl/⌘'], label: 'help.wheelZoom' },
   { keys: ['?'], label: 'help.help' },
 ];
 

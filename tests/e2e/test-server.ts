@@ -36,6 +36,32 @@ const page = (title: string, extraHead = '') => `<!doctype html>
 </body>
 </html>`;
 
+/** A tall page with a link, for synced scrolling and navigation. */
+const LONG_PAGE = page(
+  'Long page',
+  `<style>section { height: 900px; border-top: 1px solid #ccc; }</style>
+  <script>addEventListener('DOMContentLoaded', () => {
+    const link = Object.assign(document.createElement('a'), { id: 'next', href: '/linked', textContent: 'Next page' });
+    const signIn = Object.assign(document.createElement('a'), { id: 'callback', href: '/linked?code=abc&state=xyz', textContent: 'Sign-in callback' });
+    document.body.append(link, ' ', signIn);
+    for (let i = 1; i <= 5; i++) document.body.append(Object.assign(document.createElement('section'), { textContent: 'Section ' + i }));
+  });</script>`,
+);
+
+/** A page with responsive problems: no viewport tag, a too-wide banner, tiny text and tiny buttons. */
+const ISSUES_PAGE = `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><title>Page with issues</title>
+<style>body { margin: 0; font: 16px system-ui, sans-serif; } .banner { width: 1500px; height: 40px; background: #fde68a; }
+.fine { font-size: 10px; } .tiny { width: 16px; height: 16px; padding: 0; } h1 { margin: 8px; }</style></head>
+<body>
+  <h1>Page with issues</h1>
+  <div class="banner">Wide banner</div>
+  <p class="fine">Terms and conditions in tiny print</p>
+  <button class="tiny" aria-label="Previous">‹</button><button class="tiny" aria-label="Next">›</button>
+</body>
+</html>`;
+
 type Route = { headers?: Record<string, string>; body: string };
 
 let counter = 0;
@@ -43,6 +69,29 @@ let counter = 0;
 const routes: Record<string, Route | (() => Route)> = {
   '/demo': { body: DEMO_PAGE },
   '/responsive': { body: page('Responsive page') },
+  '/long': { body: LONG_PAGE },
+  '/linked': { body: page('Linked page') },
+  '/issues': { body: ISSUES_PAGE },
+  // A site that sends narrow screens to another page, which sends wide screens back.
+  '/bounce': {
+    body: page(
+      'Wide home',
+      `<script>addEventListener('load', () => setTimeout(() => { if (innerWidth < 600) location.replace('/bounce-narrow'); }, 300));</script>`,
+    ),
+  },
+  '/bounce-narrow': {
+    body: page(
+      'Narrow home',
+      `<script>addEventListener('load', () => setTimeout(() => { if (innerWidth >= 600) location.replace('/bounce'); }, 300));</script>`,
+    ),
+  },
+  // Overwrites window.name (which identifies the preview) before anything else runs.
+  '/renames': {
+    body: page(
+      'Renaming page',
+      '<script>window.name = "app-state"; addEventListener("DOMContentLoaded", () => document.body.append(Object.assign(document.createElement("a"), { id: "next", href: "/linked", textContent: "Next" })));</script>',
+    ),
+  },
   // Each load gets a new number, so tests can tell whether a frame reloaded.
   '/counter': () => ({ body: page(`Load ${++counter}`) }),
   // Paints right away, but its load event waits ~4 s for an image (like ad-heavy sites).

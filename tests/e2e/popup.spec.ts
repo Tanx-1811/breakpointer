@@ -95,6 +95,33 @@ test.describe('popup', () => {
     });
   }
 
+  test('lists saved pages and opens one', async ({ context, extensionId, server }) => {
+    const popup = await openPopup(context, extensionId);
+    // The first-run workspace saves its settings once; seed after that so it can't overwrite ours.
+    await expect
+      .poll(() =>
+        popup.evaluate(async () =>
+          Boolean((await chrome.storage.local.get('breakpointer.settings'))['breakpointer.settings']),
+        ),
+      )
+      .toBe(true);
+    await popup.evaluate(
+      (url) => chrome.storage.local.set({ 'breakpointer.settings': { version: 1, savedPages: [url] } }),
+      server.url('/responsive'),
+    );
+    await popup.reload();
+    const saved = popup.getByTestId('popup-saved');
+    await expect(saved.getByRole('button')).toHaveText(['127.0.0.1:' + new URL(server.origin).port + '/responsive']);
+    const closed = popup.waitForEvent('close');
+    await saved
+      .getByRole('button')
+      .click()
+      .catch(() => {});
+    await closed;
+    const page = await workspaceTab(context, (url) => url.searchParams.get('url') === server.url('/responsive'));
+    await expect(page.getByTestId('save-page')).toHaveAttribute('aria-pressed', 'true');
+  });
+
   test('opens the workspace with a chosen group', async ({ context, extensionId }) => {
     const popup = await openPopup(context, extensionId);
     await popup.getByRole('combobox', { name: 'Viewports' }).selectOption({ label: 'Mobile QA (5)' });

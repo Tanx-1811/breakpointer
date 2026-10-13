@@ -189,13 +189,14 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
               <button
                 key={entry.id}
                 type="button"
-                role={checkable ? 'menuitemradio' : 'menuitem'}
+                role={checkable ? 'menuitemcheckbox' : 'menuitem'}
                 aria-checked={checkable ? entry.checked : undefined}
                 tabIndex={-1}
                 disabled={entry.disabled}
                 className={[styles.item, entry.tone === 'danger' && styles.danger].filter(Boolean).join(' ')}
                 onClick={() => {
-                  close(true);
+                  // Checkbox items keep the menu open so several can be switched in a row.
+                  if (!checkable) close(true);
                   entry.onSelect();
                 }}
               >

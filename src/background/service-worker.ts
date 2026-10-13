@@ -1,4 +1,5 @@
 import { disableEmbeddingForTab, tabsWithEmbedding } from '../services/embed-rules';
+import { agentRegistered, ensureAgentRegistered, unregisterAgent } from '../services/frame-agents';
 import { openViewer, viewerUrl } from '../shared/viewer-url';
 import { parsePreviewUrl, toSafeHref } from '../utils/url';
 
@@ -26,6 +27,10 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
     });
   });
   if (reason === chrome.runtime.OnInstalledReason.INSTALL) void openViewer();
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  void unregisterAgentIfNoWorkspace();
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -67,13 +72,28 @@ async function viewerIsOpenIn(tabId: number): Promise<boolean> {
  */
 chrome.tabs.onRemoved.addListener((tabId) => {
   void disableEmbeddingForTab(tabId).catch(() => {});
+  void unregisterAgentIfNoWorkspace();
 });
+
+const workspaceOpen = async () => {
+  const contexts = await chrome.runtime.getContexts({ contextTypes: ['TAB'] }).catch(() => []);
+  return contexts.some((context) => context.documentUrl?.startsWith(VIEWER_PAGE));
+};
+
+/** The frame agent only stays registered while a workspace tab is open. */
+async function unregisterAgentIfNoWorkspace(): Promise<void> {
+  if (!(await agentRegistered()) || (await workspaceOpen())) return;
+  await unregisterAgent();
+  // A workspace that opened meanwhile found the agent still registered: put it back.
+  if (await workspaceOpen()) await ensureAgentRegistered();
+}
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
   if (changeInfo.status !== 'complete') return;
   void (async () => {
     const ruled = await tabsWithEmbedding();
-    if (!ruled.includes(tabId)) return;
-    if (!(await viewerIsOpenIn(tabId))) await disableEmbeddingForTab(tabId);
+    if (ruled.includes(tabId) && !(await viewerIsOpenIn(tabId))) await disableEmbeddingForTab(tabId);
+    // Also when the last workspace tab went to another page (it removed its own rule on the way out).
+    await unregisterAgentIfNoWorkspace();
   })().catch(() => {});
 });

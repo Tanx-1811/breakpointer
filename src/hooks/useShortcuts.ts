@@ -44,12 +44,13 @@ export function shortcutFor(event: KeyInfo): ShortcutAction | null {
   return LETTER_KEYS[event.code] ?? null;
 }
 
-function isTyping(target: EventTarget | null): boolean {
+export function isTyping(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) return false;
   return target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName);
 }
 
-function overlayOpen(): boolean {
+/** A dialog, menu or popover is open (shortcuts and gestures pause). */
+export function overlayOpen(): boolean {
   return Boolean(document.querySelector('dialog[open], [popover]:popover-open'));
 }
 

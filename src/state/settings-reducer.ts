@@ -1,6 +1,10 @@
 import { addRecentUrl } from '../services/storage';
+import { MAX_SAVED_PAGES } from '../utils/constants';
 import type {
+  Breakpoint,
   BreakpointSetId,
+  GridSettings,
+  SyncSettings,
   LanguagePreference,
   ThemePreference,
   ViewportConfig,
@@ -30,6 +34,12 @@ export type SettingsAction =
   | { type: 'setLayout'; layout: WorkspaceLayout }
   | { type: 'setBreakpoints'; breakpoints: BreakpointSetId }
   | { type: 'setShowRulers'; showRulers: boolean }
+  | { type: 'setSync'; sync: Partial<SyncSettings> }
+  | { type: 'setChecks'; checks: boolean }
+  | { type: 'setGrid'; grid: Partial<GridSettings> }
+  | { type: 'setCustomBreakpoints'; breakpoints: Breakpoint[] }
+  | { type: 'toggleSavedPage'; url: string }
+  | { type: 'removeSavedPage'; url: string }
   | { type: 'setEmbedHints'; embedHints: boolean }
   | { type: 'setRememberRecent'; rememberRecent: boolean }
   | { type: 'clearRecent' }
@@ -65,6 +75,23 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, breakpoints: action.breakpoints };
     case 'setShowRulers':
       return { ...state, showRulers: action.showRulers };
+    case 'setSync':
+      return { ...state, sync: { ...state.sync, ...action.sync } };
+    case 'setChecks':
+      return { ...state, checks: action.checks };
+    case 'setGrid':
+      return { ...state, grid: { ...state.grid, ...action.grid } };
+    case 'setCustomBreakpoints':
+      return { ...state, customBreakpoints: action.breakpoints };
+    case 'toggleSavedPage':
+      return {
+        ...state,
+        savedPages: state.savedPages.includes(action.url)
+          ? state.savedPages.filter((url) => url !== action.url)
+          : [action.url, ...state.savedPages].slice(0, MAX_SAVED_PAGES),
+      };
+    case 'removeSavedPage':
+      return { ...state, savedPages: state.savedPages.filter((url) => url !== action.url) };
     case 'setEmbedHints':
       return { ...state, embedHints: action.embedHints };
     case 'setRememberRecent':

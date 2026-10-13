@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { CheckKind } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
@@ -7,6 +8,7 @@ import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
 import { ErrorState } from '../components/ErrorState/ErrorState';
 import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/GroupDialogs';
 import { HelpDialog } from '../components/HelpDialog/HelpDialog';
+import { LiveCssDialog } from '../components/LiveCssDialog/LiveCssDialog';
 import { RULER_SIZE } from '../components/Ruler/Ruler';
 import { SettingsDialog } from '../components/SettingsDialog/SettingsDialog';
 import { SiteAccessDialog } from '../components/SiteAccessDialog/SiteAccessDialog';
@@ -14,6 +16,7 @@ import { ToastProvider, useToast } from '../components/Toast/Toast';
 import { CARD_CHROME_WIDTH, MIN_CARD_WIDTH, ViewportCard } from '../components/ViewportCard/ViewportCard';
 import { Welcome } from '../components/Welcome/Welcome';
 import { WorkspaceBar } from '../components/WorkspaceBar/WorkspaceBar';
+import { useFrameAgents } from '../hooks/useFrameAgents';
 import { usePersistentSettings } from '../hooks/usePersistentSettings';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useSiteAccess } from '../hooks/useSiteAccess';
@@ -21,20 +24,40 @@ import { useStableDomOrder } from '../hooks/useStableDomOrder';
 import { useTheme } from '../hooks/useTheme';
 import { I18nProvider, useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
-import { resolveLanguage } from '../i18n/translate';
+import { resolveLanguage, type Language } from '../i18n/translate';
 import type { PreviewAdapter } from '../services/preview-adapter';
-import { canCapture, captureElement, requestCapturePermission } from '../services/screenshot';
+import {
+  blobToDataUrl,
+  canCapture,
+  captureElement,
+  captureElementImage,
+  requestCapturePermission,
+} from '../services/screenshot';
+import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
 import { createSettingsExport, defaultViewports, parseSettingsFile } from '../services/storage';
+import { breakpointEdges, breakpointFor } from '../data/breakpoints';
 import { fitZoomForAll } from '../state/fit';
+import { isOneTimeUrl, pageOf } from '../state/follow';
+import { buildReportHtml, type ReportCard } from '../state/report';
 import { createGroup, findGroupTemplates, uniqueGroupName } from '../state/groups';
 import type { SettingsAction } from '../state/settings-reducer';
-import { canAddViewport, fromTemplates, setZoomForAll, stepZoom } from '../state/viewports';
+import {
+  canAddViewport,
+  createViewport,
+  fromTemplates,
+  rotateVisible,
+  setZoomForAll,
+  stepZoom,
+} from '../state/viewports';
 import type { ViewportConfig, BreakpointerSettings } from '../types';
+import { MAX_VIEWPORTS } from '../utils/constants';
 import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
-import { displayHost, isLocalHost, parsePreviewUrl, type UrlParseError } from '../utils/url';
-import { TopBar } from './TopBar';
+import { shortHash } from '../utils/hash';
+import { displayHost, isLocalHost, parsePreviewUrl, toSafeHref, type UrlParseError } from '../utils/url';
+import { TopBar, type ToolToggle } from './TopBar';
+import { usePan, useWheelZoom } from './workspace-gestures';
 import styles from './Viewer.module.css';
 
 const WORKSPACE_GAP = 20;
@@ -43,7 +66,10 @@ const DEFAULT_CARD_CHROME_HEIGHT = 86;
 /** Pixels kept free when fitting, so rounding never pushes a card onto a new row. */
 const FIT_SLACK = 2;
 
-type DialogName = 'add' | 'saveGroup' | 'manageGroups' | 'access' | 'capture' | 'settings' | 'help';
+type DialogName = 'add' | 'saveGroup' | 'manageGroups' | 'access' | 'capture' | 'settings' | 'help' | 'css';
+
+/** Height of the viewports made by "Test breakpoint edges". */
+const EDGE_VIEWPORT_HEIGHT = 800;
 
 type ProbeState = 'idle' | 'checking' | 'reachable' | 'unreachable' | 'unknown';
 
@@ -53,6 +79,8 @@ export type ViewerProps = {
   initialInput: string;
   initialError: UrlParseError | null;
   adapter: PreviewAdapter;
+  /** This workspace tab, for messages from the agents in its preview frames. */
+  tabId: number | null;
   version: string;
   /** No settings were stored yet: fit the default viewports once a page loads. */
   /** Fit the viewports once: after the first page is shown (first run), or right away (group from the popup). */
@@ -67,7 +95,13 @@ export function ViewerApp(props: ViewerProps) {
   return (
     <I18nProvider language={language}>
       <ToastProvider>
-        <Workspace {...props} settings={settings} dispatch={dispatch} resolvedTheme={resolvedTheme} />
+        <Workspace
+          {...props}
+          settings={settings}
+          dispatch={dispatch}
+          resolvedTheme={resolvedTheme}
+          language={language}
+        />
       </ToastProvider>
     </I18nProvider>
   );
@@ -77,18 +111,21 @@ type WorkspaceProps = ViewerProps & {
   settings: BreakpointerSettings;
   dispatch: (action: SettingsAction) => void;
   resolvedTheme: 'light' | 'dark';
+  language: Language;
 };
 
 function Workspace({
   settings,
   dispatch,
   adapter,
+  tabId,
   initialUrl,
   initialInput,
   initialError,
   version,
   autoFit,
   resolvedTheme,
+  language,
 }: WorkspaceProps) {
   const { t } = useI18n();
   const toast = useToast();
@@ -105,6 +142,15 @@ function Workspace({
   // Hosts whose blocked-site tip was dismissed, until Chrome closes.
   const [dismissedHosts, setDismissedHosts] = useState<string[]>([]);
   const [dialog, setDialog] = useState<DialogName | null>(null);
+  // Synced navigation: a card that led a navigation keeps its own frame (its
+  // address is pinned), and cards whose page moved without the others following
+  // are "strays" ("Navigated away · Back").
+  const [srcOverrides, setSrcOverrides] = useState<Record<string, string>>({});
+  const [strays, setStrays] = useState<Record<string, boolean>>({});
+  // Inspection tools for this session (not saved).
+  const [outlines, setOutlines] = useState(false);
+  const [liveCss, setLiveCss] = useState('');
+  const [highlights, setHighlights] = useState<Record<string, CheckKind | null>>({});
   const [commandShortcuts, setCommandShortcuts] = useState({ open: '', preview: '' });
 
   const addressRef = useRef<HTMLInputElement>(null);
@@ -132,6 +178,8 @@ function Workspace({
       const url = result.url;
       setAddressError(null);
       setAddress(url.href);
+      setSrcOverrides({});
+      setStrays({});
       if (currentUrl?.href === url.href) setReloadAll((n) => n + 1);
       // A dev server is rarely on port 80: suggest adding the port.
       if (isLocalHost(url.hostname) && !url.port && !/:\d/.test(input)) {
@@ -216,7 +264,7 @@ function Workspace({
     // The focused Remove button disappears with its card: keep focus nearby.
     requestAnimationFrame(() => {
       const target = neighbour
-        ? document.querySelector<HTMLElement>(`[data-viewport-id="${neighbour.id}"] [aria-haspopup="menu"]`)
+        ? document.querySelector<HTMLElement>(`[data-viewport-id="${CSS.escape(neighbour.id)}"] [aria-haspopup="menu"]`)
         : document.querySelector<HTMLElement>('[data-add-viewport]');
       target?.focus();
     });
@@ -317,7 +365,7 @@ function Workspace({
     if (granted === null) return;
     if (granted) {
       toast({ message: t('access.granted', { host: displayHost(currentUrl) }), tone: 'success' });
-      setReloadAll((n) => n + 1);
+      reloadAllPreviews();
     } else {
       toast({ message: t('access.denied'), tone: 'error' });
     }
@@ -328,7 +376,7 @@ function Workspace({
     if (granted === null) return;
     if (granted) {
       toast({ message: t('access.grantedAll'), tone: 'success' });
-      setReloadAll((n) => n + 1);
+      reloadAllPreviews();
     } else {
       toast({ message: t('access.denied'), tone: 'error' });
     }
@@ -376,7 +424,7 @@ function Workspace({
     toast({
       message: t('access.grantedAll'),
       tone: 'info',
-      action: { label: t('common.reload'), onAction: () => setReloadAll((n) => n + 1) },
+      action: { label: t('common.reload'), onAction: () => reloadAllPreviews() },
     });
   };
 
@@ -414,7 +462,7 @@ function Workspace({
 
   useShortcuts({
     focusAddress: () => addressRef.current?.focus(),
-    reload: () => currentUrl && setReloadAll((n) => n + 1),
+    reload: () => currentUrl && reloadAllPreviews(),
     add: () => setDialog('add'),
     groups: () => document.querySelector<HTMLButtonElement>('[data-groups-trigger]')?.click(),
     fit,
@@ -445,6 +493,268 @@ function Workspace({
   const src = currentUrl?.href ?? null;
   // Cards stay in a stable DOM order (moving an iframe reloads it); CSS `order` places them.
   const domOrder = useStableDomOrder(visible.map((vp) => vp.id));
+
+  // A hidden or removed card loses its frame: when it comes back it shows the
+  // workspace's page, so forget what was pinned or flagged for it.
+  const visibleKey = visible.map((vp) => vp.id).join(' ');
+  const [prunedFor, setPrunedFor] = useState(visibleKey);
+  if (prunedFor !== visibleKey) {
+    setPrunedFor(visibleKey);
+    const ids = new Set(visible.map((vp) => vp.id));
+    const keepVisible = <T,>(map: Record<string, T>) =>
+      Object.keys(map).every((id) => ids.has(id))
+        ? map
+        : Object.fromEntries(Object.entries(map).filter(([id]) => ids.has(id)));
+    setSrcOverrides(keepVisible);
+    setStrays(keepVisible);
+  }
+
+  /* ---------- Frame agents (sync, checks, inspection) ---------- */
+
+  const cardSrc = (id: string) => srcOverrides[id] ?? src;
+  const cardReloadKey = (id: string) => `${reloadAll}.${cardReloads[id] ?? 0}`;
+  // A frame's generation changes whenever it is replaced (new address or reload).
+  const generations = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const vp of visible) {
+      const page = srcOverrides[vp.id] ?? src;
+      if (page) map[vp.id] = shortHash(`${page}#${reloadAll}.${cardReloads[vp.id] ?? 0}`);
+    }
+    return map;
+  }, [visible, srcOverrides, src, reloadAll, cardReloads]);
+
+  // The page the previews follow, updated at once: several previews can report
+  // the same navigation (e.g. a redirect) before the next render.
+  const followedUrl = useRef<string | null>(currentUrl?.href ?? null);
+  useLayoutEffect(() => {
+    followedUrl.current = currentUrl?.href ?? null;
+  }, [currentUrl]);
+
+  /**
+   * Follow a page that one preview navigated to: the others load it, that one
+   * keeps its frame. False when it can't be followed.
+   */
+  const followFrame = (cardId: string, href: string): boolean => {
+    const next = toSafeHref(href);
+    const current = followedUrl.current;
+    if (!next || !current) return false;
+    // Moving within the page (e.g. a table of contents updating #section) isn't a new page.
+    if (pageOf(next) === pageOf(current)) return true;
+    // Sign-in callbacks and other one-time links must not load again in every preview.
+    if (isOneTimeUrl(next)) return false;
+    followedUrl.current = next;
+    setSrcOverrides((overrides) => ({ [cardId]: overrides[cardId] ?? current }));
+    setStrays({});
+    setCurrentUrl(new URL(next));
+    setAddress(next);
+    setAddressError(null);
+    setProbeRun((n) => n + 1);
+    dispatch({ type: 'visitUrl', url: next });
+    history.replaceState(null, '', `?${new URLSearchParams({ url: next })}`);
+    return true;
+  };
+
+  const agents = useFrameAgents(tabId, generations, {
+    onHello: (cardId) => {
+      agents.send(cardId, { type: 'checks', enabled: settings.checks });
+      if (outlines) agents.send(cardId, { type: 'outlines', on: true });
+      if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
+      setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
+    },
+    onNavigate: (cardId, href, { user, newDocument }) => {
+      // The page tidying its own address (e.g. dropping tracking parameters) isn't a navigation.
+      if (!user && !newDocument) return;
+      // Only what the user did is followed: redirects a page makes by itself (e.g.
+      // sending narrow screens to /m/) stay in that preview.
+      if (user && settings.sync.navigation && followFrame(cardId, href)) return;
+      const current = followedUrl.current;
+      const stray = !current || pageOf(href) !== pageOf(current);
+      setStrays((map) => (Boolean(map[cardId]) === stray ? map : { ...map, [cardId]: stray }));
+    },
+    onScroll: (cardId, ratio) => {
+      if (settings.sync.scroll) agents.broadcast({ type: 'scrollTo', ratio }, cardId);
+    },
+    onZoom: (direction) => dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, direction) }),
+  });
+  const { broadcast } = agents;
+
+  // Keep every connected frame in step with the tools (new frames get them on hello).
+  useEffect(() => broadcast({ type: 'checks', enabled: settings.checks }), [broadcast, settings.checks]);
+  useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
+  useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
+
+  const reloadAllPreviews = () => {
+    setSrcOverrides({});
+    setStrays({});
+    setReloadAll((n) => n + 1);
+  };
+  const reloadCard = (id: string) => {
+    setSrcOverrides(({ [id]: _dropped, ...rest }) => rest);
+    setStrays(({ [id]: _stray, ...rest }) => rest);
+    setCardReloads((map) => ({ ...map, [id]: (map[id] ?? 0) + 1 }));
+  };
+  const highlight = (cardId: string, kind: CheckKind | null) => {
+    setHighlights((map) => ({ ...map, [cardId]: kind }));
+    agents.send(cardId, { type: 'highlight', kind });
+  };
+
+  /* ---------- Tools ---------- */
+
+  /** Tools that run inside the preview need the site's permission: offer it. */
+  const hintAccess = (feature: string) => {
+    if (!currentUrl || siteAccess.site !== false) return;
+    toast({
+      message: t('tools.needsAccess', { feature, host: displayHost(currentUrl) }),
+      tone: 'info',
+      key: 'tools-access',
+      action: { label: t('tools.allow'), onAction: () => void allowSite() },
+    });
+  };
+
+  const toggleTool = (tool: ToolToggle) => {
+    switch (tool) {
+      case 'syncScroll': {
+        const on = !settings.sync.scroll;
+        dispatch({ type: 'setSync', sync: { scroll: on } });
+        if (on) hintAccess(t('tools.syncScroll'));
+        break;
+      }
+      case 'syncNavigation': {
+        const on = !settings.sync.navigation;
+        dispatch({ type: 'setSync', sync: { navigation: on } });
+        if (on) hintAccess(t('tools.syncNavigation'));
+        break;
+      }
+      case 'checks':
+        setChecks(!settings.checks);
+        break;
+      case 'outlines': {
+        const on = !outlines;
+        setOutlines(on);
+        if (on) hintAccess(t('tools.outlines'));
+        break;
+      }
+      case 'grid':
+        dispatch({ type: 'setGrid', grid: { show: !settings.grid.show } });
+        break;
+    }
+  };
+
+  const setChecks = (on: boolean) => {
+    dispatch({ type: 'setChecks', checks: on });
+    if (on) hintAccess(t('tools.checks'));
+    else setHighlights({});
+  };
+
+  const setSyncAll = (on: boolean) => {
+    dispatch({ type: 'setSync', sync: { scroll: on, navigation: on } });
+    if (on) hintAccess(t('workspace.sync'));
+  };
+
+  const applyLiveCss = (css: string) => {
+    setLiveCss(css);
+    setDialog(null);
+    toast({ message: css ? t('css.applied') : t('css.cleared'), tone: 'success', key: 'live-css' });
+    if (css) hintAccess(t('css.title'));
+  };
+
+  const testEdges = () => {
+    const edges = breakpointEdges(settings.breakpoints, settings.customBreakpoints, MAX_VIEWPORTS);
+    if (edges.length === 0) {
+      toast({ message: t('tools.noEdges'), tone: 'info' });
+      return;
+    }
+    let next = edges.map((edge) =>
+      createViewport({ name: edge.name, width: edge.width, height: EDGE_VIEWPORT_HEIGHT }),
+    );
+    const zoom = computeFitZoom(next);
+    if (zoom !== null) next = setZoomForAll(next, zoom);
+    replaceViewports(
+      next,
+      next.length === 1 ? t('tools.edgesAppliedOne') : t('tools.edgesApplied', { count: next.length }),
+    );
+  };
+
+  const rotateAll = () => {
+    const count = visible.filter((vp) => vp.width !== vp.height).length;
+    if (count === 0) {
+      toast({ message: t('tools.nothingToRotate'), tone: 'info' });
+      return;
+    }
+    replaceViewports(rotateVisible(viewports), count === 1 ? t('tools.rotatedOne') : t('tools.rotated', { count }));
+  };
+
+  const toggleSaved = () => {
+    if (!currentUrl) return;
+    const saved = settings.savedPages.includes(currentUrl.href);
+    dispatch({ type: 'toggleSavedPage', url: currentUrl.href });
+    toast({
+      message: t(saved ? 'pages.removed' : 'pages.saved', { host: displayHost(currentUrl) }),
+      tone: 'success',
+      key: 'saved-page',
+    });
+  };
+
+  /* ---------- Report ---------- */
+
+  const [reporting, setReporting] = useState(false);
+
+  const runReport = async () => {
+    if (!currentUrl) return;
+    const list = visible;
+    setReporting(true);
+    try {
+      const cards: ReportCard[] = [];
+      for (const [index, vp] of list.entries()) {
+        toast({
+          message: t('report.progress', { current: index + 1, total: list.length }),
+          tone: 'info',
+          key: 'report',
+        });
+        const stage = document.querySelector<HTMLElement>(`[data-viewport-id="${CSS.escape(vp.id)}"] [data-stage]`);
+        const shot = stage ? await captureElementImage(stage, 'image/jpeg') : null;
+        cards.push({
+          name: vp.name,
+          width: vp.width,
+          height: vp.height,
+          zoom: vp.zoom,
+          breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints),
+          image: shot ? await blobToDataUrl(shot.blob) : null,
+          checks: settings.checks ? (agents.frameOf(vp.id)?.report ?? null) : null,
+        });
+      }
+      const title = list.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
+      const html = buildReportHtml({ url: currentUrl.href, title, created: new Date(), version, language, cards }, t);
+      const fileName = `breakpointer-report_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.html`;
+      downloadBlob(new Blob([html], { type: 'text/html' }), fileName);
+      toast({ message: t('report.saved', { file: fileName }), tone: 'success', key: 'report' });
+    } catch (error) {
+      console.warn('[Breakpointer] Report failed.', error);
+      toast({ message: t('report.failed'), tone: 'error', key: 'report' });
+    } finally {
+      setReporting(false);
+    }
+  };
+
+  const exportReport = async () => {
+    if (!currentUrl || reporting) return;
+    if (visible.length === 0) {
+      toast({ message: t('report.nothing'), tone: 'info' });
+      return;
+    }
+    if (await canCapture()) {
+      await runReport();
+      return;
+    }
+    pendingCapture.current = runReport;
+    setDialog('capture');
+  };
+
+  /* ---------- Gestures ---------- */
+
+  useWheelZoom(workspaceRef, (direction) => dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, direction) }));
+  const panLayer = usePan(workspaceRef);
+
   // Chrome doesn't tell the page when a frame was refused, so the tip shows
   // for any site that isn't allowed yet (unless the site is simply unreachable).
   const showNotice = Boolean(
@@ -465,19 +775,26 @@ function Workspace({
             key={vp.id}
             order={index}
             viewport={vp}
-            src={src}
-            reloadKey={`${reloadAll}.${cardReloads[vp.id] ?? 0}`}
+            src={cardSrc(vp.id)}
+            reloadKey={cardReloadKey(vp.id)}
+            frameName={generations[vp.id] === undefined ? undefined : frameName(vp.id, generations[vp.id]!)}
+            navigatedAway={agents.frameOf(vp.id) ? strays[vp.id] === true : undefined}
             index={index}
             count={visible.length}
             canDuplicate={canAddViewport(viewports)}
             breakpointSet={settings.breakpoints}
+            customBreakpoints={settings.customBreakpoints}
+            grid={settings.grid}
+            checks={settings.checks ? (agents.frameOf(vp.id)?.report ?? null) : null}
+            highlighted={highlights[vp.id] ?? null}
+            onHighlight={(kind) => highlight(vp.id, kind)}
             showRulers={settings.showRulers}
             onRename={(name) => dispatch({ type: 'updateViewport', id: vp.id, patch: { name } })}
             onResize={(size) => dispatch({ type: 'updateViewport', id: vp.id, patch: size })}
             onZoom={(zoom) => dispatch({ type: 'updateViewport', id: vp.id, patch: { zoom } })}
             onRotate={() => dispatch({ type: 'rotateViewport', id: vp.id })}
             onMove={(delta) => moveVisible(vp, delta)}
-            onReload={() => setCardReloads((map) => ({ ...map, [vp.id]: (map[vp.id] ?? 0) + 1 }))}
+            onReload={() => reloadCard(vp.id)}
             onCapture={(stage) =>
               // The image is taken as shown on screen, so the name says at which zoom.
               void capture(stage, [vp.name, `${vp.width}x${vp.height}`, `${Math.round(vp.zoom * 100)}pct`])
@@ -552,7 +869,7 @@ function Workspace({
           if (addressError) setAddressError(null);
         }}
         onSubmit={() => navigate(address)}
-        onReloadAll={() => setReloadAll((n) => n + 1)}
+        onReloadAll={reloadAllPreviews}
         onOpenInTab={() => currentUrl && void adapter.openInTab(currentUrl.href)}
         onApplyGroup={applyGroup}
         onSaveGroup={() => setDialog('saveGroup')}
@@ -564,12 +881,34 @@ function Workspace({
         resolvedTheme={resolvedTheme}
         onSettings={() => setDialog('settings')}
         onHelp={() => setDialog('help')}
+        host={host}
+        savedPages={settings.savedPages}
+        saved={Boolean(currentUrl && settings.savedPages.includes(currentUrl.href))}
+        onToggleSaved={toggleSaved}
+        tools={{
+          syncScroll: settings.sync.scroll,
+          syncNavigation: settings.sync.navigation,
+          checks: settings.checks,
+          outlines,
+          grid: settings.grid.show,
+          liveCss: Boolean(liveCss),
+        }}
+        onTool={toggleTool}
+        onLiveCss={() => setDialog('css')}
+        onEdges={testEdges}
+        onRotateAll={rotateAll}
+        onReport={() => void exportReport()}
+        onAllowSite={() => void allowSite()}
       />
       <WorkspaceBar
         viewports={viewports}
         layout={settings.layout}
         breakpoints={settings.breakpoints}
         showRulers={settings.showRulers}
+        sync={settings.sync.scroll || settings.sync.navigation}
+        showGrid={settings.grid.show}
+        onSync={setSyncAll}
+        onGrid={(show) => dispatch({ type: 'setGrid', grid: { show } })}
         onToggleVisible={(id) => {
           const vp = viewports.find((item) => item.id === id);
           if (vp) dispatch({ type: 'updateViewport', id, patch: { hidden: !vp.hidden } });
@@ -595,7 +934,7 @@ function Workspace({
                 icon="reload"
                 onClick={() => {
                   setProbeRun((n) => n + 1);
-                  setReloadAll((n) => n + 1);
+                  reloadAllPreviews();
                 }}
               >
                 {t('error.retry')}
@@ -629,6 +968,19 @@ function Workspace({
       <main ref={workspaceRef} className={styles.workspace} aria-label={t('workspace.region')} data-testid="workspace">
         {renderContent()}
       </main>
+      {panLayer && (
+        <div
+          className={styles.panLayer}
+          style={panLayer.style}
+          data-dragging={panLayer.dragging || undefined}
+          data-testid="pan-layer"
+          aria-hidden="true"
+          onPointerDown={panLayer.onPointerDown}
+          onPointerMove={panLayer.onPointerMove}
+          onPointerUp={panLayer.onPointerUp}
+          onPointerCancel={panLayer.onPointerUp}
+        />
+      )}
 
       <AddViewportDialog
         open={dialog === 'add'}
@@ -707,6 +1059,15 @@ function Workspace({
         onTheme={(theme) => dispatch({ type: 'setTheme', theme })}
         onLanguage={(language) => dispatch({ type: 'setLanguage', language })}
         onBreakpoints={(breakpoints) => dispatch({ type: 'setBreakpoints', breakpoints })}
+        onCustomBreakpoints={(breakpoints) => dispatch({ type: 'setCustomBreakpoints', breakpoints })}
+        onSync={(sync) => dispatch({ type: 'setSync', sync })}
+        onChecks={setChecks}
+        onGrid={(grid) => dispatch({ type: 'setGrid', grid })}
+        onOpenSaved={(url) => {
+          setDialog(null);
+          navigate(url);
+        }}
+        onRemoveSaved={(url) => dispatch({ type: 'removeSavedPage', url })}
         onRulers={(showRulers) => dispatch({ type: 'setShowRulers', showRulers })}
         onEmbedHints={(embedHints) => dispatch({ type: 'setEmbedHints', embedHints })}
         onRememberRecent={(rememberRecent) => dispatch({ type: 'setRememberRecent', rememberRecent })}
@@ -719,6 +1080,17 @@ function Workspace({
         onReset={resetWorkspace}
         onManageAccess={() => setDialog('access')}
         onOpenShortcuts={() => void chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+        onClose={() => setDialog(null)}
+      />
+      <LiveCssDialog
+        open={dialog === 'css'}
+        css={liveCss}
+        host={host}
+        siteAllowed={siteAccess.site}
+        busy={requesting}
+        onApply={applyLiveCss}
+        onClear={() => applyLiveCss('')}
+        onAllowSite={() => void allowSite()}
         onClose={() => setDialog(null)}
       />
       <HelpDialog open={dialog === 'help'} onClose={() => setDialog(null)} commandShortcuts={commandShortcuts} />

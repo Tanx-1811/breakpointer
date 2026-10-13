@@ -118,6 +118,15 @@ export function rotateViewport(list: ViewportConfig[], id: string): ViewportConf
   );
 }
 
+/** Rotates every visible, non-square viewport. */
+export function rotateVisible(list: ViewportConfig[]): ViewportConfig[] {
+  return list.map((vp) =>
+    vp.hidden || vp.width === vp.height
+      ? vp
+      : { ...vp, width: vp.height, height: vp.width, orientation: orientationOf(vp.height, vp.width) },
+  );
+}
+
 export function moveViewport(list: ViewportConfig[], id: string, delta: -1 | 1): ViewportConfig[] {
   const from = list.findIndex((vp) => vp.id === id);
   return moveViewportTo(list, id, from + delta);

@@ -12,6 +12,7 @@ import styles from './AddViewportDialog.module.css';
 
 const CATEGORY_ICONS: Record<PresetCategory, IconName> = {
   mobile: 'phone',
+  foldable: 'tablet',
   tablet: 'tablet',
   laptop: 'laptop',
   desktop: 'desktop',

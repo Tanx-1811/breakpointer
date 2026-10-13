@@ -7,6 +7,7 @@ import { Button, IconButton } from '../components/Button/Button';
 import { AddressBar } from '../components/AddressBar/AddressBar';
 import { Icon, Logo } from '../components/Icon/Icon';
 import { Menu, type MenuEntry } from '../components/Menu/Menu';
+import type { MessageKey } from '../i18n/en';
 import styles from './Viewer.module.css';
 
 type Props = {
@@ -33,7 +34,21 @@ type Props = {
   resolvedTheme: 'light' | 'dark';
   onSettings: () => void;
   onHelp: () => void;
+  host: string | null;
+  savedPages: string[];
+  saved: boolean;
+  onToggleSaved: () => void;
+  tools: ToolState;
+  onTool: (tool: ToolToggle) => void;
+  onLiveCss: () => void;
+  onEdges: () => void;
+  onRotateAll: () => void;
+  onReport: () => void;
+  onAllowSite: () => void;
 };
+
+export type ToolToggle = 'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'grid';
+export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 export function TopBar(props: Props) {
   const { t } = useI18n();
@@ -68,6 +83,46 @@ export function TopBar(props: Props) {
     },
   ];
 
+  const toolToggle = (id: ToolToggle, label: MessageKey): MenuEntry => ({
+    id,
+    label: t(label),
+    checked: props.tools[id],
+    onSelect: () => props.onTool(id),
+  });
+  // Everything but the grid runs inside the preview, so it needs the site's permission.
+  const needsAccess = props.hasUrl && props.siteAllowed === false && props.host;
+  const toolEntries: MenuEntry[] = [
+    ...(needsAccess
+      ? ([
+          { kind: 'note', id: 'tools-note', label: t('tools.menuNote') },
+          {
+            id: 'tools-allow',
+            label: t('tools.allowSite', { host: props.host ?? '' }),
+            icon: 'shield',
+            onSelect: props.onAllowSite,
+          },
+          { kind: 'separator', id: 'tools-sep0' },
+        ] satisfies MenuEntry[])
+      : []),
+    toolToggle('syncScroll', 'tools.syncScroll'),
+    toolToggle('syncNavigation', 'tools.syncNavigation'),
+    toolToggle('checks', 'tools.checks'),
+    toolToggle('outlines', 'tools.outlines'),
+    toolToggle('grid', 'tools.grid'),
+    { kind: 'separator', id: 'tools-sep1' },
+    {
+      id: 'liveCss',
+      label: t('tools.liveCss'),
+      icon: 'code',
+      hint: props.tools.liveCss ? t('tools.on') : undefined,
+      onSelect: props.onLiveCss,
+    },
+    { id: 'edges', label: t('tools.edges'), icon: 'ruler', onSelect: props.onEdges },
+    { id: 'rotateAll', label: t('tools.rotateAll'), icon: 'rotate', onSelect: props.onRotateAll },
+    { kind: 'separator', id: 'tools-sep2' },
+    { id: 'report', label: t('tools.report'), icon: 'report', disabled: !props.hasUrl, onSelect: props.onReport },
+  ];
+
   const themeLabel = props.resolvedTheme === 'dark' ? t('toolbar.themeToLight') : t('toolbar.themeToDark');
 
   return (
@@ -82,6 +137,10 @@ export function TopBar(props: Props) {
           value={props.address}
           error={props.addressError}
           recentUrls={props.recentUrls}
+          savedPages={props.savedPages}
+          saved={props.saved}
+          canSave={props.hasUrl}
+          onToggleSaved={props.onToggleSaved}
           secure={props.secure}
           inputRef={props.addressRef}
           onChange={props.onAddressChange}
@@ -129,6 +188,25 @@ export function TopBar(props: Props) {
         >
           <span className={styles.collapsible}>{t('toolbar.addViewport')}</span>
         </Button>
+        <Menu
+          label={t('toolbar.tools')}
+          entries={toolEntries}
+          align="end"
+          minWidth={250}
+          trigger={(triggerProps) => (
+            <button
+              type="button"
+              {...triggerProps}
+              className={styles.menuButton}
+              data-tools-trigger
+              title={t('toolbar.tools')}
+            >
+              <Icon name="tools" size={16} />
+              <span className={styles.collapsible}>{t('toolbar.tools')}</span>
+              <Icon name="chevronDown" size={14} />
+            </button>
+          )}
+        />
         <span className={styles.separator} aria-hidden="true" />
         <IconButton
           icon="camera"
