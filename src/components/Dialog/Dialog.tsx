@@ -17,6 +17,7 @@ type Props = {
  */
 export function Dialog({ open, title, description, onClose, children, width = 560 }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
+  const pressedBackdrop = useRef(false);
   const titleId = useId();
   const descriptionId = useId();
 
@@ -39,9 +40,14 @@ export function Dialog({ open, title, description, onClose, children, width = 56
         event.preventDefault();
         onClose();
       }}
+      onPointerDown={(event) => {
+        pressedBackdrop.current = event.target === ref.current;
+      }}
       onClick={(event) => {
-        // Clicking the backdrop (the dialog element itself, outside the panel) closes it.
-        if (event.target === ref.current) onClose();
+        // A click on the backdrop (the dialog element itself, outside the panel)
+        // closes it — but not a text selection that started inside and ended outside.
+        if (event.target === ref.current && pressedBackdrop.current) onClose();
+        pressedBackdrop.current = false;
       }}
     >
       {open && (

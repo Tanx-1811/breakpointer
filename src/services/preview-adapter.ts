@@ -80,12 +80,17 @@ export function createIframePreviewAdapter(): PreviewAdapter {
       if (isLocalNetworkHost(url.hostname)) return { kind: 'unknown' };
 
       const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        controller.abort();
+      }, timeoutMs);
       try {
-        // An opaque no-cors request: it only tells whether the host answered.
-        // No cookies are sent and nothing about the response is read.
+        // An opaque no-cors GET (some servers and firewalls reject HEAD): it only
+        // tells whether the host answered. No cookies are sent, nothing is read,
+        // and the download stops as soon as the response headers arrive.
         await fetch(url.href, {
-          method: 'HEAD',
+          method: 'GET',
           mode: 'no-cors',
           credentials: 'omit',
           cache: 'no-store',
@@ -93,9 +98,10 @@ export function createIframePreviewAdapter(): PreviewAdapter {
         });
         return { kind: 'reachable' };
       } catch {
-        return controller.signal.aborted ? { kind: 'unknown' } : { kind: 'unreachable' };
+        return timedOut ? { kind: 'unknown' } : { kind: 'unreachable' };
       } finally {
         clearTimeout(timer);
+        controller.abort();
       }
     },
 

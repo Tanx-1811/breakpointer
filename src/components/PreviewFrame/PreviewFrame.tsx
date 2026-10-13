@@ -16,7 +16,11 @@ const SANDBOX = [
   'allow-downloads',
   'allow-pointer-lock',
   'allow-presentation',
+  'allow-storage-access-by-user-activation',
 ].join(' ');
+
+/** Features a page would normally have in a tab (video, fullscreen, clipboard…). */
+const ALLOW = 'fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write; web-share';
 
 const SLOW_AFTER_MS = 12000;
 
@@ -34,6 +38,10 @@ type Props = {
  * Renders a page with a real layout viewport of `width` × `height` CSS pixels.
  * The iframe itself has that size, so media queries and layout respond to it;
  * `zoom` only scales the finished rendering to fit the workspace.
+ *
+ * The loading indicator never covers the page: real sites paint long before
+ * their `load` event (which waits for every ad and tracker), so the preview
+ * stays visible while a thin bar and a small badge show progress.
  */
 export function PreviewFrame({ src, width, height, zoom, title }: Props) {
   const { t } = useI18n();
@@ -55,7 +63,7 @@ export function PreviewFrame({ src, width, height, zoom, title }: Props) {
         height={height}
         style={{ width, height, transform: `scale(${zoom})` }}
         sandbox={SANDBOX}
-        allow="fullscreen; clipboard-write"
+        allow={ALLOW}
         referrerPolicy="strict-origin-when-cross-origin"
         onLoad={() => setStatus('loaded')}
         data-testid="preview-frame"
@@ -63,10 +71,18 @@ export function PreviewFrame({ src, width, height, zoom, title }: Props) {
         data-viewport-height={height}
       />
       {status !== 'loaded' && (
-        <div className={styles.loading} role="status">
-          <span className={styles.spinner} aria-hidden="true" />
-          <span className={styles.loadingText}>{status === 'slow' ? t('frame.slow') : t('frame.loading')}</span>
-        </div>
+        <>
+          <span className={styles.progress} aria-hidden="true" />
+          <span
+            className={styles.badge}
+            role="status"
+            title={status === 'slow' ? t('frame.slow') : undefined}
+            data-testid="frame-loading"
+          >
+            <span className={styles.spinner} aria-hidden="true" />
+            {status === 'slow' ? t('frame.slowShort') : t('frame.loading')}
+          </span>
+        </>
       )}
     </div>
   );

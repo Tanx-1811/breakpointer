@@ -1,4 +1,4 @@
-export type UrlParseError = 'empty' | 'unsupported-scheme' | 'invalid';
+export type UrlParseError = 'empty' | 'unsupported-scheme' | 'invalid' | 'credentials';
 
 export type UrlParseResult = { ok: true; url: URL } | { ok: false; error: UrlParseError };
 
@@ -26,7 +26,7 @@ export function parsePreviewUrl(input: string): UrlParseResult {
 
   if (HTTP_SCHEME.test(value)) {
     try {
-      return { ok: true, url: new URL(value) };
+      return checked(new URL(value));
     } catch {
       return { ok: false, error: 'invalid' };
     }
@@ -50,28 +50,27 @@ export function parsePreviewUrl(input: string): UrlParseResult {
   if (!url.hostname.includes('.') && !isLocalHost(url.hostname)) {
     return { ok: false, error: 'invalid' };
   }
+  return checked(url);
+}
+
+/**
+ * Chrome refuses to load frames whose URL embeds credentials
+ * (https://user:pass@host), so say so instead of showing blank previews.
+ */
+function checked(url: URL): UrlParseResult {
+  if (url.username || url.password) return { ok: false, error: 'credentials' };
   return { ok: true, url };
 }
 
-/** Returns the href only if the value is a valid http(s) URL. */
+/** Returns the href only if the value is a previewable http(s) URL (no embedded credentials). */
 export function toSafeHref(value: unknown): string | undefined {
   if (typeof value !== 'string' || !HTTP_SCHEME.test(value)) return undefined;
   try {
     const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.href : undefined;
+    if (url.protocol !== 'http:' && url.protocol !== 'https:') return undefined;
+    return url.username || url.password ? undefined : url.href;
   } catch {
     return undefined;
-  }
-}
-
-export function urlErrorMessage(error: UrlParseError): string {
-  switch (error) {
-    case 'empty':
-      return 'Enter a website address, for example example.com.';
-    case 'unsupported-scheme':
-      return 'Only http:// and https:// pages can be previewed.';
-    case 'invalid':
-      return 'That doesn’t look like a website address. Try something like example.com.';
   }
 }
 

@@ -8,6 +8,7 @@ export const en = {
   'common.cancel': 'Cancel',
   'common.save': 'Save',
   'common.undo': 'Undo',
+  'common.reload': 'Reload',
   'common.dismiss': 'Dismiss',
   'common.viewports': '{count} viewports',
   'common.viewport': '1 viewport',
@@ -32,6 +33,9 @@ export const en = {
   'url.error.empty': 'Enter a website address, for example example.com.',
   'url.error.unsupported': 'Only http:// and https:// pages can be previewed.',
   'url.error.invalid': 'That doesn’t look like a website address. Try something like example.com.',
+
+  'url.error.credentials':
+    'Addresses with a username or password (user:pass@) can’t be previewed. Remove that part and try again.',
 
   'toolbar.groups': 'Groups',
   'toolbar.addViewport': 'Add viewport',
@@ -82,6 +86,7 @@ export const en = {
   'card.placeholder': 'Enter an address to preview',
   'frame.title': '{name} preview, {width} × {height}',
   'frame.loading': 'Loading…',
+  'frame.slowShort': 'Still loading…',
   'frame.slow': 'Still loading… If nothing appears, the site may block previews.',
 
   'add.title': 'Add viewport',

@@ -94,13 +94,20 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
     // Clicking into a preview iframe doesn't reach this document; blur does.
     const onBlur = () => setOpen(false);
     const onResize = () => setOpen(false);
+    // The panel is positioned once; if the page or workspace scrolls, it would
+    // drift away from its button, so close it (scrolling inside it is fine).
+    const onScroll = (event: Event) => {
+      if (!(event.target instanceof Node) || !panel?.contains(event.target)) setOpen(false);
+    };
     panel?.addEventListener('toggle', onToggle);
     window.addEventListener('blur', onBlur);
     window.addEventListener('resize', onResize);
+    window.addEventListener('scroll', onScroll, true);
     return () => {
       panel?.removeEventListener('toggle', onToggle);
       window.removeEventListener('blur', onBlur);
       window.removeEventListener('resize', onResize);
+      window.removeEventListener('scroll', onScroll, true);
     };
   }, [open]);
 

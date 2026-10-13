@@ -34,6 +34,21 @@ test.describe('previews', () => {
     expect(page.url()).toContain('chrome-extension://');
   });
 
+  test('keep showing the page while it is still loading', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/slow-load') });
+    // The page has painted, but its load event is still waiting for an image.
+    await expect.poll(() => previewWidths(page, '/slow-load')).toEqual([375, 768, 1366]);
+    const badges = page.getByTestId('frame-loading');
+    await expect(badges.first()).toBeVisible();
+    const frame = previewFrames(page, '/slow-load')[0]!;
+    await expect(frame.locator('h1')).toHaveText('Slow page');
+    // The badge is small and in a corner; it doesn't cover the preview.
+    const badge = (await badges.first().boundingBox())!;
+    const card = (await page.getByTestId('preview-frame').first().boundingBox())!;
+    expect(badge.width * badge.height).toBeLessThan((card.width * card.height) / 10);
+    await expect(badges).toHaveCount(0, { timeout: 10_000 });
+  });
+
   test('reload a single preview', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/counter') });
     await expect.poll(() => previewFrames(page, '/counter').length).toBe(3);
@@ -56,6 +71,15 @@ test.describe('previews', () => {
 });
 
 test.describe('address bar', () => {
+  test('explains why addresses with credentials cannot be previewed', async ({ openViewer }) => {
+    const page = await openViewer();
+    const input = page.getByRole('textbox', { name: 'Website address' });
+    await input.fill('https://admin:secret@example.com');
+    await input.press('Enter');
+    await expect(page.getByRole('alert')).toContainText('username or password');
+    await expect(page.getByTestId('preview-frame')).toHaveCount(0);
+  });
+
   test('rejects invalid addresses with a helpful message', async ({ openViewer }) => {
     const page = await openViewer();
     const input = page.getByRole('textbox', { name: 'Website address' });
@@ -204,6 +228,37 @@ test.describe('groups', () => {
 });
 
 test.describe('settings', () => {
+  test('two workspace tabs stay in sync instead of overwriting each other', async ({
+    context,
+    openViewer,
+    viewerUrl,
+  }) => {
+    const first = await openViewer();
+    const second = await context.newPage();
+    await second.goto(viewerUrl());
+    await second.locator('html[data-ready]').waitFor({ state: 'attached' });
+
+    await first.getByRole('radio', { name: 'Row' }).click();
+    await expect(second.getByRole('radio', { name: 'Row' })).toHaveAttribute('aria-checked', 'true');
+
+    await second.keyboard.press('a');
+    await second.getByTestId('preset-desktop-fhd').click();
+    await expect(first.getByTestId('viewport-card')).toHaveCount(4);
+    await expect(first.getByRole('radio', { name: 'Row' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  test('undo of a removal keeps changes made afterwards', async ({ openViewer }) => {
+    const page = await openViewer();
+    await card(page, 'Tablet').getByRole('button', { name: 'Remove Tablet' }).click();
+    await card(page, 'Laptop').getByRole('button', { name: 'Rename Laptop' }).click();
+    await page.getByRole('textbox', { name: 'Viewport name' }).fill('Laptop renamed');
+    await page.keyboard.press('Enter');
+    await page.getByRole('button', { name: 'Undo' }).click();
+    await expect(page.getByTestId('viewport-card')).toHaveCount(3);
+    await expect(card(page, 'Laptop renamed')).toBeVisible();
+    await expect(page.getByTestId('viewport-card').nth(1)).toHaveAttribute('aria-label', /^Tablet/);
+  });
+
   test('persist across reloads', async ({ openViewer }) => {
     const page = await openViewer();
     await page.keyboard.press('a');

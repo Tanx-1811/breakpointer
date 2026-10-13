@@ -42,6 +42,14 @@ export function deleteGroup(groups: ViewportGroup[], id: string): ViewportGroup[
   return groups.filter((group) => group.id !== id);
 }
 
+/** Puts a deleted group back at its old position without touching other groups. */
+export function restoreGroup(groups: ViewportGroup[], group: ViewportGroup, index: number): ViewportGroup[] {
+  if (groups.some((item) => item.id === group.id) || !canSaveGroup(groups)) return groups;
+  const next = [...groups];
+  next.splice(Math.min(Math.max(0, index), next.length), 0, group);
+  return next;
+}
+
 /** Resolves a built-in group into templates with names in the current language. */
 export function builtInTemplates(group: BuiltInGroup, t: Translate): ViewportTemplate[] {
   return group.viewports.map(({ preset, label, width, height, zoom }) => ({

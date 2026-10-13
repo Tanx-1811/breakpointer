@@ -80,6 +80,18 @@ export function removeViewport(list: ViewportConfig[], id: string): ViewportConf
   return list.filter((vp) => vp.id !== id);
 }
 
+/**
+ * Puts a removed viewport back at (or near) its old position, leaving every
+ * other change made since then intact. No-op if it is already there or the
+ * list is full.
+ */
+export function restoreViewport(list: ViewportConfig[], viewport: ViewportConfig, index: number): ViewportConfig[] {
+  if (list.some((vp) => vp.id === viewport.id) || !canAddViewport(list)) return list;
+  const next = [...list];
+  next.splice(Math.min(Math.max(0, index), next.length), 0, viewport);
+  return next;
+}
+
 export type ViewportPatch = Partial<Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom' | 'hidden'>>;
 
 export function updateViewport(list: ViewportConfig[], id: string, patch: ViewportPatch): ViewportConfig[] {

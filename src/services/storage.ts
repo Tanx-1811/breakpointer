@@ -184,6 +184,15 @@ export async function saveSettings(settings: BreakpointerSettings): Promise<void
   await chrome.storage.local.set({ [STORAGE_KEY]: settings });
 }
 
+/** Calls back with the raw stored value whenever settings change in storage (e.g. from another tab). */
+export function onStoredSettingsChanged(callback: (raw: unknown) => void): () => void {
+  const listener = (changes: Record<string, chrome.storage.StorageChange>, area: string) => {
+    if (area === 'local' && STORAGE_KEY in changes) callback(changes[STORAGE_KEY]?.newValue);
+  };
+  chrome.storage.onChanged.addListener(listener);
+  return () => chrome.storage.onChanged.removeListener(listener);
+}
+
 /* ---------- Export / import ---------- */
 
 const EXPORT_APP = 'Breakpointer';
@@ -208,6 +217,15 @@ export function createSettingsExport(settings: BreakpointerSettings, now = new D
  * browsing preferences (recent addresses) are kept. Returns null if the data
  * isn't a Breakpointer export.
  */
+/** Parses the text of an exported file (tolerating a byte order mark); null if it isn't one. */
+export function parseSettingsFile(text: string, current: BreakpointerSettings): BreakpointerSettings | null {
+  try {
+    return parseSettingsImport(JSON.parse(text.replace(/^\uFEFF/, '')), current);
+  } catch {
+    return null;
+  }
+}
+
 export function parseSettingsImport(raw: unknown, current: BreakpointerSettings): BreakpointerSettings | null {
   if (!isRecord(raw) || raw.app !== EXPORT_APP || raw.kind !== EXPORT_KIND || !isRecord(raw.settings)) return null;
   const imported = parseSettings({ ...raw.settings, rememberRecent: false });

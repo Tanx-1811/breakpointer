@@ -8,13 +8,14 @@ import type {
   BreakpointerSettings,
   WorkspaceLayout,
 } from '../types';
-import { deleteGroup, renameGroup, replaceGroupViewports, saveGroup } from './groups';
+import { deleteGroup, renameGroup, replaceGroupViewports, restoreGroup, saveGroup } from './groups';
 import {
   addViewport,
   duplicateViewport,
   moveViewport,
   moveViewportTo,
   removeViewport,
+  restoreViewport,
   rotateViewport,
   setZoomForAll,
   showAll,
@@ -36,6 +37,7 @@ export type SettingsAction =
   | { type: 'addViewport'; viewport: NewViewport }
   | { type: 'duplicateViewport'; id: string }
   | { type: 'removeViewport'; id: string }
+  | { type: 'restoreViewport'; viewport: ViewportConfig; index: number }
   | { type: 'updateViewport'; id: string; patch: ViewportPatch }
   | { type: 'rotateViewport'; id: string }
   | { type: 'moveViewport'; id: string; delta: -1 | 1 }
@@ -47,7 +49,7 @@ export type SettingsAction =
   | { type: 'renameGroup'; id: string; name: string }
   | { type: 'updateGroupViewports'; id: string }
   | { type: 'deleteGroup'; id: string }
-  | { type: 'replaceGroups'; groups: ViewportGroup[] }
+  | { type: 'restoreGroup'; group: ViewportGroup; index: number }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
 
 export function settingsReducer(state: BreakpointerSettings, action: SettingsAction): BreakpointerSettings {
@@ -84,6 +86,8 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, viewports: duplicateViewport(state.viewports, action.id) };
     case 'removeViewport':
       return { ...state, viewports: removeViewport(state.viewports, action.id) };
+    case 'restoreViewport':
+      return { ...state, viewports: restoreViewport(state.viewports, action.viewport, action.index) };
     case 'updateViewport':
       return { ...state, viewports: updateViewport(state.viewports, action.id, action.patch) };
     case 'rotateViewport':
@@ -106,8 +110,8 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, groups: replaceGroupViewports(state.groups, action.id, state.viewports) };
     case 'deleteGroup':
       return { ...state, groups: deleteGroup(state.groups, action.id) };
-    case 'replaceGroups':
-      return { ...state, groups: action.groups };
+    case 'restoreGroup':
+      return { ...state, groups: restoreGroup(state.groups, action.group, action.index) };
     case 'replaceSettings':
       return action.settings;
   }

@@ -1,4 +1,4 @@
-import { useId, type Ref } from 'react';
+import { useId, useRef, type Ref } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import { Button } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
@@ -18,6 +18,7 @@ export function AddressBar({ value, error, recentUrls, secure, inputRef, onChang
   const { t } = useI18n();
   const errorId = useId();
   const listId = useId();
+  const selectOnFocus = useRef(false);
 
   return (
     <form
@@ -43,7 +44,18 @@ export function AddressBar({ value, error, recentUrls, secure, inputRef, onChang
           aria-invalid={error ? true : undefined}
           aria-describedby={error ? errorId : undefined}
           onChange={(event) => onChange(event.target.value)}
-          onFocus={(event) => event.target.select()}
+          onFocus={(event) => {
+            event.target.select();
+            selectOnFocus.current = true;
+          }}
+          onMouseUp={(event) => {
+            // Keep the selection made on focus instead of letting the click place the caret.
+            if (selectOnFocus.current) event.preventDefault();
+            selectOnFocus.current = false;
+          }}
+          onBlur={() => {
+            selectOnFocus.current = false;
+          }}
           data-testid="address-input"
         />
         <kbd className={styles.kbd} aria-hidden="true">

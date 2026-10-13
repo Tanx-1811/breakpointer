@@ -45,6 +45,9 @@ const routes: Record<string, Route | (() => Route)> = {
   '/responsive': { body: page('Responsive page') },
   // Each load gets a new number, so tests can tell whether a frame reloaded.
   '/counter': () => ({ body: page(`Load ${++counter}`) }),
+  // Paints right away, but its load event waits ~4 s for an image (like ad-heavy sites).
+  // Each load gets its own image URL so Chrome doesn't queue identical requests.
+  '/slow-load': () => ({ body: page('Slow page', `<img src="/hang?n=${++counter}" alt="" width="1" height="1">`) }),
   '/xfo-deny': { headers: { 'X-Frame-Options': 'DENY' }, body: page('XFO deny page') },
   '/csp-frame-ancestors': {
     headers: { 'Content-Security-Policy': "frame-ancestors 'none'" },
@@ -60,6 +63,10 @@ export type TestServer = { origin: string; url: (path: string) => string; close:
 export async function startTestServer(): Promise<TestServer> {
   const server: Server = createServer((req, res) => {
     const path = new URL(req.url ?? '/', 'http://localhost').pathname;
+    if (path === '/hang') {
+      setTimeout(() => res.writeHead(204).end(), 4000);
+      return;
+    }
     const entry = routes[path];
     const route = typeof entry === 'function' ? entry() : entry;
     if (!route) {

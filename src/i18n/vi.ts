@@ -6,6 +6,7 @@ export const vi: Record<MessageKey, string> = {
   'common.cancel': 'Hủy',
   'common.save': 'Lưu',
   'common.undo': 'Hoàn tác',
+  'common.reload': 'Tải lại',
   'common.dismiss': 'Ẩn thông báo',
   'common.viewports': '{count} viewport',
   'common.viewport': '1 viewport',
@@ -30,6 +31,9 @@ export const vi: Record<MessageKey, string> = {
   'url.error.empty': 'Hãy nhập địa chỉ trang web, ví dụ example.com.',
   'url.error.unsupported': 'Chỉ xem trước được trang http:// và https://.',
   'url.error.invalid': 'Địa chỉ này có vẻ không hợp lệ. Hãy thử dạng example.com.',
+
+  'url.error.credentials':
+    'Không xem trước được địa chỉ có tên đăng nhập hoặc mật khẩu (user:pass@). Hãy bỏ phần đó rồi thử lại.',
 
   'toolbar.groups': 'Nhóm',
   'toolbar.addViewport': 'Thêm viewport',
@@ -80,6 +84,7 @@ export const vi: Record<MessageKey, string> = {
   'card.placeholder': 'Nhập địa chỉ để xem trước',
   'frame.title': 'Bản xem trước {name}, {width} × {height}',
   'frame.loading': 'Đang tải…',
+  'frame.slowShort': 'Vẫn đang tải…',
   'frame.slow': 'Vẫn đang tải… Nếu không hiện gì, có thể trang chặn xem trước.',
 
   'add.title': 'Thêm viewport',

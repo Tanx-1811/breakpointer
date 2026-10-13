@@ -22,22 +22,17 @@ import type { MessageKey } from '../i18n/en';
 import { resolveLanguage } from '../i18n/translate';
 import type { PreviewAdapter } from '../services/preview-adapter';
 import { canCapture, captureElement, requestCapturePermission } from '../services/screenshot';
-import { createSettingsExport, defaultViewports, parseSettingsImport } from '../services/storage';
+import { createSettingsExport, defaultViewports, parseSettingsFile } from '../services/storage';
 import { fitZoomForAll } from '../state/fit';
 import { createGroup, findGroupTemplates } from '../state/groups';
 import type { SettingsAction } from '../state/settings-reducer';
 import { canAddViewport, fromTemplates, setZoomForAll, stepZoom } from '../state/viewports';
 import type { ThemePreference, ViewportConfig, BreakpointerSettings } from '../types';
 import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
+import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { displayHost, parsePreviewUrl, type UrlParseError } from '../utils/url';
 import { TopBar } from './TopBar';
 import styles from './Viewer.module.css';
-
-const URL_ERRORS: Record<UrlParseError, MessageKey> = {
-  empty: 'url.error.empty',
-  'unsupported-scheme': 'url.error.unsupported',
-  invalid: 'url.error.invalid',
-};
 
 const THEME_CYCLE: ThemePreference[] = ['system', 'light', 'dark'];
 const WORKSPACE_GAP = 20;
@@ -92,7 +87,9 @@ function Workspace({
   const toast = useToast();
 
   const [address, setAddress] = useState(initialUrl?.href ?? initialInput);
-  const [addressError, setAddressError] = useState<MessageKey | null>(initialError ? URL_ERRORS[initialError] : null);
+  const [addressError, setAddressError] = useState<MessageKey | null>(
+    initialError ? URL_ERROR_KEYS[initialError] : null,
+  );
   const [currentUrl, setCurrentUrl] = useState<URL | null>(initialUrl);
   const [probeRun, setProbeRun] = useState(0);
   const [probeResult, setProbeResult] = useState<{ key: string; kind: ProbeState } | null>(null);
@@ -118,7 +115,7 @@ function Workspace({
     (input: string) => {
       const result = parsePreviewUrl(input);
       if (!result.ok) {
-        setAddressError(URL_ERRORS[result.error]);
+        setAddressError(URL_ERROR_KEYS[result.error]);
         addressRef.current?.focus();
         return;
       }
@@ -185,9 +182,10 @@ function Workspace({
   /* ---------- Viewport actions ---------- */
 
   const removeViewport = (vp: ViewportConfig) => {
-    const previous = viewports;
+    const index = viewports.findIndex((item) => item.id === vp.id);
     dispatch({ type: 'removeViewport', id: vp.id });
-    withUndo(t('toast.removed', { name: vp.name }), () => dispatch({ type: 'replaceViewports', viewports: previous }));
+    // Undo puts back only this viewport, keeping anything changed since.
+    withUndo(t('toast.removed', { name: vp.name }), () => dispatch({ type: 'restoreViewport', viewport: vp, index }));
   };
 
   const moveVisible = (vp: ViewportConfig, delta: -1 | 1) => {
@@ -306,10 +304,15 @@ function Workspace({
       toast({ message: t('access.denied'), tone: 'error' });
       return;
     }
-    setReloadAll((n) => n + 1);
-    // Let the dialog close and the previews reload before capturing.
-    await new Promise((resolve) => setTimeout(resolve, 1200));
+    // Let the dialog close, then capture what is on screen right now.
+    await new Promise((resolve) => setTimeout(resolve, 150));
     await pending?.();
+    // All-sites access also lets sites that refused to load in a frame appear.
+    toast({
+      message: t('access.grantedAll'),
+      tone: 'info',
+      action: { label: t('common.reload'), onAction: () => setReloadAll((n) => n + 1) },
+    });
   };
 
   /* ---------- Settings data ---------- */
@@ -321,7 +324,7 @@ function Workspace({
 
   const importSettings = async (file: File) => {
     try {
-      const imported = parseSettingsImport(JSON.parse(await file.text()), settings);
+      const imported = parseSettingsFile(await file.text(), settings);
       if (!imported) throw new Error('Not a Breakpointer export');
       const previous = settings;
       dispatch({ type: 'replaceSettings', settings: imported });
@@ -566,13 +569,11 @@ function Workspace({
           if (group) toast({ message: t('groups.updated', { name: group.name }), tone: 'success' });
         }}
         onDelete={(id) => {
-          const group = settings.groups.find((item) => item.id === id);
-          const previous = settings.groups;
+          const index = settings.groups.findIndex((item) => item.id === id);
+          const group = settings.groups[index];
           dispatch({ type: 'deleteGroup', id });
           if (group)
-            withUndo(t('groups.deleted', { name: group.name }), () =>
-              dispatch({ type: 'replaceGroups', groups: previous }),
-            );
+            withUndo(t('groups.deleted', { name: group.name }), () => dispatch({ type: 'restoreGroup', group, index }));
         }}
         onClose={() => setDialog(null)}
       />

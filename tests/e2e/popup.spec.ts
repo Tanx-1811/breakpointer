@@ -1,9 +1,30 @@
+import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
+
+/** The workspace tab showing `predicate`, whether a new tab was opened or an existing one reused. */
+async function workspaceTab(context: BrowserContext, predicate: (url: URL) => boolean): Promise<Page> {
+  let found: Page | undefined;
+  await expect
+    .poll(() => {
+      found = context.pages().find((page) => {
+        const url = new URL(page.url());
+        return url.pathname.endsWith('/viewer/viewer.html') && predicate(url);
+      });
+      return Boolean(found);
+    })
+    .toBe(true);
+  return found!;
+}
+
+async function openPopup(context: BrowserContext, extensionId: string): Promise<Page> {
+  const popup = await context.newPage();
+  await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+  return popup;
+}
 
 test.describe('popup', () => {
   test('opens a valid address in the workspace', async ({ context, extensionId, server }) => {
-    const popup = await context.newPage();
-    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    const popup = await openPopup(context, extensionId);
     // Opened as a tab, the "current tab" is the popup itself, which can't be previewed.
     await expect(popup.getByText('This page can’t be previewed')).toBeVisible();
 
@@ -12,29 +33,47 @@ test.describe('popup', () => {
     await input.press('Enter');
     await expect(popup.getByRole('alert')).toHaveText('Only http:// and https:// pages can be previewed.');
 
+    await input.fill('https://user:pass@example.com');
+    await input.press('Enter');
+    await expect(popup.getByRole('alert')).toContainText('username or password');
+
     await input.fill(server.url('/demo'));
-    const viewer = context.waitForEvent('page');
     const closed = popup.waitForEvent('close');
     // The popup closes itself once the workspace opens, so don't wait on the key press.
     await input.press('Enter').catch(() => {});
-    const page = await viewer;
     await closed;
-    await page.waitForURL(/viewer\.html/);
-    expect(new URL(page.url()).searchParams.get('url')).toBe(server.url('/demo'));
+    const page = await workspaceTab(context, (url) => url.searchParams.get('url') === server.url('/demo'));
     await expect(page.getByTestId('preview-frame')).toHaveCount(3);
   });
 
+  test('reuses an open workspace tab instead of piling up new ones', async ({
+    context,
+    extensionId,
+    server,
+    openViewer,
+  }) => {
+    await openViewer({ url: server.url('/responsive') });
+    const countWorkspaces = () => context.pages().filter((page) => page.url().includes('/viewer/viewer.html')).length;
+    const before = countWorkspaces();
+
+    const popup = await openPopup(context, extensionId);
+    const input = popup.getByRole('textbox', { name: 'Preview another address' });
+    await input.fill(server.url('/demo'));
+    const closed = popup.waitForEvent('close');
+    await input.press('Enter').catch(() => {});
+    await closed;
+    await workspaceTab(context, (url) => url.searchParams.get('url') === server.url('/demo'));
+    expect(countWorkspaces()).toBe(before);
+  });
+
   test('opens the workspace with a chosen group', async ({ context, extensionId }) => {
-    const popup = await context.newPage();
-    await popup.goto(`chrome-extension://${extensionId}/popup/popup.html`);
+    const popup = await openPopup(context, extensionId);
     await popup.getByRole('combobox', { name: 'Viewports' }).selectOption({ label: 'Mobile QA (5)' });
-    const viewer = context.waitForEvent('page');
     await popup
       .getByRole('button', { name: 'Open workspace' })
       .click()
       .catch(() => {});
-    const page = await viewer;
+    const page = await workspaceTab(context, (url) => !url.searchParams.has('group'));
     await expect(page.getByTestId('viewport-card')).toHaveCount(5);
-    expect(new URL(page.url()).searchParams.has('group')).toBe(false);
   });
 });

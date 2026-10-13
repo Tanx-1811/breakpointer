@@ -7,16 +7,11 @@ import { resolveLanguage } from '../i18n/translate';
 import { openViewer } from '../shared/viewer-url';
 import { builtInGroupName } from '../state/groups';
 import type { BreakpointerSettings } from '../types';
-import { displayHost, parsePreviewUrl, type UrlParseError } from '../utils/url';
+import { URL_ERROR_KEYS } from '../i18n/url-errors';
+import { displayHost, parsePreviewUrl } from '../utils/url';
 import { Button } from '../components/Button/Button';
 import { Icon, Logo } from '../components/Icon/Icon';
 import styles from './Popup.module.css';
-
-const URL_ERRORS: Record<UrlParseError, MessageKey> = {
-  empty: 'url.error.empty',
-  'unsupported-scheme': 'url.error.unsupported',
-  invalid: 'url.error.invalid',
-};
 
 type Props = {
   settings: BreakpointerSettings;
@@ -51,7 +46,7 @@ function Popup({ settings, tabUrl, shortcut }: Props) {
   const submit = () => {
     const result = parsePreviewUrl(address);
     if (!result.ok) {
-      setError(URL_ERRORS[result.error]);
+      setError(URL_ERROR_KEYS[result.error]);
       return;
     }
     void open(result.url.href);
