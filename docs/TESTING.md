@@ -35,6 +35,9 @@ Run on a clean Chrome profile with the packaged build (`npm run package`, then l
 | 12  | Shortcuts                     | `Alt+Shift+V`, `Alt+Shift+P`, `?` in the workspace | Popup opens; current page previews; help opens                                                           |
 | 13  | Language                      | Settings → Tiếng Việt                              | Entire UI in Vietnamese                                                                                  |
 | 14  | Persistence                   | change layout, close and reopen                    | Same workspace                                                                                           |
+| 15  | Two workspace tabs            | change something in one                            | The other follows; nothing is lost                                                                       |
+| 16  | Link inside a preview         | click a link in one preview                        | Only that preview navigates and shows "Navigated away · Back"                                            |
+| 17  | Vietnamese input method       | switch the keyboard to Telex/VNI, press R, F, ?    | Shortcuts still work                                                                                     |
 
 ## Release checklist
 

@@ -49,6 +49,7 @@ export function HelpDialog({ open, onClose, commandShortcuts }: Props) {
               </div>
             ))}
           </dl>
+          <p className={styles.note}>{t('help.shortcutsNote')}</p>
         </section>
         <section aria-labelledby="help-global">
           <h3 id="help-global" className={styles.heading}>

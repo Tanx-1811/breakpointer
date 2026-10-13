@@ -91,3 +91,23 @@ describe('importing settings files', () => {
     expect(parseSettingsFile('{"app":"Other"}', current)).toBeNull();
   });
 });
+
+describe('group names and older exports', () => {
+  it('keeps group names unique', async () => {
+    const { saveGroup, renameGroup, uniqueGroupName } = await import('../../src/state/groups');
+    const vp = createViewport({ name: 'A', width: 375, height: 667 });
+    let groups = saveGroup([], createGroup('Checkout', [vp]));
+    groups = saveGroup(groups, createGroup('checkout', [vp]));
+    groups = saveGroup(groups, createGroup('Checkout', [vp]));
+    expect(groups.map((group) => group.name)).toEqual(['Checkout', 'checkout (2)', 'Checkout (3)']);
+    expect(renameGroup(groups, groups[0]!.id, 'Checkout')[0]!.name).toBe('Checkout');
+    expect(renameGroup(groups, groups[1]!.id, 'Checkout (3)')[1]!.name).toBe('Checkout (3) (2)');
+    expect(uniqueGroupName('New', groups)).toBe('New');
+  });
+
+  it('accepts files exported under the previous name', () => {
+    const current = defaultSettings();
+    const legacy = { ...createSettingsExport({ ...current, layout: 'row' }), app: 'ViewportLab' };
+    expect(parseSettingsFile(JSON.stringify(legacy), current)?.layout).toBe('row');
+  });
+});

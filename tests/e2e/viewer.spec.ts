@@ -351,6 +351,8 @@ test.describe('settings', () => {
 
   test('recover from malformed stored data', async ({ openViewer }) => {
     const page = await openViewer();
+    // The first run fits the viewports and saves; let that land before overwriting storage.
+    await expect.poll(async () => Boolean(await storedSettings(page))).toBe(true);
     await page.evaluate(() =>
       chrome.storage.local.set({
         'breakpointer.settings': {
@@ -458,7 +460,7 @@ test.describe('tools', () => {
     const download = page.waitForEvent('download');
     await card(page, 'Phone').getByRole('button', { name: 'Screenshot of Phone' }).click();
     const file = await download;
-    expect(file.suggestedFilename()).toMatch(/^breakpointer_127.0.0.1_phone_375x667_\d{8}-\d{6}\.png$/);
+    expect(file.suggestedFilename()).toMatch(/^breakpointer_127.0.0.1_phone_375x667_\d+pct_\d{8}-\d{6}\.png$/);
     await expect(page.getByText(/Screenshot saved as/)).toBeVisible();
   });
 

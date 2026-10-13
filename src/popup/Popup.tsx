@@ -19,6 +19,8 @@ type Props = {
   tabUrl: URL | null;
   /** The tab is a page Chrome never lets extensions show (Chrome Web Store). */
   restricted?: boolean;
+  /** The popup was opened on the Breakpointer workspace itself. */
+  inWorkspace?: boolean;
   shortcut: string;
 };
 
@@ -31,7 +33,7 @@ export function PopupApp(props: Props) {
   );
 }
 
-function Popup({ settings, tabUrl, restricted, shortcut }: Props) {
+function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
   const { t } = useI18n();
   const [address, setAddress] = useState('');
   const [error, setError] = useState<MessageKey | null>(null);
@@ -92,7 +94,13 @@ function Popup({ settings, tabUrl, restricted, shortcut }: Props) {
             </Button>
           </>
         ) : (
-          <p className={styles.muted}>{restricted ? t('popup.cannotPreviewStore') : t('popup.cannotPreview')}</p>
+          <p className={styles.muted}>
+            {inWorkspace
+              ? t('popup.inWorkspace')
+              : restricted
+                ? t('popup.cannotPreviewStore')
+                : t('popup.cannotPreview')}
+          </p>
         )}
       </section>
 

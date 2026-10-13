@@ -188,6 +188,8 @@ export const en = {
   'access.none': 'No sites allowed yet.',
   'access.revoke': 'Remove access to {pattern}',
   'access.noUrl': 'Enter an address to manage access for that site.',
+  'access.revokeFailed':
+    'Couldn’t remove that access. Access given at install can only be changed in chrome://extensions.',
   'access.notice':
     'If a preview stays blank or says “refused to connect”, {host} doesn’t allow being shown inside other pages.',
   'access.noticeAllow': 'Allow on {host}',
@@ -269,6 +271,7 @@ export const en = {
 
   'help.title': 'Help & keyboard shortcuts',
   'help.shortcuts': 'In the workspace',
+  'help.shortcutsNote': 'Shortcuts pause while a preview has focus. Click the workspace background to use them again.',
   'help.global': 'Anywhere in Chrome',
   'help.focusAddress': 'Focus the address bar',
   'help.reloadAll': 'Reload all previews',
@@ -301,6 +304,7 @@ export const en = {
   'popup.previewThis': 'Preview this page',
   'popup.cannotPreview': 'This page can’t be previewed. Only http:// and https:// pages are supported.',
   'popup.cannotPreviewStore': 'Chrome doesn’t let extensions show the Chrome Web Store.',
+  'popup.inWorkspace': 'You’re in the Breakpointer workspace — type an address in its address bar.',
   'popup.openWith': 'Viewports',
   'popup.openWithCurrent': 'Current workspace',
   'popup.another': 'Preview another address',

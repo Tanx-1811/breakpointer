@@ -27,7 +27,7 @@ import { canCapture, captureElement, requestCapturePermission } from '../service
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
 import { createSettingsExport, defaultViewports, parseSettingsFile } from '../services/storage';
 import { fitZoomForAll } from '../state/fit';
-import { createGroup, findGroupTemplates } from '../state/groups';
+import { createGroup, findGroupTemplates, uniqueGroupName } from '../state/groups';
 import type { SettingsAction } from '../state/settings-reducer';
 import { canAddViewport, fromTemplates, setZoomForAll, stepZoom } from '../state/viewports';
 import type { ViewportConfig, BreakpointerSettings } from '../types';
@@ -114,6 +114,9 @@ function Workspace({
   const siteAccess = useSiteAccess(currentUrl);
   const { viewports } = settings;
   const visible = useMemo(() => viewports.filter((vp) => !vp.hidden), [viewports]);
+  // The zoom all visible viewports share (e.g. after Fit), if any.
+  const commonZoom =
+    visible.length > 0 && visible.every((vp) => vp.zoom === visible[0]!.zoom) ? visible[0]!.zoom : null;
   const host = currentUrl ? displayHost(currentUrl) : null;
 
   /* ---------- Navigation ---------- */
@@ -207,7 +210,16 @@ function Workspace({
 
   const removeViewport = (vp: ViewportConfig) => {
     const index = viewports.findIndex((item) => item.id === vp.id);
+    const position = visible.findIndex((item) => item.id === vp.id);
+    const neighbour = visible[position + 1] ?? visible[position - 1];
     dispatch({ type: 'removeViewport', id: vp.id });
+    // The focused Remove button disappears with its card: keep focus nearby.
+    requestAnimationFrame(() => {
+      const target = neighbour
+        ? document.querySelector<HTMLElement>(`[data-viewport-id="${neighbour.id}"] [aria-haspopup="menu"]`)
+        : document.querySelector<HTMLElement>('[data-add-viewport]');
+      target?.focus();
+    });
     // Undo puts back only this viewport, keeping anything changed since.
     withUndo(t('toast.removed', { name: vp.name }), () => dispatch({ type: 'restoreViewport', viewport: vp, index }));
   };
@@ -254,18 +266,20 @@ function Workspace({
   }, [computeFitZoom, dispatch, viewports]);
 
   // First run: once a page is shown, fit the default viewports to this screen.
-  const autoFitPending = useRef(autoFit !== 'none');
+  const fitOnStart = useRef(autoFit !== 'none');
+  // First run without a page: fit again once a page replaces the welcome panel.
+  const fitAfterFirstPage = useRef(autoFit === 'afterFirstPage' && !initialUrl);
   useEffect(() => {
-    if (!autoFitPending.current) return;
-    if (autoFit === 'afterFirstPage' && !currentUrl) return;
+    if (!fitOnStart.current && !(fitAfterFirstPage.current && currentUrl)) return;
     // Wait until the site-access tip (which takes space) has been decided.
     if (currentUrl && siteAccess.site === null) return;
     const frame = requestAnimationFrame(() => {
-      autoFitPending.current = false;
+      fitOnStart.current = false;
+      if (currentUrl) fitAfterFirstPage.current = false;
       fit();
     });
     return () => cancelAnimationFrame(frame);
-  }, [autoFit, currentUrl, fit, siteAccess.site]);
+  }, [currentUrl, fit, siteAccess.site]);
 
   const applyGroup = (id: string) => {
     const group = findGroupTemplates(id, settings.groups, t);
@@ -279,9 +293,28 @@ function Workspace({
 
   /* ---------- Site access ---------- */
 
+  // Only one Chrome permission prompt at a time; buttons are disabled meanwhile.
+  const [requesting, setRequesting] = useState(false);
+  const requestingRef = useRef(false);
+  /** Runs `request` (called synchronously, so it keeps the click's user gesture); false if one is already open. */
+  const withPrompt = async (request: () => Promise<boolean>): Promise<boolean | null> => {
+    if (requestingRef.current) return null;
+    requestingRef.current = true;
+    setRequesting(true);
+    try {
+      return await request();
+    } catch {
+      return false;
+    } finally {
+      requestingRef.current = false;
+      setRequesting(false);
+    }
+  };
+
   const allowSite = async () => {
     if (!currentUrl) return;
-    const granted = await siteAccess.allowSite().catch(() => false);
+    const granted = await withPrompt(() => siteAccess.allowSite());
+    if (granted === null) return;
     if (granted) {
       toast({ message: t('access.granted', { host: displayHost(currentUrl) }), tone: 'success' });
       setReloadAll((n) => n + 1);
@@ -291,7 +324,8 @@ function Workspace({
   };
 
   const allowAllSites = async () => {
-    const granted = await siteAccess.allowAllSites().catch(() => false);
+    const granted = await withPrompt(() => siteAccess.allowAllSites());
+    if (granted === null) return;
     if (granted) {
       toast({ message: t('access.grantedAll'), tone: 'success' });
       setReloadAll((n) => n + 1);
@@ -326,7 +360,8 @@ function Workspace({
   };
 
   const allowCapture = async () => {
-    const granted = await requestCapturePermission();
+    const granted = await withPrompt(() => requestCapturePermission());
+    if (granted === null) return;
     setDialog(null);
     const pending = pendingCapture.current;
     pendingCapture.current = null;
@@ -392,6 +427,14 @@ function Workspace({
     help: () => setDialog('help'),
   });
 
+  // A page opened from the popup, context menu, command or keyword (?url=) counts as a visit.
+  const recordedInitialVisit = useRef(false);
+  useEffect(() => {
+    if (recordedInitialVisit.current || !initialUrl) return;
+    recordedInitialVisit.current = true;
+    dispatch({ type: 'visitUrl', url: initialUrl.href });
+  }, [dispatch, initialUrl]);
+
   // Signals that the workspace is interactive (used by end-to-end tests).
   useEffect(() => {
     document.documentElement.dataset.ready = 'true';
@@ -435,7 +478,10 @@ function Workspace({
             onRotate={() => dispatch({ type: 'rotateViewport', id: vp.id })}
             onMove={(delta) => moveVisible(vp, delta)}
             onReload={() => setCardReloads((map) => ({ ...map, [vp.id]: (map[vp.id] ?? 0) + 1 }))}
-            onCapture={(stage) => void capture(stage, [vp.name, `${vp.width}x${vp.height}`])}
+            onCapture={(stage) =>
+              // The image is taken as shown on screen, so the name says at which zoom.
+              void capture(stage, [vp.name, `${vp.width}x${vp.height}`, `${Math.round(vp.zoom * 100)}pct`])
+            }
             onOpenInTab={() => src && void adapter.openInTab(src)}
             onOpenInWindow={async () => {
               if (!src) return;
@@ -566,6 +612,7 @@ function Workspace({
       {showNotice && host && currentUrl && (
         <EmbedNotice
           host={host}
+          busy={requesting}
           onAllow={() => void allowSite()}
           onOpenInTab={() => void adapter.openInTab(currentUrl.href)}
           onDismiss={() => {
@@ -587,8 +634,11 @@ function Workspace({
         open={dialog === 'add'}
         canAdd={canAddViewport(viewports)}
         onAdd={(viewport) => {
-          dispatch({ type: 'addViewport', viewport });
-          toast({ message: t('add.added', { name: viewport.name }), tone: 'success' });
+          dispatch({
+            type: 'addViewport',
+            viewport: commonZoom === null ? viewport : { ...viewport, zoom: commonZoom },
+          });
+          toast({ message: t('add.added', { name: viewport.name }), tone: 'success', key: 'added' });
           setDialog(null);
         }}
         onClose={() => setDialog(null)}
@@ -597,7 +647,8 @@ function Workspace({
         open={dialog === 'saveGroup'}
         viewportCount={viewports.length}
         groupCount={settings.groups.length}
-        onSave={(name) => {
+        onSave={(requested) => {
+          const name = uniqueGroupName(requested, settings.groups);
           dispatch({ type: 'saveGroup', group: createGroup(name, viewports) });
           toast({ message: t('groups.saved', { name }), tone: 'success' });
           setDialog(null);
@@ -630,13 +681,19 @@ function Workspace({
         siteAllowed={siteAccess.site}
         allSites={siteAccess.allSites}
         granted={siteAccess.granted}
+        busy={requesting}
         onAllowSite={() => void allowSite()}
         onAllowAll={() => void allowAllSites()}
-        onRevoke={(patterns) => void siteAccess.revoke(patterns)}
+        onRevoke={(patterns) =>
+          void siteAccess.revoke(patterns).then((removed) => {
+            if (!removed) toast({ message: t('access.revokeFailed'), tone: 'error' });
+          })
+        }
         onClose={() => setDialog(null)}
       />
       <CaptureDialog
         open={dialog === 'capture'}
+        busy={requesting}
         onAllow={() => void allowCapture()}
         onClose={() => {
           pendingCapture.current = null;

@@ -155,11 +155,16 @@ export function WorkspaceBar(props: Props) {
           <span className={styles.controlLabel}>{t('workspace.zoom')}</span>
           <select
             className={`field ${styles.zoomSelect}`}
-            value={commonZoom ?? 'mixed'}
+            value={visible.length === 0 ? 'none' : (commonZoom ?? 'mixed')}
             onChange={(event) => props.onZoomAll(Number(event.target.value))}
             disabled={visible.length === 0}
           >
-            {commonZoom === null && (
+            {visible.length === 0 && (
+              <option value="none" disabled>
+                —
+              </option>
+            )}
+            {visible.length > 0 && commonZoom === null && (
               <option value="mixed" disabled>
                 {t('workspace.zoomMixed')}
               </option>

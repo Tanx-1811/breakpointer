@@ -32,6 +32,13 @@
   font-weight: 600;
 }
 
+/* The title receives focus when the dialog opens; it is not a control. */
+.title:focus,
+.title:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
+
 .description {
   margin: 4px 0 0;
   color: var(--text-muted);

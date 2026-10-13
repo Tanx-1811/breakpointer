@@ -148,7 +148,7 @@ export function ViewportCard(props: Props) {
         </div>
         <div className={styles.row}>
           <div className={styles.title}>
-            <SizeFields width={width} height={height} onResize={props.onResize} />
+            <SizeFields key={`${width}x${height}`} width={width} height={height} onResize={props.onResize} />
             {breakpoint && (
               <span
                 className={styles.badge}

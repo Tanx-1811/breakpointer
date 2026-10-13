@@ -11,6 +11,8 @@ export type ToastOptions = {
   message: string;
   tone?: ToastTone;
   action?: { label: string; onAction: () => void };
+  /** A toast with the same key replaces the previous one instead of stacking. */
+  key?: string;
 };
 
 type ToastItem = ToastOptions & { id: number };
@@ -53,7 +55,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
 
   const show = useCallback((toast: ToastOptions) => {
     const id = nextId.current++;
-    setToasts((list) => [...list, { ...toast, id }].slice(-MAX_TOASTS));
+    setToasts((list) =>
+      [...list.filter((item) => !toast.key || item.key !== toast.key), { ...toast, id }].slice(-MAX_TOASTS),
+    );
   }, []);
 
   const value = useMemo(() => show, [show]);

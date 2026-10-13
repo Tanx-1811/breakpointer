@@ -43,6 +43,12 @@
   flex: none;
 }
 
+.note {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
 .tips {
   margin: 0;
   padding-left: 18px;

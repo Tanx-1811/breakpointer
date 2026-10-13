@@ -186,6 +186,7 @@ export const vi: Record<MessageKey, string> = {
   'access.none': 'Chưa cho phép trang nào.',
   'access.revoke': 'Gỡ quyền của {pattern}',
   'access.noUrl': 'Nhập một địa chỉ để quản lý quyền cho trang đó.',
+  'access.revokeFailed': 'Không gỡ được quyền này. Quyền cấp lúc cài đặt chỉ đổi được trong chrome://extensions.',
   'access.notice':
     'Nếu bản xem trước trống hoặc báo “refused to connect”, {host} không cho phép hiển thị bên trong trang khác.',
   'access.noticeAllow': 'Cho phép trên {host}',
@@ -267,6 +268,8 @@ export const vi: Record<MessageKey, string> = {
 
   'help.title': 'Trợ giúp & phím tắt',
   'help.shortcuts': 'Trong vùng làm việc',
+  'help.shortcutsNote':
+    'Phím tắt tạm dừng khi bạn đang thao tác trong một bản xem trước. Bấm vào nền vùng làm việc để dùng lại.',
   'help.global': 'Ở bất kỳ đâu trong Chrome',
   'help.focusAddress': 'Chuyển đến thanh địa chỉ',
   'help.reloadAll': 'Tải lại tất cả bản xem trước',
@@ -299,6 +302,7 @@ export const vi: Record<MessageKey, string> = {
   'popup.previewThis': 'Xem trước trang này',
   'popup.cannotPreview': 'Không xem trước được trang này. Chỉ hỗ trợ trang http:// và https://.',
   'popup.cannotPreviewStore': 'Chrome không cho tiện ích hiển thị Chrome Web Store.',
+  'popup.inWorkspace': 'Bạn đang ở vùng làm việc Breakpointer — hãy nhập địa chỉ vào thanh địa chỉ của nó.',
   'popup.openWith': 'Viewport',
   'popup.openWithCurrent': 'Vùng làm việc hiện tại',
   'popup.another': 'Xem trước địa chỉ khác',

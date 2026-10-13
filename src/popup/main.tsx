@@ -14,6 +14,7 @@ async function bootstrap() {
   ]);
   const href = toSafeHref(tabs[0]?.url);
   const tabUrl = href ? new URL(href) : null;
+  const inWorkspace = Boolean(tabs[0]?.url?.startsWith(chrome.runtime.getURL('viewer/')));
   const shortcut = commands.find((command) => command.name === '_execute_action')?.shortcut ?? '';
 
   createRoot(document.getElementById('root')!).render(
@@ -22,6 +23,7 @@ async function bootstrap() {
         settings={settings}
         tabUrl={tabUrl && !isRestrictedHost(tabUrl) ? tabUrl : null}
         restricted={Boolean(tabUrl && isRestrictedHost(tabUrl))}
+        inWorkspace={inWorkspace}
         shortcut={shortcut}
       />
     </StrictMode>,

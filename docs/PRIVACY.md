@@ -27,7 +27,9 @@ This data stays in your Chrome profile. It is removed when you uninstall the ext
 
 Previews are ordinary page loads made by your browser, the same as visiting the site in a tab. The websites you preview receive the requests your browser normally sends (including their own cookies). Breakpointer does not inject scripts into those pages and does not read their content.
 
-To check whether a site can be reached, Breakpointer may send one request to it with no cookies and without reading the response.
+For a site you have allowed, Breakpointer may send one request to check that it can be reached; it sends no cookies, reads nothing from the response and stops the download as soon as the server answers.
+
+When you dismiss the tip about sites that block previews, the site's host name is remembered in memory (Chrome's session storage) so the tip doesn't come back; it is forgotten when Chrome closes.
 
 ## Permissions
 

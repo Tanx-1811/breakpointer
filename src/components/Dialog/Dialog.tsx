@@ -31,7 +31,9 @@ export function Dialog({ open, title, description, onClose, children, width = 56
     if (!dialog) return;
     if (open && !dialog.open) {
       dialog.showModal();
-      dialog.querySelector<HTMLElement>('[data-autofocus]')?.focus();
+      // Start on the marked field, else on the title — not on the Close button,
+      // where Enter would close the dialog straight away.
+      (dialog.querySelector<HTMLElement>('[data-autofocus]') ?? dialog.querySelector<HTMLElement>('h2'))?.focus();
     }
     if (!open && dialog.open) dialog.close();
   }, [open]);
@@ -64,7 +66,7 @@ export function Dialog({ open, title, description, onClose, children, width = 56
         <div className={styles.panel}>
           <header className={styles.header}>
             <div>
-              <h2 id={titleId} className={styles.title}>
+              <h2 id={titleId} className={styles.title} tabIndex={-1}>
                 {title}
               </h2>
               {description && (

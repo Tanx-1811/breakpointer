@@ -13,6 +13,8 @@ type Props = {
   granted: string[];
   onAllowSite: () => void;
   onAllowAll: () => void;
+  /** A permission prompt is open. */
+  busy?: boolean;
   onRevoke: (patterns: string[]) => void;
   onClose: () => void;
 };
@@ -51,7 +53,7 @@ export function SiteAccessDialog(props: Props) {
               </span>
             </div>
             {!siteAllowed && (
-              <Button variant="primary" size="sm" onClick={onAllowSite}>
+              <Button variant="primary" size="sm" onClick={onAllowSite} disabled={props.busy}>
                 {t('access.allowSite', { host })}
               </Button>
             )}
@@ -72,7 +74,7 @@ export function SiteAccessDialog(props: Props) {
               {t('access.revokeAll')}
             </Button>
           ) : (
-            <Button size="sm" onClick={onAllowAll}>
+            <Button size="sm" onClick={onAllowAll} disabled={props.busy}>
               {t('access.allowAll')}
             </Button>
           )}

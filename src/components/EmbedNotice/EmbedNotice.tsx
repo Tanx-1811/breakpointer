@@ -9,6 +9,8 @@ type Props = {
   onOpenInTab: () => void;
   onDismiss: () => void;
   onNeverShow: () => void;
+  /** A permission prompt is open. */
+  busy?: boolean;
 };
 
 /**
@@ -16,14 +18,14 @@ type Props = {
  * embedding page when a frame was blocked, so this explains the likely cause
  * and offers both fixes up front.
  */
-export function EmbedNotice({ host, onAllow, onOpenInTab, onDismiss, onNeverShow }: Props) {
+export function EmbedNotice({ host, onAllow, onOpenInTab, onDismiss, onNeverShow, busy }: Props) {
   const { t } = useI18n();
   return (
     <div className={styles.notice} role="note" data-testid="embed-notice">
       <Icon name="shield" size={16} className={styles.icon} />
       <p className={styles.text}>{t('access.notice', { host })}</p>
       <div className={styles.actions}>
-        <Button size="sm" variant="primary" onClick={onAllow}>
+        <Button size="sm" variant="primary" onClick={onAllow} disabled={busy}>
           {t('access.noticeAllow', { host })}
         </Button>
         <Button size="sm" icon="external" onClick={onOpenInTab}>

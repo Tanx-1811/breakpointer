@@ -65,7 +65,18 @@ Notes from the spike:
 
 - The permission is `declarativeNetRequestWithHostAccess`: rules only act on hosts the user granted, so the rule is inert until they opt in. It has no install-time warning.
 - Session rules disappear when Chrome restarts. The viewer installs its rule before any frame loads and removes it on `pagehide`. The service worker also removes it when the tab closes, or when the tab finishes loading something other than the viewer (checked with `chrome.runtime.getContexts`).
-- Previews are sandboxed (`allow-scripts allow-same-origin allow-forms allow-popups …`, **no** `allow-top-navigation`), which defeats frame-busting scripts.
+- Previews are sandboxed (`allow-scripts allow-same-origin allow-forms allow-popups … allow-storage-access-by-user-activation`, **no** `allow-top-navigation`). Chrome already blocks cross-origin frames from navigating the top window without a user click; the sandbox also stops user-clicked `target=_top` links from replacing the workspace. Trade-off: a few sites log errors (e.g. assigning `document.domain`).
+- Site access is requested for the registrable domain (`*://*.example.com/*`, `*://*.dantri.com.vn/*` — a small list of multi-part suffixes in `utils/url.ts`), so redirects between subdomains stay covered.
+
+## Reachability check
+
+Without host access an extension page can't tell "down" from "up but restricted": a `no-cors` request also fails for sites that send `Cross-Origin-Resource-Policy` (x.com, stackoverflow.com). So `PreviewAdapter.probe` only runs with access to the site, using a CORS-exempt `GET` (any HTTP status = reachable; DNS/TLS/connection failure = unreachable; timeout = unknown), and the result only adds a banner — previews are never hidden, since each frame shows Chrome's own error page anyway.
+
+## Preview cards
+
+- Moving an `<iframe>` in the DOM makes the browser reload it, so cards keep a stable DOM order (`hooks/useStableDomOrder.ts`) and get their visual position from CSS `order`. After reordering, keyboard tab order follows the original order until the workspace reloads.
+- A second `load` event on a frame means the page navigated (e.g. a clicked link); the card shows "Navigated away · Back".
+- The loading indicator never covers the frame: real pages paint long before `load`.
 
 ## Modules
 

@@ -2,7 +2,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { previewWidths } from './helpers';
+import { previewWidths, storedSettings } from './helpers';
 
 /**
  * Generates the Chrome Web Store screenshots (1280×800) and README images from
@@ -31,6 +31,8 @@ async function seed(page: Page, viewerUrl: (p?: Record<string, string>) => strin
   await page.setViewportSize(SIZE);
   await page.goto(viewerUrl());
   await page.locator('html[data-ready]').waitFor({ state: 'attached' });
+  // The first run fits and saves the default workspace; let that land before seeding.
+  await expect.poll(async () => Boolean(await storedSettings(page))).toBe(true);
   await page.evaluate((value) => chrome.storage.local.set({ 'breakpointer.settings': value }), settings);
 }
 

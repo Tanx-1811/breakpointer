@@ -18,15 +18,26 @@ export function createGroup(name: string, viewports: ViewportConfig[]): Viewport
   return { id: createId(), name: normalizeGroupName(name), viewports: viewports.map(toTemplate) };
 }
 
+/** `name`, or `name (2)`, `name (3)`… if another group already uses it (case-insensitive). */
+export function uniqueGroupName(name: string, groups: ViewportGroup[], ignoreId?: string): string {
+  const taken = new Set(groups.filter((group) => group.id !== ignoreId).map((group) => group.name.toLowerCase()));
+  if (!taken.has(name.toLowerCase())) return name;
+  for (let n = 2; ; n++) {
+    const candidate = normalizeGroupName(`${name.slice(0, MAX_NAME_LENGTH - 5)} (${n})`);
+    if (!taken.has(candidate.toLowerCase())) return candidate;
+  }
+}
+
 export function saveGroup(groups: ViewportGroup[], group: ViewportGroup): ViewportGroup[] {
   if (!canSaveGroup(groups) || !group.name || group.viewports.length === 0) return groups;
-  return [...groups, group];
+  return [...groups, { ...group, name: uniqueGroupName(group.name, groups) }];
 }
 
 export function renameGroup(groups: ViewportGroup[], id: string, name: string): ViewportGroup[] {
   const value = normalizeGroupName(name);
   if (!value) return groups;
-  return groups.map((group) => (group.id === id ? { ...group, name: value } : group));
+  const unique = uniqueGroupName(value, groups, id);
+  return groups.map((group) => (group.id === id ? { ...group, name: unique } : group));
 }
 
 export function replaceGroupViewports(

@@ -122,6 +122,7 @@ export function TopBar(props: Props) {
         />
         <Button
           icon="plus"
+          data-add-viewport
           onClick={props.onAddViewport}
           disabled={!props.canAddViewport}
           title={`${t('toolbar.addViewport')} (A)`}

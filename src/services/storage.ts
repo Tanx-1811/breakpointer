@@ -196,6 +196,8 @@ export function onStoredSettingsChanged(callback: (raw: unknown) => void): () =>
 /* ---------- Export / import ---------- */
 
 const EXPORT_APP = 'Breakpointer';
+/** Exports made before the product was renamed are accepted too. */
+const IMPORTABLE_APPS: readonly unknown[] = [EXPORT_APP, 'ViewportLab'];
 const EXPORT_KIND = 'settings';
 
 export type SettingsExport = {
@@ -227,7 +229,9 @@ export function parseSettingsFile(text: string, current: BreakpointerSettings): 
 }
 
 export function parseSettingsImport(raw: unknown, current: BreakpointerSettings): BreakpointerSettings | null {
-  if (!isRecord(raw) || raw.app !== EXPORT_APP || raw.kind !== EXPORT_KIND || !isRecord(raw.settings)) return null;
+  if (!isRecord(raw) || !IMPORTABLE_APPS.includes(raw.app) || raw.kind !== EXPORT_KIND || !isRecord(raw.settings)) {
+    return null;
+  }
   const imported = parseSettings({ ...raw.settings, rememberRecent: false });
   const merged: BreakpointerSettings = {
     ...imported,
