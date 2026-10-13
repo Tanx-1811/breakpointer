@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="ViewportLab">
+  <title>ViewportLab</title>
+  <defs>
+    <linearGradient id="vl-mark" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="128" y2="128">
+      <stop offset="0" stop-color="#6366F1"/>
+      <stop offset="1" stop-color="#4338CA"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="url(#vl-mark)"/>
+  <g fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="20" y="30" width="70" height="48" rx="6"/>
+    <path d="M55 80v14M44 96h22"/>
+  </g>
+  <rect x="76" y="48" width="34" height="56" rx="7" fill="url(#vl-mark)" stroke="#FFFFFF" stroke-width="8"/>
+</svg>

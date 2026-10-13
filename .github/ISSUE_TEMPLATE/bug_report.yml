@@ -1,0 +1,23 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: site
+    attributes:
+      label: Site (optional)
+      description: The address you previewed, if you're comfortable sharing it. Never include private or signed-in URLs with tokens.
+  - type: input
+    id: versions
+    attributes:
+      label: ViewportLab and Chrome versions
+      placeholder: ViewportLab 0.1.0, Chrome 140 on macOS
+    validations:
+      required: true
