@@ -46,7 +46,9 @@ npm ci
 npm run build
 ```
 
-Then open `chrome://extensions`, enable **Developer mode**, click **Load unpacked** and choose the `dist/` folder. Requires Chrome 116 or later.
+Then open `chrome://extensions`, enable **Developer mode**, click **Load unpacked** and choose the **`dist` folder inside the project** (for example `~/Documents/GitHub/breakpointer/dist`), not the project folder itself — `manifest.json` only exists in `dist` after a build. On macOS, press ⌘⇧G in the folder picker to paste the path. Requires Chrome 116 or later.
+
+After pulling changes, run `npm run build` again and click the reload icon on the Breakpointer card in `chrome://extensions`.
 
 **Chrome Web Store:** coming soon (see the [release plan](docs/PLAN.md#6-release-plan-m3--store)).
 
@@ -139,7 +141,7 @@ No license has been chosen yet; all rights reserved by the author.
 
 **Tính năng chính:** xem song song tối đa 8 viewport · 15 kích thước có sẵn và kích thước tùy chỉnh · xoay, đổi kích thước, đổi tên, nhân bản, ẩn/hiện, sắp xếp, hoàn tác · "Vừa màn hình" · nhóm viewport (tự lưu hoặc 6 nhóm có sẵn) · nhãn breakpoint Tailwind/Bootstrap và thước đo · chụp ảnh · mở cửa sổ đúng kích thước · menu chuột phải, phím tắt, gõ `bpt` + dấu cách trên thanh địa chỉ · giao diện sáng/tối · **tiếng Việt và tiếng Anh** · không thu thập dữ liệu.
 
-**Cài đặt từ mã nguồn:** chạy `npm ci && npm run build`, mở `chrome://extensions`, bật **Chế độ dành cho nhà phát triển**, chọn **Tải tiện ích đã giải nén** và trỏ tới thư mục `dist/`.
+**Cài đặt từ mã nguồn:** chạy `npm ci && npm run build`, mở `chrome://extensions`, bật **Chế độ dành cho nhà phát triển**, chọn **Tải tiện ích đã giải nén** và trỏ tới **thư mục `dist` bên trong dự án** (ví dụ `~/Documents/GitHub/breakpointer/dist`), không phải thư mục dự án — `manifest.json` chỉ có trong `dist` sau khi build. Trên macOS, nhấn ⌘⇧G trong hộp chọn thư mục để dán đường dẫn. Khi cập nhật code, chạy lại `npm run build` rồi bấm nút tải lại trên thẻ Breakpointer trong `chrome://extensions`.
 
 **Cách dùng:** bấm nút Breakpointer (hoặc `Alt+Shift+V`) trên trang bất kỳ và chọn **Xem trước trang này**. Nếu bản xem trước trống hoặc báo "refused to connect", trang đó chặn hiển thị trong khung: bấm **Cho phép trên <trang>**, hoặc mở trong tab mới / cửa sổ đúng kích thước.
 
