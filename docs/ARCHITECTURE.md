@@ -27,7 +27,7 @@ The product must show one website at several viewport sizes at once, inside Chro
 
 ### Spike results
 
-Run against a local test server in Chromium with the extension loaded (`npm run test:e2e`):
+Run against a local test server in Chrome for Testing (Playwright's bundled browser) with the extension loaded (`npm run test:e2e`):
 
 | Page                   | Header                        | Without site access                                          | With site access          |
 | ---------------------- | ----------------------------- | ------------------------------------------------------------ | ------------------------- |
@@ -110,5 +110,5 @@ Data flows one way: `Viewer` owns the settings via `useReducer` (`state/settings
 ## Testing
 
 - Unit (Vitest + Testing Library, jsdom): state logic, storage validation, i18n completeness, components.
-- End-to-end (Playwright, Chromium with the extension loaded): two builds — `dist-e2e` (host access granted up front, since tests can't click Chrome's permission prompt) and `dist` (production, no access) — plus axe accessibility checks in light and dark themes.
+- End-to-end (Playwright, Chrome for Testing with the extension loaded): two builds — `dist-e2e` (host access granted up front, since tests can't click Chrome's permission prompt) and `dist` (production, no access) — plus axe accessibility checks in light and dark themes.
 - `npm run screenshots` regenerates the store screenshots from the real UI.

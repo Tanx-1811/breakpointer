@@ -32,7 +32,7 @@ jobs:
           if-no-files-found: error
 
   e2e:
-    name: End-to-end & accessibility (Chromium)
+    name: End-to-end & accessibility (Chrome for Testing)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

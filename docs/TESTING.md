@@ -8,7 +8,7 @@ npm run test:e2e    # builds dist + dist-e2e, then Playwright end-to-end and acc
 npm run screenshots # regenerates store screenshots from the real UI (brand/store/screenshots)
 ```
 
-The end-to-end suite loads the real extension into Playwright's Chromium:
+The end-to-end suite loads the real extension into **Chrome for Testing**, Google's Chrome build for automation that Playwright bundles (156 at the time of writing). Branded Google Chrome (137 and later) no longer loads extensions from the command line, so testing in your everyday Chrome is manual: `chrome://extensions` → Developer mode → Load unpacked → `dist/`.
 
 - **with-access** (`dist-e2e`): host access is granted in the manifest, as if the user allowed all sites, because automated tests can't click Chrome's permission prompt. Covers real viewport widths, blocked sites, frame-busting, workspace editing, groups, persistence, settings, screenshots, popup and axe checks.
 - **no-access** (`dist`): the production build exactly as installed — checks the embedding notice, that blocked sites stay blocked, that screenshots explain the permission first, and that the manifest requests no host access.

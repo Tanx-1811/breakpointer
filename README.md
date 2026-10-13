@@ -116,7 +116,7 @@ src/
   i18n/         English and Vietnamese strings
 tests/
   unit/         Vitest
-  e2e/          Playwright (extension loaded in Chromium)
+  e2e/          Playwright (extension loaded in Chrome for Testing)
 docs/           plan, architecture, privacy, store listing, testing
 brand/          brand guide, logos, store and social images
 ```
