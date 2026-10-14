@@ -45,6 +45,25 @@ async function captureVisibleTab(windowId: number | undefined): Promise<string> 
   }
 }
 
+/**
+ * An image of a whole window's page (e.g. a viewport opened as a real window),
+ * at the screen's resolution. The window is brought to the front first.
+ */
+export async function captureWindowImage(windowId: number): Promise<Blob | null> {
+  try {
+    await chrome.windows.update(windowId, { focused: true });
+    await new Promise((resolve) => setTimeout(resolve, 250));
+    return await dataUrlToBlob(await captureVisibleTab(windowId));
+  } catch (error) {
+    console.warn('[Breakpointer] Could not capture a window.', error);
+    return null;
+  }
+}
+
+async function dataUrlToBlob(dataUrl: string): Promise<Blob> {
+  return (await fetch(dataUrl)).blob();
+}
+
 export type ElementImage = { blob: Blob; partial: boolean };
 
 /**

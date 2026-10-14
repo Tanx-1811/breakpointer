@@ -1,4 +1,5 @@
 import { disableEmbeddingForTab, enableEmbeddingForTab } from './embed-rules';
+import { fitWindowContent } from './windows';
 import { isIpAddress } from '../utils/url';
 
 export type ProbeResult = { kind: 'reachable' } | { kind: 'unreachable' } | { kind: 'unknown' };
@@ -36,17 +37,6 @@ function isLocalNetworkHost(hostname: string): boolean {
   return (
     hostname === 'localhost' || hostname.endsWith('.localhost') || hostname.endsWith('.local') || isIpAddress(hostname)
   );
-}
-
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function contentSize(tabId: number): Promise<Size | null> {
-  for (let attempt = 0; attempt < 20; attempt++) {
-    const tab = await chrome.tabs.get(tabId);
-    if (tab.width && tab.height) return { width: tab.width, height: tab.height };
-    await sleep(50);
-  }
-  return null;
 }
 
 export function createIframePreviewAdapter(): PreviewAdapter {
@@ -127,23 +117,7 @@ export function createIframePreviewAdapter(): PreviewAdapter {
       const windowId = created?.id;
       const createdTabId = created?.tabs?.[0]?.id;
       if (windowId === undefined || createdTabId === undefined) return null;
-
-      // Window sizes include the title and address bars, which vary by OS.
-      // Measure the content area and correct the outer size until it matches.
-      let inner = await contentSize(createdTabId);
-      for (let attempt = 0; inner && attempt < 3; attempt++) {
-        const dx = size.width - inner.width;
-        const dy = size.height - inner.height;
-        if (dx === 0 && dy === 0) break;
-        const current = await chrome.windows.get(windowId);
-        await chrome.windows.update(windowId, {
-          width: (current.width ?? size.width) + dx,
-          height: (current.height ?? size.height) + dy,
-        });
-        await sleep(150);
-        inner = (await contentSize(createdTabId)) ?? inner;
-      }
-      return inner;
+      return fitWindowContent(windowId, createdTabId, size);
     },
   };
 }
