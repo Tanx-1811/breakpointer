@@ -1,0 +1,116 @@
+/* Drawn over the page itself, so the colours don't follow the app theme. */
+.overlay {
+  --measure: #ec4899;
+  --measure-label: rgb(21 24 31 / 92%);
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 3;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.crossX,
+.crossY {
+  position: absolute;
+  pointer-events: none;
+}
+
+.crossX {
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: 1px dashed color-mix(in srgb, var(--measure) 70%, transparent);
+}
+
+.crossY {
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed color-mix(in srgb, var(--measure) 70%, transparent);
+}
+
+.cursor,
+.size,
+.gapLabel {
+  position: absolute;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--measure-label);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 16px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.cursor {
+  transform: translate(8px, 8px);
+}
+
+.cursor[data-flip-x] {
+  transform: translate(calc(-100% - 8px), 8px);
+}
+
+.cursor[data-flip-y] {
+  transform: translate(8px, calc(-100% - 8px));
+}
+
+.cursor[data-flip-x][data-flip-y] {
+  transform: translate(calc(-100% - 8px), calc(-100% - 8px));
+}
+
+.rect {
+  position: absolute;
+  box-sizing: border-box;
+  border: 1px solid var(--measure);
+  background: color-mix(in srgb, var(--measure) 14%, transparent);
+  pointer-events: none;
+}
+
+.size {
+  bottom: calc(100% + 4px);
+  left: -1px;
+  background: var(--measure);
+}
+
+.size[data-below] {
+  top: calc(100% + 4px);
+  bottom: auto;
+}
+
+.size[data-end] {
+  left: auto;
+  right: -1px;
+}
+
+.gapX,
+.gapY {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.gapX {
+  left: 0;
+  height: 0;
+  border-top: 1px dashed var(--measure);
+}
+
+.gapY {
+  top: 0;
+  width: 0;
+  border-left: 1px dashed var(--measure);
+}
+
+.gapLabel {
+  position: relative;
+  padding: 0 4px;
+  font-size: 10px;
+}

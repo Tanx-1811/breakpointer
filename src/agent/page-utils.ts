@@ -90,6 +90,64 @@ export function mentionsColorScheme(text: string): boolean {
   return /prefers-color-scheme/i.test(text);
 }
 
+/**
+ * Makes `prefers-reduced-motion` queries answer the other way, so a page in a
+ * browser without the preference shows its reduced-motion styles: `reduce` and
+ * `no-preference` swap, and the bare `(prefers-reduced-motion)` (true only with
+ * the preference) becomes `(prefers-reduced-motion: no-preference)`.
+ */
+export function swapReducedMotion(text: string): string {
+  return text.replace(
+    /(prefers-reduced-motion)(\s*:\s*(reduce|no-preference))?/gi,
+    (_, feature: string, _value: string | undefined, keyword: string | undefined) => {
+      if (!keyword) return `${feature}: no-preference`;
+      return `${feature}: ${keyword.toLowerCase() === 'reduce' ? 'no-preference' : 'reduce'}`;
+    },
+  );
+}
+
+export function mentionsReducedMotion(text: string): boolean {
+  return /prefers-reduced-motion/i.test(text);
+}
+
+const ACCENTED: Record<string, string> = {
+  a: 'å', b: 'ƀ', c: 'ç', d: 'ð', e: 'é', f: 'ƒ', g: 'ĝ', h: 'ĥ', i: 'î', j: 'ĵ', k: 'ķ', l: 'ļ', m: 'ɱ',
+  n: 'ñ', o: 'ö', p: 'þ', q: 'ǫ', r: 'ŕ', s: 'š', t: 'ţ', u: 'û', v: 'ṽ', w: 'ŵ', x: 'ẋ', y: 'ý', z: 'ž',
+  A: 'Å', B: 'Ɓ', C: 'Ç', D: 'Ð', E: 'É', F: 'Ƒ', G: 'Ĝ', H: 'Ĥ', I: 'Î', J: 'Ĵ', K: 'Ķ', L: 'Ļ', M: 'Ṁ',
+  N: 'Ñ', O: 'Ö', P: 'Þ', Q: 'Ǫ', R: 'Ŕ', S: 'Š', T: 'Ţ', U: 'Û', V: 'Ṽ', W: 'Ŵ', X: 'Ẋ', Y: 'Ý', Z: 'Ž',
+}; // prettier-ignore
+
+/** How much longer pseudo-translated text gets: translations often run 30–40% longer than English. */
+export const PSEUDO_EXPANSION = 0.4;
+
+/**
+ * Pseudo-translation, to find layouts that break with longer or accented text:
+ * "Sign in" → "[Šîîĝñ îñ]". Letters get accents (checks fonts and line
+ * height), vowels are doubled until the text is about 40% longer (checks that
+ * it can grow and wrap), and brackets mark both ends (a missing "]" means the
+ * text was cut off). Surrounding whitespace is kept; text without letters is
+ * returned as it is.
+ */
+export function pseudoLocalize(text: string): string {
+  const match = /^(\s*)([\s\S]*?)(\s*)$/.exec(text)!;
+  const [, lead, core, trail] = match as unknown as [string, string, string, string];
+  if (!/\p{L}/u.test(core)) return text;
+  // Brackets count toward the growth.
+  let extra = Math.max(1, Math.ceil(core.length * PSEUDO_EXPANSION) - 2);
+  let result = '';
+  for (const char of core) {
+    const accented = ACCENTED[char] ?? char;
+    result += accented;
+    if (extra > 0 && /[aeiouy]/i.test(char)) {
+      result += accented;
+      extra--;
+    }
+  }
+  // Short words without enough vowels.
+  if (extra > 0) result += '·'.repeat(extra);
+  return `${lead}[${result}]${trail}`;
+}
+
 /** CSS shorthand for four sides: ["0px","8px","0px","8px"] → "0 8px". */
 export function compressBox(sides: [string, string, string, string]): string {
   const [top, right, bottom, left] = sides.map((side) => (side === '0px' ? '0' : side)) as [

@@ -1,6 +1,6 @@
 import type { CheckKind, CheckReport } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
-import { CHECK_KIND_KEYS, issueDetail } from '../../state/checks';
+import { CHECK_KIND_KEYS, canHighlight, issueDetail } from '../../state/checks';
 import { Icon } from '../Icon/Icon';
 import { Popover } from '../Popover/Popover';
 import styles from './ChecksBadge.module.css';
@@ -49,7 +49,6 @@ export function ChecksBadge({ report, highlighted, onHighlight }: Props) {
           <ul className={styles.list}>
             {report.issues.map((issue) => {
               const active = highlighted === issue.kind;
-              const canHighlight = issue.kind !== 'viewport-meta';
               return (
                 <li key={issue.kind} className={styles.issue}>
                   <div className={styles.issueHead}>
@@ -58,7 +57,7 @@ export function ChecksBadge({ report, highlighted, onHighlight }: Props) {
                       <strong>{t(CHECK_KIND_KEYS[issue.kind])}</strong>
                       <span className={styles.detail}>{issueDetail(issue, t)}</span>
                     </div>
-                    {canHighlight && (
+                    {canHighlight(issue.kind) && (
                       <button
                         type="button"
                         className={styles.highlight}

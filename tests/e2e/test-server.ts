@@ -90,6 +90,41 @@ const INSPECT_PAGE = page(
   });</script>`,
 );
 
+/** Text, a field, reduced-motion styles and an animation, to try the simulations and stress tests on. */
+const UTILITIES_PAGE = page(
+  'Utilities page',
+  `<style>#motion { outline: 0 solid transparent; }
+  @media (prefers-reduced-motion: reduce) { #motion { outline: 3px solid rgb(255, 0, 0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #spinner { width: 24px; height: 24px; background: #6366f1; animation: spin 1s linear infinite; }
+  section { height: 700px; border-top: 1px solid #ccc; }</style>
+  <script>addEventListener('DOMContentLoaded', () => {
+    document.body.append(
+      Object.assign(document.createElement('p'), { id: 'label', textContent: 'Sign in to continue' }),
+      Object.assign(document.createElement('input'), { id: 'field', placeholder: 'Search products' }),
+      Object.assign(document.createElement('div'), { id: 'motion', textContent: 'Moving banner' }),
+      Object.assign(document.createElement('div'), { id: 'spinner' }),
+      Object.assign(document.createElement('code'), { id: 'code', textContent: 'const keep = true;' }),
+    );
+    for (let i = 1; i <= 4; i++) document.body.append(Object.assign(document.createElement('section'), { textContent: 'Section ' + i }));
+  });</script>`,
+);
+
+/** A 1×1 image shown at 180px (blurry) and a cookie banner covering half of a phone screen. */
+const COVER_PAGE = page(
+  'Cover page',
+  `<style>#photo { display: block; width: 180px; height: 180px; }
+  #cookies { position: fixed; left: 0; right: 0; bottom: 0; height: 55vh; background: #fef3c7; }</style>
+  <script>addEventListener('DOMContentLoaded', () => {
+    document.body.append(Object.assign(document.createElement('img'), {
+      id: 'photo',
+      alt: 'Photo',
+      src: 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',
+    }));
+    document.body.append(Object.assign(document.createElement('div'), { id: 'cookies', textContent: 'We use cookies' }));
+  });</script>`,
+);
+
 type Route = { headers?: Record<string, string>; body: string };
 
 let counter = 0;
@@ -103,6 +138,8 @@ const routes: Record<string, Route | (() => Route)> = {
   '/scheme': { body: SCHEME_PAGE },
   '/scheme-css': { body: SCHEME_CSS_PAGE },
   '/inspect': { body: INSPECT_PAGE },
+  '/utilities': { body: UTILITIES_PAGE },
+  '/cover': { body: COVER_PAGE },
   // A site that sends narrow screens to another page, which sends wide screens back.
   '/bounce': {
     body: page(

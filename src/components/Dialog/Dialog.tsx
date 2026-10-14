@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import { IconButton } from '../Button/Button';
 import { Icon, type IconName } from '../Icon/Icon';
@@ -17,6 +17,11 @@ type Props = {
   width?: number;
   /** The body has no padding (for layouts with their own, e.g. two panes). */
   flush?: boolean;
+  /**
+   * Stays open but out of sight, without dimming the page behind it (e.g.
+   * while the eyedropper picks a colour from the previews under it).
+   */
+  concealed?: boolean;
 };
 
 /**
@@ -26,10 +31,23 @@ type Props = {
  * Put `data-autofocus` on the element that should receive focus when the
  * dialog opens (React's autoFocus runs before showModal() and is lost).
  */
-export function Dialog({ open, title, description, icon, onClose, children, footer, width = 560, flush }: Props) {
+export function Dialog({
+  open,
+  title,
+  description,
+  icon,
+  onClose,
+  children,
+  footer,
+  width = 560,
+  flush,
+  concealed,
+}: Props) {
   const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
   const pressedBackdrop = useRef(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const [scrollable, setScrollable] = useState(false);
   const titleId = useId();
   const descriptionId = useId();
 
@@ -45,6 +63,17 @@ export function Dialog({ open, title, description, icon, onClose, children, foot
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
+  // A body that scrolls (long content, small screens) must be reachable with the
+  // keyboard: it becomes focusable while its content overflows.
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!open || !body || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => setScrollable(body.scrollHeight > body.clientHeight + 1));
+    observer.observe(body);
+    for (const child of Array.from(body.children)) observer.observe(child);
+    return () => observer.disconnect();
+  }, [open]);
+
   // Closing is driven by `open` only. Listening to the native "close" event
   // would also fire when another dialog replaces this one (e.g. Settings →
   // Site access) and close the new dialog right after it opened.
@@ -55,6 +84,7 @@ export function Dialog({ open, title, description, icon, onClose, children, foot
       style={{ width: `min(${width}px, calc(100vw - 32px))` }}
       aria-labelledby={titleId}
       aria-describedby={description ? descriptionId : undefined}
+      data-concealed={concealed || undefined}
       onCancel={(event) => {
         event.preventDefault();
         onClose();
@@ -89,7 +119,15 @@ export function Dialog({ open, title, description, icon, onClose, children, foot
             </div>
             <IconButton icon="close" size="sm" label={t('common.close')} onClick={onClose} className={styles.close} />
           </header>
-          <div className={flush ? styles.bodyFlush : styles.body}>{children}</div>
+          <div
+            ref={bodyRef}
+            className={flush ? styles.bodyFlush : styles.body}
+            tabIndex={scrollable ? 0 : undefined}
+            role={scrollable ? 'region' : undefined}
+            aria-labelledby={scrollable ? titleId : undefined}
+          >
+            {children}
+          </div>
           {footer && <footer className={styles.footer}>{footer}</footer>}
         </div>
       )}

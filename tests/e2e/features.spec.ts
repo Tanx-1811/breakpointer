@@ -276,3 +276,54 @@ test.describe('capture and arrange', () => {
     await expect.poll(() => visualCardNames(page)).toEqual(['Tablet', 'Phone', 'Laptop']);
   });
 });
+
+test.describe('input to the previews', () => {
+  test('on a first run, the previews start at the zoom that fits the screen', async ({
+    context,
+    openViewer,
+    server,
+  }) => {
+    // Frames resized just as they finish loading can stop getting clicks, so the fit comes first.
+    await context.addInitScript(() => {
+      if (location.protocol !== 'chrome-extension:') return;
+      const changes: string[] = [];
+      Object.assign(window, { frameStyleChanges: changes });
+      new MutationObserver((records) => {
+        for (const record of records)
+          if (record.target instanceof HTMLIFrameElement) changes.push(record.target.style.cssText);
+      }).observe(document, { subtree: true, attributes: true, attributeFilter: ['style'] });
+    });
+    const page = await openViewer({ url: server.url('/demo') });
+    await agentsReady(page, '/demo');
+    const zooms = await page
+      .getByTestId('preview-frame')
+      .evaluateAll((frames) => frames.map((frame) => (frame as HTMLIFrameElement).style.transform));
+    expect(zooms.every((zoom) => zoom === zooms[0] && zoom !== 'scale(1)')).toBe(true);
+    expect(await page.evaluate(() => (window as unknown as { frameStyleChanges: string[] }).frameStyleChanges)).toEqual(
+      [],
+    );
+  });
+
+  test('input aimed at a preview that reaches the workspace makes the previews refresh', async ({
+    openViewer,
+    server,
+  }) => {
+    const page = await openViewer({ url: server.url('/demo') });
+    await agentsReady(page, '/demo');
+    // Chrome delivers such input to the workspace, aimed at the <iframe> element.
+    const states = await page.evaluate(async () => {
+      const frames = [...document.querySelectorAll<HTMLIFrameElement>('[data-testid="preview-frame"]')];
+      const seen: string[] = [];
+      const observer = new MutationObserver(() => seen.push(frames.map((frame) => frame.style.translate).join('|')));
+      observer.observe(document, { subtree: true, attributes: true, attributeFilter: ['style'] });
+      frames[1].dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+      await new Promise((done) => setTimeout(done, 300));
+      observer.disconnect();
+      return seen;
+    });
+    // Every preview moved by a hundredth of a pixel, then back.
+    expect(states.length).toBeGreaterThanOrEqual(2);
+    expect(states[0].split('|').every((value) => value.startsWith('0.01px'))).toBe(true);
+    expect(states.at(-1)).toBe('||');
+  });
+});

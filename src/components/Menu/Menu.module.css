@@ -2,7 +2,7 @@
   position: fixed;
   inset: auto;
   margin: 0;
-  max-height: min(72vh, 560px);
+  max-height: min(80vh, 640px);
   overflow: auto;
   padding: 5px;
   border: 1px solid var(--border);

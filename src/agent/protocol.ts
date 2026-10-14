@@ -8,7 +8,15 @@
 export const AGENT_SOURCE = 'breakpointer-agent';
 export const AGENT_SCRIPT_ID = 'breakpointer-agent';
 
-export type CheckKind = 'overflow' | 'viewport-meta' | 'small-text' | 'tap-targets';
+export type CheckKind =
+  | 'overflow'
+  | 'viewport-meta'
+  | 'small-text'
+  | 'tap-targets'
+  /** Images shown larger than their real size (they look blurry). */
+  | 'upscaled-images'
+  /** Fixed or stuck elements covering much of a phone or tablet screen. */
+  | 'fixed-cover';
 
 export type CheckSample = {
   /** A short CSS-like description, e.g. "div.hero > img". */
@@ -85,7 +93,12 @@ export type AgentEvent =
   | { type: 'bye' }
   /** The user clicked or typed in the page (sent at most once a second). */
   | { type: 'input' }
-  | { type: 'scroll'; ratio: number; anchor?: ScrollAnchor }
+  /**
+   * The page scrolled. `y` is the scroll position in CSS pixels (a design
+   * overlay follows it). `synced` marks a scroll the workspace asked for (synced
+   * scrolling, a highlight): only reported when asked to with `trackScroll`.
+   */
+  | { type: 'scroll'; ratio: number; anchor?: ScrollAnchor; y: number; synced?: boolean }
   /** Ctrl + wheel (or a pinch) over the page: zoom the workspace instead of the browser tab. */
   | { type: 'zoom'; direction: 1 | -1 }
   | { type: 'checks'; report: CheckReport }
@@ -114,4 +127,15 @@ export type AgentCommand =
   /** Pick mode: hovering outlines elements, a click selects one instead of activating it. */
   | { type: 'inspect'; on: boolean }
   /** Outline this element (or none) and report its details, also after the layout changes. */
-  | { type: 'select'; selector: string | null };
+  | { type: 'select'; selector: string | null }
+  /** Also report scrolls the workspace caused (a design overlay follows them); reports the position at once. */
+  | { type: 'trackScroll'; on: boolean }
+  /**
+   * Layout stress tests: pseudo-translated text (longer, accented, in brackets)
+   * and right-to-left direction. The original text and direction are restored.
+   */
+  | { type: 'stress'; pseudo: boolean; rtl: boolean }
+  /** Show the page's `prefers-reduced-motion: reduce` styles whatever the browser prefers. */
+  | { type: 'reducedMotion'; on: boolean }
+  /** Freeze CSS animations and transitions (for steady screenshots). */
+  | { type: 'animations'; paused: boolean };

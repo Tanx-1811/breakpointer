@@ -1,0 +1,83 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12.5px;
+}
+
+.modes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 0;
+}
+
+.modes legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.mode {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+
+.mode:hover {
+  background: var(--surface-hover);
+}
+
+.mode:has(input:checked) {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.mode input {
+  margin: 3px 0 0;
+  accent-color: var(--accent);
+}
+
+.modeText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.modeLabel {
+  font-weight: 600;
+}
+
+.modeHint {
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stop {
+  margin-right: auto;
+}

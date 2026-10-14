@@ -276,7 +276,16 @@
   color: var(--text-subtle);
 }
 
-@media (max-width: 1200px) {
+/* Something is being simulated. */
+.activeDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+
+@media (max-width: 1320px) {
   .toggleLabel {
     display: none;
   }
@@ -286,7 +295,7 @@
   }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1180px) {
   .addLabel,
   .menuLabel {
     display: none;

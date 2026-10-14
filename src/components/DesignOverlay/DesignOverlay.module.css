@@ -1,0 +1,41 @@
+.clip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.image {
+  display: block;
+  max-width: none;
+  height: auto;
+  user-select: none;
+}
+
+.bar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px 3px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+}
+
+.range {
+  width: 84px;
+  margin-right: 4px;
+  accent-color: var(--accent);
+}
+
+:global(html[data-capturing]) .bar {
+  visibility: hidden;
+}

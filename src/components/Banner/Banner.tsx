@@ -3,7 +3,7 @@ import { Icon, type IconName } from '../Icon/Icon';
 import styles from './Banner.module.css';
 
 type Props = {
-  tone: 'danger' | 'warning';
+  tone: 'danger' | 'warning' | 'info';
   icon: IconName;
   children: ReactNode;
   actions?: ReactNode;

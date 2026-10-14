@@ -36,6 +36,8 @@ type Props = {
   onClose: () => void;
   onReveal: (id: string) => void;
   onCopySelector: (selector: string) => void;
+  /** Copies the comparison as a Markdown table (the button shows when given). */
+  onCopyTable?: () => void;
   onAllowSite: () => void;
 };
 
@@ -113,6 +115,11 @@ export function InspectorPanel(props: Props) {
                 <Button size="sm" variant="ghost" icon="copy" onClick={() => props.onCopySelector(selector)}>
                   {t('inspector.copySelector')}
                 </Button>
+                {props.onCopyTable && (
+                  <Button size="sm" variant="ghost" icon="clipboard" onClick={props.onCopyTable}>
+                    {t('inspector.copyTable')}
+                  </Button>
+                )}
                 <Button size="sm" variant="ghost" icon="close" onClick={props.onClear}>
                   {t('inspector.clear')}
                 </Button>

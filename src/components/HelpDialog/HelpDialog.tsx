@@ -14,9 +14,14 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['F'], label: 'help.fit' },
   { keys: ['+'], label: 'help.zoomIn' },
   { keys: ['−'], label: 'help.zoomOut' },
+  { keys: ['0'], label: 'help.actualSize' },
   { keys: ['L'], label: 'help.layout' },
   { keys: ['M'], label: 'help.rulers' },
   { keys: ['I'], label: 'help.inspect' },
+  { keys: ['X'], label: 'help.measure' },
+  { keys: ['C'], label: 'help.contrast' },
+  { keys: ['O'], label: 'help.outlines' },
+  { keys: ['[', ']'], label: 'help.cycleFocus' },
   { keys: ['S'], label: 'help.capture' },
   { keys: ['T'], label: 'help.theme' },
   { keys: ['Esc'], label: 'help.escape' },
@@ -88,6 +93,8 @@ export function HelpDialog({ open, onClose, commandShortcuts, paletteShortcut = 
             <li>{t('help.mouseResize')}</li>
             <li>{t('help.mouseFocus')}</li>
             <li>{t('help.mouseInspect')}</li>
+            <li>{t('help.mouseMeasure')}</li>
+            <li>{t('help.mouseOverlay')}</li>
           </ul>
           <h3 className={styles.heading}>{t('help.how')}</h3>
           <ul className={styles.tips}>

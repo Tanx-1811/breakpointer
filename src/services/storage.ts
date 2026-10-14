@@ -13,6 +13,7 @@ import type {
   Breakpoint,
   BreakpointSetId,
   ColorScheme,
+  CssSnippet,
   GridColumns,
   GridSettings,
   LanguagePreference,
@@ -27,11 +28,14 @@ import {
   DEFAULT_ZOOM,
   GRID_COLUMN_OPTIONS,
   MAX_BREAKPOINT_NAME,
+  MAX_CSS_SNIPPETS,
   MAX_CUSTOM_BREAKPOINTS,
   MAX_GRID_SPACING,
   MAX_GROUPS,
+  MAX_LIVE_CSS,
   MAX_RECENT_URLS,
   MAX_SAVED_PAGES,
+  MAX_SNIPPET_NAME,
   MAX_VIEWPORTS,
 } from '../utils/constants';
 import { createId } from '../utils/id';
@@ -86,6 +90,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     rememberRecent: false,
     recentUrls: [],
     savedPages: [],
+    cssSnippets: [],
   };
 }
 
@@ -192,6 +197,29 @@ export function parseBreakpoints(raw: unknown): Breakpoint[] | null {
   return list.sort((a, b) => a.min - b.min).slice(0, MAX_CUSTOM_BREAKPOINTS);
 }
 
+/** A snippet name: one line, trimmed, at most MAX_SNIPPET_NAME characters. */
+export function normalizeSnippetName(name: string): string {
+  return name.replace(/\s+/g, ' ').trim().slice(0, MAX_SNIPPET_NAME);
+}
+
+function parseSnippets(raw: unknown): CssSnippet[] {
+  if (!Array.isArray(raw)) return [];
+  const seenIds = new Set<string>();
+  const snippets: CssSnippet[] = [];
+  for (const item of raw) {
+    if (!isRecord(item) || typeof item.name !== 'string' || typeof item.css !== 'string') continue;
+    const name = normalizeSnippetName(item.name);
+    const css = item.css.trim().slice(0, MAX_LIVE_CSS);
+    if (!name || !css) continue;
+    let id = safeId(item.id);
+    if (!id || seenIds.has(id)) id = createId();
+    seenIds.add(id);
+    snippets.push({ id, name, css });
+    if (snippets.length === MAX_CSS_SNIPPETS) break;
+  }
+  return snippets;
+}
+
 function parseGrid(raw: unknown): GridSettings {
   if (!isRecord(raw)) return { ...DEFAULT_GRID };
   const columns = GRID_COLUMN_OPTIONS.includes(raw.columns as GridColumns)
@@ -245,6 +273,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     rememberRecent,
     recentUrls: rememberRecent ? parseRecentUrls(raw.recentUrls) : [],
     savedPages: parseUrlList(raw.savedPages, MAX_SAVED_PAGES),
+    cssSnippets: parseSnippets(raw.cssSnippets),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;

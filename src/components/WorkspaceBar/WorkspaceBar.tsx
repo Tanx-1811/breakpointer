@@ -4,6 +4,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
 import { builtInGroupName } from '../../state/groups';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
+import { VISION_MODES, type VisionMode } from '../../state/vision';
 import type { BreakpointSetId, ViewportConfig, ViewportGroup } from '../../types';
 import { MAX_VIEWPORTS } from '../../utils/constants';
 import { Icon, type IconName } from '../Icon/Icon';
@@ -13,6 +14,19 @@ import styles from './WorkspaceBar.module.css';
 
 export type ToolToggle = 'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'scrollbars' | 'grid';
 export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
+
+/** Simulations that run inside the previews (sites the user allowed). */
+export type SimulateToggle = 'reduceMotion' | 'pauseAnimations' | 'pseudo' | 'rtl';
+export type SimulateState = Record<SimulateToggle, boolean> & { vision: VisionMode };
+
+export const VISION_KEYS: Record<VisionMode, MessageKey> = {
+  none: 'vision.none',
+  protanopia: 'vision.protanopia',
+  deuteranopia: 'vision.deuteranopia',
+  tritanopia: 'vision.tritanopia',
+  achromatopsia: 'vision.achromatopsia',
+  blurred: 'vision.blurred',
+};
 
 type Props = {
   viewports: ViewportConfig[];
@@ -27,7 +41,12 @@ type Props = {
   showGrid: boolean;
   /** The inspector is open. */
   inspecting: boolean;
+  measuring?: boolean;
+  /** Comparing two addresses. */
+  comparing?: boolean;
   tools: ToolState;
+  /** The Simulate menu shows when this and its handlers are given. */
+  simulate?: SimulateState;
   hasUrl: boolean;
   siteAllowed: boolean | null;
   host: string | null;
@@ -44,6 +63,12 @@ type Props = {
   onSync: (on: boolean) => void;
   onGrid: (show: boolean) => void;
   onInspect: () => void;
+  onMeasure?: () => void;
+  onContrast?: () => void;
+  onCompare?: () => void;
+  onStopCompare?: () => void;
+  onVision?: (mode: VisionMode) => void;
+  onSimulate?: (toggle: SimulateToggle) => void;
   onTool: (tool: ToolToggle) => void;
   onLiveCss: () => void;
   onEdges: () => void;
@@ -208,6 +233,37 @@ export function WorkspaceBar(props: Props) {
     checked: props.tools[id],
     onSelect: () => props.onTool(id),
   });
+  // Measuring is a toggle in the bar (X), so it isn't repeated here.
+  const utilityEntries: MenuEntry[] = [];
+  if (props.onContrast)
+    utilityEntries.push({
+      id: 'contrast',
+      label: t('tools.contrast'),
+      icon: 'eyedropper',
+      shortcut: 'C',
+      onSelect: props.onContrast,
+    });
+  if (props.comparing && props.onStopCompare)
+    utilityEntries.push({
+      id: 'compare-stop',
+      label: t('tools.compareStop'),
+      icon: 'split',
+      onSelect: props.onStopCompare,
+    });
+  else if (props.onCompare)
+    utilityEntries.push({
+      id: 'compare',
+      label: t('tools.compare'),
+      icon: 'split',
+      disabled: !props.hasUrl,
+      onSelect: props.onCompare,
+    });
+  if (utilityEntries.length)
+    utilityEntries.unshift(
+      { kind: 'separator', id: 'tools-sep-utilities' },
+      { kind: 'heading', id: 'utilities', label: t('tools.utilities') },
+    );
+
   // Everything but the grid runs inside the preview, so it needs the site's permission.
   const needsAccess = props.hasUrl && props.siteAllowed === false && props.host;
   const toolEntries: MenuEntry[] = [
@@ -238,6 +294,7 @@ export function WorkspaceBar(props: Props) {
       onSelect: props.onLiveCss,
     },
     { id: 'inspect', label: t('tools.inspect'), icon: 'inspect', shortcut: 'I', onSelect: props.onInspect },
+    ...utilityEntries,
     { kind: 'separator', id: 'tools-sep1' },
     { kind: 'heading', id: 'arrange', label: t('tools.arrange') },
     { id: 'edges', label: t('tools.edges'), icon: 'ruler', onSelect: props.onEdges },
@@ -246,6 +303,54 @@ export function WorkspaceBar(props: Props) {
     { kind: 'separator', id: 'tools-sep2' },
     { id: 'report', label: t('tools.report'), icon: 'report', disabled: !props.hasUrl, onSelect: props.onReport },
   ];
+
+  const simulate = props.simulate;
+  const simulateToggle = (id: SimulateToggle, label: MessageKey, description: MessageKey): MenuEntry => ({
+    id,
+    label: t(label),
+    description: t(description),
+    checked: Boolean(simulate?.[id]),
+    onSelect: () => props.onSimulate?.(id),
+  });
+  const simulateEntries: MenuEntry[] = [
+    ...(needsAccess
+      ? ([
+          { kind: 'note', id: 'simulate-note', label: t('simulate.accessNote') },
+          {
+            id: 'simulate-allow',
+            label: t('tools.allowSite', { host: props.host ?? '' }),
+            icon: 'shield',
+            onSelect: props.onAllowSite,
+          },
+          { kind: 'separator', id: 'simulate-sep0' },
+        ] satisfies MenuEntry[])
+      : []),
+    { kind: 'heading', id: 'vision', label: t('simulate.vision') },
+    ...(['none', ...VISION_MODES] as VisionMode[]).map<MenuEntry>((mode) => ({
+      id: `vision-${mode}`,
+      label: t(VISION_KEYS[mode]),
+      radio: true,
+      checked: (simulate?.vision ?? 'none') === mode,
+      onSelect: () => props.onVision?.(mode),
+    })),
+    { kind: 'note', id: 'vision-note', label: t('simulate.visionNote') },
+    { kind: 'separator', id: 'simulate-sep1' },
+    { kind: 'heading', id: 'preferences', label: t('simulate.preferences') },
+    simulateToggle('reduceMotion', 'motion.reduce', 'motion.reduceHint'),
+    simulateToggle('pauseAnimations', 'animations.pause', 'animations.pauseHint'),
+    { kind: 'separator', id: 'simulate-sep2' },
+    { kind: 'heading', id: 'stress', label: t('simulate.stress') },
+    simulateToggle('pseudo', 'stress.pseudo', 'stress.pseudoHint'),
+    simulateToggle('rtl', 'stress.rtl', 'stress.rtlHint'),
+  ];
+  const simulating = Boolean(
+    simulate &&
+    (simulate.vision !== 'none' ||
+      simulate.reduceMotion ||
+      simulate.pauseAnimations ||
+      simulate.pseudo ||
+      simulate.rtl),
+  );
 
   const siteCount = props.siteBreakpoints?.length ?? 0;
 
@@ -392,7 +497,37 @@ export function WorkspaceBar(props: Props) {
             onClick={props.onInspect}
             testId="inspect-toggle"
           />
+          {props.onMeasure && (
+            <Toggle
+              pressed={Boolean(props.measuring)}
+              label={t('workspace.measure')}
+              icon="measure"
+              tooltip={t('workspace.measureHint')}
+              shortcut="X"
+              onClick={props.onMeasure}
+              testId="measure-toggle"
+            />
+          )}
         </div>
+
+        {simulate && props.onVision && props.onSimulate && (
+          <Menu
+            label={t('toolbar.simulate')}
+            entries={simulateEntries}
+            align="end"
+            minWidth={300}
+            trigger={(triggerProps) => (
+              <MenuButton
+                triggerProps={triggerProps}
+                icon="beaker"
+                label={t('toolbar.simulate')}
+                tooltip={t('simulate.hint')}
+                extra={simulating ? <span className={styles.activeDot} aria-hidden="true" /> : undefined}
+                dataAttribute={{ 'data-simulate-trigger': true }}
+              />
+            )}
+          />
+        )}
 
         <Menu
           label={t('toolbar.tools')}

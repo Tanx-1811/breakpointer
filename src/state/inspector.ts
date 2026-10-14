@@ -44,6 +44,40 @@ export function changingProperties(infos: (ElementInfo | null | undefined)[]): S
   return changing;
 }
 
+export type ComparisonRow = { name: string; width: number; info: ElementInfo | null | undefined };
+
+/** Text used in the comparison table for states other than a shown element. */
+export type ComparisonLabels = { viewport: string; missing: string; hidden: string; waiting: string } & Record<
+  InspectedProperty,
+  string
+>;
+
+const cell = (value: string) => value.replace(/\|/g, '\\|').replace(/\s+/g, ' ').trim() || '—';
+
+/**
+ * The comparison as a Markdown table (one row per viewport, one column per
+ * property), to paste into a ticket or a pull request.
+ */
+export function comparisonMarkdown(selector: string, rows: ComparisonRow[], labels: ComparisonLabels): string {
+  const header = [labels.viewport, ...INSPECTED_PROPERTIES.map((property) => labels[property])];
+  const lines = [
+    `\`${selector.replace(/`/g, "'")}\``,
+    '',
+    `| ${header.map(cell).join(' | ')} |`,
+    `| ${header.map(() => '---').join(' | ')} |`,
+  ];
+  for (const row of rows) {
+    const name = `${row.name} (${row.width}px)`;
+    const state = row.info === undefined ? labels.waiting : row.info === null ? labels.missing : labels.hidden;
+    const values =
+      row.info && row.info.visible
+        ? INSPECTED_PROPERTIES.map((property) => propertyValue(row.info!, property))
+        : [state, ...INSPECTED_PROPERTIES.slice(1).map(() => '')];
+    lines.push(`| ${[name, ...values].map(cell).join(' | ')} |`);
+  }
+  return `${lines.join('\n')}\n`;
+}
+
 /** Whether the element is shown in some viewports and hidden (or missing) in others. */
 export function visibilityChanges(infos: (ElementInfo | null | undefined)[]): boolean {
   const states = new Set(infos.filter((info) => info !== undefined).map((info) => Boolean(info?.visible)));

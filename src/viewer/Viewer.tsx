@@ -5,6 +5,9 @@ import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
 import { Banner } from '../components/Banner/Banner';
 import { CommandPalette, type PaletteCommand } from '../components/CommandPalette/CommandPalette';
+import { CompareDialog } from '../components/CompareDialog/CompareDialog';
+import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
+import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
 import { ErrorState } from '../components/ErrorState/ErrorState';
 import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/GroupDialogs';
@@ -17,8 +20,15 @@ import { SiteAccessDialog } from '../components/SiteAccessDialog/SiteAccessDialo
 import { ToastProvider, useToast } from '../components/Toast/Toast';
 import { TooltipLayer } from '../components/Tooltip/TooltipLayer';
 import { CARD_CHROME_WIDTH, MIN_CARD_WIDTH, ViewportCard } from '../components/ViewportCard/ViewportCard';
+import { VisionFilters } from '../components/VisionFilters/VisionFilters';
 import { Welcome } from '../components/Welcome/Welcome';
-import { WorkspaceBar, type ToolToggle } from '../components/WorkspaceBar/WorkspaceBar';
+import {
+  VISION_KEYS,
+  WorkspaceBar,
+  type SimulateState,
+  type SimulateToggle,
+  type ToolToggle,
+} from '../components/WorkspaceBar/WorkspaceBar';
 import { DockStatus, ZoomDock } from '../components/ZoomDock/ZoomDock';
 import { useFrameAgents } from '../hooks/useFrameAgents';
 import { useNavigationHistory } from '../hooks/useNavigationHistory';
@@ -43,9 +53,21 @@ import {
 } from '../services/screenshot';
 import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
-import { createSettingsExport, defaultViewports, parseSettingsFile } from '../services/storage';
+import { hasSiteAccess, requestSiteAccess } from '../services/site-access';
+import { createSettingsExport, defaultViewports, normalizeSnippetName, parseSettingsFile } from '../services/storage';
 import { breakpointEdges, breakpointFor, breakpointSet } from '../data/breakpoints';
+import {
+  compareCardId,
+  compareLabel,
+  compareUrl,
+  isCompareCardId,
+  mirrorBack,
+  swapCompare,
+  viewportIdOf,
+  type CompareTarget,
+} from '../state/compare';
 import { fitZoomForAll } from '../state/fit';
+import { comparisonMarkdown } from '../state/inspector';
 import { isOneTimeUrl, pageOf } from '../state/follow';
 import { buildReportHtml, type ReportCard } from '../state/report';
 import { createGroup, findGroupTemplates, uniqueGroupName } from '../state/groups';
@@ -63,12 +85,21 @@ import {
   sortByWidth,
   stepZoom,
 } from '../state/viewports';
-import type { BreakpointSetId, ColorScheme, ViewportConfig, BreakpointerSettings, WorkspaceLayout } from '../types';
-import { MAX_VIEWPORTS } from '../utils/constants';
+import { visionFilter, type VisionMode } from '../state/vision';
+import type {
+  BreakpointSetId,
+  ColorScheme,
+  CssSnippet,
+  ViewportConfig,
+  BreakpointerSettings,
+  WorkspaceLayout,
+} from '../types';
+import { MAX_CSS_SNIPPETS, MAX_LIVE_CSS, MAX_VIEWPORTS } from '../utils/constants';
 import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
 import { modShortcut } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
+import { createId } from '../utils/id';
 import {
   displayHost,
   isLocalHost,
@@ -90,7 +121,28 @@ const DEFAULT_CARD_CHROME_HEIGHT = 72;
 /** Pixels kept free when fitting, so rounding never pushes a card onto a new row. */
 const FIT_SLACK = 2;
 
-type DialogName = 'add' | 'saveGroup' | 'manageGroups' | 'access' | 'capture' | 'settings' | 'help' | 'css' | 'palette';
+type DialogName =
+  | 'add'
+  | 'saveGroup'
+  | 'manageGroups'
+  | 'access'
+  | 'capture'
+  | 'settings'
+  | 'help'
+  | 'css'
+  | 'palette'
+  | 'contrast'
+  | 'compare';
+
+/** One preview: a visible viewport, or (when comparing two addresses) its B side. */
+type CardEntry = { id: string; viewport: ViewportConfig; compare: boolean };
+
+const SIMULATE_LABELS: Record<SimulateToggle, MessageKey> = {
+  pseudo: 'stress.pseudo',
+  rtl: 'stress.rtl',
+  reduceMotion: 'motion.reduce',
+  pauseAnimations: 'animations.pause',
+};
 
 /** Height of the viewports made by "Test breakpoint edges". */
 const EDGE_VIEWPORT_HEIGHT = 800;
@@ -198,6 +250,20 @@ function Workspace({
   const [focus, setFocus] = useState<{ id: string; zoom: number } | null>(null);
   const [inspector, setInspector] = useState<InspectorState>(CLOSED_INSPECTOR);
   const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
+  // Utilities for this session (not saved).
+  const [measuring, setMeasuring] = useState(false);
+  const [vision, setVision] = useState<VisionMode>('none');
+  const [stress, setStress] = useState({ pseudo: false, rtl: false });
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [pauseAnimations, setPauseAnimations] = useState(false);
+  const [contrastColors, setContrastColors] = useState<ContrastColors>({ text: '#1f2430', background: '#ffffff' });
+  // Comparing two addresses: every visible viewport also shows a B preview.
+  const [compare, setCompare] = useState<CompareTarget | null>(null);
+  // Design mockups laid over previews (object URLs of local files), by card.
+  const [overlays, setOverlays] = useState<Record<string, DesignOverlayState>>({});
+  // The scroll position of previews with a design overlay (it moves with the page).
+  const [overlayScroll, setOverlayScroll] = useState<Record<string, number>>({});
+  const overlayUrls = useRef(new Set<string>());
 
   const addressRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLElement>(null);
@@ -214,6 +280,45 @@ function Workspace({
   const host = currentUrl ? displayHost(currentUrl) : null;
   const focused = focus && visible.some((vp) => vp.id === focus.id) ? focus : null;
   const paletteShortcut = modShortcut('K');
+  const simulateState: SimulateState = {
+    vision,
+    reduceMotion,
+    pauseAnimations,
+    pseudo: stress.pseudo,
+    rtl: stress.rtl,
+  };
+
+  // Each visible viewport is a card; when comparing, its B side is a second card next to it.
+  const cards = useMemo<CardEntry[]>(
+    () =>
+      visible.flatMap((viewport) => {
+        const main: CardEntry = { id: viewport.id, viewport, compare: false };
+        return compare ? [main, { id: compareCardId(viewport.id), viewport, compare: true }] : [main];
+      }),
+    [visible, compare],
+  );
+  /** The address a card shows while the workspace shows `page`. */
+  const pageFor = useCallback(
+    (cardId: string, page: string | null) =>
+      page && compare && isCompareCardId(cardId) ? compareUrl(compare, page) : page,
+    [compare],
+  );
+  /** Two previews show the same page (B previews in mirror mode: the same path on the other site). */
+  const samePage = (a: string, b: string) => {
+    if (pageOf(a) === pageOf(b)) return true;
+    if (compare?.mode !== 'mirror') return false;
+    try {
+      const [first, second] = [new URL(a), new URL(b)];
+      return first.pathname === second.pathname && first.search === second.search;
+    } catch {
+      return false;
+    }
+  };
+  /** A card's name in captures, reports and the inspector: B previews are marked. */
+  const cardTitle = (card: CardEntry) => (card.compare ? `${card.viewport.name} · B` : card.viewport.name);
+  /** The preview area of a card, for captures. */
+  const stageOf = (cardId: string) =>
+    document.querySelector<HTMLElement>(`[data-card-id="${CSS.escape(cardId)}"] [data-stage]`);
 
   /* ---------- Navigation ---------- */
 
@@ -386,6 +491,10 @@ function Workspace({
   /** The largest common zoom at which `list` fits in the visible workspace. */
   const computeFitZoom = useCallback(
     (list: ViewportConfig[], layout: WorkspaceLayout = settings.layout) => {
+      // When comparing, every visible viewport is shown twice.
+      const shown = compare
+        ? list.flatMap((vp) => (vp.hidden ? [vp] : [vp, { ...vp, id: compareCardId(vp.id) }]))
+        : list;
       const element = workspaceRef.current;
       if (!element) return null;
       const cards = element.querySelector<HTMLElement>('[data-cards]');
@@ -394,7 +503,7 @@ function Workspace({
       const chromeHeight = (header?.offsetHeight ?? DEFAULT_CARD_CHROME_HEIGHT - 2) + 2;
       const rulerSize = settings.showRulers ? RULER_SIZE : 0;
       return fitZoomForAll(
-        list,
+        shown,
         {
           width: element.clientWidth - WORKSPACE_PADDING * 2 - FIT_SLACK,
           height: element.clientHeight - top - WORKSPACE_BOTTOM - FIT_SLACK,
@@ -409,7 +518,7 @@ function Workspace({
         },
       );
     },
-    [settings.layout, settings.showRulers],
+    [compare, settings.layout, settings.showRulers],
   );
 
   /** The zoom at which one viewport fills the workspace on its own (focus mode). */
@@ -461,17 +570,19 @@ function Workspace({
 
   // First run (or a group from the popup): fit the viewports to this screen once a
   // page is shown — before that, the welcome panel takes the room they will have.
-  const fitPending = useRef(autoFit !== 'none');
+  // The previews start loading after that fit: a frame resized just as its page
+  // finishes loading can stop getting clicks (see state/stray-input.ts).
+  const [fitPending, setFitPending] = useState(autoFit !== 'none');
   useEffect(() => {
-    if (!fitPending.current || !currentUrl) return;
+    if (!fitPending || !currentUrl) return;
     // Wait until the site-access tip (which takes space) has been decided.
     if (siteAccess.site === null) return;
     const frame = requestAnimationFrame(() => {
-      fitPending.current = false;
+      setFitPending(false);
       fit();
     });
     return () => cancelAnimationFrame(frame);
-  }, [currentUrl, fit, siteAccess.site]);
+  }, [currentUrl, fit, fitPending, siteAccess.site]);
 
   const applyGroup = (id: string) => {
     const group = findGroupTemplates(id, settings.groups, t);
@@ -566,11 +677,12 @@ function Workspace({
       );
     });
 
-  const cardLabel = (vp: ViewportConfig) =>
+  const cardLabel = (vp: ViewportConfig, compareSide = false) =>
     [
       `${vp.width} × ${vp.height}`,
       breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
       vp.colorScheme ? t(vp.colorScheme === 'dark' ? 'card.schemeDark' : 'card.schemeLight') : null,
+      compareSide && compare ? compareLabel(compare) : null,
     ]
       .filter(Boolean)
       .join(' · ');
@@ -591,15 +703,20 @@ function Workspace({
           await nextFrame();
         }
         const entries: SheetEntry[] = [];
-        for (const [index, vp] of visible.entries()) {
+        for (const [index, card] of cards.entries()) {
           toast({
-            message: t('capture.allProgress', { current: index + 1, total: visible.length }),
+            message: t('capture.allProgress', { current: index + 1, total: cards.length }),
             tone: 'info',
             key: 'sheet',
           });
-          const stage = document.querySelector<HTMLElement>(`[data-viewport-id="${CSS.escape(vp.id)}"] [data-stage]`);
+          const stage = stageOf(card.id);
           const shot = stage ? await captureElementImage(stage) : null;
-          if (shot) entries.push({ image: shot.blob, title: vp.name, subtitle: cardLabel(vp) });
+          if (shot)
+            entries.push({
+              image: shot.blob,
+              title: cardTitle(card),
+              subtitle: cardLabel(card.viewport, card.compare),
+            });
         }
         const title = visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
         const sheet = await composeSheet(entries, {
@@ -694,15 +811,15 @@ function Workspace({
 
   const src = currentUrl?.href ?? null;
   // Cards stay in a stable DOM order (moving an iframe reloads it); CSS `order` places them.
-  const domOrder = useStableDomOrder(visible.map((vp) => vp.id));
+  const domOrder = useStableDomOrder(cards.map((card) => card.id));
 
   // A hidden or removed card loses its frame: when it comes back it shows the
   // workspace's page, so forget what was pinned or flagged for it.
-  const visibleKey = visible.map((vp) => vp.id).join(' ');
+  const visibleKey = cards.map((card) => card.id).join(' ');
   const [prunedFor, setPrunedFor] = useState(visibleKey);
   if (prunedFor !== visibleKey) {
     setPrunedFor(visibleKey);
-    const ids = new Set(visible.map((vp) => vp.id));
+    const ids = new Set(cards.map((card) => card.id));
     const keepVisible = <T,>(map: Record<string, T>) =>
       Object.keys(map).every((id) => ids.has(id))
         ? map
@@ -714,17 +831,17 @@ function Workspace({
 
   /* ---------- Frame agents (sync, checks, inspection) ---------- */
 
-  const cardSrc = (id: string) => srcOverrides[id] ?? src;
+  const cardSrc = (id: string) => (fitPending ? null : (srcOverrides[id] ?? pageFor(id, src)));
   const cardReloadKey = (id: string) => `${reloadAll}.${cardReloads[id] ?? 0}`;
   // A frame's generation changes whenever it is replaced (new address or reload).
   const generations = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const vp of visible) {
-      const page = srcOverrides[vp.id] ?? src;
-      if (page) map[vp.id] = shortHash(`${page}#${reloadAll}.${cardReloads[vp.id] ?? 0}`);
+    for (const card of cards) {
+      const page = srcOverrides[card.id] ?? pageFor(card.id, src);
+      if (page) map[card.id] = shortHash(`${page}#${reloadAll}.${cardReloads[card.id] ?? 0}`);
     }
     return map;
-  }, [visible, srcOverrides, src, reloadAll, cardReloads]);
+  }, [cards, pageFor, srcOverrides, src, reloadAll, cardReloads]);
 
   // The page the previews follow, updated at once: several previews can report
   // the same navigation (e.g. a redirect) before the next render.
@@ -746,7 +863,11 @@ function Workspace({
     // Sign-in callbacks and other one-time links must not load again in every preview.
     if (isOneTimeUrl(next)) return false;
     followedUrl.current = next;
-    setSrcOverrides((overrides) => ({ [cardId]: overrides[cardId] ?? current }));
+    const pinned = pageFor(cardId, current);
+    setSrcOverrides((overrides) => {
+      const keep = overrides[cardId] ?? pinned;
+      return keep ? { [cardId]: keep } : {};
+    });
     setStrays({});
     resetInspection();
     setCurrentUrl(new URL(next));
@@ -776,6 +897,8 @@ function Workspace({
   };
 
   const startPicking = () => {
+    // Measuring and picking both take clicks in the previews: one at a time.
+    setMeasuring(false);
     setInspector((state) => ({ ...state, open: true, picking: true }));
     agents.broadcast({ type: 'inspect', on: true });
     hintAccess(t('tools.inspect'));
@@ -794,8 +917,10 @@ function Workspace({
 
   const onEscape = () => {
     if (inspector.picking) stopPicking();
+    else if (measuring) setMeasuring(false);
     else if (focused) exitFocus();
     else if (inspector.open) closeInspector();
+    else if (vision !== 'none') setVision('none');
   };
 
   const agents = useFrameAgents(tabId, generations, {
@@ -804,8 +929,12 @@ function Workspace({
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
       if (hideScrollbars) agents.send(cardId, { type: 'scrollbars', hidden: true });
       if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
-      const scheme = viewports.find((vp) => vp.id === cardId)?.colorScheme;
+      const scheme = viewports.find((vp) => vp.id === viewportIdOf(cardId))?.colorScheme;
       if (scheme) agents.send(cardId, { type: 'colorScheme', scheme });
+      if (stress.pseudo || stress.rtl) agents.send(cardId, { type: 'stress', pseudo: stress.pseudo, rtl: stress.rtl });
+      if (reduceMotion) agents.send(cardId, { type: 'reducedMotion', on: true });
+      if (pauseAnimations) agents.send(cardId, { type: 'animations', paused: true });
+      if (overlays[cardId]) agents.send(cardId, { type: 'trackScroll', on: true });
       if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
       if (inspector.selector) agents.send(cardId, { type: 'select', selector: inspector.selector });
       setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
@@ -813,22 +942,28 @@ function Workspace({
     onNavigate: (cardId, href, { user, newDocument }) => {
       // The page tidying its own address (e.g. dropping tracking parameters) isn't a navigation.
       if (!user && !newDocument) return;
+      const current = followedUrl.current;
+      // A B preview leads too (mirror mode): the workspace follows to the same page on A's site.
+      const lead = isCompareCardId(cardId) ? (compare && current ? mirrorBack(compare, href, current) : null) : href;
       // Only what the user did is followed: redirects a page makes by itself (e.g.
       // sending narrow screens to /m/) stay in that preview.
-      if (user && settings.sync.navigation && followFrame(cardId, href)) return;
-      const current = followedUrl.current;
-      const stray = !current || pageOf(href) !== pageOf(current);
+      if (user && settings.sync.navigation && lead && followFrame(cardId, lead)) return;
+      const expected = pageFor(cardId, current);
+      const stray = !expected || pageOf(href) !== pageOf(expected);
       setStrays((map) => (Boolean(map[cardId]) === stray ? map : { ...map, [cardId]: stray }));
     },
-    onScroll: (cardId, ratio, anchor) => {
-      if (!settings.sync.scroll) return;
+    onScroll: (cardId, ratio, anchor, y, synced) => {
+      // A design overlay moves with its page.
+      if (overlays[cardId]) setOverlayScroll((map) => (map[cardId] === y ? map : { ...map, [cardId]: y }));
+      // Scrolls the workspace caused itself are reported only for overlays.
+      if (synced || !settings.sync.scroll) return;
       // Content anchors only fit previews of the same page; others scroll to the same ratio.
       const page = agents.frameOf(cardId)?.href;
-      for (const vp of visible) {
-        if (vp.id === cardId) continue;
-        const other = agents.frameOf(vp.id)?.href;
-        const samePage = Boolean(page && other && pageOf(page) === pageOf(other));
-        agents.send(vp.id, { type: 'scrollTo', ratio, anchor: samePage ? anchor : undefined });
+      for (const card of cards) {
+        if (card.id === cardId) continue;
+        const other = agents.frameOf(card.id)?.href;
+        const same = Boolean(page && other && samePage(page, other));
+        agents.send(card.id, { type: 'scrollTo', ratio, anchor: same ? anchor : undefined });
       }
     },
     onZoom: (direction) => zoomStep(direction),
@@ -865,17 +1000,28 @@ function Workspace({
   useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
   useEffect(() => broadcast({ type: 'scrollbars', hidden: hideScrollbars }), [broadcast, hideScrollbars]);
   useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
+  useEffect(() => broadcast({ type: 'stress', pseudo: stress.pseudo, rtl: stress.rtl }), [broadcast, stress]);
+  useEffect(() => broadcast({ type: 'reducedMotion', on: reduceMotion }), [broadcast, reduceMotion]);
+  useEffect(() => broadcast({ type: 'animations', paused: pauseAnimations }), [broadcast, pauseAnimations]);
   // When the inspector's selection goes (cleared, closed, another page), previews drop its outline too.
   useEffect(() => {
     if (!inspector.selector) broadcast({ type: 'select', selector: null });
   }, [broadcast, inspector.selector]);
-  const schemeKey = visible.map((vp) => `${vp.id}:${vp.colorScheme ?? ''}`).join(' ');
+  const schemeKey = cards.map((card) => `${card.id}:${card.viewport.colorScheme ?? ''}`).join(' ');
   useEffect(() => {
     for (const entry of schemeKey.split(' ')) {
       const [id, scheme] = entry.split(':');
       if (id) send(id, { type: 'colorScheme', scheme: (scheme || null) as ColorScheme | null });
     }
   }, [schemeKey, send]);
+  // Previews with a design overlay report every scroll (also synced ones), so the overlay follows.
+  const trackKey = cards.map((card) => `${card.id}:${overlays[card.id] ? 1 : 0}`).join(' ');
+  useEffect(() => {
+    for (const entry of trackKey.split(' ')) {
+      const [id, on] = entry.split(':');
+      if (id) send(id, { type: 'trackScroll', on: on === '1' });
+    }
+  }, [trackKey, send]);
 
   // Breakpoints found in the page's own stylesheets, from a preview showing the workspace's page.
   const siteMedia: MediaReport | null = (() => {
@@ -1036,6 +1182,163 @@ function Workspace({
     broadcast({ type: 'scrollTo', ratio: 0 });
   };
 
+  const scrollAllToBottom = () => {
+    hintAccess(t('palette.scrollBottom'));
+    broadcast({ type: 'scrollTo', ratio: 1 });
+  };
+
+  const copyAddress = () => {
+    if (!currentUrl) return;
+    void copyText(currentUrl.href).then((copied) =>
+      toast(
+        copied
+          ? { message: t('palette.addressCopied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+  };
+
+  /** Measuring and picking both take clicks in the previews: one at a time. */
+  const toggleMeasure = () => {
+    if (!measuring && inspector.picking) stopPicking();
+    setMeasuring(!measuring);
+  };
+
+  /** Simulations inside the previews (stress tests, page preferences) need the site's permission. */
+  const toggleSimulate = (toggle: SimulateToggle) => {
+    const on = !simulateState[toggle];
+    if (toggle === 'pseudo' || toggle === 'rtl') setStress({ ...stress, [toggle]: on });
+    else if (toggle === 'reduceMotion') setReduceMotion(on);
+    else setPauseAnimations(on);
+    if (on) hintAccess(t(SIMULATE_LABELS[toggle]));
+  };
+
+  /** Shows one viewport on its own, then the next or previous one ([ and ]). */
+  const cycleFocus = (delta: 1 | -1) => {
+    if (visible.length === 0) return;
+    const position = focused ? visible.findIndex((vp) => vp.id === focused.id) : delta === 1 ? -1 : visible.length;
+    const next = visible[(position + delta + visible.length) % visible.length]!;
+    setFocus({ id: next.id, zoom: focusZoom(next) });
+    requestAnimationFrame(() => workspaceRef.current?.scrollTo({ top: 0, left: 0 }));
+  };
+
+  /* ---------- Comparing two addresses ---------- */
+
+  const allowCompareSite = async (url: URL) => {
+    const granted = await withPrompt(() => requestSiteAccess(url));
+    if (granted === null) return;
+    if (!granted) {
+      toast({ message: t('access.denied'), tone: 'error' });
+      return;
+    }
+    toast({ message: t('access.granted', { host: displayHost(url) }), tone: 'success' });
+    // Load the B previews again, now that the site may appear in frames.
+    setCardReloads((map) => {
+      const next = { ...map };
+      for (const vp of visible) next[compareCardId(vp.id)] = (next[compareCardId(vp.id)] ?? 0) + 1;
+      return next;
+    });
+  };
+
+  const startCompare = async (target: CompareTarget) => {
+    const starting = compare === null;
+    setDialog(null);
+    setCompare(target);
+    if (starting && visible.length > 4) toast({ message: t('compare.many'), tone: 'info', key: 'compare-many' });
+    // The other site may need its own permission to appear in frames.
+    const page = currentUrl ? compareUrl(target, currentUrl.href) : null;
+    if (!page) return;
+    const other = new URL(page);
+    if (await hasSiteAccess(other)) return;
+    toast({
+      message: t('compare.needsAccess', { host: displayHost(other) }),
+      tone: 'info',
+      key: 'compare-access',
+      action: { label: t('tools.allow'), onAction: () => void allowCompareSite(other) },
+    });
+  };
+
+  const stopCompare = () => {
+    setCompare(null);
+    setDialog((current) => (current === 'compare' ? null : current));
+  };
+
+  /** What B shows becomes the workspace's page, and A's page becomes the comparison. */
+  const swapSides = () => {
+    if (!compare || !currentUrl) return;
+    const swapped = swapCompare(compare, currentUrl.href);
+    if (!swapped) return;
+    setCompare(swapped.target);
+    navigate(swapped.page);
+  };
+
+  /* ---------- Design overlays ---------- */
+
+  const addOverlay = (cardId: string, name: string, file: File) => {
+    if (!file.type.startsWith('image/')) {
+      toast({ message: t('overlay.failed'), tone: 'error', key: 'overlay' });
+      return;
+    }
+    // The image stays in this browser: an object URL of the local file.
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      overlayUrls.current.add(url);
+      setOverlays((map) => ({ ...map, [cardId]: { src: url, opacity: 0.5, difference: false, hidden: false } }));
+      toast({ message: t('overlay.added', { name }), tone: 'success', key: 'overlay' });
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      toast({ message: t('overlay.failed'), tone: 'error', key: 'overlay' });
+    };
+    image.src = url;
+  };
+
+  const updateOverlay = (cardId: string, patch: Partial<DesignOverlayState>) =>
+    setOverlays((map) => {
+      const overlay = map[cardId];
+      return overlay ? { ...map, [cardId]: { ...overlay, ...patch } } : map;
+    });
+
+  const removeOverlay = (cardId: string) => {
+    const overlay = overlays[cardId];
+    if (!overlay) return;
+    URL.revokeObjectURL(overlay.src);
+    overlayUrls.current.delete(overlay.src);
+    setOverlays(({ [cardId]: _removed, ...rest }) => rest);
+  };
+
+  // The designs' object URLs are released when the workspace closes.
+  useEffect(() => {
+    const urls = overlayUrls.current;
+    return () => urls.forEach((url) => URL.revokeObjectURL(url));
+  }, []);
+
+  /* ---------- Live CSS snippets ---------- */
+
+  const saveSnippet = (name: string, css: string) => {
+    const snippetName = normalizeSnippetName(name);
+    const code = css.trim().slice(0, MAX_LIVE_CSS);
+    if (!snippetName || !code) return;
+    const replaces = settings.cssSnippets.some(
+      (snippet) => snippet.name.toLocaleLowerCase() === snippetName.toLocaleLowerCase(),
+    );
+    if (!replaces && settings.cssSnippets.length >= MAX_CSS_SNIPPETS) {
+      toast({ message: t('css.snippetLimit', { max: MAX_CSS_SNIPPETS }), tone: 'info', key: 'snippet' });
+      return;
+    }
+    dispatch({ type: 'saveCssSnippet', snippet: { id: createId(), name: snippetName, css: code } });
+    toast({ message: t('css.snippetSaved', { name: snippetName }), tone: 'success', key: 'snippet' });
+  };
+
+  const deleteSnippet = (snippet: CssSnippet) => {
+    const index = settings.cssSnippets.findIndex((item) => item.id === snippet.id);
+    dispatch({ type: 'deleteCssSnippet', id: snippet.id });
+    withUndo(t('css.snippetDeleted', { name: snippet.name }), () =>
+      dispatch({ type: 'restoreCssSnippet', snippet, index }),
+    );
+  };
+
   const toggleSaved = () => {
     if (!currentUrl) return;
     const saved = settings.savedPages.includes(currentUrl.href);
@@ -1051,34 +1354,38 @@ function Workspace({
 
   const runReport = async () => {
     if (!currentUrl) return;
-    const list = visible;
+    const list = cards;
     setBusy('report');
     try {
       if (focused) {
         setFocus(null);
         await nextFrame();
       }
-      const cards: ReportCard[] = [];
-      for (const [index, vp] of list.entries()) {
+      const reportCards: ReportCard[] = [];
+      for (const [index, card] of list.entries()) {
+        const vp = card.viewport;
         toast({
           message: t('report.progress', { current: index + 1, total: list.length }),
           tone: 'info',
           key: 'report',
         });
-        const stage = document.querySelector<HTMLElement>(`[data-viewport-id="${CSS.escape(vp.id)}"] [data-stage]`);
+        const stage = stageOf(card.id);
         const shot = stage ? await captureElementImage(stage, 'image/jpeg') : null;
-        cards.push({
-          name: vp.name,
+        reportCards.push({
+          name: cardTitle(card),
           width: vp.width,
           height: vp.height,
           zoom: vp.zoom,
           breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
           image: shot ? await blobToDataUrl(shot.blob) : null,
-          checks: settings.checks ? (agents.frameOf(vp.id)?.report ?? null) : null,
+          checks: settings.checks ? (agents.frameOf(card.id)?.report ?? null) : null,
         });
       }
-      const title = list.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
-      const html = buildReportHtml({ url: currentUrl.href, title, created: new Date(), version, language, cards }, t);
+      const title = visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
+      const html = buildReportHtml(
+        { url: currentUrl.href, title, created: new Date(), version, language, cards: reportCards },
+        t,
+      );
       const fileName = `breakpointer-report_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.html`;
       downloadBlob(new Blob([html], { type: 'text/html' }), fileName);
       toast({ message: t('report.saved', { file: fileName }), tone: 'success', key: 'report' });
@@ -1116,6 +1423,12 @@ function Workspace({
     help: () => setDialog('help'),
     palette: () => (dialog === 'palette' ? setDialog(null) : openPalette()),
     inspect: toggleInspector,
+    measure: toggleMeasure,
+    contrast: () => setDialog('contrast'),
+    outlines: () => toggleTool('outlines'),
+    prevViewport: () => cycleFocus(-1),
+    nextViewport: () => cycleFocus(1),
+    actualSize: () => visible.length > 0 && zoomTo(1),
     escape: onEscape,
   });
 
@@ -1139,6 +1452,9 @@ function Workspace({
         hideScrollbars,
         liveCss: Boolean(liveCss),
         inspecting: inspector.open,
+        measuring,
+        comparing: compare !== null,
+        simulate: simulateState,
         actions: {
           reloadAll: reloadAllPreviews,
           openInTab: () => currentUrl && void adapter.openInTab(currentUrl.href),
@@ -1171,6 +1487,17 @@ function Workspace({
           siteAccess: () => setDialog('access'),
           help: () => setDialog('help'),
           exportSettings,
+          scrollBottom: scrollAllToBottom,
+          copyAddress,
+          cycleFocus,
+          measure: toggleMeasure,
+          contrast: () => setDialog('contrast'),
+          compare: () => setDialog('compare'),
+          stopCompare,
+          swapCompare: swapSides,
+          setVision,
+          toggleSimulate,
+          applySnippet: applyLiveCss,
         },
       }),
     );
@@ -1220,23 +1547,49 @@ function Workspace({
     !dismissedHosts.includes(currentUrl.hostname),
   );
 
-  const inspectorRows: InspectorRow[] = visible.map((vp) => {
-    const result = inspector.results[vp.id];
+  const inspectorRows: InspectorRow[] = cards.map((card) => {
+    const result = inspector.results[card.id];
+    const { width, height } = card.viewport;
     return {
-      id: vp.id,
-      name: vp.name,
-      width: vp.width,
-      height: vp.height,
-      sizeClass: sizeClassOf(vp.width, vp.height),
-      info: result && result.generation === generations[vp.id] ? result.info : undefined,
+      id: card.id,
+      name: cardTitle(card),
+      width,
+      height,
+      sizeClass: sizeClassOf(width, height),
+      info: result && result.generation === generations[card.id] ? result.info : undefined,
     };
   });
 
+  /** The inspector's comparison as a Markdown table, for a ticket or a pull request. */
+  const copyComparison = () => {
+    if (!inspector.selector) return;
+    const markdown = comparisonMarkdown(inspector.selector, inspectorRows, {
+      viewport: t('inspector.tableViewport'),
+      missing: t('inspector.missing'),
+      hidden: t('inspector.hidden'),
+      waiting: t('inspector.waiting'),
+      size: t('inspector.prop.size'),
+      display: t('inspector.prop.display'),
+      font: t('inspector.prop.font'),
+      margin: t('inspector.prop.margin'),
+      padding: t('inspector.prop.padding'),
+      layout: t('inspector.prop.layout'),
+      position: t('inspector.prop.position'),
+    });
+    void copyText(markdown).then((copied) =>
+      toast(
+        copied
+          ? { message: t('inspector.tableCopied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+  };
+
   const revealCard = (id: string) => {
-    if (focused && focused.id !== id) setFocus(null);
+    if (focused && focused.id !== viewportIdOf(id)) setFocus(null);
     requestAnimationFrame(() =>
       document
-        .querySelector(`[data-viewport-id="${CSS.escape(id)}"]`)
+        .querySelector(`[data-card-id="${CSS.escape(id)}"]`)
         ?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }),
     );
   };
@@ -1244,18 +1597,22 @@ function Workspace({
   const renderCards = () => (
     <div className={styles.cards} data-layout={settings.layout} data-focus={focused ? '' : undefined} data-cards>
       {domOrder.map((id) => {
-        const index = visible.findIndex((item) => item.id === id);
-        const vp = visible[index];
-        return vp ? (
+        const index = cards.findIndex((item) => item.id === id);
+        const card = cards[index];
+        if (!card) return null;
+        const vp = card.viewport;
+        const zoom = focused?.id === vp.id ? focused.zoom : vp.zoom;
+        return (
           <ViewportCard
-            key={vp.id}
+            key={card.id}
+            cardId={card.id}
             order={index}
             viewport={vp}
-            src={cardSrc(vp.id)}
-            reloadKey={cardReloadKey(vp.id)}
-            frameName={generations[vp.id] === undefined ? undefined : frameName(vp.id, generations[vp.id]!)}
-            navigatedAway={agents.frameOf(vp.id) ? strays[vp.id] === true : undefined}
-            index={index}
+            src={cardSrc(card.id)}
+            reloadKey={cardReloadKey(card.id)}
+            frameName={generations[card.id] === undefined ? undefined : frameName(card.id, generations[card.id]!)}
+            navigatedAway={agents.frameOf(card.id) ? strays[card.id] === true : undefined}
+            index={visible.findIndex((item) => item.id === vp.id)}
             count={visible.length}
             canDuplicate={canAddViewport(viewports)}
             breakpointSet={settings.breakpoints}
@@ -1263,36 +1620,51 @@ function Workspace({
             siteBreakpoints={siteBreakpoints ?? undefined}
             snapWidths={snapWidths}
             grid={settings.grid}
-            checks={settings.checks ? (agents.frameOf(vp.id)?.report ?? null) : null}
-            highlighted={highlights[vp.id] ?? null}
-            onHighlight={(kind) => highlight(vp.id, kind)}
+            checks={settings.checks ? (agents.frameOf(card.id)?.report ?? null) : null}
+            highlighted={highlights[card.id] ?? null}
+            onHighlight={(kind) => highlight(card.id, kind)}
             showRulers={settings.showRulers}
             focused={focused?.id === vp.id}
             concealed={Boolean(focused && focused.id !== vp.id)}
             zoomOverride={focused?.id === vp.id ? focused.zoom : undefined}
+            filter={visionFilter(vision)}
+            measuring={measuring}
+            overlay={overlays[card.id]}
+            overlayScroll={overlayScroll[card.id]}
+            onOverlayFile={(file) => addOverlay(card.id, cardTitle(card), file)}
+            onOverlayChange={(patch) => updateOverlay(card.id, patch)}
+            onOverlayRemove={() => removeOverlay(card.id)}
+            compare={
+              compare
+                ? { side: card.compare ? 'b' : 'a', target: card.compare ? compareLabel(compare) : (host ?? '') }
+                : undefined
+            }
+            onStopCompare={stopCompare}
             onRename={(name) => dispatch({ type: 'updateViewport', id: vp.id, patch: { name } })}
             onResize={(size) => dispatch({ type: 'updateViewport', id: vp.id, patch: size })}
-            onZoom={(zoom) => dispatch({ type: 'updateViewport', id: vp.id, patch: { zoom } })}
+            onZoom={(value) => dispatch({ type: 'updateViewport', id: vp.id, patch: { zoom: value } })}
             onRotate={() => dispatch({ type: 'rotateViewport', id: vp.id })}
             onMove={(delta) => moveVisible(vp, delta)}
-            onReload={() => reloadCard(vp.id)}
+            onReload={() => reloadCard(card.id)}
             onCapture={(stage) =>
               // The image is taken as shown on screen, so the name says at which zoom.
               void capture(stage, [
-                vp.name,
+                card.compare ? `${vp.name} B` : vp.name,
                 `${vp.width}x${vp.height}`,
-                `${Math.round((focused?.id === vp.id ? focused.zoom : vp.zoom) * 100)}pct`,
+                `${Math.round(zoom * 100)}pct`,
               ])
             }
             onCopy={(stage) => void copyCapture(stage)}
             // The page this preview shows now (it may have followed a link on its own).
             onOpenInTab={() => {
-              const page = agents.frameOf(vp.id)?.href ?? cardSrc(vp.id);
-              if (page) void adapter.openInTab(toSafeHref(page) ?? src ?? page);
+              const shown = cardSrc(card.id);
+              const page = agents.frameOf(card.id)?.href ?? shown;
+              if (page) void adapter.openInTab(toSafeHref(page) ?? shown ?? page);
             }}
             onOpenInWindow={async () => {
-              if (!src) return;
-              const size = await adapter.openInWindow(src, { width: vp.width, height: vp.height }).catch(() => null);
+              const page = cardSrc(card.id);
+              if (!page) return;
+              const size = await adapter.openInWindow(page, { width: vp.width, height: vp.height }).catch(() => null);
               if (!size) toast({ message: t('window.failed'), tone: 'error' });
               else if (size.width !== vp.width || size.height !== vp.height)
                 toast({ message: t('window.clamped', size), tone: 'info' });
@@ -1307,7 +1679,7 @@ function Workspace({
             onFocus={() => toggleFocus(vp.id)}
             onColorScheme={(scheme) => setColorScheme(vp, scheme)}
           />
-        ) : null;
+        );
       })}
     </div>
   );
@@ -1359,6 +1731,7 @@ function Workspace({
 
   return (
     <div className={styles.app}>
+      <VisionFilters />
       <TopBar
         address={address}
         addressError={addressError ? t(addressError) : null}
@@ -1400,6 +1773,15 @@ function Workspace({
         sync={settings.sync.scroll || settings.sync.navigation}
         showGrid={settings.grid.show}
         inspecting={inspector.open}
+        measuring={measuring}
+        comparing={compare !== null}
+        simulate={simulateState}
+        onMeasure={toggleMeasure}
+        onContrast={() => setDialog('contrast')}
+        onCompare={() => setDialog('compare')}
+        onStopCompare={stopCompare}
+        onVision={setVision}
+        onSimulate={toggleSimulate}
         tools={{
           syncScroll: settings.sync.scroll,
           syncNavigation: settings.sync.navigation,
@@ -1432,6 +1814,30 @@ function Workspace({
         onReport={exportReport}
         onAllowSite={() => void allowSite()}
       />
+      {compare && currentUrl && (
+        <Banner
+          tone="info"
+          icon="split"
+          testId="compare-banner"
+          actions={
+            <>
+              <Button size="sm" icon="swap" onClick={swapSides}>
+                {t('compare.swap')}
+              </Button>
+              <Button size="sm" icon="pencil" onClick={() => setDialog('compare')}>
+                {t('compare.change')}
+              </Button>
+              <Button size="sm" variant="ghost" icon="close" onClick={stopCompare}>
+                {t('compare.stop')}
+              </Button>
+            </>
+          }
+        >
+          {compare.mode === 'mirror'
+            ? t('compare.bannerMirror', { target: compareLabel(compare) })
+            : t('compare.bannerFixed', { target: compareLabel(compare) })}
+        </Banner>
+      )}
       {probe === 'unreachable' && host && currentUrl && (
         // The previews stay: each frame shows Chrome's own error page too.
         <Banner
@@ -1511,6 +1917,24 @@ function Workspace({
                   >
                     {t('inspector.pickingHint')}
                   </DockStatus>
+                ) : measuring ? (
+                  <DockStatus
+                    icon="measure"
+                    testId="measure-status"
+                    action={t('measure.done')}
+                    onAction={() => setMeasuring(false)}
+                  >
+                    {t('measure.status')}
+                  </DockStatus>
+                ) : vision !== 'none' ? (
+                  <DockStatus
+                    icon="eye"
+                    testId="vision-status"
+                    action={t('vision.off')}
+                    onAction={() => setVision('none')}
+                  >
+                    {t('vision.status')} <strong>{t(VISION_KEYS[vision])}</strong>
+                  </DockStatus>
                 ) : null
               }
             />
@@ -1537,6 +1961,7 @@ function Workspace({
                 ),
               )
             }
+            onCopyTable={copyComparison}
             onAllowSite={() => void allowSite()}
           />
         )}
@@ -1672,6 +2097,23 @@ function Workspace({
         onApply={applyLiveCss}
         onClear={() => applyLiveCss('')}
         onAllowSite={() => void allowSite()}
+        onClose={() => setDialog(null)}
+        snippets={settings.cssSnippets}
+        onSaveSnippet={saveSnippet}
+        onDeleteSnippet={deleteSnippet}
+      />
+      <ContrastDialog
+        open={dialog === 'contrast'}
+        colors={contrastColors}
+        onChange={setContrastColors}
+        onClose={() => setDialog(null)}
+      />
+      <CompareDialog
+        open={dialog === 'compare'}
+        target={compare}
+        current={currentUrl?.href ?? null}
+        onCompare={(target) => void startCompare(target)}
+        onStop={stopCompare}
         onClose={() => setDialog(null)}
       />
       <HelpDialog

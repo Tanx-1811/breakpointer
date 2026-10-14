@@ -20,6 +20,16 @@
   color: var(--danger);
 }
 
+.info {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--text);
+}
+
+.info .icon {
+  color: var(--accent);
+}
+
 .icon {
   flex: none;
 }

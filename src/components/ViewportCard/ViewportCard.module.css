@@ -159,6 +159,28 @@
   line-height: 18px;
 }
 
+.side {
+  flex: none;
+  margin-left: 2px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
+.side[data-side='b'] {
+  background: var(--success-soft);
+  color: var(--success);
+}
+
+.card[data-side='b'] {
+  border-color: color-mix(in srgb, var(--success) 30%, var(--border));
+}
+
 .scheme {
   display: inline-flex;
   flex: none;

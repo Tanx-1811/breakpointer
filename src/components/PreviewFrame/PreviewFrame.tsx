@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
+import { createStrayInputMonitor, type StrayInputKind } from '../../state/stray-input';
 import styles from './PreviewFrame.module.css';
 
 /**
@@ -24,6 +25,36 @@ const ALLOW = 'fullscreen; autoplay; encrypted-media; picture-in-picture; clipbo
 
 const SLOW_AFTER_MS = 12000;
 
+/* Input aimed at a preview that reached the workspace instead (see state/stray-input.ts). */
+const frames = new Set<HTMLIFrameElement>();
+const strayInput = createStrayInputMonitor();
+
+function trackFrame(frame: HTMLIFrameElement | null) {
+  if (!frame) return;
+  frames.add(frame);
+  return () => {
+    frames.delete(frame);
+  };
+}
+
+/** Moves every preview by a hundredth of a pixel for two frames and back, so Chrome rebuilds their hit-test data. */
+function refreshFrames() {
+  const moved = [...frames];
+  for (const frame of moved) frame.style.translate = '0.01px 0.01px';
+  requestAnimationFrame(() =>
+    requestAnimationFrame(() => {
+      for (const frame of moved) frame.style.translate = '';
+    }),
+  );
+}
+
+const onStrayInput = (kind: StrayInputKind) => (event: { timeStamp: number }) => {
+  if (strayInput.note(kind, event.timeStamp)) refreshFrames();
+};
+const onStrayPress = onStrayInput('press');
+const onStrayWheel = onStrayInput('wheel');
+const onStrayMove = onStrayInput('move');
+
 type Status = 'loading' | 'slow' | 'loaded';
 
 type Props = {
@@ -41,6 +72,8 @@ type Props = {
    * agent). Otherwise a second `load` event is taken to mean it did.
    */
   navigatedAway?: boolean;
+  /** A CSS filter drawn over the rendered page (vision simulation). */
+  filter?: string | null;
 };
 
 /**
@@ -52,7 +85,7 @@ type Props = {
  * their `load` event (which waits for every ad and tracker), so the preview
  * stays visible while a thin bar and a small badge show progress.
  */
-export function PreviewFrame({ src, width, height, zoom, title, onBack, name, navigatedAway }: Props) {
+export function PreviewFrame({ src, width, height, zoom, title, onBack, name, navigatedAway, filter }: Props) {
   const { t } = useI18n();
   const [status, setStatus] = useState<Status>('loading');
   // A second load event means the page inside navigated (e.g. a clicked link);
@@ -69,13 +102,14 @@ export function PreviewFrame({ src, width, height, zoom, title, onBack, name, na
   return (
     <div className={styles.viewport} style={{ width: width * zoom, height: height * zoom }} data-status={status}>
       <iframe
+        ref={trackFrame}
         className={styles.frame}
         src={src}
         name={name}
         title={title}
         width={width}
         height={height}
-        style={{ width, height, transform: `scale(${zoom})` }}
+        style={{ width, height, transform: `scale(${zoom})`, filter: filter ?? undefined }}
         sandbox={SANDBOX}
         allow={ALLOW}
         referrerPolicy="strict-origin-when-cross-origin"
@@ -84,6 +118,9 @@ export function PreviewFrame({ src, width, height, zoom, title, onBack, name, na
           if (loads.current > 1) setNavigated(true);
           setStatus('loaded');
         }}
+        onPointerDown={onStrayPress}
+        onWheel={onStrayWheel}
+        onPointerMove={onStrayMove}
         data-testid="preview-frame"
         data-viewport-width={width}
         data-viewport-height={height}

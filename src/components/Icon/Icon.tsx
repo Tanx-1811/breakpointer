@@ -74,12 +74,25 @@ const PATHS = {
   panel: 'M3 5h18v14H3zM15 5v14',
   tag: 'M3 7.5A1.5 1.5 0 0 1 4.5 6H15l5 6-5 6H4.5A1.5 1.5 0 0 1 3 16.5z',
   resize: 'M21 15l-6 6M21 9L9 21',
+  measure: 'M4 12h16M4 8v8M20 8v8M7 12l2.5-2.5M7 12l2.5 2.5M17 12l-2.5-2.5M17 12l-2.5 2.5',
+  eyedropper: 'M14.5 6.5l3-3a2.1 2.1 0 0 1 3 3l-3 3M13 5l6 6M16 8l-9.5 9.5L4 20l2.5-2.5',
+  beaker: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3M7.4 15h9.2',
+  split: 'M3 5h18v14H3zM12 5v14M6 9h3M15 9h3',
+  overlay: 'M4 4h11v11H4zM9 9h11v11H9z',
+  pause: 'M9 5v14M15 5v14',
+  text: 'M5 7V5h14v2M12 5v14M9 19h6',
+  palette: 'M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3.5 3H16a2 2 0 0 0-1.5 3.3c.6.7.2 2.7-2.5 2.7z',
   more: 'M6 12h.01M12 12h.01M18 12h.01',
   grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
 } as const;
 
 /** Icons made of dots need a wider stroke to read as dots. */
 const DOT_ICONS = new Set<IconName>(['more', 'grip']);
+
+/** Icons that mix lines with dots: the dots get a second, wider stroke. */
+const DOTS: Partial<Record<IconName, string>> = {
+  palette: 'M7.5 11.5h.01M10 7.5h.01M15 7.5h.01',
+};
 
 /** Solid shapes drawn on top of the stroke (e.g. the dark half of "contrast"). */
 const FILLS: Partial<Record<IconName, string>> = {
@@ -92,6 +105,7 @@ type Props = SVGProps<SVGSVGElement> & { name: IconName; size?: number };
 
 export function Icon({ name, size = 16, ...rest }: Props) {
   const fill = FILLS[name];
+  const dots = DOTS[name];
   return (
     <svg
       width={size}
@@ -107,6 +121,7 @@ export function Icon({ name, size = 16, ...rest }: Props) {
       {...rest}
     >
       <path d={PATHS[name]} />
+      {dots && <path d={dots} strokeWidth={3} />}
       {fill && <path d={fill} fill="currentColor" stroke="none" />}
     </svg>
   );

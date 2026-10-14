@@ -13,6 +13,8 @@ export const MAX_BREAKPOINT_NAME = 12;
 export const GRID_COLUMN_OPTIONS = ['auto', 4, 6, 8, 12, 16] as const;
 export const MAX_GRID_SPACING = 200;
 export const MAX_LIVE_CSS = 20_000;
+export const MAX_CSS_SNIPPETS = 20;
+export const MAX_SNIPPET_NAME = 40;
 
 export const MIN_ZOOM = 0.1;
 export const MAX_ZOOM = 1;

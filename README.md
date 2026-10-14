@@ -23,8 +23,11 @@ Breakpointer is a Chrome extension (Manifest V3) for frontend developers, design
 - **This site's breakpoints:** reads the widths in the page's own media queries — label viewports with them, snap to them and test both sides of each.
 - **Light and dark side by side:** show any preview with the page's light or dark styles (`prefers-color-scheme`), whatever your browser prefers.
 - **Synced scrolling and navigation:** scroll or follow a link in one preview and the others follow — keeping the **same content** in view.
-- **Responsive checks** on every card: sideways overflow and its culprits, missing viewport tag, tiny text, small touch targets — with **highlight** in the page.
-- **Layout outlines**, **live CSS** for every preview at once, a **column grid**, **pixel rulers** with breakpoint marks, and **hidden scrollbars** like on phones.
+- **Responsive checks** on every card: sideways overflow and its culprits, missing viewport tag, tiny text, small touch targets, blurry (upscaled) images and fixed elements covering the screen — with **highlight** in the page.
+- **Compare two addresses:** a second preview, **B**, next to every viewport — the same page on staging next to production (B follows A to other pages), or any fixed address; swap A and B in one click.
+- **Simulate:** colour vision deficiencies (no red, green, blue or colour) and blurred vision on any site; **prefers-reduced-motion** styles and **paused animations**; and **layout stress tests** — pseudo-translated text about 40% longer, and right-to-left.
+- **Measure** any area of a preview in CSS pixels, a **colour contrast checker** with an eyedropper and WCAG AA/AAA grades, and a **design overlay** to compare a mockup with the page pixel by pixel.
+- **Layout outlines**, **live CSS** for every preview at once (with **saved snippets**), a **column grid**, **pixel rulers** with breakpoint marks, and **hidden scrollbars** like on phones.
 - **Breakpoint labels** (Tailwind, Bootstrap, your own or this site's) and **Test breakpoint edges**.
 - **Focus mode** for one viewport, **back/forward** between previewed pages, **rotate all**, **sort by width**, `Ctrl/⌘ + wheel` zoom and `Space + drag` pan.
 - **Screenshots** of one preview or the workspace, **all viewports in one labelled image**, **copy to clipboard**, and an **HTML report** of every size with its issues.
@@ -80,9 +83,14 @@ After pulling changes, run `npm run build` again and click the reload icon on th
 | `L`                   | Switch layout                            |                    |                          |
 | `M`                   | Toggle rulers                            |                    |                          |
 | `I`                   | Inspect an element                       |                    |                          |
+| `X`                   | Measure in a preview                     |                    |                          |
+| `C`                   | Colour contrast checker                  |                    |                          |
+| `O`                   | Toggle layout outlines                   |                    |                          |
+| `[` / `]`             | Focus the previous / next viewport       |                    |                          |
+| `0`                   | Zoom to 100%                             |                    |                          |
 | `S`                   | Screenshot of the workspace              |                    |                          |
 | `T`                   | Switch theme                             |                    |                          |
-| `Esc`                 | Leave focus mode or inspector            |                    |                          |
+| `Esc`                 | Leave measuring, focus or the inspector  |                    |                          |
 | `Alt + ←` / `Alt + →` | Previous / next previewed page           |                    |                          |
 | `?`                   | Help                                     |                    |                          |
 | `Space` + drag        | Pan the workspace                        |                    |                          |
@@ -95,13 +103,13 @@ Chrome shortcuts can be changed at `chrome://extensions/shortcuts`.
 
 No permission shows a warning at install. Host access is **optional** and requested only when you allow a site, allow all sites, or take your first screenshot (Chrome requires all-sites access to capture a tab).
 
-| Permission                            | Used for                                                                                                                                                             |
-| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage`                             | Your viewports, groups and preferences, stored locally                                                                                                               |
-| `activeTab`                           | Reading the current tab's address when you invoke Breakpointer                                                                                                       |
-| `contextMenus`                        | "Preview in Breakpointer" on pages and links                                                                                                                         |
-| `declarativeNetRequestWithHostAccess` | Letting previews of sites **you allowed** ignore frame-blocking headers, only inside the Breakpointer tab                                                            |
-| `scripting`                           | Running Breakpointer's own script inside previews of sites **you allowed** (sync, checks, inspector, breakpoints, colours, live CSS), only while a workspace is open |
+| Permission                            | Used for                                                                                                                                                                           |
+| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`                             | Your viewports, groups and preferences, stored locally                                                                                                                             |
+| `activeTab`                           | Reading the current tab's address when you invoke Breakpointer                                                                                                                     |
+| `contextMenus`                        | "Preview in Breakpointer" on pages and links                                                                                                                                       |
+| `declarativeNetRequestWithHostAccess` | Letting previews of sites **you allowed** ignore frame-blocking headers, only inside the Breakpointer tab                                                                          |
+| `scripting`                           | Running Breakpointer's own script inside previews of sites **you allowed** (sync, checks, inspector, breakpoints, colours, live CSS, stress tests), only while a workspace is open |
 
 Breakpointer collects nothing and sends nothing anywhere. Read the full [privacy policy](docs/PRIVACY.md).
 
@@ -144,7 +152,7 @@ Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing how previews render
 
 ## Roadmap
 
-V1 covers the preview workflow, v0.2 the inspection toolkit and v0.3 the redesign with the command palette, inspector, drag-to-resize and site breakpoints. Next, driven by feedback: "allow for this session" access, visual regression baselines, comparing two addresses side by side, and optional sharing — see [docs/PLAN.md](docs/PLAN.md#9-roadmap-ideas-ordered-by-expected-value).
+V1 covers the preview workflow, v0.2 the inspection toolkit and v0.3 the redesign with the command palette, inspector, drag-to-resize, site breakpoints, A/B comparison, simulations, measuring and design overlays. Next, driven by feedback: "allow for this session" access, visual regression baselines and optional sharing — see [docs/PLAN.md](docs/PLAN.md#9-roadmap-ideas-ordered-by-expected-value).
 
 ## License
 
@@ -156,7 +164,7 @@ No license has been chosen yet; all rights reserved by the author.
 
 **Breakpointer** là tiện ích Chrome giúp xem trước website ở nhiều kích thước viewport cùng lúc. Mỗi bản xem trước có **viewport dàn trang thật**, nên media query và bố cục responsive hoạt động đúng như trong một cửa sổ cùng kích thước.
 
-**Tính năng chính:** xem song song tối đa 8 viewport · 22 kích thước có sẵn (tìm kiếm được) và kích thước tùy chỉnh · **kéo cạnh để đổi kích thước**, tự bắt dính vào breakpoint · **bảng lệnh** `Ctrl/⌘ + K` · **soi phần tử** ở mọi kích thước · **breakpoint của chính trang** · **xem sáng/tối cạnh nhau** · cuộn và điều hướng đồng bộ (giữ đúng nội dung đang xem) · **kiểm tra responsive** kèm đánh dấu trên trang · viền bố cục, CSS trực tiếp, lưới cột, thước đo, ẩn thanh cuộn · chế độ tập trung, quay lại/tới trang trước/sau, xoay tất cả, sắp theo chiều rộng · chụp ảnh, **ghép mọi viewport thành một ảnh**, chép vào bộ nhớ tạm, **xuất báo cáo HTML** · nhóm viewport, trang đã lưu (★) · menu chuột phải, phím tắt, gõ `bpt` + dấu cách trên thanh địa chỉ · giao diện sáng/tối mới · **tiếng Việt và tiếng Anh** · không thu thập dữ liệu.
+**Tính năng chính:** xem song song tối đa 8 viewport · 22 kích thước có sẵn (tìm kiếm được) và kích thước tùy chỉnh · **kéo cạnh để đổi kích thước**, tự bắt dính vào breakpoint · **bảng lệnh** `Ctrl/⌘ + K` · **soi phần tử** ở mọi kích thước · **breakpoint của chính trang** · **xem sáng/tối cạnh nhau** · cuộn và điều hướng đồng bộ (giữ đúng nội dung đang xem) · **kiểm tra responsive** kèm đánh dấu trên trang (cả ảnh bị phóng mờ và phần tử cố định che màn hình) · **so sánh hai địa chỉ** (A/B, ví dụ staging cạnh bản chính thức) · **mô phỏng** thị lực (mù màu, nhìn mờ), giảm chuyển động, dừng hiệu ứng động, **thử độ bền bố cục** (chữ dài hơn ~40%, phải sang trái) · **đo khoảng cách** (`X`), **kiểm tra độ tương phản màu** với ống hút màu (`C`), **phủ ảnh thiết kế** để so từng pixel · viền bố cục, CSS trực tiếp (lưu được đoạn CSS), lưới cột, thước đo, ẩn thanh cuộn · chế độ tập trung, quay lại/tới trang trước/sau, xoay tất cả, sắp theo chiều rộng · chụp ảnh, **ghép mọi viewport thành một ảnh**, chép vào bộ nhớ tạm, **xuất báo cáo HTML** · nhóm viewport, trang đã lưu (★) · menu chuột phải, phím tắt, gõ `bpt` + dấu cách trên thanh địa chỉ · giao diện sáng/tối mới · **tiếng Việt và tiếng Anh** · không thu thập dữ liệu.
 
 **Cài đặt từ mã nguồn:** chạy `npm ci && npm run build`, mở `chrome://extensions`, bật **Chế độ dành cho nhà phát triển**, chọn **Tải tiện ích đã giải nén** và trỏ tới **thư mục `dist` bên trong dự án** (ví dụ `~/Documents/GitHub/breakpointer/dist`), không phải thư mục dự án — `manifest.json` chỉ có trong `dist` sau khi build. Trên macOS, nhấn ⌘⇧G trong hộp chọn thư mục để dán đường dẫn. Khi cập nhật code, chạy lại `npm run build` rồi bấm nút tải lại trên thẻ Breakpointer trong `chrome://extensions`.
 

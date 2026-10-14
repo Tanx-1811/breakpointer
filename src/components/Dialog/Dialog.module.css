@@ -25,6 +25,17 @@
   background: rgb(0 0 0 / 58%);
 }
 
+/* Open but out of sight, and the page behind it undimmed (the eyedropper samples it). */
+.dialog[data-concealed] {
+  visibility: hidden;
+}
+
+.dialog[data-concealed]::backdrop,
+:global(html[data-theme='dark']) .dialog[data-concealed]::backdrop {
+  background: transparent;
+  backdrop-filter: none;
+}
+
 .panel {
   display: flex;
   flex-direction: column;

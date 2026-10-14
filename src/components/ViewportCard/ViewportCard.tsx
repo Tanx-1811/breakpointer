@@ -10,8 +10,10 @@ import { MAX_DIMENSION, MAX_NAME_LENGTH, MIN_DIMENSION, ZOOM_OPTIONS } from '../
 import { formatZoom } from '../../utils/format';
 import { IconButton } from '../Button/Button';
 import { ChecksBadge } from '../Checks/ChecksBadge';
+import { DesignOverlay, type DesignOverlayState } from '../DesignOverlay/DesignOverlay';
 import { GridOverlay } from '../GridOverlay/GridOverlay';
 import { Icon } from '../Icon/Icon';
+import { MeasureOverlay } from '../MeasureOverlay/MeasureOverlay';
 import { Menu, type MenuEntry } from '../Menu/Menu';
 import { PreviewFrame } from '../PreviewFrame/PreviewFrame';
 import { RULER_SIZE, Ruler } from '../Ruler/Ruler';
@@ -47,6 +49,8 @@ export type ViewportCardActions = {
 
 type Props = ViewportCardActions & {
   viewport: ViewportConfig;
+  /** Identifies the card (a viewport is shown twice when comparing two addresses); defaults to the viewport id. */
+  cardId?: string;
   /** Visual position (CSS order); the DOM order stays stable so frames don't reload. */
   order: number;
   /** Name of the preview iframe (ties its agent to this card). */
@@ -81,6 +85,21 @@ type Props = ViewportCardActions & {
   concealed?: boolean;
   /** Zoom used instead of the viewport's own (focus mode). */
   zoomOverride?: number;
+  /** A CSS filter over the page (vision simulation). */
+  filter?: string | null;
+  /** Measuring: an overlay over the preview takes the pointer. */
+  measuring?: boolean;
+  /** A design mockup laid over the preview. */
+  overlay?: DesignOverlayState;
+  /** The page's scroll position, for the design overlay (0 when unknown). */
+  overlayScroll?: number;
+  onOverlayFile?: (file: File) => void;
+  onOverlayChange?: (patch: Partial<DesignOverlayState>) => void;
+  onOverlayRemove?: () => void;
+  /** Comparing two addresses: the side this card shows, and what B shows. */
+  compare?: { side: 'a' | 'b'; target: string };
+  /** On a B card the close button stops comparing instead of removing the viewport. */
+  onStopCompare?: () => void;
 };
 
 type Drag = {
@@ -99,7 +118,9 @@ export function ViewportCard(props: Props) {
   const { viewport, src, reloadKey, index, count, canDuplicate, breakpointSet, showRulers } = props;
   const { t } = useI18n();
   const stageRef = useRef<HTMLDivElement>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
+  const side = props.compare?.side;
 
   const { name, orientation, colorScheme } = viewport;
   const width = drag?.width ?? viewport.width;
@@ -135,6 +156,17 @@ export function ViewportCard(props: Props) {
     },
     { id: 'tab', label: t('card.menuOpenTab'), icon: 'external', disabled: !src, onSelect: props.onOpenInTab },
     { id: 'window', label: t('card.menuOpenWindow'), icon: 'window', disabled: !src, onSelect: props.onOpenInWindow },
+    ...(props.onOverlayFile
+      ? [
+          {
+            id: 'overlay',
+            label: props.overlay ? t('card.menuOverlayRemove') : t('card.menuOverlay'),
+            icon: 'overlay',
+            disabled: !src && !props.overlay,
+            onSelect: () => (props.overlay ? props.onOverlayRemove?.() : fileRef.current?.click()),
+          } satisfies MenuEntry,
+        ]
+      : []),
     { kind: 'separator', id: 'sep-scheme' },
     { kind: 'heading', id: 'scheme', label: t('card.colorScheme') },
     {
@@ -258,13 +290,19 @@ export function ViewportCard(props: Props) {
     <section
       className={styles.card}
       style={{ width: Math.max(MIN_CARD_WIDTH, contentWidth + CARD_CHROME_WIDTH), order: props.order }}
-      aria-label={t('card.label', { name, width: viewport.width, height: viewport.height })}
+      aria-label={t(side === 'b' ? 'card.labelCompare' : 'card.label', {
+        name,
+        width: viewport.width,
+        height: viewport.height,
+      })}
       data-testid="viewport-card"
       data-viewport-id={viewport.id}
+      data-card-id={props.cardId ?? viewport.id}
       data-size-class={sizeClass}
       data-focused={props.focused || undefined}
       data-concealed={props.concealed || undefined}
       data-resizing={drag ? drag.axis : undefined}
+      data-side={side}
     >
       <header
         className={styles.header}
@@ -280,6 +318,18 @@ export function ViewportCard(props: Props) {
           </span>
           <div className={styles.title}>
             <NameField name={name} onRename={props.onRename} />
+            {props.compare && (
+              <span
+                className={styles.side}
+                data-side={props.compare.side}
+                data-tooltip={
+                  side === 'b' ? t('card.compareHint', { target: props.compare.target }) : props.compare.target
+                }
+                data-testid="compare-side"
+              >
+                {side === 'b' ? t('card.compareBadge') : t('card.mainBadge')}
+              </span>
+            )}
           </div>
           <span className={styles.gap} data-header-gap aria-hidden="true" />
           <div className={styles.actions}>
@@ -331,13 +381,23 @@ export function ViewportCard(props: Props) {
                 </button>
               )}
             />
-            <IconButton
-              icon="close"
-              size="xs"
-              tone="danger"
-              label={t('card.remove', { name })}
-              onClick={props.onRemove}
-            />
+            {side === 'b' && props.onStopCompare ? (
+              <IconButton
+                icon="close"
+                size="xs"
+                tone="danger"
+                label={t('compare.stop')}
+                onClick={props.onStopCompare}
+              />
+            ) : (
+              <IconButton
+                icon="close"
+                size="xs"
+                tone="danger"
+                label={t('card.remove', { name })}
+                onClick={props.onRemove}
+              />
+            )}
           </div>
         </div>
         <div className={styles.row}>
@@ -422,10 +482,20 @@ export function ViewportCard(props: Props) {
                 width={width}
                 height={height}
                 zoom={zoom}
-                title={t('frame.title', { name, width: viewport.width, height: viewport.height })}
+                title={
+                  side === 'b' && props.compare
+                    ? t('frame.titleCompare', {
+                        name,
+                        target: props.compare.target,
+                        width: viewport.width,
+                        height: viewport.height,
+                      })
+                    : t('frame.title', { name, width: viewport.width, height: viewport.height })
+                }
                 onBack={props.onReload}
                 name={props.frameName}
                 navigatedAway={props.navigatedAway}
+                filter={props.filter}
               />
             ) : (
               <div className={styles.placeholder} style={{ width: width * zoom, height: height * zoom }}>
@@ -446,6 +516,19 @@ export function ViewportCard(props: Props) {
               </div>
             )}
             {props.grid?.show && <GridOverlay grid={props.grid} width={width} height={height} zoom={zoom} />}
+            {src && props.overlay && props.onOverlayChange && props.onOverlayRemove && (
+              <DesignOverlay
+                overlay={props.overlay}
+                width={width}
+                height={height}
+                zoom={zoom}
+                scrollY={props.overlayScroll ?? 0}
+                name={name}
+                onChange={props.onOverlayChange}
+                onRemove={props.onOverlayRemove}
+              />
+            )}
+            {src && props.measuring && <MeasureOverlay width={width} height={height} zoom={zoom} />}
             {guides.map((value) => (
               <span
                 key={value}
@@ -501,6 +584,21 @@ export function ViewportCard(props: Props) {
         <span className={styles.grip} />
       </div>
       <div className={`${styles.handle} ${styles.handleXY}`} aria-hidden="true" {...handleProps('xy')} />
+      {props.onOverlayFile && (
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          data-testid="overlay-file"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            // Picking the same file again must fire a change too.
+            event.target.value = '';
+            if (file) props.onOverlayFile?.(file);
+          }}
+        />
+      )}
     </section>
   );
 }

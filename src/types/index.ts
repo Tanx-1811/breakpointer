@@ -55,6 +55,13 @@ export type ViewportConfig = {
 /** A viewport inside a saved group, without identity or visibility. */
 export type ViewportTemplate = Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom' | 'colorScheme'>;
 
+/** A piece of live CSS the user saved to use again. */
+export type CssSnippet = {
+  id: string;
+  name: string;
+  css: string;
+};
+
 export type ViewportGroup = {
   id: string;
   name: string;
@@ -84,6 +91,8 @@ export type BreakpointerSettings = {
   recentUrls: string[];
   /** Addresses the user saved explicitly (star in the address bar). */
   savedPages: string[];
+  /** Live CSS saved by the user, to apply again in one click. */
+  cssSnippets: CssSnippet[];
   activeUrl?: string;
 };
 

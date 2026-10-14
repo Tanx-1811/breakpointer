@@ -1,10 +1,16 @@
 import type { PaletteCommand } from '../components/CommandPalette/CommandPalette';
-import type { ToolToggle } from '../components/WorkspaceBar/WorkspaceBar';
+import {
+  VISION_KEYS,
+  type SimulateState,
+  type SimulateToggle,
+  type ToolToggle,
+} from '../components/WorkspaceBar/WorkspaceBar';
 import { BUILT_IN_GROUPS } from '../data/groups';
 import { PRESETS } from '../data/presets';
 import type { MessageKey } from '../i18n/en';
 import type { Translate } from '../i18n/translate';
 import { builtInGroupName } from '../state/groups';
+import { VISION_MODES, type VisionMode } from '../state/vision';
 import type {
   BreakpointSetId,
   BreakpointerSettings,
@@ -21,6 +27,18 @@ export type CommandActions = {
   reloadAll: () => void;
   openInTab: () => void;
   scrollTop: () => void;
+  /* v0.4 utilities: their commands are listed when the action is given. */
+  scrollBottom?: () => void;
+  copyAddress?: () => void;
+  cycleFocus?: (delta: 1 | -1) => void;
+  measure?: () => void;
+  contrast?: () => void;
+  compare?: () => void;
+  stopCompare?: () => void;
+  swapCompare?: () => void;
+  setVision?: (mode: VisionMode) => void;
+  toggleSimulate?: (toggle: SimulateToggle) => void;
+  applySnippet?: (css: string) => void;
   navigate: (url: string) => void;
   addPreset: (preset: ViewportPreset, name: string) => void;
   openAdd: () => void;
@@ -63,6 +81,9 @@ export type CommandContext = {
   hideScrollbars: boolean;
   liveCss: boolean;
   inspecting: boolean;
+  measuring?: boolean;
+  comparing?: boolean;
+  simulate?: SimulateState;
   actions: CommandActions;
 };
 
@@ -81,6 +102,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     capture: t('palette.section.capture'),
     pages: t('palette.section.pages'),
     preferences: t('palette.section.preferences'),
+    simulate: t('palette.section.simulate'),
   };
   const add = (command: Omit<PaletteCommand, 'title' | 'keywords'> & { title: string; keywords?: string }) =>
     commands.push(command);
@@ -115,6 +137,35 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     disabled: !ctx.hasUrl,
     run: actions.scrollTop,
   });
+  if (actions.scrollBottom)
+    named('palette.scrollBottom', {
+      id: 'scroll-bottom',
+      section: section.page,
+      icon: 'chevronDown',
+      disabled: !ctx.hasUrl,
+      run: actions.scrollBottom,
+    });
+  if (actions.copyAddress)
+    named('palette.copyAddress', {
+      id: 'copy-address',
+      section: section.page,
+      icon: 'link',
+      disabled: !ctx.hasUrl,
+      run: actions.copyAddress,
+    });
+  if (ctx.comparing && actions.swapCompare && actions.compare && actions.stopCompare) {
+    named('compare.swap', { id: 'compare-swap', section: section.page, icon: 'swap', run: actions.swapCompare });
+    named('compare.change', { id: 'compare-change', section: section.page, icon: 'split', run: actions.compare });
+    named('compare.stop', { id: 'compare-stop', section: section.page, icon: 'close', run: actions.stopCompare });
+  } else if (actions.compare)
+    named('tools.compare', {
+      id: 'compare',
+      section: section.page,
+      icon: 'split',
+      keywords: 'A/B staging production',
+      disabled: !ctx.hasUrl,
+      run: actions.compare,
+    });
 
   /* ---------- Viewports ---------- */
   named('workspace.fit', {
@@ -150,6 +201,23 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
   }
   if (settings.viewports.some((vp) => vp.hidden))
     named('empty.showAll', { id: 'show-all', section: section.viewports, icon: 'eye', run: actions.showAll });
+  const { cycleFocus } = actions;
+  if (cycleFocus) {
+    named('palette.prevViewport', {
+      id: 'focus-prev',
+      section: section.viewports,
+      icon: 'chevronLeft',
+      shortcut: '[',
+      run: () => cycleFocus(-1),
+    });
+    named('palette.nextViewport', {
+      id: 'focus-next',
+      section: section.viewports,
+      icon: 'chevronRight',
+      shortcut: ']',
+      run: () => cycleFocus(1),
+    });
+  }
   named('tools.rotateAll', { id: 'rotate-all', section: section.viewports, icon: 'rotate', run: actions.rotateAll });
   named('tools.sortByWidth', { id: 'sort', section: section.viewports, icon: 'sort', run: actions.sortByWidth });
   named('tools.edges', { id: 'edges', section: section.viewports, icon: 'ruler', run: actions.edges });
@@ -252,6 +320,36 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     checked: ctx.liveCss || undefined,
     run: actions.liveCss,
   });
+  const { applySnippet } = actions;
+  if (applySnippet)
+    for (const snippet of settings.cssSnippets)
+      add({
+        id: `snippet-${snippet.id}`,
+        section: section.tools,
+        icon: 'code',
+        title: t('palette.applySnippet', { name: snippet.name }),
+        keywords: `${en('palette.applySnippet', { name: snippet.name })} css`,
+        run: () => applySnippet(snippet.css),
+      });
+  if (actions.measure)
+    named('tools.measure', {
+      id: 'measure',
+      section: section.tools,
+      icon: 'measure',
+      shortcut: 'X',
+      checked: Boolean(ctx.measuring),
+      keywords: 'ruler distance pixels',
+      run: actions.measure,
+    });
+  if (actions.contrast)
+    named('tools.contrast', {
+      id: 'contrast',
+      section: section.tools,
+      icon: 'eyedropper',
+      shortcut: 'C',
+      keywords: 'colour color wcag eyedropper picker accessibility',
+      run: actions.contrast,
+    });
   for (const set of ['tailwind', 'bootstrap', 'custom', 'site', 'none'] as const) {
     named(
       'palette.breakpoints',
@@ -265,6 +363,39 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       { set: t(set === 'none' ? 'breakpoints.noneLabel' : (`breakpoints.${set}` as MessageKey)) },
     );
   }
+
+  /* ---------- Simulate ---------- */
+  const { setVision, toggleSimulate } = actions;
+  const state = ctx.simulate;
+  if (state && setVision)
+    for (const mode of ['none', ...VISION_MODES] as VisionMode[])
+      named(
+        'palette.vision',
+        {
+          id: `vision-${mode}`,
+          section: section.simulate,
+          icon: 'eye',
+          checked: state.vision === mode || undefined,
+          keywords: 'colour blind color blindness simulate',
+          run: () => setVision(mode),
+        },
+        { mode: t(VISION_KEYS[mode]) },
+      );
+  const simulate = (id: SimulateToggle, key: MessageKey, icon: PaletteCommand['icon'], keywords: string) => {
+    if (!state || !toggleSimulate) return;
+    named(key, {
+      id: `simulate-${id}`,
+      section: section.simulate,
+      icon,
+      checked: state[id],
+      keywords,
+      run: () => toggleSimulate(id),
+    });
+  };
+  simulate('reduceMotion', 'motion.reduce', 'pause', 'prefers-reduced-motion accessibility');
+  simulate('pauseAnimations', 'animations.pause', 'pause', 'freeze transition');
+  simulate('pseudo', 'stress.pseudo', 'text', 'pseudo localization translation i18n');
+  simulate('rtl', 'stress.rtl', 'arrowLeft', 'rtl arabic hebrew direction');
 
   /* ---------- View ---------- */
   for (const zoom of ZOOM_OPTIONS) {

@@ -9,6 +9,7 @@ import { layoutSheet } from '../../src/state/composite';
 import { changingProperties, propertyValue, visibilityChanges } from '../../src/state/inspector';
 import { keyboardResize, resolveDrag } from '../../src/state/resize';
 import { sizeClassOf } from '../../src/state/size-class';
+import { createStrayInputMonitor, MOVE_WINDOW_MS, REFRESH_COOLDOWN_MS } from '../../src/state/stray-input';
 import {
   createViewport,
   isSortedByWidth,
@@ -351,5 +352,32 @@ describe('review fixes', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+});
+
+describe('stray input aimed at the previews', () => {
+  it('asks for a refresh on a press or a wheel turn, at most once a second', () => {
+    const monitor = createStrayInputMonitor();
+    expect(monitor.note('press', 1000)).toBe(true);
+    expect(monitor.note('press', 1200)).toBe(false);
+    expect(monitor.note('wheel', 1000 + REFRESH_COOLDOWN_MS - 1)).toBe(false);
+    expect(monitor.note('wheel', 1000 + REFRESH_COOLDOWN_MS)).toBe(true);
+  });
+
+  it('ignores the single move that comes as the pointer enters a frame', () => {
+    const monitor = createStrayInputMonitor();
+    expect(monitor.note('move', 100)).toBe(false);
+    expect(monitor.note('move', 100 + MOVE_WINDOW_MS)).toBe(false);
+    expect(monitor.note('move', 100 + MOVE_WINDOW_MS * 2)).toBe(false);
+  });
+
+  it('asks for a refresh after a few moves in a row, then starts counting again', () => {
+    const monitor = createStrayInputMonitor();
+    expect(monitor.note('move', 10)).toBe(false);
+    expect(monitor.note('move', 26)).toBe(false);
+    expect(monitor.note('move', 42)).toBe(true);
+    // Still stray during the cooldown: counted, but no new refresh until it ends.
+    for (let time = 58; time < 42 + REFRESH_COOLDOWN_MS; time += 16) expect(monitor.note('move', time)).toBe(false);
+    expect(monitor.note('move', 42 + REFRESH_COOLDOWN_MS + 16)).toBe(true);
   });
 });

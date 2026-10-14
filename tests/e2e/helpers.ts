@@ -30,12 +30,11 @@ export async function visualCardNames(page: Page): Promise<string[]> {
  * locator click can't aim inside a scaled cross-origin frame, so the point is
  * mapped through the frame's zoom by hand.
  *
- * A synthetic pointer that jumps straight into a cross-origin frame right after
- * it loaded is occasionally delivered to the workspace instead (the frame's
- * hit-testing isn't settled for an input that arrives without any movement
- * before it; a real mouse always moves there first). So the pointer moves in
- * first, and when `until` is given, the click is repeated (up to three times)
- * until it holds.
+ * Chrome can stop routing input to the previews when a frame moved just as its
+ * page finished loading; the workspace refreshes the frames once it notices
+ * input aimed at them (see src/state/stray-input.ts). So the pointer moves in
+ * first, in a few steps like a real mouse, and when `until` is given, the click
+ * is repeated (up to three times) until it holds.
  */
 export async function clickInFrame(
   page: Page,
@@ -66,7 +65,7 @@ export async function clickInFrame(
     const zoom = box.width / point.width;
     const x = box.x + point.x * zoom;
     const y = box.y + point.y * zoom;
-    await page.mouse.move(x, y, { steps: 2 });
+    await page.mouse.move(x, y, { steps: 4 });
     await page.waitForTimeout(250);
     await page.mouse.click(x, y);
     if (!until) return;

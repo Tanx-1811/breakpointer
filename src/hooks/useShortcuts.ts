@@ -15,6 +15,12 @@ export type ShortcutAction =
   | 'help'
   | 'palette'
   | 'inspect'
+  | 'measure'
+  | 'contrast'
+  | 'outlines'
+  | 'prevViewport'
+  | 'nextViewport'
+  | 'actualSize'
   | 'escape';
 
 export type ShortcutHandlers = Partial<Record<ShortcutAction, () => void>>;
@@ -35,6 +41,13 @@ const LETTER_KEYS: Record<string, ShortcutAction> = {
   KeyT: 'theme',
   KeyK: 'palette',
   KeyI: 'inspect',
+  KeyX: 'measure',
+  KeyC: 'contrast',
+  KeyO: 'outlines',
+  BracketLeft: 'prevViewport',
+  BracketRight: 'nextViewport',
+  Digit0: 'actualSize',
+  Numpad0: 'actualSize',
 };
 
 type KeyInfo = Pick<KeyboardEvent, 'key' | 'code' | 'shiftKey' | 'ctrlKey' | 'metaKey' | 'altKey' | 'isComposing'>;

@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [0.3.0] — 2026-10-14
 
-A redesigned workspace and a professional toolkit: find, inspect and fix responsive problems faster.
+A redesigned workspace and a professional toolkit: find, inspect and fix responsive problems faster — then measure, simulate, stress-test and compare what you find.
 
 ### Added
 
@@ -20,18 +20,31 @@ A redesigned workspace and a professional toolkit: find, inspect and fix respons
 - **Hide scrollbars** in previews, like on phones and tablets; **Sort by width**; **Scroll every preview to the top**.
 - Add viewport: **search** by name or size, filter by device type, aspect-ratio thumbnails, sizes already in the workspace are marked, and a width ⇄ height swap.
 - Manage groups: apply a group from the list.
+- **Compare two addresses** (Tools → Compare with another address…): each viewport gets a second preview, **B**, next to the usual one. B shows either the same page on another site (staging next to production; it follows A to other pages, and a link followed in B takes A along) or one fixed address. Swap A and B, change or stop from the banner; screenshots, the all-in-one image, reports and the inspector label the B side.
+- **Simulate** menu — **vision**: no red (protanopia), no green (deuteranopia), no blue (tritanopia), no colour (achromatopsia) and blurred vision, drawn over every preview on any site; `Esc` turns it off.
+- **Simulate** menu — **layout stress tests** (sites you allow): **Longer text** pseudo-translates the page (about 40% longer, accented, in [brackets]) to find layouts that break when translated; **Right to left** lays the page out like Arabic or Hebrew. Both are undone when switched off.
+- **Simulate** menu — **page preferences** (sites you allow): **Prefer reduced motion** shows the page's `prefers-reduced-motion` styles; **Pause animations** freezes CSS animations and transitions for steady screenshots.
+- **Colour contrast checker** (`C`): a text colour graded against its background with the WCAG 2.2 thresholds (AA and AAA for normal and large text, and 3:1 for icons and borders). Pick colours from any preview with the eyedropper, or type hex or `rgb()`; swap them in one click.
+- **Measure** (`X`): drag over any preview to measure an area in CSS pixels at any zoom, with its distance from the edges; `Shift` measures a straight line. Works on every site.
+- **Design overlay** (card menu → Overlay a design…): lay a mockup over a preview, with adjustable opacity and a "show differences" blend; on sites you allow it moves with the page's scroll. The image never leaves your browser.
+- Two more **responsive checks**: images shown larger than their real size (they look blurry), and fixed or sticky elements covering more than a third of a phone or tablet screen (cookie walls, tall headers) — both with highlight.
+- **Saved live CSS snippets**: save CSS you use often, then edit it or apply it again from the Live CSS dialog or the command palette. Included in exports.
+- **Inspector → Copy table**: the comparison as a Markdown table, ready for a ticket or a pull request.
+- Shortcuts `[` / `]` (focus the previous / next viewport), `0` (zoom to 100%), `O` (layout outlines), `X` (measure) and `C` (contrast); commands to scroll every preview to the bottom and to copy the page address.
 
 ### Changed
 
 - **New look** across the workspace, popup and dialogs: a refined design system (colours, depth, motion, type), device-class colours, chips with icons, a floating zoom dock (`−` · zoom · `+` · Fit · layout), styled selects, rich tooltips with shortcuts, a two-pane Settings dialog and a redesigned welcome page.
 - **Synced scrolling keeps the same content in view** in every preview instead of the same percentage of the page (falls back to the percentage when the content isn't found).
-- The first-run fit waits until a page is shown, so the welcome panel no longer shrinks the previews; the first-run viewports have fixed ids, so two tabs opened on a fresh install no longer reload each other's previews.
+- The first-run fit waits until a page is shown, so the welcome panel no longer shrinks the previews, and the previews start loading at the fitted zoom (no jump in size). The first-run viewports have fixed ids, so two tabs opened on a fresh install no longer reload each other's previews.
 - The address bar is a combobox with its own suggestion list (was a `datalist`).
 - "Open in new tab" from a card opens the page that preview shows now.
+- A dialog whose content doesn't fit (such as Help on a small screen) can be scrolled from the keyboard; menus are taller before they scroll.
 
 ### Fixed
 
 - Dragging over a preview of another site no longer loses the pointer.
+- Previews that stop taking clicks recover. Chrome can stop sending input to the previews when one moves just as its page finishes loading; the workspace notices the stray input and refreshes them, so the next click goes through.
 
 ## [0.2.0] — 2026-10-13
 

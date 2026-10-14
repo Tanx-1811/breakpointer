@@ -1,8 +1,9 @@
 import { addRecentUrl } from '../services/storage';
-import { MAX_SAVED_PAGES } from '../utils/constants';
+import { MAX_CSS_SNIPPETS, MAX_SAVED_PAGES } from '../utils/constants';
 import type {
   Breakpoint,
   BreakpointSetId,
+  CssSnippet,
   GridSettings,
   SyncSettings,
   LanguagePreference,
@@ -61,6 +62,10 @@ export type SettingsAction =
   | { type: 'deleteGroup'; id: string }
   | { type: 'restoreGroup'; group: ViewportGroup; index: number }
   | { type: 'replaceGroup'; group: ViewportGroup }
+  /** Saves a snippet; one with the same name is replaced. */
+  | { type: 'saveCssSnippet'; snippet: CssSnippet }
+  | { type: 'deleteCssSnippet'; id: string }
+  | { type: 'restoreCssSnippet'; snippet: CssSnippet; index: number }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
 
 export function settingsReducer(state: BreakpointerSettings, action: SettingsAction): BreakpointerSettings {
@@ -145,6 +150,25 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       };
     case 'restoreGroup':
       return { ...state, groups: restoreGroup(state.groups, action.group, action.index) };
+    case 'saveCssSnippet': {
+      const name = action.snippet.name.toLocaleLowerCase();
+      const index = state.cssSnippets.findIndex((snippet) => snippet.name.toLocaleLowerCase() === name);
+      if (index >= 0) {
+        const cssSnippets = [...state.cssSnippets];
+        cssSnippets[index] = { ...action.snippet, id: state.cssSnippets[index]!.id };
+        return { ...state, cssSnippets };
+      }
+      if (state.cssSnippets.length >= MAX_CSS_SNIPPETS) return state;
+      return { ...state, cssSnippets: [...state.cssSnippets, action.snippet] };
+    }
+    case 'deleteCssSnippet':
+      return { ...state, cssSnippets: state.cssSnippets.filter((snippet) => snippet.id !== action.id) };
+    case 'restoreCssSnippet': {
+      if (state.cssSnippets.some((snippet) => snippet.id === action.snippet.id)) return state;
+      const cssSnippets = [...state.cssSnippets];
+      cssSnippets.splice(Math.min(action.index, cssSnippets.length), 0, action.snippet);
+      return { ...state, cssSnippets: cssSnippets.slice(0, MAX_CSS_SNIPPETS) };
+    }
     case 'replaceSettings':
       return action.settings;
   }

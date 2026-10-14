@@ -7,7 +7,8 @@
  * It never sends page content anywhere: it reports the page address and title,
  * scroll position, the results of layout checks, the widths used by the page's
  * media queries and the box of an element the user inspects — to the workspace
- * tab only.
+ * tab only. Stress tests (pseudo-translated text, right-to-left) change the
+ * page only inside the preview and are undone when switched off.
  */
 import {
   compressBox,
@@ -15,8 +16,11 @@ import {
   describeElement,
   mediaQueryEdges,
   mentionsColorScheme,
+  mentionsReducedMotion,
+  pseudoLocalize,
   scheduler,
   swapColorScheme,
+  swapReducedMotion,
 } from './page-utils';
 import {
   AGENT_SOURCE,
@@ -44,6 +48,13 @@ const WHEEL_STEP = 60;
 const MAX_BREAKPOINTS = 12;
 /** Where the reader's eye is, as a fraction of the window height (used to sync scrolling by content). */
 const READING_LINE = 0.3;
+/** Images shown this much larger than their real size are reported (and at least this many pixels wider). */
+const UPSCALE_RATIO = 1.15;
+const UPSCALE_MIN_PX = 24;
+/** Fixed and stuck elements covering more of a phone or tablet screen than this are reported. */
+const MAX_FIXED_COVER = 0.35;
+/** Text nodes changed at most by the pseudo-translation, per pass. */
+const MAX_TEXT_NODES = 20_000;
 const OVERLAY_ATTRIBUTE = 'data-breakpointer-overlay';
 
 type AgentWindow = Window & { __breakpointerAgent?: boolean };
@@ -187,16 +198,28 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     return false;
   };
 
+  // Scrolls the workspace caused (synced scrolling, highlights) are reported
+  // only when asked to: a design overlay over this preview follows them.
+  let trackScroll = false;
+  const reportScroll = (synced: boolean) =>
+    send({
+      type: 'scroll',
+      ratio: scrollRatio(),
+      anchor: synced ? undefined : scrollAnchor(),
+      y: Math.round(window.scrollY),
+      synced,
+    });
+
   window.addEventListener(
     'scroll',
     () => {
       drawOverlay();
-      if (performance.now() < ignoreScrollUntil || scrollQueued) return;
+      if ((performance.now() < ignoreScrollUntil && !trackScroll) || scrollQueued) return;
       scrollQueued = true;
       requestAnimationFrame(() => {
         scrollQueued = false;
-        if (performance.now() >= ignoreScrollUntil)
-          send({ type: 'scroll', ratio: scrollRatio(), anchor: scrollAnchor() });
+        const synced = performance.now() < ignoreScrollUntil;
+        if (!synced || trackScroll) reportScroll(synced);
       });
     },
     { passive: true },
@@ -388,6 +411,90 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
+    // 5. Images shown larger than their real size look blurry (at every width).
+    //    `naturalWidth` already accounts for the density of the srcset candidate.
+    const upscaled: Element[] = [];
+    const imageSamples: CheckSample[] = [];
+    for (const image of Array.from(document.images).slice(0, MAX_SCAN)) {
+      if (!image.complete || !image.naturalWidth || !image.naturalHeight) continue;
+      if (/\.svg(?:[?#]|$)/i.test(image.currentSrc)) continue;
+      const style = getComputedStyle(image);
+      const rect = image.getBoundingClientRect();
+      if (!visible(rect, style) || style.objectFit === 'none') continue;
+      // The size the picture itself is drawn at inside its box.
+      const contain = Math.min(rect.width / image.naturalWidth, rect.height / image.naturalHeight);
+      const cover = Math.max(rect.width / image.naturalWidth, rect.height / image.naturalHeight);
+      const scale =
+        style.objectFit === 'contain'
+          ? contain
+          : style.objectFit === 'scale-down'
+            ? Math.min(1, contain)
+            : style.objectFit === 'cover'
+              ? cover
+              : rect.width / image.naturalWidth;
+      const shown = image.naturalWidth * scale;
+      if (scale < UPSCALE_RATIO || shown - image.naturalWidth < UPSCALE_MIN_PX) continue;
+      upscaled.push(image);
+      if (imageSamples.length < MAX_SAMPLES)
+        imageSamples.push({
+          selector: describeElement(image),
+          detail: `${image.naturalWidth}px → ${Math.round(shown)}px`,
+        });
+    }
+    if (upscaled.length) {
+      nextFlagged.set('upscaled-images', upscaled);
+      issues.push({ kind: 'upscaled-images', count: upscaled.length, samples: imageSamples });
+    }
+
+    // 6. Fixed (or stuck) elements covering much of a phone or tablet screen, such
+    //    as cookie walls or tall headers: sampled on a grid of points.
+    if (width <= 1024) {
+      const height = window.innerHeight;
+      const coverOwner = (element: Element): Element | null => {
+        let owner: Element | null = null;
+        for (let node: Element | null = element; node && node !== document.body; node = node.parentElement) {
+          if (node === document.documentElement || node.hasAttribute(OVERLAY_ATTRIBUTE)) break;
+          const position = getComputedStyle(node).position;
+          if (position === 'fixed') owner = node;
+          else if (position === 'sticky') {
+            const rect = node.getBoundingClientRect();
+            if (rect.top <= 1 || rect.bottom >= height - 1) owner = node;
+          }
+        }
+        return owner;
+      };
+      const columns = 6;
+      const rows = 10;
+      const owners = new Set<Element>();
+      let covered = 0;
+      for (let row = 0; row < rows; row++) {
+        for (let column = 0; column < columns; column++) {
+          const element = document.elementFromPoint(((column + 0.5) * width) / columns, ((row + 0.5) * height) / rows);
+          const owner = element && coverOwner(element);
+          if (!owner) continue;
+          covered++;
+          owners.add(owner);
+        }
+      }
+      const share = covered / (columns * rows);
+      if (share > MAX_FIXED_COVER) {
+        const list = [...owners];
+        nextFlagged.set('fixed-cover', list);
+        issues.push({
+          kind: 'fixed-cover',
+          count: list.length,
+          detail: `${Math.round(share * 100)}%`,
+          samples: list.slice(0, MAX_SAMPLES).map((element) => {
+            const rect = element.getBoundingClientRect();
+            return {
+              selector: describeElement(element),
+              detail: `${Math.round(rect.width)}×${Math.round(rect.height)}`,
+            };
+          }),
+        });
+      }
+    }
+
     flagged = nextFlagged;
     return { width, issues };
   };
@@ -448,8 +555,11 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   };
 
   let colorScheme: ColorSchemeOverride = null;
+  let reduceMotion = false;
   const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+  const systemReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const originalMedia = new WeakMap<object, string>();
+  const overridden = (text: string) => mentionsColorScheme(text) || mentionsReducedMotion(text);
 
   const mediaReport = (): MediaReport => {
     const counts = new Map<number, number>();
@@ -469,27 +579,35 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   };
 
   /**
-   * Shows the page's light or dark styles whatever the browser prefers: when
-   * the wanted scheme differs from the browser's, `prefers-color-scheme: dark`
-   * and `light` are swapped in the page's media queries (restored afterwards).
-   * Only styles chosen by CSS follow; a page that picks its theme in script doesn't.
+   * Shows the page's light or dark styles (and its reduced-motion styles)
+   * whatever the browser prefers: when the wanted value differs from the
+   * browser's, `prefers-color-scheme: dark` and `light` (or the reduced-motion
+   * values) are swapped in the page's media queries, and restored afterwards.
+   * Only styles chosen by CSS follow; a page that decides in script doesn't.
    */
-  const applyColorScheme = () => {
-    const swap = colorScheme !== null && (colorScheme === 'dark') !== systemDark.matches;
+  const applyMediaOverrides = () => {
+    const swapScheme = colorScheme !== null && (colorScheme === 'dark') !== systemDark.matches;
+    const swapMotion = reduceMotion && !systemReduce.matches;
+    const rewrite = (original: string) => {
+      let text = original;
+      if (swapScheme) text = swapColorScheme(text);
+      if (swapMotion) text = swapReducedMotion(text);
+      return text;
+    };
     const update = (original: string, current: string, write: (text: string) => void) => {
-      const next = swap ? swapColorScheme(original) : original;
+      const next = rewrite(original);
       if (current !== next) write(next);
     };
     forEachMediaList((list) => {
       const original = originalMedia.get(list) ?? list.mediaText;
-      if (!mentionsColorScheme(original)) return;
+      if (!overridden(original)) return;
       originalMedia.set(list, original);
       update(original, list.mediaText, (text) => (list.mediaText = text));
     });
     // Images with a dark variant (<picture><source media="(prefers-color-scheme: dark)">).
     document.querySelectorAll('source[media]').forEach((source) => {
       const original = originalMedia.get(source) ?? source.getAttribute('media') ?? '';
-      if (!mentionsColorScheme(original)) return;
+      if (!overridden(original)) return;
       originalMedia.set(source, original);
       update(original, source.getAttribute('media') ?? '', (text) => source.setAttribute('media', text));
     });
@@ -502,14 +620,15 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     }`;
     if (own) own.disabled = false;
     const both = /\blight\b/.test(declared) && /\bdark\b/.test(declared);
-    setStyle('bp-color-scheme', swap && both ? `:root{color-scheme:${colorScheme} !important}` : '');
+    setStyle('bp-color-scheme', swapScheme && both ? `:root{color-scheme:${colorScheme} !important}` : '');
   };
-  systemDark.addEventListener('change', applyColorScheme);
+  systemDark.addEventListener('change', applyMediaOverrides);
+  systemReduce.addEventListener('change', applyMediaOverrides);
 
   let lastMedia = '';
   /** Re-reads the stylesheets soon (they load and change after the first paint). */
   const mediaScan = scheduler(() => {
-    if (colorScheme !== null) applyColorScheme();
+    if (colorScheme !== null || reduceMotion) applyMediaOverrides();
     const report = mediaReport();
     const json = JSON.stringify(report);
     if (json === lastMedia) return;
@@ -525,6 +644,81 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     },
     true,
   );
+
+  /* ---------- Stress tests ---------- */
+
+  // Pseudo-translated text: each changed text node remembers the page's text
+  // and what is shown, so the page's own later changes are noticed (and
+  // translated too) and everything can be put back.
+  let pseudo = false;
+  const pseudoText = new Map<Text, { original: string; shown: string }>();
+  const pseudoPlaceholders = new Map<Element, { original: string; shown: string }>();
+  const SKIP_TEXT = 'script, style, noscript, textarea, template, code, pre, kbd, samp, var, [contenteditable]';
+
+  const translateText = (node: Text) => {
+    const known = pseudoText.get(node);
+    if (known && node.data === known.shown) return;
+    const parent = node.parentElement;
+    if (!parent || parent.closest(`${SKIP_TEXT}, [${OVERLAY_ATTRIBUTE}]`)) return;
+    if (node.data.trim().length < 2) return;
+    const shown = pseudoLocalize(node.data);
+    if (shown === node.data) return;
+    pseudoText.set(node, { original: node.data, shown });
+    node.data = shown;
+  };
+
+  const translatePlaceholder = (element: Element) => {
+    const value = element.getAttribute('placeholder') ?? '';
+    const known = pseudoPlaceholders.get(element);
+    if ((known && value === known.shown) || value.trim().length < 2) return;
+    const shown = pseudoLocalize(value);
+    pseudoPlaceholders.set(element, { original: value, shown });
+    element.setAttribute('placeholder', shown);
+  };
+
+  const translateTree = (root: Node) => {
+    if (root instanceof Text) {
+      translateText(root);
+      return;
+    }
+    if (!(root instanceof Element) || root.hasAttribute(OVERLAY_ATTRIBUTE)) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+    let count = 0;
+    for (let node = walker.nextNode(); node && count < MAX_TEXT_NODES; node = walker.nextNode(), count++)
+      translateText(node as Text);
+    if (root.hasAttribute('placeholder')) translatePlaceholder(root);
+    root.querySelectorAll('[placeholder]').forEach(translatePlaceholder);
+  };
+
+  const untranslate = () => {
+    for (const [node, entry] of pseudoText) if (node.data === entry.shown) node.data = entry.original;
+    for (const [element, entry] of pseudoPlaceholders)
+      if (element.getAttribute('placeholder') === entry.shown) element.setAttribute('placeholder', entry.original);
+    pseudoText.clear();
+    pseudoPlaceholders.clear();
+  };
+
+  // Right to left: the `dir` attributes the page had are put back afterwards.
+  let originalDir: { html: string | null; body: string | null } | null = null;
+  const setRtl = (on: boolean) => {
+    const { documentElement: html, body } = document;
+    if (on) {
+      originalDir ??= { html: html.getAttribute('dir'), body: body?.getAttribute('dir') ?? null };
+      html.setAttribute('dir', 'rtl');
+      // A page that sets dir on <body> would otherwise keep its direction.
+      if (originalDir.body !== null) body?.setAttribute('dir', 'rtl');
+      return;
+    }
+    if (!originalDir) return;
+    const restore = (element: Element | null, value: string | null) => {
+      if (!element) return;
+      if (value === null) element.removeAttribute('dir');
+      else element.setAttribute('dir', value);
+    };
+    restore(html, originalDir.html);
+    restore(body, originalDir.body);
+    originalDir = null;
+  };
 
   /* ---------- Inspector ---------- */
 
@@ -757,6 +951,11 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       })
     )
       return;
+    if (pseudo)
+      for (const record of records) {
+        if (record.type === 'characterData' && record.target instanceof Text) translateText(record.target);
+        else record.addedNodes.forEach(translateTree);
+      }
     scheduleChecks();
     scheduleElementReport();
     const styles = records.some((record) =>
@@ -822,7 +1021,32 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'colorScheme':
         if (command.scheme === colorScheme) break;
         colorScheme = command.scheme;
-        applyColorScheme();
+        applyMediaOverrides();
+        break;
+      case 'reducedMotion':
+        if (command.on === reduceMotion) break;
+        reduceMotion = command.on;
+        applyMediaOverrides();
+        break;
+      case 'animations':
+        setStyle(
+          'bp-animations',
+          command.paused
+            ? '*,*::before,*::after{animation-play-state:paused !important;transition:none !important;scroll-behavior:auto !important}'
+            : '',
+        );
+        break;
+      case 'stress':
+        if (command.pseudo !== pseudo) {
+          pseudo = command.pseudo;
+          if (pseudo && document.body) translateTree(document.body);
+          else untranslate();
+        }
+        setRtl(command.rtl);
+        break;
+      case 'trackScroll':
+        trackScroll = command.on;
+        if (trackScroll) reportScroll(true);
         break;
       case 'inspect':
         inspecting = command.on;

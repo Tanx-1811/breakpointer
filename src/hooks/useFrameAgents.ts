@@ -31,7 +31,11 @@ export type FrameAgentHandlers = {
   onHello: (cardId: string) => void;
   /** The page inside a frame changed after its first load (link, form, script, single-page-app route). */
   onNavigate: (cardId: string, href: string, navigation: FrameNavigation) => void;
-  onScroll: (cardId: string, ratio: number, anchor: ScrollAnchor | undefined) => void;
+  /**
+   * A preview scrolled. `y` is its scroll position in CSS pixels; `synced` marks
+   * a scroll the workspace caused (reported only to frames asked to track scrolling).
+   */
+  onScroll: (cardId: string, ratio: number, anchor: ScrollAnchor | undefined, y: number, synced: boolean) => void;
   onZoom: (direction: 1 | -1) => void;
   /** The user picked an element in this preview while inspecting. */
   onPick: (cardId: string, selector: string, element: ElementInfo) => void;
@@ -136,7 +140,13 @@ export function useFrameAgents(
           inputAt[cardId] = Date.now();
           break;
         case 'scroll':
-          handlersRef.current.onScroll(cardId, message.ratio, message.anchor);
+          handlersRef.current.onScroll(
+            cardId,
+            message.ratio,
+            message.anchor,
+            typeof message.y === 'number' ? message.y : 0,
+            message.synced === true,
+          );
           break;
         case 'zoom':
           handlersRef.current.onZoom(message.direction);
