@@ -86,7 +86,11 @@ export type ElementInfo = {
 
 /** Agent → workspace. `name` identifies the preview frame (its iframe `name`). */
 export type AgentEvent =
-  | { type: 'hello'; href: string; title: string }
+  /**
+   * A page started (or the workspace asked again). `status` is the HTTP status
+   * the page was served with (Navigation Timing; 0 when unknown).
+   */
+  | { type: 'hello'; href: string; title: string; status?: number }
   /** The address changed without a new page (single-page app routes, history.replaceState). */
   | { type: 'location'; href: string; title: string }
   /** The page is unloading (the next page may be on a site without an agent). */

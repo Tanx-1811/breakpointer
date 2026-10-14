@@ -30,6 +30,7 @@ A redesigned workspace and a professional toolkit: find, inspect and fix respons
 - Two more **responsive checks**: images shown larger than their real size (they look blurry), and fixed or sticky elements covering more than a third of a phone or tablet screen (cookie walls, tall headers) — both with highlight.
 - **Saved live CSS snippets**: save CSS you use often, then edit it or apply it again from the Live CSS dialog or the command palette. Included in exports.
 - **Inspector → Copy table**: the comparison as a Markdown table, ready for a ticket or a pull request.
+- A preview the site served with an error (a refused frame, a bot check, a missing sign-in) shows **HTTP 403** (or whichever status) on its card, with what to try.
 - Shortcuts `[` / `]` (focus the previous / next viewport), `0` (zoom to 100%), `O` (layout outlines), `X` (measure) and `C` (contrast); commands to scroll every preview to the bottom and to copy the page address.
 
 ### Changed
@@ -45,6 +46,7 @@ A redesigned workspace and a professional toolkit: find, inspect and fix respons
 
 - Dragging over a preview of another site no longer loses the pointer.
 - Previews that stop taking clicks recover. Chrome can stop sending input to the previews when one moves just as its page finishes loading; the workspace notices the stray input and refreshes them, so the next click goes through.
+- Facebook, Instagram, Threads and other sites that refuse to load inside frames by the browser's Fetch Metadata (Facebook showed "Sorry, something went wrong" in every preview) now show in previews of sites you allow. Your sign-in carries over: with access, the site's cookies (of every SameSite kind) and storage reach its previews.
 
 ## [0.2.0] — 2026-10-13
 

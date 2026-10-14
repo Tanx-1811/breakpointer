@@ -1621,6 +1621,7 @@ function Workspace({
             snapWidths={snapWidths}
             grid={settings.grid}
             checks={settings.checks ? (agents.frameOf(card.id)?.report ?? null) : null}
+            httpStatus={agents.frameOf(card.id)?.status}
             highlighted={highlights[card.id] ?? null}
             onHighlight={(kind) => highlight(card.id, kind)}
             showRulers={settings.showRulers}

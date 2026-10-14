@@ -706,6 +706,9 @@ export const en = {
   'help.cycleFocus': 'Focus on the previous / next viewport',
   'help.actualSize': 'Zoom to 100%',
   'help.mouseMeasure': 'Turn on Measure, then drag over a preview to measure an area in CSS pixels.',
+  'card.httpStatus': 'HTTP {status}',
+  'card.httpStatusHint':
+    'The site answered this preview with an error ({status}). Some sites refuse frames, run bot checks or need you to sign in in a tab first. Try “Open in a window of this size” from the menu.',
   'help.mouseOverlay': 'Put a design mockup over a preview (⋯ → Overlay a design) to compare it pixel by pixel.',
 } as const;
 

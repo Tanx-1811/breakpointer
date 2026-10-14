@@ -336,6 +336,20 @@ describe('ViewportCard utilities', () => {
     expect(onOverlayFile).toHaveBeenCalledWith(file);
   });
 
+  it('points out a page the site served with an error', () => {
+    card({ httpStatus: 403 });
+    expect(screen.getByTestId('http-status')).toHaveTextContent('HTTP 403');
+    expect(screen.getByTestId('http-status')).toHaveAttribute(
+      'data-tooltip',
+      expect.stringContaining('The site answered this preview with an error (403).'),
+    );
+  });
+
+  it('says nothing about pages served normally', () => {
+    card({ httpStatus: 200 });
+    expect(screen.queryByTestId('http-status')).toBeNull();
+  });
+
   it('labels the sides of a comparison; the B card’s close button stops comparing', async () => {
     const user = userEvent.setup();
     const onStopCompare = vi.fn();

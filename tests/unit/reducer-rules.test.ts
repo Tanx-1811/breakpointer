@@ -26,7 +26,7 @@ describe('settingsReducer', () => {
 });
 
 describe('embedRuleForTab', () => {
-  it('is scoped to one tab and to sub-frames, and only removes frame-blocking headers', () => {
+  it('is scoped to one tab and to sub-frames, removes frame-blocking headers and says the frame is a document', () => {
     const rule = embedRuleForTab(42);
     expect(rule.id).toBe(42);
     expect(rule.condition).toEqual({ tabIds: [42], resourceTypes: ['sub_frame'] });
@@ -35,6 +35,7 @@ describe('embedRuleForTab', () => {
       { header: 'x-frame-options', operation: 'remove' },
       { header: 'content-security-policy', operation: 'remove' },
     ]);
-    expect(rule.action.requestHeaders).toBeUndefined();
+    // Sites that refuse `Sec-Fetch-Dest: iframe` (e.g. Facebook) load as they do in a tab.
+    expect(rule.action.requestHeaders).toEqual([{ header: 'sec-fetch-dest', operation: 'set', value: 'document' }]);
   });
 });

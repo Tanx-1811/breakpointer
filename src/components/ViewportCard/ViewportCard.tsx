@@ -100,6 +100,8 @@ type Props = ViewportCardActions & {
   compare?: { side: 'a' | 'b'; target: string };
   /** On a B card the close button stops comparing instead of removing the viewport. */
   onStopCompare?: () => void;
+  /** The HTTP status the preview's page was served with, when known (from its agent). */
+  httpStatus?: number;
 };
 
 type Drag = {
@@ -415,6 +417,17 @@ export function ViewportCard(props: Props) {
                 data-testid="breakpoint-badge"
               >
                 {breakpoint}
+              </span>
+            )}
+            {props.httpStatus !== undefined && props.httpStatus >= 400 && (
+              <span
+                className={styles.httpError}
+                data-tooltip={t('card.httpStatusHint', { status: props.httpStatus })}
+                data-testid="http-status"
+              >
+                <Icon name="alert" size={12} />
+                {t('card.httpStatus', { status: props.httpStatus })}
+                <span className="visually-hidden">{t('card.httpStatusHint', { status: props.httpStatus })}</span>
               </span>
             )}
             {props.checks && props.onHighlight && (

@@ -65,6 +65,7 @@ Run on a clean Chrome profile with the packaged build (`npm run package`, then l
 | 42  | Image and cover checks        | An allowed site with a cookie wall, or a small image shown large                                        | "Fixed elements cover much of the screen" on phone and tablet cards; "Images shown larger than their real size" names the image; Highlight outlines it |
 | 43  | CSS snippets                  | Live CSS → Save as snippet; `Ctrl/⌘ + K`, "apply css snippet"                                           | Applied to every preview; still listed after reopening the workspace; included in exported settings                                                    |
 | 44  | Clicks in fresh previews      | New Chrome profile: open a page from the popup, then click a link in a preview as soon as it has loaded | The previews appear at the fitted size without a jump; the link opens in that preview (move the pointer in first, as a mouse does)                     |
+| 45  | Signed-in site                | Sign in to facebook.com in a tab, allow it, preview a post                                              | Every preview shows the page (no "Sorry, something went wrong"); without access the tip explains it                                                    |
 
 ## Release checklist
 

@@ -17,6 +17,8 @@ export type FrameAgentState = {
   report: CheckReport | null;
   /** Breakpoints and colour-scheme styles found in the page's stylesheets. */
   media: MediaReport | null;
+  /** The HTTP status the page was served with (0 when unknown). */
+  status: number;
 };
 
 export type FrameNavigation = {
@@ -80,6 +82,7 @@ export function useFrameAgents(
               title: '',
               report: null,
               media: null,
+              status: 0,
             };
       const next = { ...all, [cardId]: { ...base, ...patch } };
       framesRef.current = next;
@@ -118,6 +121,7 @@ export function useFrameAgents(
             connected: true,
             href: message.href,
             title: message.title,
+            status: typeof message.status === 'number' ? message.status : 0,
             // The same page saying hello again keeps its last reports until new ones arrive.
             report: sameFrame && known.href === message.href ? known.report : null,
             media: sameFrame && known.href === message.href ? known.media : null,

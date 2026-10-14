@@ -89,8 +89,16 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   /* ---------- Address ---------- */
 
+  /** The HTTP status this page was served with: an error page (e.g. a refused preview) can be pointed out. */
+  const navigationStatus = () => {
+    const entry = performance.getEntriesByType('navigation')[0] as
+      (PerformanceNavigationTiming & { responseStatus?: number }) | undefined;
+    return entry?.responseStatus ?? 0;
+  };
+  const hello = () => send({ type: 'hello', href: location.href, title: document.title, status: navigationStatus() });
+
   let lastHref = location.href;
-  send({ type: 'hello', href: location.href, title: document.title });
+  hello();
   // Single-page apps change the address without loading a new document; the
   // agent runs in an isolated world and can't hook their history calls, so poll.
   window.setInterval(() => {
@@ -978,7 +986,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   runtime.onMessage.addListener((command: AgentCommand) => {
     switch (command?.type) {
       case 'ping':
-        send({ type: 'hello', href: location.href, title: document.title });
+        hello();
         lastMedia = '';
         scheduleMedia(50);
         break;

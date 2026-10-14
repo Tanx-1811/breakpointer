@@ -108,7 +108,7 @@ No permission shows a warning at install. Host access is **optional** and reques
 | `storage`                             | Your viewports, groups and preferences, stored locally                                                                                                                             |
 | `activeTab`                           | Reading the current tab's address when you invoke Breakpointer                                                                                                                     |
 | `contextMenus`                        | "Preview in Breakpointer" on pages and links                                                                                                                                       |
-| `declarativeNetRequestWithHostAccess` | Letting previews of sites **you allowed** ignore frame-blocking headers, only inside the Breakpointer tab                                                                          |
+| `declarativeNetRequestWithHostAccess` | Letting previews of sites **you allowed** ignore frame-blocking headers and frame checks, only inside the Breakpointer tab                                                         |
 | `scripting`                           | Running Breakpointer's own script inside previews of sites **you allowed** (sync, checks, inspector, breakpoints, colours, live CSS, stress tests), only while a workspace is open |
 
 Breakpointer collects nothing and sends nothing anywhere. Read the full [privacy policy](docs/PRIVACY.md).

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { createServer, type Server } from 'node:http';
+import { createServer, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 const DEMO_PAGE = readFileSync(new URL('./fixtures/demo.html', import.meta.url), 'utf8');
@@ -125,11 +125,44 @@ const COVER_PAGE = page(
   });</script>`,
 );
 
-type Route = { headers?: Record<string, string>; body: string };
+type Route = { status?: number; headers?: Record<string, string | string[]>; body: string };
+
+/** Answers like Facebook: a request that says it is for a frame (`Sec-Fetch-Dest: iframe`) gets an error page. */
+const fetchMetadataRoute = (req: IncomingMessage): Route =>
+  req.headers['sec-fetch-dest'] === 'iframe'
+    ? { status: 400, body: '<!doctype html><title>Error</title><p>Sorry, something went wrong.</p>' }
+    : { body: page('Fetch metadata page') };
+
+/** A page that shows which of the session cookies set by /session/login reached the server. */
+const sessionRoute = (req: IncomingMessage): Route => {
+  const names = (req.headers.cookie ?? '')
+    .split(';')
+    .map((part) => part.trim().split('=')[0])
+    .filter((name) => name?.startsWith('sid_'))
+    .sort();
+  return {
+    body: page('Session page', `<script>window.__serverCookies = ${JSON.stringify(names.join(' '))};</script>`),
+  };
+};
 
 let counter = 0;
 
-const routes: Record<string, Route | (() => Route)> = {
+const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
+  '/fetch-metadata': fetchMetadataRoute,
+  // Signs in: session cookies with every SameSite value, as sites set them.
+  '/session/login': {
+    headers: {
+      'Set-Cookie': [
+        'sid_lax=1; Path=/; SameSite=Lax',
+        'sid_strict=1; Path=/; SameSite=Strict',
+        'sid_none=1; Path=/; SameSite=None; Secure',
+      ],
+    },
+    body: page('Signed in'),
+  },
+  '/session/check': sessionRoute,
+  // Served with an error status, as a site that refuses a preview (a bot check, a missing sign-in).
+  '/forbidden': { status: 403, body: page('Forbidden page') },
   '/demo': { body: DEMO_PAGE },
   '/responsive': { body: page('Responsive page') },
   '/long': { body: LONG_PAGE },
@@ -185,12 +218,12 @@ export async function startTestServer(): Promise<TestServer> {
       return;
     }
     const entry = routes[path];
-    const route = typeof entry === 'function' ? entry() : entry;
+    const route = typeof entry === 'function' ? entry(req) : entry;
     if (!route) {
       res.writeHead(404, { 'Content-Type': 'text/plain' }).end('Not found');
       return;
     }
-    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', ...route.headers });
+    res.writeHead(route.status ?? 200, { 'Content-Type': 'text/html; charset=utf-8', ...route.headers });
     res.end(req.method === 'HEAD' ? undefined : route.body);
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));

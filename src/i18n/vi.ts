@@ -705,5 +705,8 @@ export const vi: Record<MessageKey, string> = {
   'help.cycleFocus': 'Tập trung vào viewport trước / sau',
   'help.actualSize': 'Thu phóng 100%',
   'help.mouseMeasure': 'Bật Đo, rồi kéo trên bản xem trước để đo một vùng theo pixel CSS.',
+  'card.httpStatus': 'HTTP {status}',
+  'card.httpStatusHint':
+    'Trang web trả lỗi ({status}) cho bản xem trước này. Một số trang từ chối hiển thị trong khung, kiểm tra bot hoặc cần bạn đăng nhập trong một tab trước. Hãy thử “Mở cửa sổ đúng kích thước này” trong menu.',
   'help.mouseOverlay': 'Phủ ảnh thiết kế lên bản xem trước (⋯ → Phủ ảnh thiết kế) để so từng pixel.',
 };
