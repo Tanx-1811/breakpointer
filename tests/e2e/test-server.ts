@@ -70,6 +70,13 @@ const SCHEME_PAGE = page(
   @media (prefers-color-scheme: dark) { body { background: rgb(0, 0, 0); color: rgb(240, 240, 240); } }</style>`,
 );
 
+/** Both schemes declared in CSS only (no color-scheme meta tag). */
+const SCHEME_CSS_PAGE = page(
+  'Scheme page (CSS)',
+  `<style>:root { color-scheme: light dark; } body { background: rgb(255, 255, 255); }
+  @media (prefers-color-scheme: dark) { body { background: rgb(0, 0, 0); } }</style>`,
+);
+
 /** An element whose layout changes at 768px, for the inspector. */
 const INSPECT_PAGE = page(
   'Inspect page',
@@ -94,6 +101,7 @@ const routes: Record<string, Route | (() => Route)> = {
   '/linked': { body: page('Linked page') },
   '/issues': { body: ISSUES_PAGE },
   '/scheme': { body: SCHEME_PAGE },
+  '/scheme-css': { body: SCHEME_CSS_PAGE },
   '/inspect': { body: INSPECT_PAGE },
   // A site that sends narrow screens to another page, which sends wide screens back.
   '/bounce': {

@@ -16,7 +16,11 @@ async function bootstrap() {
   // Install the tab's embedding rule and the frame agent before any preview frame starts loading.
   const ready = Promise.all([adapter.start(), ensureAgentRegistered()]);
 
-  const stored = await readStoredSettings().catch(() => undefined);
+  let readFailed = false;
+  const stored = await readStoredSettings().catch(() => {
+    readFailed = true;
+    return undefined;
+  });
   const language = resolveLanguage(parseSettings(stored).language);
   const t = createTranslator(language);
   let settings = parseSettings(stored, (id) => t(`preset.${id}` as MessageKey));
@@ -45,7 +49,7 @@ async function bootstrap() {
   }
 
   // First run: keep the defaults (in the user's language), so every tab starts from the same workspace.
-  if (stored === undefined && !groupId) await saveSettings(settings).catch(() => {});
+  if (stored === undefined && !readFailed && !groupId) await saveSettings(settings).catch(() => {});
 
   let initialUrl: URL | null = null;
   let initialInput = '';

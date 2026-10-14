@@ -5,6 +5,7 @@ import {
   agentsReady,
   card,
   clickInFrame,
+  framesShow,
   frameAt,
   openTools,
   previewFrames,
@@ -45,7 +46,7 @@ test.describe('tools inside previews', () => {
     const page = await openViewer({ url: server.url('/long') });
     await agentsReady(page, '/long');
     const tablet = await frameAt(page, '/long', 768);
-    await clickInFrame(page, tablet, '#next');
+    await clickInFrame(page, tablet, '#next', framesShow(page, '/linked'));
 
     await expect(page.getByTestId('address-input')).toHaveValue(server.url('/linked'));
     await expect.poll(() => previewWidths(page, '/linked')).toEqual([375, 768, 1366]);
@@ -62,11 +63,25 @@ test.describe('tools inside previews', () => {
     expect(await previewWidths(page, '/long')).toEqual([]);
   });
 
+  test('going back after a followed link shows the previous page in every preview', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/long') });
+    await agentsReady(page, '/long');
+    await clickInFrame(page, await frameAt(page, '/long', 768), '#next', framesShow(page, '/linked'));
+    await expect.poll(() => previewWidths(page, '/linked')).toEqual([375, 768, 1366]);
+    await expect(page.getByTestId('address-input')).toHaveValue(server.url('/linked'));
+
+    await page.getByRole('button', { name: 'Back to the previous page' }).click();
+    await expect(page.getByTestId('address-input')).toHaveValue(server.url('/long'));
+    // Including the preview that led (it was showing /linked in its own frame).
+    await expect.poll(() => previewWidths(page, '/long')).toEqual([375, 768, 1366]);
+    await expect.poll(() => previewWidths(page, '/linked')).toEqual([]);
+  });
+
   test('one-time links and redirects by the page stay in their preview', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/long') });
     await agentsReady(page, '/long');
     // A sign-in callback (?code=…) is never loaded again in the other previews.
-    await clickInFrame(page, await frameAt(page, '/long', 375), '#callback');
+    await clickInFrame(page, await frameAt(page, '/long', 375), '#callback', framesShow(page, 'code=abc'));
     await expect(card(page, 'Phone').getByRole('button', { name: /Navigated away/ })).toBeVisible();
     await page.waitForTimeout(800);
     expect(await previewWidths(page, '/long')).toEqual([768, 1366]);
@@ -152,7 +167,7 @@ test.describe('tools inside previews', () => {
       'Responsive checks: no issues found',
     );
     // The name survives into the next page too; the preview stays connected.
-    await clickInFrame(page, phone, '#next');
+    await clickInFrame(page, phone, '#next', framesShow(page, '/linked'));
     await expect.poll(() => previewWidths(page, '/linked')).toEqual([375, 768, 1366]);
     await expect(page.getByTestId('checks-badge')).toHaveCount(3);
   });

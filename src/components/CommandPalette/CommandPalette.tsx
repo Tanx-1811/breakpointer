@@ -187,8 +187,19 @@ function Palette({ commands, fromQuery, onClose }: Omit<Props, 'open'>) {
         />
         <kbd className={styles.esc}>Esc</kbd>
       </div>
-      <div ref={listRef} id={listId} role="listbox" aria-label={t('palette.results')} className={styles.list}>
-        {results.length === 0 && <p className={styles.empty}>{t('palette.empty', { query: query.trim() })}</p>}
+      {results.length === 0 && (
+        <p className={styles.empty} role="status">
+          {t('palette.empty', { query: query.trim() })}
+        </p>
+      )}
+      <div
+        ref={listRef}
+        id={listId}
+        role="listbox"
+        aria-label={t('palette.results')}
+        className={styles.list}
+        hidden={results.length === 0}
+      >
         {sections
           ? sections.map(([section, items]) => (
               <div key={section} role="group" aria-label={section} className={styles.group}>

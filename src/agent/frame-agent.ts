@@ -15,6 +15,7 @@ import {
   describeElement,
   mediaQueryEdges,
   mentionsColorScheme,
+  scheduler,
   swapColorScheme,
 } from './page-utils';
 import {
@@ -492,29 +493,30 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       originalMedia.set(source, original);
       update(original, source.getAttribute('media') ?? '', (text) => source.setAttribute('media', text));
     });
-    // Built-in colours (form controls, scrollbars, `light-dark()`) follow too when the page supports both schemes.
+    // Built-in colours (form controls, scrollbars, `light-dark()`) follow too when the page supports
+    // both schemes — as the page itself declares them, so Breakpointer's own override is left out.
+    const own = (document.getElementById('bp-color-scheme') as HTMLStyleElement | null)?.sheet;
+    if (own) own.disabled = true;
     const declared = `${getComputedStyle(document.documentElement).colorScheme} ${
       document.querySelector<HTMLMetaElement>('meta[name="color-scheme" i]')?.content ?? ''
     }`;
+    if (own) own.disabled = false;
     const both = /\blight\b/.test(declared) && /\bdark\b/.test(declared);
     setStyle('bp-color-scheme', swap && both ? `:root{color-scheme:${colorScheme} !important}` : '');
   };
   systemDark.addEventListener('change', applyColorScheme);
 
   let lastMedia = '';
-  let mediaTimer = 0;
   /** Re-reads the stylesheets soon (they load and change after the first paint). */
-  const scheduleMedia = (delay = 400) => {
-    window.clearTimeout(mediaTimer);
-    mediaTimer = window.setTimeout(() => {
-      if (colorScheme !== null) applyColorScheme();
-      const report = mediaReport();
-      const json = JSON.stringify(report);
-      if (json === lastMedia) return;
-      lastMedia = json;
-      send({ type: 'media', report });
-    }, delay);
-  };
+  const mediaScan = scheduler(() => {
+    if (colorScheme !== null) applyColorScheme();
+    const report = mediaReport();
+    const json = JSON.stringify(report);
+    if (json === lastMedia) return;
+    lastMedia = json;
+    send({ type: 'media', report });
+  });
+  const scheduleMedia = (delay = 400) => mediaScan(delay);
   // A stylesheet finished loading (load events don't bubble, so listen while capturing).
   document.addEventListener(
     'load',
@@ -655,21 +657,31 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     }
   };
 
-  let elementTimer = 0;
+  let lastElement = '';
+  /** Sends the selected element's details, unless they are what was sent last. */
+  const reportElement = () => {
+    if (!selectedSelector) return;
+    const element = selected ? elementInfo(selected) : null;
+    const json = JSON.stringify([selectedSelector, element]);
+    if (json === lastElement) return;
+    lastElement = json;
+    send({ type: 'element', selector: selectedSelector, element });
+  };
+  const elementUpdate = scheduler(() => {
+    if (!selectedSelector) return;
+    selected = findSelected();
+    drawOverlay();
+    reportElement();
+  });
   /** Reports the selected element again after the layout changed (resize, new content). */
   const scheduleElementReport = () => {
-    if (!selectedSelector) return;
-    window.clearTimeout(elementTimer);
-    elementTimer = window.setTimeout(() => {
-      if (!selectedSelector) return;
-      selected = findSelected();
-      drawOverlay();
-      send({ type: 'element', selector: selectedSelector, element: selected ? elementInfo(selected) : null });
-    }, 350);
+    if (selectedSelector) elementUpdate(350);
   };
 
+  // At the window, an event from inside a shadow tree is retargeted to its outermost host: an element
+  // a selector can find again in the other previews.
   const pickTarget = (event: Event): Element | null => {
-    const target = event.composedPath()[0];
+    const target = event.target;
     if (!(target instanceof Element) || target.hasAttribute(OVERLAY_ATTRIBUTE)) return null;
     return target === document.documentElement ? document.body : target;
   };
@@ -749,7 +761,9 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     scheduleElementReport();
     const styles = records.some((record) =>
       [...record.addedNodes, ...record.removedNodes].some(
-        (node) => node instanceof HTMLStyleElement || (node instanceof HTMLLinkElement && /stylesheet/i.test(node.rel)),
+        (node) =>
+          (node instanceof HTMLStyleElement && !node.id.startsWith('bp-')) ||
+          (node instanceof HTMLLinkElement && /stylesheet/i.test(node.rel)),
       ),
     );
     if (styles) scheduleMedia();
@@ -823,8 +837,18 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         selected = findSelected();
         if (selectedSelector) {
           ensureOverlay();
-          if (selected) reveal(selected);
-          send({ type: 'element', selector: selectedSelector, element: selected ? elementInfo(selected) : null });
+          // Scroll to it only if it is shown here and not already in view.
+          const rect = selected?.getBoundingClientRect();
+          if (
+            selected &&
+            rect &&
+            rect.width > 0 &&
+            rect.height > 0 &&
+            (rect.top < 0 || rect.bottom > window.innerHeight)
+          )
+            reveal(selected);
+          lastElement = '';
+          reportElement();
         }
         drawOverlay();
         removeOverlayIfIdle();

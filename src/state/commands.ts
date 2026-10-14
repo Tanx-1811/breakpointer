@@ -58,9 +58,9 @@ export function matchScore(query: string, item: Searchable): number {
   return total - Math.min(title.length, 60) / 100;
 }
 
-/** Items matching `query`, best first (ties keep their order); everything for an empty query. */
+/** Items matching `query`, best first (ties keep their order, at most `limit`); every item for an empty query. */
 export function searchCommands<T extends Searchable>(items: T[], query: string, limit = 60): T[] {
-  if (!query.trim()) return items.slice(0, limit);
+  if (!query.trim()) return items;
   return items
     .map((item, index) => ({ item, index, score: matchScore(query, item) }))
     .filter((entry) => entry.score > 0)

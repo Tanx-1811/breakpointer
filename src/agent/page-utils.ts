@@ -133,7 +133,10 @@ export function cssPath(element: Element): string {
     parts.unshift(`${CSS.escape(node.localName)}:nth-of-type(${index})`);
     node = node.parentElement;
   }
-  return parts.join(' > ') || 'html';
+  if (parts.length === 0) return ':root';
+  // Outside <body> (e.g. added to <html> directly): anchored at the root.
+  if (parts[0] !== 'body') parts.unshift(':root');
+  return parts.join(' > ');
 }
 
 /** A short, readable description, e.g. "div.hero > img" (at most three levels). */
@@ -152,4 +155,37 @@ export function describeElement(element: Element): string {
     node = node.parentElement;
   }
   return parts.join(' > ') || element.localName;
+}
+
+/**
+ * Runs `task` after a delay. A new request never postpones a run that is due
+ * sooner (so pages that change all the time still get it); if it asks for a
+ * later time, the task runs once more then.
+ */
+export function scheduler(task: () => void) {
+  let timer = 0;
+  let due = 0;
+  let again = 0;
+  const schedule = (delay: number) => {
+    const at = performance.now() + delay;
+    if (timer && at >= due) {
+      again = Math.max(again, at);
+      return;
+    }
+    // Sooner than the pending run: run then, and still at the later time.
+    if (timer) again = Math.max(again, due);
+    window.clearTimeout(timer);
+    due = at;
+    timer = window.setTimeout(run, delay);
+  };
+  const run = () => {
+    timer = 0;
+    task();
+    if (again) {
+      const wait = Math.max(0, again - performance.now());
+      again = 0;
+      schedule(wait);
+    }
+  };
+  return schedule;
 }

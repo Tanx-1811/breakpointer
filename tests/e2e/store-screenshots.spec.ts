@@ -152,7 +152,7 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       let narrow = phone;
       for (const frame of previewFrames(page, 'brightside.example'))
         if ((await frame.evaluate(() => innerWidth)) === 390) narrow = frame;
-      await clickInFrame(page, narrow, 'h1');
+      await clickInFrame(page, narrow, 'h1', async () => (await page.getByTestId('inspector-size').count()) === 3);
       await expect(page.getByTestId('inspector-size')).toHaveCount(3);
       await page.mouse.move(5, 795);
       await page.waitForTimeout(800);

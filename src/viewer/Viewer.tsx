@@ -69,7 +69,14 @@ import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
 import { modShortcut } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
-import { displayHost, isLocalHost, parsePreviewUrl, toSafeHref, type UrlParseError } from '../utils/url';
+import {
+  displayHost,
+  isLocalHost,
+  looksLikeAddress,
+  parsePreviewUrl,
+  toSafeHref,
+  type UrlParseError,
+} from '../utils/url';
 import { buildCommands } from './commands';
 import { TopBar, type CaptureKind } from './TopBar';
 import { usePan, useWheelZoom } from './workspace-gestures';
@@ -220,6 +227,15 @@ function Workspace({
     (url: URL, mode: HistoryMode) => {
       setAddressError(null);
       setAddress(url.href);
+      // A card that led a synced navigation still shows that page (its address was
+      // pinned): load it afresh too, even when it is pinned to this very address.
+      const pinned = Object.keys(srcOverrides);
+      if (pinned.length)
+        setCardReloads((map) => {
+          const next = { ...map };
+          for (const id of pinned) next[id] = (next[id] ?? 0) + 1;
+          return next;
+        });
       setSrcOverrides({});
       setStrays({});
       resetInspection();
@@ -231,7 +247,7 @@ function Workspace({
       if (mode === 'push' && currentUrl?.href !== url.href) history.pushState(null, '', search);
       else if (mode !== 'none') history.replaceState(null, '', search);
     },
-    [currentUrl, dispatch, resetInspection],
+    [currentUrl, dispatch, resetInspection, srcOverrides],
   );
 
   const navigate = useCallback(
@@ -260,8 +276,12 @@ function Workspace({
         showPage(new URL(href), 'none');
         return;
       }
+      // An entry without a page: the workspace as opened, maybe with an address that couldn't be used.
+      const input = new URLSearchParams(location.search).get('input') ?? '';
+      const parsed = input ? parsePreviewUrl(input) : null;
       setCurrentUrl(null);
-      setAddress('');
+      setAddress(input);
+      setAddressError(parsed && !parsed.ok ? URL_ERROR_KEYS[parsed.error] : null);
       setSrcOverrides({});
       setStrays({});
       resetInspection();
@@ -269,6 +289,13 @@ function Workspace({
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, [resetInspection, showPage]);
+
+  // The page restored from the last visit gets its address in this history entry
+  // too, so going Back to it shows that page rather than an empty workspace.
+  useEffect(() => {
+    if (initialUrl && new URLSearchParams(location.search).get('url') !== initialUrl.href)
+      history.replaceState(null, '', `?${new URLSearchParams({ url: initialUrl.href })}`);
+  }, [initialUrl]);
 
   useEffect(() => {
     let active = true;
@@ -411,9 +438,19 @@ function Workspace({
     else dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, direction) });
   };
 
+  /** Leaves focus mode, keeping the keyboard focus on that card if the button pressed goes away with it. */
+  const exitFocus = () => {
+    if (!focused) return;
+    const card = `[data-viewport-id="${CSS.escape(focused.id)}"]`;
+    const active = document.activeElement;
+    setFocus(null);
+    if (active instanceof HTMLElement && active.closest(`[data-testid="zoom-dock"], ${card}`))
+      requestAnimationFrame(() => document.querySelector<HTMLElement>(`${card} [aria-haspopup="menu"]`)?.focus());
+  };
+
   const toggleFocus = (id: string) => {
     if (focused?.id === id) {
-      setFocus(null);
+      exitFocus();
       return;
     }
     const vp = visible.find((item) => item.id === id);
@@ -729,9 +766,13 @@ function Workspace({
   };
 
   const closeInspector = () => {
+    // Keyboard focus inside the panel would be lost with it: give it to the toolbar's Inspect button.
+    const inPanel = document.activeElement?.closest('[data-testid="inspector"]');
     setInspector(CLOSED_INSPECTOR);
     agents.broadcast({ type: 'inspect', on: false });
     agents.broadcast({ type: 'select', selector: null });
+    if (inPanel)
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="inspect-toggle"]')?.focus());
   };
 
   const startPicking = () => {
@@ -753,7 +794,7 @@ function Workspace({
 
   const onEscape = () => {
     if (inspector.picking) stopPicking();
-    else if (focused) setFocus(null);
+    else if (focused) exitFocus();
     else if (inspector.open) closeInspector();
   };
 
@@ -780,7 +821,15 @@ function Workspace({
       setStrays((map) => (Boolean(map[cardId]) === stray ? map : { ...map, [cardId]: stray }));
     },
     onScroll: (cardId, ratio, anchor) => {
-      if (settings.sync.scroll) agents.broadcast({ type: 'scrollTo', ratio, anchor }, cardId);
+      if (!settings.sync.scroll) return;
+      // Content anchors only fit previews of the same page; others scroll to the same ratio.
+      const page = agents.frameOf(cardId)?.href;
+      for (const vp of visible) {
+        if (vp.id === cardId) continue;
+        const other = agents.frameOf(vp.id)?.href;
+        const samePage = Boolean(page && other && pageOf(page) === pageOf(other));
+        agents.send(vp.id, { type: 'scrollTo', ratio, anchor: samePage ? anchor : undefined });
+      }
     },
     onZoom: (direction) => zoomStep(direction),
     onPick: (cardId, selector, element) => {
@@ -816,6 +865,10 @@ function Workspace({
   useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
   useEffect(() => broadcast({ type: 'scrollbars', hidden: hideScrollbars }), [broadcast, hideScrollbars]);
   useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
+  // When the inspector's selection goes (cleared, closed, another page), previews drop its outline too.
+  useEffect(() => {
+    if (!inspector.selector) broadcast({ type: 'select', selector: null });
+  }, [broadcast, inspector.selector]);
   const schemeKey = visible.map((vp) => `${vp.id}:${vp.colorScheme ?? ''}`).join(' ');
   useEffect(() => {
     for (const entry of schemeKey.split(' ')) {
@@ -1125,7 +1178,8 @@ function Workspace({
   };
 
   const commandFromQuery = (query: string): PaletteCommand | null => {
-    if (/\s/.test(query)) return null;
+    // Not for numbers such as a width ("768" would read as an IP address).
+    if (!looksLikeAddress(query)) return null;
     const result = parsePreviewUrl(query);
     if (!result.ok) return null;
     return {
@@ -1315,8 +1369,8 @@ function Workspace({
         siteAllowed={siteAccess.site}
         canGoBack={navigation.canGoBack}
         canGoForward={navigation.canGoForward}
-        onBack={() => history.back()}
-        onForward={() => history.forward()}
+        onBack={navigation.back}
+        onForward={navigation.forward}
         onAddressChange={(value) => {
           setAddress(value);
           if (addressError) setAddressError(null);
@@ -1445,12 +1499,7 @@ function Workspace({
               focused={Boolean(focused)}
               status={
                 focusedViewport ? (
-                  <DockStatus
-                    icon="maximize"
-                    testId="focus-status"
-                    action={t('focus.exit')}
-                    onAction={() => setFocus(null)}
-                  >
+                  <DockStatus icon="maximize" testId="focus-status" action={t('focus.exit')} onAction={exitFocus}>
                     {t('focus.label')} <strong>{focusedViewport.name}</strong>
                   </DockStatus>
                 ) : inspector.picking ? (

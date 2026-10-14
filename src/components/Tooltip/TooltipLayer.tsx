@@ -102,8 +102,10 @@ export function TooltipLayer() {
 
   useLayoutEffect(() => {
     const panel = panelRef.current;
-    if (!panel || !tip) return;
-    if (typeof panel.showPopover === 'function' && !panel.matches(':popover-open')) panel.showPopover();
+    if (!panel || !tip || typeof panel.showPopover !== 'function') return;
+    // Shown again for every new tip, so it is the newest entry of the top layer (above a dialog opened meanwhile).
+    if (panel.matches(':popover-open')) panel.hidePopover();
+    panel.showPopover();
     const { rect } = tip;
     const width = panel.offsetWidth;
     const height = panel.offsetHeight;

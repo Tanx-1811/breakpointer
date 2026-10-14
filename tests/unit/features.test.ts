@@ -288,3 +288,68 @@ describe('shortcuts', () => {
     expect(shortcutFor(key('KeyI', 'i', { altKey: true }))).toBeNull();
   });
 });
+
+describe('review fixes', () => {
+  it('tells addresses from numbers', async () => {
+    const { looksLikeAddress } = await import('../../src/utils/url');
+    for (const text of [
+      'example.com',
+      'https://example.com',
+      'localhost:5173',
+      '127.0.0.1:8080/demo',
+      'shop.example.com/a?b',
+    ])
+      expect(looksLikeAddress(text), text).toBe(true);
+    for (const text of ['768', '375', '1.5', 'tablet', 'fit all', '.com', 'example.', ''])
+      expect(looksLikeAddress(text), text).toBe(false);
+  });
+
+  it('anchors selectors of elements outside <body> at the root', () => {
+    const extra = document.createElement('div');
+    document.documentElement.append(extra);
+    expect(cssPath(extra)).toMatch(/^:root > div:nth-of-type\(\d+\)$/);
+    expect(document.querySelector(cssPath(extra))).toBe(extra);
+    extra.remove();
+  });
+
+  it('lists every command when nothing is typed', () => {
+    const many = Array.from({ length: 150 }, (_, index) => ({ title: `Command ${index}` }));
+    expect(searchCommands(many, '')).toHaveLength(150);
+    expect(searchCommands(many, 'command', 60)).toHaveLength(60);
+  });
+
+  it('never postpones a scan that is already due', async () => {
+    const { vi } = await import('vitest');
+    const { scheduler } = await import('../../src/agent/page-utils');
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'performance'] });
+    try {
+      const task = vi.fn();
+      const schedule = scheduler(task);
+      schedule(100);
+      // A page that keeps changing asks again and again (until 90 ms, for 490 ms)…
+      for (let step = 0; step < 3; step++) {
+        vi.advanceTimersByTime(30);
+        schedule(400);
+      }
+      // …the first run still happens on time…
+      vi.advanceTimersByTime(10);
+      expect(task).toHaveBeenCalledTimes(1);
+      // …and once more for the latest request.
+      vi.advanceTimersByTime(389);
+      expect(task).toHaveBeenCalledTimes(1);
+      vi.advanceTimersByTime(1);
+      expect(task).toHaveBeenCalledTimes(2);
+      // A sooner request runs first; the later one still runs afterwards.
+      schedule(1000);
+      schedule(50);
+      vi.advanceTimersByTime(50);
+      expect(task).toHaveBeenCalledTimes(3);
+      vi.advanceTimersByTime(950);
+      expect(task).toHaveBeenCalledTimes(4);
+      vi.advanceTimersByTime(5000);
+      expect(task).toHaveBeenCalledTimes(4);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

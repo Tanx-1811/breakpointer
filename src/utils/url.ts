@@ -63,6 +63,20 @@ function checked(url: URL): UrlParseResult {
   return { ok: true, url };
 }
 
+/**
+ * Whether typed text is meant as an address: a URL, localhost, an IPv4 address,
+ * or a host with a dot and a letter — not a number such as "768" (which the URL
+ * parser would read as an IP address).
+ */
+export function looksLikeAddress(text: string): boolean {
+  const value = text.trim();
+  if (!value || /\s/.test(value)) return false;
+  if (HTTP_SCHEME.test(value)) return true;
+  const host = value.split(/[/?#]/, 1)[0]!.replace(/:\d*$/, '').toLowerCase();
+  if (host === 'localhost' || host.endsWith('.localhost') || IPV4.test(host)) return true;
+  return host.includes('.') && /[a-z]/.test(host) && !host.startsWith('.') && !host.endsWith('.');
+}
+
 /** Returns the href only if the value is a previewable http(s) URL (no embedded credentials). */
 export function toSafeHref(value: unknown): string | undefined {
   if (typeof value !== 'string' || !HTTP_SCHEME.test(value)) return undefined;

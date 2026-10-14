@@ -161,12 +161,16 @@ test.describe('inspector', () => {
     await expect(panel).toBeVisible();
 
     // While picking, a click selects instead of following the link.
-    await clickInFrame(page, await frameAt(page, '/inspect', 375), '#away');
+    await clickInFrame(page, await frameAt(page, '/inspect', 375), '#away', async () =>
+      (await panel.textContent())!.includes('main > a#away'),
+    );
     await expect(panel).toContainText('main > a#away');
     expect(await previewWidths(page, '/linked')).toEqual([]);
 
     await page.getByRole('button', { name: 'Pick an element' }).click();
-    await clickInFrame(page, await frameAt(page, '/inspect', 375), '#target');
+    await clickInFrame(page, await frameAt(page, '/inspect', 375), '#target', async () =>
+      (await panel.textContent())!.includes('main > div#target'),
+    );
     await expect(panel).toContainText('main > div#target');
     await expect(panel.getByTestId('inspector-size')).toHaveCount(3);
     // Its display changes at 768px.
@@ -204,6 +208,30 @@ test.describe('page colours', () => {
     await card(page, 'Phone').getByRole('button', { name: 'More actions for Phone' }).click();
     await page.getByRole('menuitemradio', { name: 'Like the browser' }).click();
     await expect.poll(() => background(375)).toBe('rgb(255, 255, 255)');
+  });
+});
+
+test.describe('page colours, declared in CSS', () => {
+  test('a dark override holds steady when the page declares its schemes in CSS only', async ({
+    openViewer,
+    server,
+  }) => {
+    const page = await openViewer({ url: server.url('/scheme-css') });
+    await agentsReady(page, '/scheme-css');
+    await card(page, 'Phone').getByRole('button', { name: 'More actions for Phone' }).click();
+    await page.getByRole('menuitemradio', { name: 'Dark' }).click();
+    const phone = await frameAt(page, '/scheme-css', 375);
+    const state = () =>
+      phone.evaluate(() => [
+        getComputedStyle(document.body).backgroundColor,
+        getComputedStyle(document.documentElement).colorScheme,
+      ]);
+    await expect.poll(state).toEqual(['rgb(0, 0, 0)', 'dark']);
+    // It stays so (no switching back and forth as the page's styles are re-read).
+    for (let sample = 0; sample < 8; sample++) {
+      await page.waitForTimeout(200);
+      expect(await state()).toEqual(['rgb(0, 0, 0)', 'dark']);
+    }
   });
 });
 

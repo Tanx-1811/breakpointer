@@ -29,37 +29,57 @@ export async function visualCardNames(page: Page): Promise<string[]> {
  * A real (trusted) click on an element inside a preview. Playwright's own
  * locator click can't aim inside a scaled cross-origin frame, so the point is
  * mapped through the frame's zoom by hand.
+ *
+ * A synthetic pointer that jumps straight into a cross-origin frame right after
+ * it loaded is occasionally delivered to the workspace instead (the frame's
+ * hit-testing isn't settled for an input that arrives without any movement
+ * before it; a real mouse always moves there first). So the pointer moves in
+ * first, and when `until` is given, the click is repeated (up to three times)
+ * until it holds.
  */
-export async function clickInFrame(page: Page, frame: Frame, selector: string) {
-  const iframe = await frame.frameElement();
-  await iframe.scrollIntoViewIfNeeded();
-  // The workspace may still be fitting its cards to the screen: wait until the frame holds still.
-  let box = (await iframe.boundingBox())!;
-  for (let tries = 0; tries < 20; tries += 1) {
-    await page.waitForTimeout(100);
-    const next = (await iframe.boundingBox())!;
-    const still = ['x', 'y', 'width', 'height'].every(
-      (key) => Math.abs(next[key as keyof typeof next] - box[key as keyof typeof box]) < 0.5,
-    );
-    box = next;
-    if (still) break;
+export async function clickInFrame(
+  page: Page,
+  frame: Frame,
+  selector: string,
+  until?: () => Promise<boolean> | boolean,
+) {
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const iframe = await frame.frameElement();
+    await iframe.scrollIntoViewIfNeeded();
+    // The workspace may still be fitting its cards to the screen: wait until the frame holds still.
+    let box = (await iframe.boundingBox())!;
+    for (let tries = 0; tries < 20; tries += 1) {
+      await page.waitForTimeout(100);
+      const next = (await iframe.boundingBox())!;
+      const still = ['x', 'y', 'width', 'height'].every(
+        (key) => Math.abs(next[key as keyof typeof next] - box[key as keyof typeof box]) < 0.5,
+      );
+      box = next;
+      if (still) break;
+    }
+    const point = await frame.evaluate((sel) => {
+      const element = document.querySelector(sel)!;
+      element.scrollIntoView({ block: 'center', behavior: 'instant' });
+      const rect = element.getBoundingClientRect();
+      return { x: rect.left + Math.min(rect.width / 2, 20), y: rect.top + rect.height / 2, width: innerWidth };
+    }, selector);
+    const zoom = box.width / point.width;
+    const x = box.x + point.x * zoom;
+    const y = box.y + point.y * zoom;
+    await page.mouse.move(x, y, { steps: 2 });
+    await page.waitForTimeout(250);
+    await page.mouse.click(x, y);
+    if (!until) return;
+    for (let wait = 0; wait < 15; wait++) {
+      if (await until()) return;
+      await page.waitForTimeout(100);
+    }
   }
-  const point = await frame.evaluate((sel) => {
-    const element = document.querySelector(sel)!;
-    element.scrollIntoView({ block: 'center', behavior: 'instant' });
-    const rect = element.getBoundingClientRect();
-    return { x: rect.left + Math.min(rect.width / 2, 20), y: rect.top + rect.height / 2, width: innerWidth };
-  }, selector);
-  const zoom = box.width / point.width;
-  const x = box.x + point.x * zoom;
-  const y = box.y + point.y * zoom;
-  // Move first and let the card's hover transitions finish (Chrome updates
-  // its hit-testing for the out-of-process frame meanwhile): a click right on
-  // arrival is sometimes not delivered to the frame.
-  await page.mouse.move(x, y, { steps: 2 });
-  await page.waitForTimeout(400);
-  await page.mouse.click(x, y);
 }
+
+/** True once a preview shows an address containing `part`. */
+export const framesShow = (page: Page, part: string) => () =>
+  page.frames().some((frame) => frame !== page.mainFrame() && frame.url().includes(part));
 
 export function card(page: Page, name: string) {
   return page.getByRole('region', { name: new RegExp(`^${name}, \\d+ by \\d+ pixels$`) });
