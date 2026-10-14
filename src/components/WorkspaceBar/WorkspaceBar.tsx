@@ -1,46 +1,132 @@
-import { useState, type DragEvent, type KeyboardEvent } from 'react';
+import { useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { BUILT_IN_GROUPS } from '../../data/groups';
 import { useI18n } from '../../i18n/I18nProvider';
-import type { BreakpointSetId, ViewportConfig, WorkspaceLayout } from '../../types';
-import { MAX_VIEWPORTS, ZOOM_OPTIONS } from '../../utils/constants';
-import { Button } from '../Button/Button';
-import { Icon } from '../Icon/Icon';
-import { Segmented } from '../Segmented/Segmented';
-import { formatZoom } from '../ViewportCard/ViewportCard';
+import type { MessageKey } from '../../i18n/en';
+import { builtInGroupName } from '../../state/groups';
+import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
+import type { BreakpointSetId, ViewportConfig, ViewportGroup } from '../../types';
+import { MAX_VIEWPORTS } from '../../utils/constants';
+import { Icon, type IconName } from '../Icon/Icon';
+import { Menu, type MenuEntry } from '../Menu/Menu';
+import { Select } from '../Select/Select';
 import styles from './WorkspaceBar.module.css';
+
+export type ToolToggle = 'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'grid';
+export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 type Props = {
   viewports: ViewportConfig[];
-  layout: WorkspaceLayout;
+  groups: ViewportGroup[];
+  canAddViewport: boolean;
   breakpoints: BreakpointSetId;
+  /** Breakpoints detected in the page (null: not known yet). */
+  siteBreakpoints: number[] | null;
   showRulers: boolean;
   /** Scroll or navigation sync is on. */
   sync: boolean;
   showGrid: boolean;
+  /** The inspector is open. */
+  inspecting: boolean;
+  tools: ToolState;
+  hasUrl: boolean;
+  siteAllowed: boolean | null;
+  host: string | null;
+  /** The viewport shown on its own (focus mode). */
+  focusedId: string | null;
   onToggleVisible: (id: string) => void;
   onMoveTo: (id: string, index: number) => void;
-  onZoomAll: (zoom: number) => void;
-  onFit: () => void;
-  onLayout: (layout: WorkspaceLayout) => void;
+  onApplyGroup: (id: string) => void;
+  onSaveGroup: () => void;
+  onManageGroups: () => void;
+  onAddViewport: () => void;
   onBreakpoints: (set: BreakpointSetId) => void;
   onRulers: (show: boolean) => void;
   onSync: (on: boolean) => void;
   onGrid: (show: boolean) => void;
+  onInspect: () => void;
+  onTool: (tool: ToolToggle) => void;
+  onLiveCss: () => void;
+  onEdges: () => void;
+  onRotateAll: () => void;
+  onSortByWidth: () => void;
+  onReport: () => void;
+  onAllowSite: () => void;
 };
 
+function Toggle({
+  pressed,
+  label,
+  icon,
+  tooltip,
+  shortcut,
+  onClick,
+  testId,
+}: {
+  pressed: boolean;
+  label: string;
+  icon: IconName;
+  tooltip: string;
+  shortcut?: string;
+  onClick: () => void;
+  testId?: string;
+}) {
+  return (
+    <button
+      type="button"
+      className={styles.toggle}
+      aria-pressed={pressed}
+      aria-label={label}
+      data-tooltip={tooltip}
+      data-shortcut={shortcut}
+      onClick={onClick}
+      data-testid={testId}
+    >
+      <Icon name={icon} size={15} />
+      <span className={styles.toggleLabel}>{label}</span>
+    </button>
+  );
+}
+
+function MenuButton({
+  triggerProps,
+  icon,
+  label,
+  tooltip,
+  shortcut,
+  extra,
+  dataAttribute,
+}: {
+  triggerProps: object;
+  icon: IconName;
+  label: string;
+  tooltip?: string;
+  shortcut?: string;
+  extra?: ReactNode;
+  dataAttribute: Record<string, true>;
+}) {
+  return (
+    <button
+      type="button"
+      {...triggerProps}
+      {...dataAttribute}
+      className={styles.menuButton}
+      data-tooltip={tooltip}
+      data-shortcut={shortcut}
+    >
+      <Icon name={icon} size={16} />
+      <span className={styles.menuLabel}>{label}</span>
+      {extra}
+      <Icon name="chevronDown" size={13} className={styles.chevron} />
+    </button>
+  );
+}
+
 export function WorkspaceBar(props: Props) {
-  const { viewports, layout, breakpoints, showRulers, sync, showGrid } = props;
+  const { viewports, breakpoints, showRulers, sync, showGrid } = props;
   const { t } = useI18n();
   const [dragId, setDragId] = useState<string | null>(null);
   /** Insertion slot while dragging: 0 = before the first chip, n = after the last. */
   const [dropSlot, setDropSlot] = useState<number | null>(null);
-
-  const visible = viewports.filter((vp) => !vp.hidden);
-  const zooms = [...new Set(visible.map((vp) => vp.zoom))];
-  const commonZoom = zooms.length === 1 ? zooms[0]! : null;
-  const zoomOptions =
-    commonZoom === null || ZOOM_OPTIONS.includes(commonZoom)
-      ? ZOOM_OPTIONS
-      : [...ZOOM_OPTIONS, commonZoom].sort((a, b) => a - b);
 
   const onDragOver = (event: DragEvent<HTMLLIElement>, index: number) => {
     if (!dragId) return;
@@ -84,152 +170,238 @@ export function WorkspaceBar(props: Props) {
     requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`[data-chip-id="${vp.id}"]`)?.focus());
   };
 
+  const groupEntries: MenuEntry[] = [
+    { kind: 'heading', id: 'builtin', label: t('groups.builtIn') },
+    ...BUILT_IN_GROUPS.map<MenuEntry>((group) => ({
+      id: `builtin:${group.id}`,
+      label: builtInGroupName(group, t),
+      icon: 'layers',
+      hint: String(group.viewports.length),
+      onSelect: () => props.onApplyGroup(`builtin:${group.id}`),
+    })),
+    { kind: 'separator', id: 'sep1' },
+    { kind: 'heading', id: 'yours', label: t('groups.yours') },
+    ...(props.groups.length
+      ? props.groups.map<MenuEntry>((group) => ({
+          id: group.id,
+          label: group.name,
+          icon: 'layers',
+          hint: String(group.viewports.length),
+          onSelect: () => props.onApplyGroup(group.id),
+        }))
+      : [{ kind: 'note', id: 'none', label: t('groups.empty') } satisfies MenuEntry]),
+    { kind: 'separator', id: 'sep2' },
+    { id: 'save', label: t('groups.save'), icon: 'save', onSelect: props.onSaveGroup },
+    {
+      id: 'manage',
+      label: t('groups.manage'),
+      icon: 'settings',
+      disabled: props.groups.length === 0,
+      onSelect: props.onManageGroups,
+    },
+  ];
+
+  const toolToggle = (id: ToolToggle, label: MessageKey, description?: MessageKey): MenuEntry => ({
+    id,
+    label: t(label),
+    description: description ? t(description) : undefined,
+    checked: props.tools[id],
+    onSelect: () => props.onTool(id),
+  });
+  // Everything but the grid runs inside the preview, so it needs the site's permission.
+  const needsAccess = props.hasUrl && props.siteAllowed === false && props.host;
+  const toolEntries: MenuEntry[] = [
+    ...(needsAccess
+      ? ([
+          { kind: 'note', id: 'tools-note', label: t('tools.menuNote') },
+          {
+            id: 'tools-allow',
+            label: t('tools.allowSite', { host: props.host ?? '' }),
+            icon: 'shield',
+            onSelect: props.onAllowSite,
+          },
+          { kind: 'separator', id: 'tools-sep0' },
+        ] satisfies MenuEntry[])
+      : []),
+    { kind: 'heading', id: 'in-page', label: t('tools.inPage') },
+    toolToggle('syncScroll', 'tools.syncScroll'),
+    toolToggle('syncNavigation', 'tools.syncNavigation'),
+    toolToggle('checks', 'tools.checks'),
+    toolToggle('outlines', 'tools.outlines'),
+    toolToggle('grid', 'tools.grid'),
+    {
+      id: 'liveCss',
+      label: t('tools.liveCss'),
+      icon: 'code',
+      hint: props.tools.liveCss ? t('tools.on') : undefined,
+      onSelect: props.onLiveCss,
+    },
+    { id: 'inspect', label: t('tools.inspect'), icon: 'inspect', shortcut: 'I', onSelect: props.onInspect },
+    { kind: 'separator', id: 'tools-sep1' },
+    { kind: 'heading', id: 'arrange', label: t('tools.arrange') },
+    { id: 'edges', label: t('tools.edges'), icon: 'ruler', onSelect: props.onEdges },
+    { id: 'rotateAll', label: t('tools.rotateAll'), icon: 'rotate', onSelect: props.onRotateAll },
+    { id: 'sortWidth', label: t('tools.sortByWidth'), icon: 'sort', onSelect: props.onSortByWidth },
+    { kind: 'separator', id: 'tools-sep2' },
+    { id: 'report', label: t('tools.report'), icon: 'report', disabled: !props.hasUrl, onSelect: props.onReport },
+  ];
+
+  const siteCount = props.siteBreakpoints?.length ?? 0;
+
   return (
     <div className={styles.bar}>
       <div className={styles.chipsArea}>
-        <span className={styles.label}>
-          {t('workspace.viewports')}
-          <span className={styles.count}>{t('workspace.count', { count: viewports.length, max: MAX_VIEWPORTS })}</span>
+        <Menu
+          label={t('toolbar.groups')}
+          entries={groupEntries}
+          minWidth={270}
+          trigger={(triggerProps) => (
+            <MenuButton
+              triggerProps={triggerProps}
+              icon="layers"
+              label={t('toolbar.groups')}
+              tooltip={t('toolbar.groupsHint')}
+              shortcut="G"
+              dataAttribute={{ 'data-groups-trigger': true }}
+            />
+          )}
+        />
+        <span className={styles.divider} aria-hidden="true" />
+        <span className={styles.count}>
+          <span aria-hidden="true">
+            {viewports.length}/{MAX_VIEWPORTS}
+          </span>
+          <span className="visually-hidden">
+            {t('workspace.countLabel', { count: viewports.length, max: MAX_VIEWPORTS })}
+          </span>
         </span>
         <ul className={styles.chips} aria-label={t('workspace.viewports')}>
-          {viewports.map((vp, index) => (
-            <li
-              key={vp.id}
-              className={styles.chipItem}
-              data-drop={dropMarker(index)}
-              onDragOver={(event) => onDragOver(event, index)}
-              onDrop={onDrop}
-            >
-              <button
-                type="button"
-                className={styles.chip}
-                aria-pressed={!vp.hidden}
-                aria-label={t('workspace.chipLabel', { name: vp.name, size: `${vp.width} × ${vp.height}` })}
-                title={t('workspace.chipHint')}
-                data-chip-id={vp.id}
-                data-testid="viewport-chip"
-                draggable
-                onDragStart={(event) => {
-                  setDragId(vp.id);
-                  event.dataTransfer.effectAllowed = 'move';
-                  event.dataTransfer.setData('text/plain', vp.id);
-                }}
-                onDragEnd={endDrag}
-                onClick={() => props.onToggleVisible(vp.id)}
-                onKeyDown={(event) => onChipKeyDown(event, vp, index)}
+          {viewports.map((vp, index) => {
+            const sizeClass = sizeClassOf(vp.width, vp.height);
+            return (
+              <li
+                key={vp.id}
+                className={styles.chipItem}
+                data-drop={dropMarker(index)}
+                onDragOver={(event) => onDragOver(event, index)}
+                onDrop={onDrop}
               >
-                <Icon name={vp.hidden ? 'eyeOff' : 'eye'} size={13} className={styles.chipIcon} />
-                <span className={styles.chipName}>{vp.name}</span>
-                <span className={styles.chipSize}>
-                  {vp.width}×{vp.height}
-                </span>
-              </button>
-            </li>
-          ))}
+                <button
+                  type="button"
+                  className={styles.chip}
+                  aria-pressed={!vp.hidden}
+                  aria-label={t('workspace.chipLabel', { name: vp.name, size: `${vp.width} × ${vp.height}` })}
+                  data-tooltip={vp.hidden ? t('workspace.chipShow') : t('workspace.chipHint')}
+                  data-chip-id={vp.id}
+                  data-size-class={sizeClass}
+                  data-focused={props.focusedId === vp.id || undefined}
+                  data-testid="viewport-chip"
+                  draggable
+                  onDragStart={(event) => {
+                    setDragId(vp.id);
+                    event.dataTransfer.effectAllowed = 'move';
+                    event.dataTransfer.setData('text/plain', vp.id);
+                  }}
+                  onDragEnd={endDrag}
+                  onClick={() => props.onToggleVisible(vp.id)}
+                  onKeyDown={(event) => onChipKeyDown(event, vp, index)}
+                >
+                  <Icon name={vp.hidden ? 'eyeOff' : SIZE_CLASS_ICONS[sizeClass]} size={14} className={styles.chipIcon} />
+                  <span className={styles.chipName}>{vp.name}</span>
+                  <span className={styles.chipSize}>{vp.width}</span>
+                  {vp.colorScheme && (
+                    <Icon name={vp.colorScheme === 'dark' ? 'moon' : 'sun'} size={12} className={styles.chipScheme} />
+                  )}
+                </button>
+              </li>
+            );
+          })}
         </ul>
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={props.onAddViewport}
+          disabled={!props.canAddViewport}
+          aria-label={t('toolbar.addViewport')}
+          data-tooltip={props.canAddViewport ? t('toolbar.addViewport') : t('add.limit', { max: MAX_VIEWPORTS })}
+          data-shortcut="A"
+          data-add-viewport
+        >
+          <Icon name="plus" size={15} />
+          <span className={styles.addLabel}>{t('toolbar.addViewport')}</span>
+        </button>
       </div>
 
       <div className={styles.controls}>
         <label className={styles.control}>
-          <span className={styles.controlLabel}>{t('workspace.breakpoints')}</span>
-          <select
-            className="field"
+          <span className="visually-hidden">{t('workspace.breakpoints')}</span>
+          <Select
+            size="sm"
+            icon="tag"
             value={breakpoints}
+            aria-label={t('workspace.breakpoints')}
+            data-tooltip={t('workspace.breakpointsHint')}
             onChange={(event) => props.onBreakpoints(event.target.value as BreakpointSetId)}
           >
-            <option value="none">{t('breakpoints.none')}</option>
+            <option value="none">{t('breakpoints.noneLabel')}</option>
             <option value="tailwind">{t('breakpoints.tailwind')}</option>
             <option value="bootstrap">{t('breakpoints.bootstrap')}</option>
             <option value="custom">{t('breakpoints.custom')}</option>
-          </select>
+            <option value="site">
+              {siteCount ? t('breakpoints.siteCount', { count: siteCount }) : t('breakpoints.site')}
+            </option>
+          </Select>
         </label>
 
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-pressed={showRulers}
-          aria-label={t('workspace.rulers')}
-          onClick={() => props.onRulers(!showRulers)}
-          title={`${t('workspace.rulers')} (M)`}
-        >
-          <Icon name="ruler" size={15} />
-          <span className={styles.toggleLabel}>{t('workspace.rulers')}</span>
-        </button>
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-pressed={showGrid}
-          aria-label={t('workspace.grid')}
-          onClick={() => props.onGrid(!showGrid)}
-          title={t('workspace.gridHint')}
-          data-testid="grid-toggle"
-        >
-          <Icon name="columns" size={15} />
-          <span className={styles.toggleLabel}>{t('workspace.grid')}</span>
-        </button>
-        <button
-          type="button"
-          className={styles.toggle}
-          aria-pressed={sync}
-          aria-label={t('workspace.sync')}
-          onClick={() => props.onSync(!sync)}
-          title={t('workspace.syncHint')}
-          data-testid="sync-toggle"
-        >
-          <Icon name="link" size={15} />
-          <span className={styles.toggleLabel}>{t('workspace.sync')}</span>
-        </button>
+        <div className={styles.toggleGroup}>
+          <Toggle
+            pressed={showRulers}
+            label={t('workspace.rulers')}
+            icon="ruler"
+            tooltip={t('workspace.rulersHint')}
+            shortcut="M"
+            onClick={() => props.onRulers(!showRulers)}
+          />
+          <Toggle
+            pressed={showGrid}
+            label={t('workspace.grid')}
+            icon="columns"
+            tooltip={t('workspace.gridHint')}
+            onClick={() => props.onGrid(!showGrid)}
+            testId="grid-toggle"
+          />
+          <Toggle
+            pressed={sync}
+            label={t('workspace.sync')}
+            icon="link"
+            tooltip={t('workspace.syncHint')}
+            onClick={() => props.onSync(!sync)}
+            testId="sync-toggle"
+          />
+          <Toggle
+            pressed={props.inspecting}
+            label={t('workspace.inspect')}
+            icon="inspect"
+            tooltip={t('workspace.inspectHint')}
+            shortcut="I"
+            onClick={props.onInspect}
+            testId="inspect-toggle"
+          />
+        </div>
 
-        <span className={styles.divider} aria-hidden="true" />
-
-        <label className={styles.control}>
-          <span className={styles.controlLabel}>{t('workspace.zoom')}</span>
-          <select
-            className={`field ${styles.zoomSelect}`}
-            data-mixed={visible.length > 0 && commonZoom === null ? '' : undefined}
-            value={visible.length === 0 ? 'none' : (commonZoom ?? 'mixed')}
-            onChange={(event) => props.onZoomAll(Number(event.target.value))}
-            disabled={visible.length === 0}
-          >
-            {visible.length === 0 && (
-              <option value="none" disabled>
-                —
-              </option>
-            )}
-            {visible.length > 0 && commonZoom === null && (
-              <option value="mixed" disabled>
-                {t('workspace.zoomMixed')}
-              </option>
-            )}
-            {zoomOptions.map((option) => (
-              <option key={option} value={option}>
-                {formatZoom(option)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Button
-          size="sm"
-          icon="fit"
-          onClick={props.onFit}
-          title={`${t('workspace.fitHint')} (F)`}
-          disabled={visible.length === 0}
-        >
-          {t('workspace.fit')}
-        </Button>
-
-        <span className={styles.divider} aria-hidden="true" />
-
-        <Segmented
-          label={t('workspace.layout')}
-          size="sm"
-          iconOnly
-          value={layout}
-          onChange={props.onLayout}
-          options={[
-            { value: 'wrap', label: t('layout.wrap'), icon: 'wrap' },
-            { value: 'row', label: t('layout.row'), icon: 'row' },
-          ]}
+        <Menu
+          label={t('toolbar.tools')}
+          entries={toolEntries}
+          align="end"
+          minWidth={270}
+          trigger={(triggerProps) => (
+            <MenuButton
+              triggerProps={triggerProps}
+              icon="tools"
+              label={t('toolbar.tools')}
+              dataAttribute={{ 'data-tools-trigger': true }}
+            />
+          )}
         />
       </div>
     </div>

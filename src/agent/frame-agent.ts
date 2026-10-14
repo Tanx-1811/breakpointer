@@ -5,8 +5,18 @@
  * workspace; on every other page it returns immediately.
  *
  * It never sends page content anywhere: it reports the page address and title,
- * scroll position and the results of layout checks to the workspace tab only.
+ * scroll position, the results of layout checks, the widths used by the page's
+ * media queries and the box of an element the user inspects — to the workspace
+ * tab only.
  */
+import {
+  compressBox,
+  cssPath,
+  describeElement,
+  mediaQueryEdges,
+  mentionsColorScheme,
+  swapColorScheme,
+} from './page-utils';
 import {
   AGENT_SOURCE,
   type AgentCommand,
@@ -14,6 +24,10 @@ import {
   type CheckIssue,
   type CheckReport,
   type CheckSample,
+  type ColorSchemeOverride,
+  type ElementInfo,
+  type MediaReport,
+  type ScrollAnchor,
 } from './protocol';
 
 const MAX_SAMPLES = 8;
@@ -25,6 +39,11 @@ const CHECK_INTERVAL_MS = 2000;
 const CHECK_DELAY_MS = 500;
 /** Wheel distance (pixels) per zoom step, as in the workspace. */
 const WHEEL_STEP = 60;
+/** Most-used media query widths reported (sites often ship CSS from several libraries). */
+const MAX_BREAKPOINTS = 12;
+/** Where the reader's eye is, as a fraction of the window height (used to sync scrolling by content). */
+const READING_LINE = 0.3;
+const OVERLAY_ATTRIBUTE = 'data-breakpointer-overlay';
 
 type AgentWindow = Window & { __breakpointerAgent?: boolean };
 
@@ -74,7 +93,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   // the user's doing (synced navigation ignores redirects the page makes itself).
   let lastInput = -Infinity;
   const onInput = (event: Event) => {
-    if (!event.isTrusted || performance.now() - lastInput < 1000) return;
+    if (inspecting || !event.isTrusted || performance.now() - lastInput < 1000) return;
     lastInput = performance.now();
     send({ type: 'input' });
   };
@@ -104,18 +123,75 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   let ignoreScrollUntil = 0;
   let scrollQueued = false;
+  const maxScroll = () => document.documentElement.scrollHeight - window.innerHeight;
   const scrollRatio = () => {
-    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const max = maxScroll();
     return max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0;
   };
+
+  const fixedOrSticky = (element: Element) => {
+    for (let node: Element | null = element; node && node !== document.body; node = node.parentElement) {
+      const position = getComputedStyle(node).position;
+      if (position === 'fixed' || position === 'sticky') return true;
+    }
+    return false;
+  };
+
+  /**
+   * The content at the reading line, so other previews (whose layouts differ)
+   * can show the same content instead of the same percentage of the page.
+   */
+  const scrollAnchor = (): ScrollAnchor | undefined => {
+    const max = maxScroll();
+    // At the very top or bottom the ratio says it all.
+    if (window.scrollY < 4 || max - window.scrollY < 4) return undefined;
+    const line = Math.round(window.innerHeight * READING_LINE);
+    for (const element of document.elementsFromPoint(window.innerWidth / 2, line)) {
+      if (element === document.documentElement || element === document.body) break;
+      if (element.hasAttribute(OVERLAY_ATTRIBUTE) || fixedOrSticky(element)) continue;
+      const chain: Element[] = [];
+      for (let node: Element | null = element; node && node !== document.body && chain.length < 3; node = node.parentElement)
+        chain.push(node);
+      return {
+        selectors: chain.map(cssPath),
+        offsets: chain.map((node) => {
+          const rect = node.getBoundingClientRect();
+          return rect.height > 0 ? Math.round(((line - rect.top) / rect.height) * 1000) / 1000 : 0;
+        }),
+        line: READING_LINE,
+      };
+    }
+    return undefined;
+  };
+
+  const scrollToAnchor = (anchor: ScrollAnchor): boolean => {
+    for (const [index, selector] of anchor.selectors.entries()) {
+      let element: Element | null = null;
+      try {
+        element = document.querySelector(selector);
+      } catch {
+        continue;
+      }
+      const rect = element?.getBoundingClientRect();
+      if (!rect || rect.width <= 0 || rect.height <= 0) continue;
+      const offset = anchor.offsets[index] ?? 0;
+      const top = window.scrollY + rect.top + offset * rect.height - anchor.line * window.innerHeight;
+      window.scrollTo({ top: Math.max(0, top), behavior: 'instant' });
+      return true;
+    }
+    return false;
+  };
+
   window.addEventListener(
     'scroll',
     () => {
+      drawOverlay();
       if (performance.now() < ignoreScrollUntil || scrollQueued) return;
       scrollQueued = true;
       requestAnimationFrame(() => {
         scrollQueued = false;
-        if (performance.now() >= ignoreScrollUntil) send({ type: 'scroll', ratio: scrollRatio() });
+        if (performance.now() >= ignoreScrollUntil)
+          send({ type: 'scroll', ratio: scrollRatio(), anchor: scrollAnchor() });
       });
     },
     { passive: true },
@@ -144,7 +220,17 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   let flagged = new Map<string, Element[]>();
   let highlighted: string | null = null;
 
-  const applyHighlight = (kind: string | null, reveal: boolean) => {
+  /** Scrolls this page only (scrollIntoView could also scroll the workspace); other previews don't follow. */
+  const reveal = (element: Element) => {
+    const rect = element.getBoundingClientRect();
+    ignoreScrollUntil = performance.now() + 300;
+    window.scrollTo({
+      top: Math.max(0, window.scrollY + rect.top - Math.max(0, (window.innerHeight - rect.height) / 2)),
+      behavior: 'instant',
+    });
+  };
+
+  const applyHighlight = (kind: string | null, scroll: boolean) => {
     highlighted = kind;
     document.querySelectorAll(`[${MARK}]`).forEach((element) => {
       if (!kind || element.getAttribute(MARK) !== kind || !flagged.get(kind)?.includes(element))
@@ -160,35 +246,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       'bp-highlight',
       `[${MARK}]{outline:2px dashed #e11d48 !important;outline-offset:-2px !important;background-color:rgba(225,29,72,.08) !important}`,
     );
-    if (reveal && elements[0]) {
-      // Scroll this page only (scrollIntoView could also scroll the workspace),
-      // and as a programmatic scroll it doesn't move the other previews.
-      const rect = elements[0].getBoundingClientRect();
-      ignoreScrollUntil = performance.now() + 300;
-      window.scrollTo({
-        top: Math.max(0, window.scrollY + rect.top - (window.innerHeight - rect.height) / 2),
-        behavior: 'instant',
-      });
-    }
+    if (scroll && elements[0]) reveal(elements[0]);
   };
 
   /* ---------- Responsive checks ---------- */
-
-  const describe = (element: Element): string => {
-    const parts: string[] = [];
-    let node: Element | null = element;
-    while (node && node !== document.body && node !== document.documentElement && parts.length < 3) {
-      let part = node.tagName.toLowerCase();
-      if (node.id) part += `#${node.id}`;
-      else {
-        const classes = [...node.classList].slice(0, 2);
-        if (classes.length) part += `.${classes.join('.')}`;
-      }
-      parts.unshift(part);
-      node = node.parentElement;
-    }
-    return parts.join(' > ');
-  };
 
   /** Rendered and not visually hidden (skip links and screen-reader text are often 1×1 px). */
   const visible = (rect: DOMRect, style: CSSStyleDeclaration) =>
@@ -207,11 +268,14 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     return value === 'hidden' || value === 'clip';
   };
 
+  const pageElements = () =>
+    Array.from(document.body?.querySelectorAll(`*:not([${OVERLAY_ATTRIBUTE}])`) ?? []).slice(0, MAX_SCAN);
+
   const runChecks = (): CheckReport => {
     const width = document.documentElement.clientWidth || window.innerWidth;
     const issues: CheckIssue[] = [];
     const nextFlagged = new Map<string, Element[]>();
-    const elements = Array.from(document.body?.querySelectorAll('*') ?? []).slice(0, MAX_SCAN);
+    const elements = pageElements();
 
     // 1. Content wider than the viewport (the page scrolls sideways). Pages
     //    that hide horizontal overflow on html/body can't scroll sideways.
@@ -230,7 +294,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         if (clipped(element)) continue;
         culprits.push(element);
         if (samples.length < MAX_SAMPLES)
-          samples.push({ selector: describe(element), detail: `+${Math.round(right(element) - width)}px` });
+          samples.push({ selector: describeElement(element), detail: `+${Math.round(right(element) - width)}px` });
       }
       nextFlagged.set('overflow', culprits);
       issues.push({
@@ -263,7 +327,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       if (!visible(element.getBoundingClientRect(), style)) continue;
       smallText.push(element);
       if (textSamples.length < MAX_SAMPLES)
-        textSamples.push({ selector: describe(element), detail: `${Math.round(size * 10) / 10}px` });
+        textSamples.push({ selector: describeElement(element), detail: `${Math.round(size * 10) / 10}px` });
     }
     if (smallText.length) {
       nextFlagged.set('small-text', smallText);
@@ -309,7 +373,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         small.push(target.element);
         if (targetSamples.length < MAX_SAMPLES)
           targetSamples.push({
-            selector: describe(target.element),
+            selector: describeElement(target.element),
             detail: `${Math.round(target.rect.width)}×${Math.round(target.rect.height)}`,
           });
       }
@@ -338,13 +402,359 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       if (highlighted) applyHighlight(highlighted, false);
     }, wait);
   };
-  window.addEventListener('resize', scheduleChecks);
-  window.addEventListener('load', scheduleChecks);
-  new MutationObserver(scheduleChecks).observe(document.documentElement, {
+
+  /* ---------- Stylesheets: breakpoints and color scheme ---------- */
+
+  type Visit = (list: MediaList) => void;
+
+  /** Calls `visit` for every media list in the page's readable stylesheets; returns how many couldn't be read. */
+  const forEachMediaList = (visit: Visit): number => {
+    let unreadable = 0;
+    const walk = (rules: CSSRuleList, depth: number) => {
+      for (const rule of Array.from(rules)) {
+        if (rule instanceof CSSMediaRule) visit(rule.media);
+        if (rule instanceof CSSImportRule) {
+          visit(rule.media);
+          try {
+            if (rule.styleSheet) walk(rule.styleSheet.cssRules, depth + 1);
+          } catch {
+            unreadable++;
+          }
+        }
+        const nested = (rule as Partial<CSSGroupingRule>).cssRules;
+        if (nested && depth < 8) walk(nested, depth + 1);
+      }
+    };
+    const sheets = [...Array.from(document.styleSheets), ...(document.adoptedStyleSheets ?? [])];
+    for (const sheet of sheets) {
+      // Breakpointer's own styles (live CSS, outlines…) aren't the page's.
+      if (sheet.ownerNode instanceof Element && sheet.ownerNode.id.startsWith('bp-')) continue;
+      visit(sheet.media);
+      let rules: CSSRuleList;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        unreadable++;
+        continue;
+      }
+      walk(rules, 0);
+    }
+    return unreadable;
+  };
+
+  let colorScheme: ColorSchemeOverride = null;
+  const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
+  const originalMedia = new WeakMap<object, string>();
+
+  const mediaReport = (): MediaReport => {
+    const counts = new Map<number, number>();
+    let schemeStyles = false;
+    const unreadable = forEachMediaList((list) => {
+      const text = originalMedia.get(list) ?? list.mediaText;
+      if (!text) return;
+      if (mentionsColorScheme(text)) schemeStyles = true;
+      for (const edge of mediaQueryEdges(text)) counts.set(edge, (counts.get(edge) ?? 0) + 1);
+    });
+    const breakpoints = [...counts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0] - b[0])
+      .slice(0, MAX_BREAKPOINTS)
+      .map(([width]) => width)
+      .sort((a, b) => a - b);
+    return { breakpoints, unreadable, colorScheme: schemeStyles };
+  };
+
+  /**
+   * Shows the page's light or dark styles whatever the browser prefers: when
+   * the wanted scheme differs from the browser's, `prefers-color-scheme: dark`
+   * and `light` are swapped in the page's media queries (restored afterwards).
+   * Only styles chosen by CSS follow; a page that picks its theme in script doesn't.
+   */
+  const applyColorScheme = () => {
+    const swap = colorScheme !== null && (colorScheme === 'dark') !== systemDark.matches;
+    const update = (original: string, current: string, write: (text: string) => void) => {
+      const next = swap ? swapColorScheme(original) : original;
+      if (current !== next) write(next);
+    };
+    forEachMediaList((list) => {
+      const original = originalMedia.get(list) ?? list.mediaText;
+      if (!mentionsColorScheme(original)) return;
+      originalMedia.set(list, original);
+      update(original, list.mediaText, (text) => (list.mediaText = text));
+    });
+    // Images with a dark variant (<picture><source media="(prefers-color-scheme: dark)">).
+    document.querySelectorAll('source[media]').forEach((source) => {
+      const original = originalMedia.get(source) ?? source.getAttribute('media') ?? '';
+      if (!mentionsColorScheme(original)) return;
+      originalMedia.set(source, original);
+      update(original, source.getAttribute('media') ?? '', (text) => source.setAttribute('media', text));
+    });
+    // Built-in colours (form controls, scrollbars, `light-dark()`) follow too when the page supports both schemes.
+    const declared = `${getComputedStyle(document.documentElement).colorScheme} ${
+      document.querySelector<HTMLMetaElement>('meta[name="color-scheme" i]')?.content ?? ''
+    }`;
+    const both = /\blight\b/.test(declared) && /\bdark\b/.test(declared);
+    setStyle('bp-color-scheme', swap && both ? `:root{color-scheme:${colorScheme} !important}` : '');
+  };
+  systemDark.addEventListener('change', applyColorScheme);
+
+  let lastMedia = '';
+  let mediaTimer = 0;
+  /** Re-reads the stylesheets soon (they load and change after the first paint). */
+  const scheduleMedia = (delay = 400) => {
+    window.clearTimeout(mediaTimer);
+    mediaTimer = window.setTimeout(() => {
+      if (colorScheme !== null) applyColorScheme();
+      const report = mediaReport();
+      const json = JSON.stringify(report);
+      if (json === lastMedia) return;
+      lastMedia = json;
+      send({ type: 'media', report });
+    }, delay);
+  };
+  // A stylesheet finished loading (load events don't bubble, so listen while capturing).
+  document.addEventListener(
+    'load',
+    (event) => {
+      if (event.target instanceof HTMLLinkElement) scheduleMedia();
+    },
+    true,
+  );
+
+  /* ---------- Inspector ---------- */
+
+  let inspecting = false;
+  let hovered: Element | null = null;
+  let selectedSelector: string | null = null;
+  let selected: Element | null = null;
+  let overlay: { host: HTMLElement; hover: HTMLElement; hoverLabel: HTMLElement; select: HTMLElement } | null = null;
+
+  const OVERLAY_CSS = `
+:host{all:initial}
+.box{position:fixed;left:0;top:0;box-sizing:border-box;pointer-events:none;display:none;border-radius:2px}
+.hover{border:1.5px solid #6366f1;background:rgba(99,102,241,.14)}
+.select{border:2px solid #f59e0b;background:rgba(245,158,11,.12);box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+.label{position:absolute;left:-1.5px;top:-24px;padding:2px 6px;border-radius:4px;background:#312e81;color:#fff;font:600 11px/16px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;max-width:min(360px,90vw);overflow:hidden;text-overflow:ellipsis}
+.label.below{top:auto;bottom:-24px}`;
+
+  const ensureOverlay = () => {
+    if (overlay?.host.isConnected) return overlay;
+    const host = document.createElement('div');
+    host.setAttribute(OVERLAY_ATTRIBUTE, '');
+    for (const [property, value] of [
+      ['position', 'fixed'],
+      ['inset', '0'],
+      ['pointer-events', 'none'],
+      ['z-index', '2147483647'],
+      ['display', 'block'],
+      ['margin', '0'],
+      ['padding', '0'],
+      ['border', '0'],
+      ['background', 'transparent'],
+    ] as [string, string][])
+      host.style.setProperty(property, value, 'important');
+    const root = host.attachShadow({ mode: 'closed' });
+    const style = document.createElement('style');
+    style.textContent = OVERLAY_CSS;
+    const hover = document.createElement('div');
+    hover.className = 'box hover';
+    const hoverLabel = document.createElement('div');
+    hoverLabel.className = 'label';
+    hover.append(hoverLabel);
+    const select = document.createElement('div');
+    select.className = 'box select';
+    root.append(style, select, hover);
+    document.documentElement.append(host);
+    overlay = { host, hover, hoverLabel, select };
+    return overlay;
+  };
+
+  const place = (box: HTMLElement, element: Element | null) => {
+    const rect = element?.isConnected ? element.getBoundingClientRect() : null;
+    if (!rect || (rect.width === 0 && rect.height === 0)) {
+      box.style.display = 'none';
+      return null;
+    }
+    box.style.display = 'block';
+    box.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
+    box.style.width = `${rect.width}px`;
+    box.style.height = `${rect.height}px`;
+    return rect;
+  };
+
+  let overlayQueued = false;
+  function drawOverlay() {
+    if (!overlay || overlayQueued) return;
+    overlayQueued = true;
+    requestAnimationFrame(() => {
+      overlayQueued = false;
+      if (!overlay) return;
+      const rect = place(overlay.hover, inspecting ? hovered : null);
+      if (rect && hovered) {
+        overlay.hoverLabel.textContent = `${describeElement(hovered)}  ${Math.round(rect.width)} × ${Math.round(rect.height)}`;
+        overlay.hoverLabel.classList.toggle('below', rect.top < 26);
+      }
+      place(overlay.select, selected);
+    });
+  }
+
+  const removeOverlayIfIdle = () => {
+    if (inspecting || selected || !overlay) return;
+    overlay.host.remove();
+    overlay = null;
+  };
+
+  const elementInfo = (element: Element): ElementInfo => {
+    const style = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    const sides = (property: 'margin' | 'padding') =>
+      compressBox(
+        (['top', 'right', 'bottom', 'left'] as const).map((side) => style.getPropertyValue(`${property}-${side}`)) as [
+          string,
+          string,
+          string,
+          string,
+        ],
+      );
+    const gap = [style.rowGap, style.columnGap].filter((value) => value && value !== 'normal');
+    const display = style.display;
+    let layout = '';
+    if (display.includes('flex')) layout = `flex ${style.flexDirection}${style.flexWrap === 'wrap' ? ' wrap' : ''}`;
+    else if (display.includes('grid')) {
+      const tracks = style.gridTemplateColumns.split(/\s+/).filter((track) => track && !track.startsWith('['));
+      layout = `grid ×${style.gridTemplateColumns === 'none' ? 1 : tracks.length}`;
+    }
+    if (layout && gap.length) layout += ` · gap ${gap[0] === gap[1] || gap.length === 1 ? gap[0] : gap.join(' ')}`;
+    return {
+      label: describeElement(element),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+      top: Math.round(rect.top + window.scrollY),
+      left: Math.round(rect.left + window.scrollX),
+      visible: rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && display !== 'none',
+      display,
+      position: style.position,
+      fontSize: style.fontSize,
+      lineHeight: style.lineHeight,
+      fontWeight: style.fontWeight,
+      margin: sides('margin'),
+      padding: sides('padding'),
+      layout,
+    };
+  };
+
+  const findSelected = () => {
+    if (!selectedSelector) return null;
+    try {
+      return document.querySelector(selectedSelector);
+    } catch {
+      return null;
+    }
+  };
+
+  let elementTimer = 0;
+  /** Reports the selected element again after the layout changed (resize, new content). */
+  const scheduleElementReport = () => {
+    if (!selectedSelector) return;
+    window.clearTimeout(elementTimer);
+    elementTimer = window.setTimeout(() => {
+      if (!selectedSelector) return;
+      selected = findSelected();
+      drawOverlay();
+      send({ type: 'element', selector: selectedSelector, element: selected ? elementInfo(selected) : null });
+    }, 350);
+  };
+
+  const pickTarget = (event: Event): Element | null => {
+    const target = event.composedPath()[0];
+    if (!(target instanceof Element) || target.hasAttribute(OVERLAY_ATTRIBUTE)) return null;
+    return target === document.documentElement ? document.body : target;
+  };
+
+  window.addEventListener(
+    'pointermove',
+    (event) => {
+      if (!inspecting) return;
+      const target = pickTarget(event);
+      if (target && target !== hovered) {
+        hovered = target;
+        drawOverlay();
+      }
+    },
+    { capture: true, passive: true },
+  );
+  document.addEventListener('pointerout', (event) => {
+    if (inspecting && !event.relatedTarget) {
+      hovered = null;
+      drawOverlay();
+    }
+  });
+  // While inspecting, a click picks an element instead of activating it.
+  const swallow = (event: Event) => {
+    if (!inspecting || !event.isTrusted) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
+  for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'dblclick', 'auxclick', 'contextmenu'])
+    window.addEventListener(type, swallow, { capture: true });
+  window.addEventListener(
+    'click',
+    (event) => {
+      if (!inspecting || !event.isTrusted) return;
+      swallow(event);
+      const target = pickTarget(event);
+      if (!target) return;
+      send({ type: 'pick', selector: cssPath(target), element: elementInfo(target) });
+    },
+    { capture: true },
+  );
+  window.addEventListener(
+    'keydown',
+    (event) => {
+      if (inspecting && event.key === 'Escape') {
+        event.preventDefault();
+        send({ type: 'key', key: 'Escape' });
+      }
+    },
+    { capture: true },
+  );
+
+  /* ---------- Changes to the page ---------- */
+
+  window.addEventListener('resize', () => {
+    scheduleChecks();
+    scheduleElementReport();
+    drawOverlay();
+  });
+  window.addEventListener('load', () => {
+    scheduleChecks();
+    scheduleMedia(100);
+    // Styles added by scripts after load (CSS-in-JS, lazy routes).
+    scheduleMedia(1500);
+  });
+  const isOverlay = (node: Node) => node instanceof Element && node.hasAttribute(OVERLAY_ATTRIBUTE);
+  new MutationObserver((records) => {
+    // Adding or removing the inspector's own overlay isn't a change to the page.
+    if (
+      records.every((record) => {
+        const nodes = [...record.addedNodes, ...record.removedNodes];
+        return nodes.length > 0 && nodes.every(isOverlay);
+      })
+    )
+      return;
+    scheduleChecks();
+    scheduleElementReport();
+    const styles = records.some((record) =>
+      [...record.addedNodes, ...record.removedNodes].some(
+        (node) => node instanceof HTMLStyleElement || (node instanceof HTMLLinkElement && /stylesheet/i.test(node.rel)),
+      ),
+    );
+    if (styles) scheduleMedia();
+  }).observe(document.documentElement, {
     childList: true,
     subtree: true,
     characterData: true,
   });
+  scheduleMedia(150);
 
   /* ---------- Commands from the workspace ---------- */
 
@@ -352,11 +762,13 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     switch (command?.type) {
       case 'ping':
         send({ type: 'hello', href: location.href, title: document.title });
+        lastMedia = '';
+        scheduleMedia(50);
         break;
       case 'scrollTo': {
-        const max = document.documentElement.scrollHeight - window.innerHeight;
         ignoreScrollUntil = performance.now() + 150;
-        window.scrollTo({ top: Math.max(0, command.ratio * max), behavior: 'instant' });
+        if (command.anchor && scrollToAnchor(command.anchor)) break;
+        window.scrollTo({ top: Math.max(0, command.ratio * maxScroll()), behavior: 'instant' });
         break;
       }
       case 'outlines':
@@ -382,6 +794,30 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           checkTimer = 0;
           if (highlighted) applyHighlight(null, false);
         }
+        break;
+      case 'colorScheme':
+        if (command.scheme === colorScheme) break;
+        colorScheme = command.scheme;
+        applyColorScheme();
+        break;
+      case 'inspect':
+        inspecting = command.on;
+        hovered = null;
+        setStyle('bp-inspect', inspecting ? '*{cursor:crosshair !important}' : '');
+        if (inspecting) ensureOverlay();
+        drawOverlay();
+        removeOverlayIfIdle();
+        break;
+      case 'select':
+        selectedSelector = command.selector;
+        selected = findSelected();
+        if (selectedSelector) {
+          ensureOverlay();
+          if (selected) reveal(selected);
+          send({ type: 'element', selector: selectedSelector, element: selected ? elementInfo(selected) : null });
+        }
+        drawOverlay();
+        removeOverlayIfIdle();
         break;
     }
   });

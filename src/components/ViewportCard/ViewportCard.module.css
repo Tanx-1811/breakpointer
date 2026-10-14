@@ -1,4 +1,6 @@
 .card {
+  --class-color: var(--class-phone);
+  position: relative;
   display: flex;
   flex-direction: column;
   flex: none;
@@ -6,30 +8,83 @@
   border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow: var(--shadow-card);
-  overflow: hidden;
+  transition:
+    box-shadow var(--duration) ease,
+    border-color var(--duration) ease;
 }
+
+.card[data-size-class='tablet'] {
+  --class-color: var(--class-tablet);
+}
+
+.card[data-size-class='laptop'] {
+  --class-color: var(--class-laptop);
+}
+
+.card[data-size-class='desktop'] {
+  --class-color: var(--class-desktop);
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--text-subtle) 22%, var(--border));
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* Another card is focused: keep this one loaded (its frame doesn't reload) but out of sight. */
+.card[data-concealed] {
+  display: none;
+}
+
+.card[data-focused] {
+  border-color: var(--accent-border);
+}
+
+.card[data-resizing] {
+  user-select: none;
+}
+
+/* ---------- Header ---------- */
 
 .header {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px 8px 8px 10px;
-  border-bottom: 1px solid var(--border);
+  gap: 4px;
+  padding: 7px 7px 6px 9px;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
+  background: var(--surface);
 }
 
 .row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   min-width: 0;
+  min-height: 28px;
+}
+
+.classIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--class-color) 13%, var(--surface));
+  color: var(--class-color);
 }
 
 .title {
   display: flex;
   align-items: center;
-  gap: 8px;
   min-width: 0;
+}
+
+.gap {
+  flex: 1;
+  align-self: stretch;
+  min-width: 4px;
 }
 
 .actions {
@@ -44,13 +99,14 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
-  height: 28px;
+  height: 26px;
   padding: 0 6px;
-  margin-left: -6px;
   border: 0;
   border-radius: var(--radius-sm);
   background: transparent;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
 }
 
 .name:hover {
@@ -67,7 +123,7 @@
   flex: none;
   color: var(--text-subtle);
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--duration-fast) ease;
 }
 
 .name:hover .nameIcon,
@@ -76,31 +132,51 @@
 }
 
 .nameInput {
-  height: 28px;
+  height: 26px;
   min-width: 0;
-  width: 150px;
+  width: 160px;
   font-weight: 600;
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .badge {
   flex: none;
-  align-self: center;
-  padding: 1px 6px;
+  padding: 0 7px;
+  border: 1px solid color-mix(in srgb, var(--breakpoint) 35%, transparent);
   border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--breakpoint-soft);
+  color: var(--breakpoint-text);
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 600;
-  line-height: 16px;
+  font-weight: 650;
+  line-height: 18px;
+}
+
+.scheme {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  color: var(--text-muted);
 }
 
 .moreButton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
@@ -121,17 +197,41 @@
 .size {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 1px;
+  margin-left: -2px;
 }
 
+/* Reads as text; becomes a field on hover and focus. */
 .dimension {
-  width: 66px;
-  height: 28px;
-  padding: 0 6px;
+  height: 24px;
+  min-width: 0;
+  padding: 0 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
   text-align: center;
   appearance: textfield;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.dimension:hover {
+  background: var(--surface-hover);
+}
+
+.dimension:focus-visible {
+  border-color: var(--accent);
+  background: var(--surface);
+  box-shadow: var(--ring-accent);
+}
+
+.dimension[aria-invalid='true'] {
+  border-color: var(--danger);
 }
 
 .dimension::-webkit-inner-spin-button,
@@ -142,12 +242,24 @@
 
 .times {
   color: var(--text-subtle);
+  font-size: 12px;
 }
 
 .zoom {
-  height: 28px;
-  font-size: 13px;
+  flex: none;
+  height: 24px;
+  padding: 0 4px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
   font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.zoom:hover:not(:disabled) {
+  border-color: var(--border);
+  background: var(--surface-hover);
 }
 
 .error {
@@ -157,9 +269,13 @@
   font-size: 12px;
 }
 
+/* ---------- Preview ---------- */
+
 .stage {
   display: flex;
   justify-content: center;
+  overflow: hidden;
+  border-radius: 0 0 calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px);
   background: var(--surface-2);
 }
 
@@ -185,19 +301,164 @@
   justify-content: center;
   gap: 6px;
   padding: 8px;
-  border: 1px dashed var(--border-strong);
-  background: var(--surface);
+  background-color: var(--surface);
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1.2px);
+  background-size: 14px 14px;
   color: var(--text-subtle);
   text-align: center;
   overflow: hidden;
 }
 
+.placeholderIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--class-color) 12%, var(--surface));
+  color: var(--class-color);
+}
+
 .placeholderSize {
+  color: var(--text);
   font-family: var(--font-mono);
   font-size: 13px;
-  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .placeholderHint {
+  max-width: 220px;
+  color: var(--text-muted);
   font-size: 12px;
+}
+
+/* ---------- Resizing ---------- */
+
+.handle {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+  opacity: 0;
+  transition: opacity var(--duration) ease;
+}
+
+.card:hover .handle,
+.card[data-resizing] .handle,
+.handle:focus-visible {
+  opacity: 1;
+}
+
+.handle:focus-visible {
+  box-shadow: none;
+}
+
+.handleX {
+  top: 14px;
+  bottom: 14px;
+  right: -15px;
+  width: 15px;
+  cursor: ew-resize;
+}
+
+.handleY {
+  left: 14px;
+  right: 14px;
+  bottom: -15px;
+  height: 15px;
+  cursor: ns-resize;
+}
+
+.handleXY {
+  right: -15px;
+  bottom: -15px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.grip {
+  width: 4px;
+  height: 40px;
+  max-height: 60%;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition:
+    background-color var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
+}
+
+.handleY .grip {
+  width: 40px;
+  max-width: 60%;
+  height: 4px;
+}
+
+.handle:hover .grip,
+.card[data-resizing='x'] .handleX .grip,
+.card[data-resizing='y'] .handleY .grip,
+.handle:focus-visible .grip {
+  background: var(--accent);
+}
+
+.handle:focus-visible .grip {
+  box-shadow: var(--focus-ring);
+}
+
+.guide {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  border-left: 1px dashed color-mix(in srgb, var(--breakpoint) 75%, transparent);
+  pointer-events: none;
+}
+
+.guide[data-snapped] {
+  border-left: 2px solid var(--breakpoint);
+}
+
+.guideLabel {
+  position: absolute;
+  top: 4px;
+  left: 3px;
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--breakpoint-soft);
+  color: var(--breakpoint-text);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 16px;
+}
+
+.dragSize {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 9px;
+  border-radius: var(--radius-sm);
+  background: rgb(21 24 31 / 92%);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 650;
+  box-shadow: var(--shadow-md);
+  pointer-events: none;
+}
+
+.dragBreakpoint {
+  color: #fcd34d;
+}
+
+:global(html[data-capturing]) .handle,
+:global(html[data-capturing]) .guide,
+:global(html[data-capturing]) .dragSize {
+  visibility: hidden;
 }

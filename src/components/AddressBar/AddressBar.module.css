@@ -4,8 +4,8 @@
   align-items: center;
   gap: 8px;
   flex: 1;
-  min-width: 220px;
-  max-width: 760px;
+  min-width: 200px;
+  max-width: 780px;
 }
 
 .inputWrap {
@@ -13,23 +13,25 @@
   align-items: center;
   flex: 1;
   min-width: 0;
-  height: 34px;
-  border: 1px solid var(--border-strong);
-  border-radius: 999px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
   background: var(--surface-2);
   transition:
-    border-color 120ms ease,
-    background-color 120ms ease;
+    border-color var(--duration-fast) ease,
+    background-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 
 .inputWrap:hover {
-  border-color: var(--text-subtle);
+  border-color: var(--border-strong);
+  background: var(--surface);
 }
 
 .inputWrap:focus-within {
   border-color: var(--accent);
   background: var(--surface);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: var(--ring-accent);
 }
 
 .inputWrap[data-invalid] {
@@ -40,6 +42,10 @@
   flex: none;
   margin: 0 8px 0 12px;
   color: var(--text-subtle);
+}
+
+.leading[data-secure] {
+  color: var(--success);
 }
 
 .input {
@@ -62,11 +68,11 @@
 }
 
 .kbd {
-  margin-right: 10px;
+  margin-right: 8px;
 }
 
 .inputWrap:focus-within .kbd {
-  visibility: hidden;
+  display: none;
 }
 
 .star {
@@ -79,9 +85,13 @@
   margin-right: 3px;
   padding: 0;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-subtle);
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    transform var(--duration-fast) var(--ease-out);
 }
 
 .star:hover {
@@ -89,28 +99,99 @@
   color: var(--text);
 }
 
+.star:active {
+  transform: scale(0.9);
+}
+
 .star[aria-pressed='true'] {
-  color: var(--warning-text);
+  color: var(--breakpoint);
 }
 
 .star[aria-pressed='true'] svg {
   fill: currentColor;
 }
 
+.submit {
+  height: 36px;
+  border-radius: var(--radius-md);
+}
+
+.list {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  max-height: 340px;
+  overflow: auto;
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-pop);
+  list-style: none;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.option[aria-selected='true'] {
+  background: var(--surface-hover);
+}
+
+.optionIcon {
+  flex: none;
+  color: var(--text-subtle);
+}
+
+.optionIcon[data-saved] {
+  color: var(--breakpoint);
+  fill: currentColor;
+}
+
+.optionUrl {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.optionHost {
+  font-weight: 600;
+}
+
+.optionRest {
+  color: var(--text-muted);
+}
+
+.optionKind {
+  flex: none;
+  color: var(--text-subtle);
+  font-size: 12px;
+}
+
 .error {
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100% + 8px);
   left: 0;
   z-index: 20;
   display: flex;
   align-items: center;
   gap: 6px;
   margin: 0;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--border));
-  border-radius: var(--radius-sm);
+  padding: 7px 11px;
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
   background: var(--danger-soft);
   color: var(--danger);
   font-size: 13px;
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--shadow-md);
 }

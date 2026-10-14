@@ -52,10 +52,14 @@ export function Popover({ label, trigger, children, align = 'start', width = 320
     let left = align === 'end' ? rect.right - panelWidth : rect.left;
     left = Math.min(Math.max(EDGE, left), window.innerWidth - panelWidth - EDGE);
     let top = rect.bottom + GAP;
-    if (top + panelHeight > window.innerHeight - EDGE && rect.top - GAP - panelHeight > EDGE)
+    let placement = 'below';
+    if (top + panelHeight > window.innerHeight - EDGE && rect.top - GAP - panelHeight > EDGE) {
       top = rect.top - GAP - panelHeight;
+      placement = 'above';
+    }
     panel.style.left = `${left}px`;
     panel.style.top = `${Math.max(EDGE, top)}px`;
+    panel.dataset.placement = placement;
     panel.focus();
   }, [open, align]);
 

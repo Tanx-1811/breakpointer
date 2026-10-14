@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { AgentCommand, CheckReport } from '../agent/protocol';
+import type { AgentCommand, CheckReport, ElementInfo, MediaReport, ScrollAnchor } from '../agent/protocol';
 import { listenToAgents, parseFrameName, pingAgents, sendToAgent } from '../services/frame-agents';
 
 /** A navigation this soon after a click or key press in the preview counts as the user's. */
@@ -15,6 +15,8 @@ export type FrameAgentState = {
   href: string;
   title: string;
   report: CheckReport | null;
+  /** Breakpoints and colour-scheme styles found in the page's stylesheets. */
+  media: MediaReport | null;
 };
 
 export type FrameNavigation = {
@@ -29,8 +31,14 @@ export type FrameAgentHandlers = {
   onHello: (cardId: string) => void;
   /** The page inside a frame changed after its first load (link, form, script, single-page-app route). */
   onNavigate: (cardId: string, href: string, navigation: FrameNavigation) => void;
-  onScroll: (cardId: string, ratio: number) => void;
+  onScroll: (cardId: string, ratio: number, anchor: ScrollAnchor | undefined) => void;
   onZoom: (direction: 1 | -1) => void;
+  /** The user picked an element in this preview while inspecting. */
+  onPick: (cardId: string, selector: string, element: ElementInfo) => void;
+  /** This preview's answer for the selected element (null: not on the page). */
+  onElement: (cardId: string, selector: string, element: ElementInfo | null) => void;
+  /** A key the workspace handles was pressed inside a preview. */
+  onKey: (cardId: string, key: 'Escape') => void;
 };
 
 /**
@@ -60,7 +68,15 @@ export function useFrameAgents(
       const base: FrameAgentState =
         previous && previous.generation === patch.generation
           ? previous
-          : { frameId: -1, connected: false, generation: patch.generation, href: '', title: '', report: null };
+          : {
+              frameId: -1,
+              connected: false,
+              generation: patch.generation,
+              href: '',
+              title: '',
+              report: null,
+              media: null,
+            };
       const next = { ...all, [cardId]: { ...base, ...patch } };
       framesRef.current = next;
       setFrames(next);
@@ -98,8 +114,9 @@ export function useFrameAgents(
             connected: true,
             href: message.href,
             title: message.title,
-            // The same page saying hello again keeps its last report until a new one arrives.
+            // The same page saying hello again keeps its last reports until new ones arrive.
             report: sameFrame && known.href === message.href ? known.report : null,
+            media: sameFrame && known.href === message.href ? known.media : null,
           });
           handlersRef.current.onHello(cardId);
           // A second page in the same frame means the preview navigated.
@@ -113,19 +130,31 @@ export function useFrameAgents(
           break;
         case 'bye':
           // Not connected until the next page says hello (if it runs an agent at all).
-          if (sameFrame) update(cardId, { generation, connected: false, report: null });
+          if (sameFrame) update(cardId, { generation, connected: false, report: null, media: null });
           break;
         case 'input':
           inputAt[cardId] = Date.now();
           break;
         case 'scroll':
-          handlersRef.current.onScroll(cardId, message.ratio);
+          handlersRef.current.onScroll(cardId, message.ratio, message.anchor);
           break;
         case 'zoom':
           handlersRef.current.onZoom(message.direction);
           break;
         case 'checks':
           if (sameFrame) update(cardId, { generation, report: message.report });
+          break;
+        case 'media':
+          if (sameFrame) update(cardId, { generation, media: message.report });
+          break;
+        case 'pick':
+          if (sameFrame) handlersRef.current.onPick(cardId, message.selector, message.element);
+          break;
+        case 'element':
+          if (sameFrame) handlersRef.current.onElement(cardId, message.selector, message.element);
+          break;
+        case 'key':
+          handlersRef.current.onKey(cardId, message.key);
           break;
       }
     });

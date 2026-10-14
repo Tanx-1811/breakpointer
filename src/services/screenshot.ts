@@ -144,3 +144,23 @@ export function blobToDataUrl(blob: Blob): Promise<string> {
     reader.readAsDataURL(blob);
   });
 }
+
+/** Copies an image to the clipboard. The workspace must have focus (it does after a click in it). */
+export async function copyImageToClipboard(blob: Blob): Promise<boolean> {
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    return true;
+  } catch (error) {
+    console.warn('[Breakpointer] Could not copy the image.', error);
+    return false;
+  }
+}
+
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}

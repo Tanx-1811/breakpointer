@@ -12,6 +12,7 @@ import {
 import type {
   Breakpoint,
   BreakpointSetId,
+  ColorScheme,
   GridColumns,
   GridSettings,
   LanguagePreference,
@@ -41,7 +42,8 @@ export const STORAGE_KEY = 'breakpointer.settings';
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi'];
 const LAYOUTS: readonly WorkspaceLayout[] = ['wrap', 'row'];
-const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', 'tailwind', 'bootstrap', 'custom'];
+const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', 'tailwind', 'bootstrap', 'custom', 'site'];
+const COLOR_SCHEMES: readonly ColorScheme[] = ['light', 'dark'];
 
 /** Names default viewports; lets callers create them in the user's language. */
 export type PresetNamer = (presetId: string) => string;
@@ -105,11 +107,13 @@ function parseTemplate(raw: unknown): ViewportTemplate | null {
   if (!isRecord(raw) || !isFiniteNumber(raw.width) || !isFiniteNumber(raw.height)) return null;
   const width = clampDimension(raw.width);
   const height = clampDimension(raw.height);
+  const colorScheme = COLOR_SCHEMES.find((scheme) => scheme === raw.colorScheme);
   return {
     name: normalizeName(typeof raw.name === 'string' ? raw.name : '', width, height),
     width,
     height,
     zoom: isFiniteNumber(raw.zoom) ? clampZoom(raw.zoom) : DEFAULT_ZOOM,
+    ...(colorScheme ? { colorScheme } : {}),
   };
 }
 

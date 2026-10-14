@@ -101,11 +101,9 @@ function ToastView({ toast, onDismiss }: { toast: ToastItem; onDismiss: (id: num
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
-      <Icon
-        name={tone === 'error' ? 'alert' : tone === 'success' ? 'check' : 'info'}
-        size={16}
-        className={styles.icon}
-      />
+      <span className={styles.icon}>
+        <Icon name={tone === 'error' ? 'alert' : tone === 'success' ? 'check' : 'info'} size={15} />
+      </span>
       <span className={styles.message}>{toast.message}</span>
       {toast.action && (
         <button

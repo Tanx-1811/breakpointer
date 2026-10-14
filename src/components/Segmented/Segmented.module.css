@@ -3,8 +3,8 @@
   padding: 2px;
   gap: 2px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface-2);
+  border-radius: var(--radius);
+  background: var(--surface-3);
 }
 
 .option {
@@ -13,23 +13,28 @@
   justify-content: center;
   gap: 6px;
   border: 0;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-muted);
-  font-weight: 500;
+  font-weight: 550;
   white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
 }
 
 .md .option {
   height: 28px;
-  padding: 0 10px;
+  padding: 0 11px;
+  font-size: 13px;
 }
 
 .sm .option {
   height: 24px;
   min-width: 28px;
   padding: 0 7px;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 
 .option:hover {
@@ -39,9 +44,12 @@
 .option[aria-checked='true'] {
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 1px 2px rgb(16 24 40 / 12%);
+  box-shadow:
+    0 1px 2px rgb(16 24 40 / 10%),
+    0 0 0 1px rgb(16 24 40 / 4%);
 }
 
 :global(html[data-theme='dark']) .option[aria-checked='true'] {
-  background: var(--surface-hover);
+  background: var(--surface-active);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 40%);
 }

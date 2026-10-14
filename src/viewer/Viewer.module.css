@@ -3,31 +3,42 @@
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: var(--canvas);
 }
 
 /* ---------- Top bar ---------- */
 
 .topBar {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
-  gap: 10px 16px;
-  flex-wrap: wrap;
-  padding: 10px 16px;
+  gap: 10px 12px;
+  min-height: 56px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  background: var(--bg);
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
   flex: none;
+  padding-right: 4px;
 }
 
 .brandName {
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.02em;
+}
+
+.navButtons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
 }
 
 .addressArea {
@@ -41,32 +52,78 @@
 .topActions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   flex: none;
   margin-left: auto;
 }
 
-.menuButton {
+.searchButton {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  font-weight: 500;
+  margin-right: 4px;
+  padding: 0 6px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 13px;
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
 }
 
-.menuButton:hover,
-.menuButton[aria-expanded='true'] {
+.searchButton:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.searchText {
+  min-width: 64px;
+  text-align: left;
+}
+
+.searchKbd {
+  background: var(--surface);
+}
+
+.splitIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  height: 32px;
+  padding: 0 6px 0 7px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.splitIcon:hover:not(:disabled),
+.splitIcon[aria-expanded='true'] {
   background: var(--surface-hover);
+  color: var(--text);
+}
+
+.splitIcon:disabled {
+  opacity: 0.45;
+}
+
+.splitChevron {
+  opacity: 0.7;
 }
 
 .separator {
   width: 1px;
   height: 22px;
-  margin: 0 4px;
+  margin: 0 6px;
   background: var(--border);
 }
 
@@ -74,33 +131,60 @@
   color: var(--success) !important;
 }
 
-@media (max-width: 1180px) {
-  .collapsible {
+@media (max-width: 1240px) {
+  .brandName,
+  .searchText {
     display: none;
   }
 
-  .brandName {
+  .searchButton {
+    padding: 0 6px 0 8px;
+  }
+}
+
+@media (max-width: 980px) {
+  .searchKbd {
     display: none;
   }
 }
 
-/* ---------- Workspace ---------- */
+/* ---------- Body: workspace (+ dock) and the inspector panel ---------- */
+
+.body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
 
 .workspace {
   position: relative;
   flex: 1;
   min-height: 0;
   overflow: auto;
-  padding: 24px;
+  padding: 24px 24px 92px;
   background-color: var(--canvas);
-  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1px);
-  background-size: 18px 18px;
+  background-image:
+    radial-gradient(1200px 520px at 15% -10%, var(--canvas-glow), transparent 70%),
+    radial-gradient(var(--canvas-dot) 1px, transparent 1.2px);
+  background-size:
+    100% 100%,
+    20px 20px;
+  background-attachment: local, local;
+  scroll-padding: 24px;
 }
 
 .cards {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
+  gap: 24px 20px;
 }
 
 .cards[data-layout='wrap'] {
@@ -122,4 +206,50 @@
 
 .panLayer[data-dragging] {
   cursor: grabbing;
+}
+
+/* A floating pill at the top of the workspace (focus mode, inspector). */
+.modePill {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: calc(100% - 32px);
+  padding: 5px 5px 5px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--surface-glass);
+  color: var(--text);
+  font-size: 13px;
+  box-shadow: var(--shadow-md);
+  transform: translateX(-50%);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+.modePill strong {
+  font-weight: 650;
+}
+
+.modeIcon {
+  flex: none;
+  color: var(--accent);
+}
+
+.modeText {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.modeSize {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+:global(html[data-capturing]) .modePill {
+  visibility: hidden;
 }

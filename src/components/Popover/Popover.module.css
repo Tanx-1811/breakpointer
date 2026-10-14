@@ -2,14 +2,26 @@
   position: fixed;
   inset: auto;
   margin: 0;
-  max-height: min(70vh, 560px);
+  max-height: min(72vh, 580px);
   overflow: auto;
-  padding: 12px;
+  padding: 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-pop);
+  transform-origin: top center;
+  transition: transform var(--duration) var(--ease-out);
+}
+
+.panel[data-placement='above'] {
+  transform-origin: bottom center;
+}
+
+@starting-style {
+  .panel:popover-open {
+    transform: translateY(-4px) scale(0.985);
+  }
 }
 
 .panel:focus-visible {

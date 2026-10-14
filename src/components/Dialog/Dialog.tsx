@@ -1,15 +1,22 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import { IconButton } from '../Button/Button';
+import { Icon, type IconName } from '../Icon/Icon';
 import styles from './Dialog.module.css';
 
 type Props = {
   open: boolean;
   title: string;
   description?: ReactNode;
+  /** A small icon tile next to the title. */
+  icon?: IconName;
   onClose: () => void;
   children: ReactNode;
+  /** Actions pinned to the bottom of the dialog (stay visible while the body scrolls). */
+  footer?: ReactNode;
   width?: number;
+  /** The body has no padding (for layouts with their own, e.g. two panes). */
+  flush?: boolean;
 };
 
 /**
@@ -19,7 +26,7 @@ type Props = {
  * Put `data-autofocus` on the element that should receive focus when the
  * dialog opens (React's autoFocus runs before showModal() and is lost).
  */
-export function Dialog({ open, title, description, onClose, children, width = 560 }: Props) {
+export function Dialog({ open, title, description, icon, onClose, children, footer, width = 560, flush }: Props) {
   const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
   const pressedBackdrop = useRef(false);
@@ -65,7 +72,12 @@ export function Dialog({ open, title, description, onClose, children, width = 56
       {open && (
         <div className={styles.panel}>
           <header className={styles.header}>
-            <div>
+            {icon && (
+              <span className={styles.headerIcon} aria-hidden="true">
+                <Icon name={icon} size={18} />
+              </span>
+            )}
+            <div className={styles.heading}>
               <h2 id={titleId} className={styles.title} tabIndex={-1}>
                 {title}
               </h2>
@@ -75,9 +87,10 @@ export function Dialog({ open, title, description, onClose, children, width = 56
                 </p>
               )}
             </div>
-            <IconButton icon="close" label={t('common.close')} onClick={onClose} />
+            <IconButton icon="close" size="sm" label={t('common.close')} onClick={onClose} className={styles.close} />
           </header>
-          <div className={styles.body}>{children}</div>
+          <div className={flush ? styles.bodyFlush : styles.body}>{children}</div>
+          {footer && <footer className={styles.footer}>{footer}</footer>}
         </div>
       )}
     </dialog>

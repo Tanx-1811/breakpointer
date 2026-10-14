@@ -9,8 +9,8 @@
 .column {
   flex: 1 1 0;
   min-width: 0;
-  background: rgba(225, 29, 72, 0.09);
+  background: rgb(225 29 72 / 8%);
   box-shadow:
-    inset 1px 0 rgba(225, 29, 72, 0.3),
-    inset -1px 0 rgba(225, 29, 72, 0.3);
+    inset 1px 0 rgb(225 29 72 / 28%),
+    inset -1px 0 rgb(225 29 72 / 28%);
 }

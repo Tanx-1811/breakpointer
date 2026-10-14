@@ -17,9 +17,17 @@ export type MenuEntry =
       kind?: 'item';
       id: string;
       label: string;
+      /** A second, quieter line under the label. */
+      description?: string;
       icon?: IconName;
+      /** Text on the right, e.g. a count. */
       hint?: string;
+      /** Keyboard shortcut shown on the right. */
+      shortcut?: string;
+      /** A checkbox item (stays open when toggled). */
       checked?: boolean;
+      /** With `checked`: one of a set of options (menuitemradio). */
+      radio?: boolean;
       disabled?: boolean;
       tone?: 'danger';
       onSelect: () => void;
@@ -78,9 +86,14 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
     let left = align === 'end' ? rect.right - width : rect.left;
     left = Math.min(Math.max(EDGE, left), window.innerWidth - width - EDGE);
     let top = rect.bottom + GAP;
-    if (top + height > window.innerHeight - EDGE && rect.top - GAP - height > EDGE) top = rect.top - GAP - height;
+    let placement = 'below';
+    if (top + height > window.innerHeight - EDGE && rect.top - GAP - height > EDGE) {
+      top = rect.top - GAP - height;
+      placement = 'above';
+    }
     panel.style.left = `${left}px`;
     panel.style.top = `${top}px`;
+    panel.dataset.placement = placement;
     items()[0]?.focus();
   }, [open, align]);
 
@@ -139,6 +152,13 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
       case 'Tab':
         close(false);
         break;
+      default:
+        // Type-ahead: jump to the next item starting with the typed letter.
+        if (event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey) {
+          const key = event.key.toLocaleLowerCase();
+          const order = [...list.slice(index + 1), ...list.slice(0, index + 1)];
+          order.find((item) => item.textContent?.trim().toLocaleLowerCase().startsWith(key))?.focus();
+        }
     }
   };
 
@@ -185,28 +205,42 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
                 </div>
               );
             const checkable = entry.checked !== undefined;
+            const role = checkable ? (entry.radio ? 'menuitemradio' : 'menuitemcheckbox') : 'menuitem';
             return (
               <button
                 key={entry.id}
                 type="button"
-                role={checkable ? 'menuitemcheckbox' : 'menuitem'}
+                role={role}
                 aria-checked={checkable ? entry.checked : undefined}
                 tabIndex={-1}
                 disabled={entry.disabled}
                 className={[styles.item, entry.tone === 'danger' && styles.danger].filter(Boolean).join(' ')}
+                data-menu-item={entry.id}
                 onClick={() => {
                   // Checkbox items keep the menu open so several can be switched in a row.
-                  if (!checkable) close(true);
+                  if (!checkable || entry.radio) close(true);
                   entry.onSelect();
                 }}
               >
-                <span className={styles.itemIcon}>
-                  {checkable
-                    ? entry.checked && <Icon name="check" size={15} />
-                    : entry.icon && <Icon name={entry.icon} size={15} />}
+                <span className={styles.itemIcon} data-checkable={checkable || undefined}>
+                  {checkable ? (
+                    entry.radio ? (
+                      <span className={styles.radio} data-on={entry.checked || undefined} />
+                    ) : (
+                      <span className={styles.checkbox} data-on={entry.checked || undefined}>
+                        {entry.checked && <Icon name="check" size={12} strokeWidth={2.6} />}
+                      </span>
+                    )
+                  ) : (
+                    entry.icon && <Icon name={entry.icon} size={16} />
+                  )}
                 </span>
-                <span className={styles.itemLabel}>{entry.label}</span>
+                <span className={styles.itemText}>
+                  <span className={styles.itemLabel}>{entry.label}</span>
+                  {entry.description && <span className={styles.itemDescription}>{entry.description}</span>}
+                </span>
                 {entry.hint && <span className={styles.hint}>{entry.hint}</span>}
+                {entry.shortcut && <kbd className={styles.shortcut}>{entry.shortcut}</kbd>}
               </button>
             );
           })}

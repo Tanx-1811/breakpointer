@@ -1,4 +1,4 @@
-import type { Orientation, ViewportConfig, ViewportTemplate } from '../types';
+import type { ColorScheme, Orientation, ViewportConfig, ViewportTemplate } from '../types';
 import {
   DEFAULT_ZOOM,
   MAX_DIMENSION,
@@ -41,9 +41,9 @@ export function suggestedZoom(width: number, height: number): number {
   return 0.25;
 }
 
-export type NewViewport = { name: string; width: number; height: number; zoom?: number };
+export type NewViewport = { name: string; width: number; height: number; zoom?: number; colorScheme?: ColorScheme };
 
-export function createViewport({ name, width, height, zoom }: NewViewport): ViewportConfig {
+export function createViewport({ name, width, height, zoom, colorScheme }: NewViewport): ViewportConfig {
   const w = clampDimension(width);
   const h = clampDimension(height);
   return {
@@ -54,6 +54,7 @@ export function createViewport({ name, width, height, zoom }: NewViewport): View
     orientation: orientationOf(w, h),
     zoom: clampZoom(zoom ?? suggestedZoom(w, h)),
     hidden: false,
+    ...(colorScheme ? { colorScheme } : {}),
   };
 }
 
@@ -92,21 +93,27 @@ export function restoreViewport(list: ViewportConfig[], viewport: ViewportConfig
   return next;
 }
 
-export type ViewportPatch = Partial<Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom' | 'hidden'>>;
+export type ViewportPatch = Partial<Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom' | 'hidden'>> & {
+  /** null goes back to following the browser. */
+  colorScheme?: ColorScheme | null;
+};
 
 export function updateViewport(list: ViewportConfig[], id: string, patch: ViewportPatch): ViewportConfig[] {
   return list.map((vp) => {
     if (vp.id !== id) return vp;
     const width = patch.width === undefined ? vp.width : clampDimension(patch.width);
     const height = patch.height === undefined ? vp.height : clampDimension(patch.height);
+    const { colorScheme: _scheme, ...rest } = vp;
+    const colorScheme = patch.colorScheme === undefined ? vp.colorScheme : (patch.colorScheme ?? undefined);
     return {
-      ...vp,
+      ...rest,
       name: patch.name === undefined ? vp.name : normalizeName(patch.name, width, height),
       width,
       height,
       orientation: orientationOf(width, height),
       zoom: patch.zoom === undefined ? vp.zoom : clampZoom(patch.zoom),
       hidden: patch.hidden ?? vp.hidden,
+      ...(colorScheme ? { colorScheme } : {}),
     };
   });
 }
@@ -147,20 +154,33 @@ export function setZoomForAll(list: ViewportConfig[], zoom: number): ViewportCon
   return list.map((vp) => ({ ...vp, zoom: value }));
 }
 
+/** The next zoom step up or down from `current`. */
+export function nextZoom(current: number, direction: 1 | -1): number {
+  if (direction > 0) return ZOOM_OPTIONS.find((option) => option > current + 0.001) ?? MAX_ZOOM;
+  return [...ZOOM_OPTIONS].reverse().find((option) => option < current - 0.001) ?? ZOOM_OPTIONS[0]!;
+}
+
 /** Next zoom step up or down from the largest current zoom of visible viewports. */
 export function stepZoom(list: ViewportConfig[], direction: 1 | -1): number {
   const visible = list.filter((vp) => !vp.hidden);
-  const current = visible.length ? Math.max(...visible.map((vp) => vp.zoom)) : DEFAULT_ZOOM;
-  if (direction > 0) return ZOOM_OPTIONS.find((option) => option > current + 0.001) ?? MAX_ZOOM;
-  return [...ZOOM_OPTIONS].reverse().find((option) => option < current - 0.001) ?? ZOOM_OPTIONS[0]!;
+  return nextZoom(visible.length ? Math.max(...visible.map((vp) => vp.zoom)) : DEFAULT_ZOOM, direction);
 }
 
 export function showAll(list: ViewportConfig[]): ViewportConfig[] {
   return list.map((vp) => (vp.hidden ? { ...vp, hidden: false } : vp));
 }
 
-export function toTemplate({ name, width, height, zoom }: ViewportConfig): ViewportTemplate {
-  return { name, width, height, zoom };
+/** Narrowest first (then shortest); the order of equal sizes is kept. */
+export function sortByWidth(list: ViewportConfig[]): ViewportConfig[] {
+  return [...list].sort((a, b) => a.width - b.width || a.height - b.height);
+}
+
+export function isSortedByWidth(list: ViewportConfig[]): boolean {
+  return sortByWidth(list).every((vp, index) => vp === list[index]);
+}
+
+export function toTemplate({ name, width, height, zoom, colorScheme }: ViewportConfig): ViewportTemplate {
+  return { name, width, height, zoom, ...(colorScheme ? { colorScheme } : {}) };
 }
 
 export function fromTemplates(templates: ViewportTemplate[]): ViewportConfig[] {

@@ -1,63 +1,155 @@
+/*
+ * Design tokens. Components use the semantic names (--surface, --text-muted…),
+ * never raw colours, so both themes stay consistent. Contrast of every text
+ * colour on --surface and --bg is at least 4.5:1 (checked by the axe tests).
+ */
 :root {
   color-scheme: light;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI Variable Text', 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, 'Cascadia Mono', 'JetBrains Mono', Menlo, Consolas, monospace;
 
-  --bg: #f4f5f7;
-  --canvas: #eceef2;
-  --canvas-dot: #d3d8df;
+  /* Chrome (toolbars) and the canvas behind the previews. */
+  --bg: #ffffff;
+  --canvas: #eff1f5;
+  --canvas-dot: rgb(104 113 132 / 26%);
+  --canvas-glow: rgb(99 102 241 / 7%);
+
+  /* Surfaces, from flat to raised. */
   --surface: #ffffff;
-  --surface-2: #f6f7f9;
-  --surface-hover: #eef0f4;
-  --border: #e1e4e9;
-  --border-strong: #c9ced6;
-  --text: #171a1f;
-  --text-muted: #59626f;
-  --text-subtle: #687180;
+  --surface-2: #f5f6f9;
+  --surface-3: #eceef3;
+  --surface-hover: #f0f2f6;
+  --surface-active: #e6e9f0;
+  --surface-glass: rgb(255 255 255 / 82%);
+
+  --border: #e2e5eb;
+  --border-subtle: #edeff3;
+  --border-strong: #cdd2db;
+
+  --text: #121620;
+  --text-muted: #4f5868;
+  --text-subtle: #636c7c;
+
+  /* Brand: indigo for actions, amber for breakpoints (as in the mark). */
   --accent: #4f46e5;
   --accent-hover: #4338ca;
+  --accent-strong: #3730a3;
   --accent-soft: #eef0ff;
+  --accent-soft-hover: #e3e6ff;
+  --accent-border: #c3c7fa;
   --accent-text: #ffffff;
+  --breakpoint: #f59e0b;
+  --breakpoint-soft: #fff4dc;
+  --breakpoint-text: #8a5300;
+
   --warning-bg: #fff8e6;
   --warning-border: #f0d28a;
-  --warning-text: #634800;
-  --danger: #c4302b;
-  --danger-soft: #fdecec;
-  --success: #17804a;
+  --warning-text: #6b4a00;
+  --danger: #c42d2d;
+  --danger-hover: #a82424;
+  --danger-soft: #fdeded;
+  --danger-border: #f3c4c4;
+  --success: #0f7a45;
+  --success-soft: #e5f6ed;
+  --info: #2563eb;
 
-  --focus-ring: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent);
+  /* Size classes: a small colour cue next to the device icons. */
+  --class-phone: #0d9488;
+  --class-tablet: #7c3aed;
+  --class-laptop: #2563eb;
+  --class-desktop: #d97706;
+
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--accent) 75%, transparent);
+  --ring-accent: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+
+  --radius-xs: 4px;
   --radius-sm: 6px;
   --radius: 8px;
-  --radius-lg: 12px;
-  --shadow-card: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 4%);
-  --shadow-pop: 0 16px 40px rgb(16 24 40 / 18%), 0 2px 6px rgb(16 24 40 / 8%);
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 18px;
+
+  --shadow-xs: 0 1px 2px rgb(16 24 40 / 6%);
+  --shadow-sm: 0 1px 2px rgb(16 24 40 / 6%), 0 1px 3px rgb(16 24 40 / 5%);
+  --shadow-md: 0 6px 16px -4px rgb(16 24 40 / 12%), 0 2px 4px -2px rgb(16 24 40 / 6%);
+  --shadow-card: 0 1px 2px rgb(16 24 40 / 5%), 0 12px 32px -16px rgb(16 24 40 / 24%);
+  --shadow-card-hover: 0 1px 2px rgb(16 24 40 / 6%), 0 18px 40px -16px rgb(16 24 40 / 30%);
+  --shadow-pop: 0 20px 48px -12px rgb(16 24 40 / 26%), 0 4px 12px -4px rgb(16 24 40 / 10%);
+  --shadow-dock: 0 12px 32px -8px rgb(16 24 40 / 24%), 0 2px 6px rgb(16 24 40 / 8%);
+  --inset-highlight: inset 0 1px 0 rgb(255 255 255 / 16%);
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 120ms;
+  --duration: 180ms;
+  --duration-slow: 260ms;
+
+  --scrollbar: rgb(104 113 132 / 38%);
+  --scrollbar-hover: rgb(104 113 132 / 60%);
 }
 
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --bg: #0f1114;
-  --canvas: #0b0d10;
-  --canvas-dot: #20252d;
-  --surface: #171a1f;
-  --surface-2: #1d2127;
-  --surface-hover: #252a32;
-  --border: #2a3038;
-  --border-strong: #3b424d;
-  --text: #e7e9ec;
-  --text-muted: #a2aab5;
-  --text-subtle: #8a94a1;
+  --bg: #111318;
+  --canvas: #08090c;
+  --canvas-dot: rgb(255 255 255 / 8%);
+  --canvas-glow: rgb(129 140 248 / 8%);
+
+  --surface: #16181e;
+  --surface-2: #1b1e25;
+  --surface-3: #22262e;
+  --surface-hover: #22252d;
+  --surface-active: #2a2e37;
+  --surface-glass: rgb(22 24 30 / 82%);
+
+  --border: #272b34;
+  --border-subtle: #1f2229;
+  --border-strong: #3a404b;
+
+  --text: #e9ebef;
+  --text-muted: #a7afbc;
+  --text-subtle: #8f98a7;
+
   --accent: #8b93ff;
-  --accent-hover: #a9afff;
-  --accent-soft: #23264a;
-  --accent-text: #0f1114;
-  --warning-bg: #2a2412;
-  --warning-border: #5e4b17;
+  --accent-hover: #a5abff;
+  --accent-strong: #c1c5ff;
+  --accent-soft: #1f2247;
+  --accent-soft-hover: #272b57;
+  --accent-border: #3f4585;
+  --accent-text: #0d0f17;
+  --breakpoint: #fbbf24;
+  --breakpoint-soft: #2e2510;
+  --breakpoint-text: #f7cf6b;
+
+  --warning-bg: #2a2310;
+  --warning-border: #5c4914;
   --warning-text: #f1d48c;
-  --danger: #f17570;
-  --danger-soft: #3a1d1d;
+  --danger: #f27a74;
+  --danger-hover: #f79792;
+  --danger-soft: #361b1c;
+  --danger-border: #5c2a2a;
   --success: #4cc489;
-  --shadow-card: 0 1px 2px rgb(0 0 0 / 40%);
-  --shadow-pop: 0 16px 40px rgb(0 0 0 / 55%), 0 2px 6px rgb(0 0 0 / 35%);
+  --success-soft: #133024;
+  --info: #7aa7ff;
+
+  --class-phone: #2dd4bf;
+  --class-tablet: #a78bfa;
+  --class-laptop: #60a5fa;
+  --class-desktop: #fbbf24;
+
+  --shadow-xs: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 45%), 0 1px 3px rgb(0 0 0 / 30%);
+  --shadow-md: 0 8px 20px -6px rgb(0 0 0 / 60%), 0 2px 4px rgb(0 0 0 / 30%);
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 50%), 0 16px 40px -18px rgb(0 0 0 / 80%);
+  --shadow-card-hover: 0 1px 2px rgb(0 0 0 / 50%), 0 22px 48px -18px rgb(0 0 0 / 90%);
+  --shadow-pop: 0 24px 56px -12px rgb(0 0 0 / 70%), 0 4px 12px rgb(0 0 0 / 40%);
+  --shadow-dock: 0 16px 40px -8px rgb(0 0 0 / 70%), 0 2px 6px rgb(0 0 0 / 40%);
+  --inset-highlight: inset 0 1px 0 rgb(255 255 255 / 6%);
+
+  --scrollbar: rgb(255 255 255 / 16%);
+  --scrollbar-hover: rgb(255 255 255 / 28%);
 }
 
 *,
@@ -77,9 +169,14 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
   color: inherit;
 }
@@ -95,6 +192,14 @@ button:disabled {
 :focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
+}
+
+/* Thin, quiet scrollbars everywhere except the previews themselves. */
+@supports (scrollbar-color: auto) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar) transparent;
+  }
 }
 
 .visually-hidden {
@@ -116,36 +221,74 @@ button:disabled {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  transition: border-color 120ms ease;
+  box-shadow: var(--shadow-xs);
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    background-color var(--duration-fast) ease;
+}
+
+.field::placeholder {
+  color: var(--text-subtle);
 }
 
 .field:hover {
-  border-color: var(--text-subtle);
+  border-color: color-mix(in srgb, var(--text-subtle) 70%, var(--border-strong));
 }
 
 .field:focus-visible {
   border-color: var(--accent);
+  box-shadow: var(--ring-accent);
 }
 
 .field[aria-invalid='true'] {
   border-color: var(--danger);
 }
 
-select.field {
-  padding-right: 6px;
+.field[aria-invalid='true']:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.field:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+textarea.field {
+  height: auto;
 }
 
 kbd {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   min-width: 18px;
+  height: 18px;
   padding: 0 5px;
   border: 1px solid var(--border-strong);
   border-bottom-width: 2px;
-  border-radius: 4px;
-  font-family: var(--font-mono);
+  border-radius: 5px;
+  font-family: var(--font-sans);
   font-size: 11px;
-  line-height: 16px;
+  font-weight: 600;
+  line-height: 1;
   text-align: center;
   color: var(--text-muted);
   background: var(--surface-2);
+  white-space: nowrap;
+}
+
+code {
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
 }

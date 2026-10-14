@@ -14,10 +14,12 @@ type Props = {
   /** Length of the page axis in CSS pixels. */
   length: number;
   zoom: number;
+  /** Positions to mark along the ruler (e.g. breakpoints), in CSS pixels. */
+  marks?: number[];
 };
 
 /** Pixel ruler along a preview, in the page's CSS pixels (not screen pixels). */
-export function Ruler({ orientation, length, zoom }: Props) {
+export function Ruler({ orientation, length, zoom, marks = [] }: Props) {
   const step = rulerStep(zoom);
   const minor = step / 5;
   const horizontal = orientation === 'horizontal';
@@ -41,6 +43,16 @@ export function Ruler({ orientation, length, zoom }: Props) {
           {value}
         </span>
       ))}
+      {marks
+        .filter((value) => value > 0 && value < length)
+        .map((value) => (
+          <span
+            key={`mark-${value}`}
+            className={styles.mark}
+            style={{ [horizontal ? 'left' : 'top']: value * zoom }}
+            data-testid="ruler-mark"
+          />
+        ))}
     </div>
   );
 }

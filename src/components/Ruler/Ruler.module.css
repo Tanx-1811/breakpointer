@@ -1,5 +1,5 @@
 .ruler {
-  --tick: var(--text-subtle);
+  --tick: color-mix(in srgb, var(--text-subtle) 75%, transparent);
   position: relative;
   flex: none;
   overflow: hidden;
@@ -52,4 +52,24 @@
   transform: rotate(180deg);
   transform-origin: center;
   translate: 0 0;
+}
+
+/* Breakpoint marks: a small amber notch. */
+.mark {
+  position: absolute;
+  background: var(--breakpoint);
+}
+
+.horizontal .mark {
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+}
+
+.vertical .mark {
+  left: 0;
+  right: 0;
+  height: 2px;
+  margin-top: -1px;
 }

@@ -46,7 +46,7 @@ export function Segmented<T extends string>({ label, value, options, onChange, i
             role="radio"
             aria-checked={selected}
             aria-label={iconOnly ? option.label : undefined}
-            title={iconOnly ? option.label : undefined}
+            data-tooltip={iconOnly ? option.label : undefined}
             tabIndex={selected ? 0 : -1}
             className={styles.option}
             onClick={() => onChange(option.value)}

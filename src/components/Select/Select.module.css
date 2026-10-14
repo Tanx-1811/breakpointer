@@ -1,0 +1,79 @@
+.wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.wide {
+  display: flex;
+  width: 100%;
+}
+
+.select {
+  appearance: none;
+  width: 100%;
+  min-width: 0;
+  padding-right: 28px;
+  font-weight: 500;
+  cursor: pointer;
+  text-overflow: ellipsis;
+}
+
+.md .select {
+  height: 32px;
+  font-size: 13.5px;
+}
+
+.sm .select {
+  height: 28px;
+  padding-left: 9px;
+  padding-right: 26px;
+  font-size: 13px;
+}
+
+.withIcon .select {
+  padding-left: 30px;
+}
+
+.sm.withIcon .select {
+  padding-left: 27px;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.icon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.sm .icon {
+  left: 8px;
+}
+
+.chevron {
+  position: absolute;
+  right: 8px;
+  color: var(--text-subtle);
+  pointer-events: none;
+  transition: transform var(--duration-fast) ease;
+}
+
+.wrap:hover .chevron {
+  color: var(--text-muted);
+}
+
+.select:disabled + .chevron {
+  opacity: 0.45;
+}
+
+/* Options use the theme's colours where the platform allows it. */
+.select option {
+  background: var(--surface);
+  color: var(--text);
+}

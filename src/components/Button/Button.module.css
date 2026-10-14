@@ -1,45 +1,103 @@
 .button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 7px;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
-  font-weight: 500;
+  border-radius: var(--radius);
+  font-weight: 550;
+  letter-spacing: -0.005em;
   white-space: nowrap;
+  user-select: none;
   transition:
-    background-color 120ms ease,
-    border-color 120ms ease,
-    color 120ms ease;
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease,
+    transform var(--duration-fast) ease;
 }
 
-.md {
-  height: 32px;
-  padding: 0 12px;
+.button:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.iconEnd {
+  margin-left: -2px;
+  opacity: 0.7;
 }
 
 .sm {
   height: 28px;
   padding: 0 10px;
+  border-radius: var(--radius-sm);
   font-size: 13px;
+  gap: 6px;
+}
+
+.md {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 13.5px;
+}
+
+.lg {
+  height: 40px;
+  padding: 0 18px;
+  border-radius: var(--radius-md);
+  font-size: 14.5px;
 }
 
 .primary {
-  background: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, #fff) 0%, var(--accent) 100%);
+  border-color: color-mix(in srgb, var(--accent) 80%, #000);
   color: var(--accent-text);
+  box-shadow:
+    var(--inset-highlight),
+    0 1px 2px rgb(16 24 40 / 14%),
+    0 2px 6px -2px color-mix(in srgb, var(--accent) 45%, transparent);
 }
 
 .primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--accent) 0%, var(--accent-hover) 100%);
+}
+
+:global(html[data-theme='dark']) .primary {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+:global(html[data-theme='dark']) .primary:hover:not(:disabled) {
   background: var(--accent-hover);
 }
 
 .secondary {
   background: var(--surface);
   border-color: var(--border-strong);
+  box-shadow: var(--shadow-xs);
 }
 
 .secondary:hover:not(:disabled) {
   background: var(--surface-hover);
+  border-color: color-mix(in srgb, var(--text-subtle) 45%, var(--border-strong));
+}
+
+.subtle {
+  background: var(--surface-3);
+  color: var(--text);
+}
+
+.subtle:hover:not(:disabled) {
+  background: var(--surface-active);
 }
 
 .ghost {
@@ -53,9 +111,10 @@
 }
 
 .danger {
-  background: transparent;
-  border-color: var(--border-strong);
+  background: var(--surface);
+  border-color: var(--danger-border);
   color: var(--danger);
+  box-shadow: var(--shadow-xs);
 }
 
 .danger:hover:not(:disabled) {
@@ -74,17 +133,38 @@
   flex: none;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text-muted);
   transition:
-    background-color 120ms ease,
-    color 120ms ease;
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
 }
 
 .iconButton:hover:not(:disabled) {
   background: var(--surface-hover);
   color: var(--text);
+}
+
+.iconButton:active:not(:disabled) {
+  background: var(--surface-active);
+}
+
+.iconButton[aria-pressed='true'] {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.iconButton[aria-pressed='true']:hover:not(:disabled) {
+  background: var(--accent-soft-hover);
+  color: var(--accent);
+}
+
+.iconSecondary {
+  border-color: var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-xs);
 }
 
 .icon-md {
@@ -95,9 +175,20 @@
 .icon-sm {
   width: 28px;
   height: 28px;
+  border-radius: var(--radius-sm);
+}
+
+.icon-xs {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
 }
 
 .dangerTone:hover:not(:disabled) {
   background: var(--danger-soft);
   color: var(--danger);
+}
+
+.accentTone {
+  color: var(--accent);
 }

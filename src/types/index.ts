@@ -6,7 +6,11 @@ export type LanguagePreference = 'auto' | 'en' | 'vi';
 
 export type WorkspaceLayout = 'wrap' | 'row';
 
-export type BreakpointSetId = 'none' | 'tailwind' | 'bootstrap' | 'custom';
+/** `site`: the widths found in the previewed page's own media queries (sites you allow). */
+export type BreakpointSetId = 'none' | 'tailwind' | 'bootstrap' | 'custom' | 'site';
+
+/** Forces a preview to the page's light or dark styles (on sites you allow). */
+export type ColorScheme = 'light' | 'dark';
 
 /** A min-width breakpoint, e.g. { name: 'md', min: 768 }. */
 export type Breakpoint = { name: string; min: number };
@@ -44,10 +48,12 @@ export type ViewportConfig = {
   zoom: number;
   /** Hidden viewports keep their settings but don't load a preview. */
   hidden: boolean;
+  /** Show the page's light or dark styles whatever the browser prefers; absent = follow the browser. */
+  colorScheme?: ColorScheme;
 };
 
 /** A viewport inside a saved group, without identity or visibility. */
-export type ViewportTemplate = Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom'>;
+export type ViewportTemplate = Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom' | 'colorScheme'>;
 
 export type ViewportGroup = {
   id: string;
