@@ -25,7 +25,11 @@ export function Select({ size = 'md', icon, mono, wide, className, selectRef, ch
         .join(' ')}
     >
       {icon && <Icon name={icon} size={size === 'sm' ? 14 : 15} className={styles.icon} />}
-      <select ref={selectRef} className={['field', styles.select, mono && styles.mono].filter(Boolean).join(' ')} {...rest}>
+      <select
+        ref={selectRef}
+        className={['field', styles.select, mono && styles.mono].filter(Boolean).join(' ')}
+        {...rest}
+      >
         {children}
       </select>
       <Icon name="chevronDown" size={14} className={styles.chevron} />

@@ -151,4 +151,4 @@ node scripts/brand/render.mjs --html /tmp/brand  # also write the composed HTML 
 
 ## Store screenshots
 
-`store/screenshots/{en,vi}/` holds the 1280 × 800 Chrome Web Store screenshots (workspace, groups, add viewport, dark theme with rulers, settings) and a popup image, captured from the real extension by `npm run screenshots` (Playwright; the demo site is a fictional page served as `https://brightside.example/`).
+`store/screenshots/{en,vi}/` holds the 1280 × 800 Chrome Web Store screenshots (workspace, groups, add viewport, dark theme with rulers, responsive checks, inspector, command palette, drag to resize — the store takes five, see `docs/STORE_LISTING.md`) and a popup image, captured from the real extension by `npm run screenshots` (Playwright; the demo site is a fictional page served as `https://brightside.example/`).

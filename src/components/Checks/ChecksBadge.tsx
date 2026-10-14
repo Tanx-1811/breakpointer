@@ -28,7 +28,7 @@ export function ChecksBadge({ report, highlighted, onHighlight }: Props) {
           {...props}
           className={`${styles.badge} ${count ? styles.warn : styles.ok}`}
           aria-label={label}
-          title={label}
+          data-tooltip={label}
           data-testid="checks-badge"
         >
           <Icon name={count ? 'alert' : 'check'} size={12} />
@@ -37,7 +37,10 @@ export function ChecksBadge({ report, highlighted, onHighlight }: Props) {
       )}
     >
       <div className={styles.panel}>
-        <h3 className={styles.title}>{t('checks.title', { width: report.width })}</h3>
+        <h3 className={styles.title}>
+          <Icon name={count ? 'alert' : 'check'} size={15} className={count ? styles.titleWarn : styles.titleOk} />
+          {t('checks.title', { width: report.width })}
+        </h3>
         {count === 0 ? (
           <p className={styles.ok}>
             <Icon name="check" size={14} /> {t('checks.ok')}

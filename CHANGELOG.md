@@ -2,6 +2,37 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-10-14
+
+A redesigned workspace and a professional toolkit: find, inspect and fix responsive problems faster.
+
+### Added
+
+- **Command palette** (`Ctrl/⌘ + K` or `K`): search and run every action, preset, group, saved or recent page and setting; type an address to preview it. Finds Vietnamese commands without accents and English names in any language.
+- **Drag to resize**: drag a preview's right or bottom edge (or corner) and watch the page reflow live. Edges snap to the breakpoints in use, with guides and a live size and breakpoint read-out; `Shift` moves in 10px steps, `Alt` turns snapping off. The handles also work from the keyboard (arrow keys, `Shift` for 10px).
+- **Inspector** (`I`): click an element in any preview to compare it at every size — box size, display, font, margin, padding, flex/grid layout and position — with what changes between sizes highlighted, the element outlined in every preview, and its selector one click away.
+- **This site's breakpoints**: the widths used by the page's own media queries are detected (on sites you allow) and can label the viewports ("≥768"), drive "Test breakpoint edges", snap resizing, and fill your custom breakpoints.
+- **Page colours per viewport**: show a preview with the page's light or dark styles (`prefers-color-scheme`) whatever your browser prefers — compare light and dark side by side. Kept with the viewport and in saved groups.
+- **Focus mode**: show one viewport on its own, fitted to the screen (double-click its header or use its menu); `Esc` brings the others back without reloading them.
+- **Back and forward** between previewed pages (toolbar buttons, `Alt + ←/→`, mouse buttons).
+- **Address suggestions**: saved and recent pages in a list under the address bar, with the keyboard.
+- **All viewports in one image**: every visible preview side by side with its name and size, under the page's title — ready for a ticket. **Copy screenshot** puts a preview or the workspace on the clipboard.
+- **Hide scrollbars** in previews, like on phones and tablets; **Sort by width**; **Scroll every preview to the top**.
+- Add viewport: **search** by name or size, filter by device type, aspect-ratio thumbnails, sizes already in the workspace are marked, and a width ⇄ height swap.
+- Manage groups: apply a group from the list.
+
+### Changed
+
+- **New look** across the workspace, popup and dialogs: a refined design system (colours, depth, motion, type), device-class colours, chips with icons, a floating zoom dock (`−` · zoom · `+` · Fit · layout), styled selects, rich tooltips with shortcuts, a two-pane Settings dialog and a redesigned welcome page.
+- **Synced scrolling keeps the same content in view** in every preview instead of the same percentage of the page (falls back to the percentage when the content isn't found).
+- The first-run fit waits until a page is shown, so the welcome panel no longer shrinks the previews; the first-run viewports have fixed ids, so two tabs opened on a fresh install no longer reload each other's previews.
+- The address bar is a combobox with its own suggestion list (was a `datalist`).
+- "Open in new tab" from a card opens the page that preview shows now.
+
+### Fixed
+
+- Dragging over a preview of another site no longer loses the pointer.
+
 ## [0.2.0] — 2026-10-13
 
 The inspection toolkit: tools that work inside the previews, plus more ways to set up and share a check.

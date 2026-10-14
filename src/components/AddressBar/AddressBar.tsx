@@ -53,9 +53,19 @@ export function AddressBar(props: Props) {
     ...savedPages.map((url) => ({ url, kind: 'saved' as const })),
     ...recentUrls.filter((url) => !savedPages.includes(url)).map((url) => ({ url, kind: 'recent' as const })),
   ];
-  const needle = (query ?? '').trim().toLowerCase().replace(/^https?:\/\//, '');
+  const needle = (query ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '');
   const suggestions = all
-    .filter((item) => !needle || item.url.toLowerCase().replace(/^https?:\/\//, '').includes(needle))
+    .filter(
+      (item) =>
+        !needle ||
+        item.url
+          .toLowerCase()
+          .replace(/^https?:\/\//, '')
+          .includes(needle),
+    )
     .slice(0, MAX_SUGGESTIONS);
   const showList = open && suggestions.length > 0;
 
@@ -189,7 +199,14 @@ export function AddressBar(props: Props) {
         {t('address.submit')}
       </Button>
       {showList && (
-        <ul ref={listRef} id={listId} role="listbox" aria-label={t('address.suggestions')} popover="manual" className={styles.list}>
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          aria-label={t('address.suggestions')}
+          popover="manual"
+          className={styles.list}
+        >
           {suggestions.map((item, index) => {
             const { host, rest } = splitUrl(item.url);
             return (

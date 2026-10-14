@@ -44,6 +44,9 @@ async function bootstrap() {
     history.replaceState(null, '', params.size ? `?${params}` : location.pathname);
   }
 
+  // First run: keep the defaults (in the user's language), so every tab starts from the same workspace.
+  if (stored === undefined && !groupId) await saveSettings(settings).catch(() => {});
+
   let initialUrl: URL | null = null;
   let initialInput = '';
   let initialError: UrlParseError | null = null;

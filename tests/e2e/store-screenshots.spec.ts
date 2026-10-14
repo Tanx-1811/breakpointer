@@ -2,7 +2,7 @@ import { mkdir, readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import type { BrowserContext, Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { previewWidths, storedSettings } from './helpers';
+import { clickInFrame, previewFrames, previewWidths, storedSettings } from './helpers';
 
 /**
  * Generates the Chrome Web Store screenshots (1280×800) and README images from
@@ -130,6 +130,69 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.getByRole('button', { name: TEXT[lang].highlight }).first().click();
       await page.waitForTimeout(800);
       await page.screenshot({ path: resolve(OUT, lang, '5-checks.png') });
+    });
+
+    test('inspector', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('i');
+      const phone = previewFrames(page, 'brightside.example').find((frame) => frame.url().includes('brightside'))!;
+      let narrow = phone;
+      for (const frame of previewFrames(page, 'brightside.example'))
+        if ((await frame.evaluate(() => innerWidth)) === 390) narrow = frame;
+      await clickInFrame(page, narrow, 'h1');
+      await expect(page.getByTestId('inspector-size')).toHaveCount(3);
+      await page.mouse.move(5, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '6-inspector.png') });
+    });
+
+    test('command palette', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, { version: 1, language: lang, theme: 'dark', breakpoints: 'tailwind' });
+      await show(page, viewerUrl, 3);
+      await page.keyboard.press('Control+k');
+      await page.keyboard.type(lang === 'vi' ? 'tablet' : 'tablet');
+      await page.waitForTimeout(400);
+      await page.screenshot({ path: resolve(OUT, lang, '7-palette.png') });
+    });
+
+    test('drag to resize', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        showRulers: true,
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 760, zoom: 0.62 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 700, height: 760, zoom: 0.62 },
+        ],
+      });
+      await show(page, viewerUrl, 2);
+      const tablet = page.getByTestId('viewport-card').nth(1);
+      await tablet.hover();
+      const handle = (await page.getByTestId('resize-width').nth(1).boundingBox())!;
+      const start = { x: handle.x + handle.width / 2, y: handle.y + handle.height / 2 };
+      await page.mouse.move(start.x, start.y);
+      await page.mouse.down();
+      await page.mouse.move(start.x + (765 - 700) * 0.62, start.y, { steps: 6 });
+      await page.waitForTimeout(500);
+      await page.screenshot({ path: resolve(OUT, lang, '8-resize.png') });
+      await page.mouse.up();
     });
 
     test('popup', async ({ context, extensionId }) => {

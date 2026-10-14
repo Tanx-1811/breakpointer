@@ -5,6 +5,7 @@ import type { ViewportGroup } from '../../types';
 import { MAX_GROUPS, MAX_NAME_LENGTH } from '../../utils/constants';
 import { Button, IconButton } from '../Button/Button';
 import { Dialog } from '../Dialog/Dialog';
+import { Icon } from '../Icon/Icon';
 import styles from './GroupDialogs.module.css';
 
 type SaveProps = {
@@ -22,6 +23,7 @@ export function SaveGroupDialog({ open, viewportCount, groupCount, onSave, onClo
       open={open}
       title={t('groups.saveTitle')}
       description={t('groups.saveDescription', { count: viewportCount })}
+      icon="save"
       onClose={onClose}
       width={460}
     >
@@ -84,6 +86,7 @@ function SaveGroupForm({ viewportCount, groupCount, onSave, onClose }: Omit<Save
 type ManageProps = {
   open: boolean;
   groups: ViewportGroup[];
+  onApply: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onReplace: (id: string) => void;
   onDelete: (id: string) => void;
@@ -91,15 +94,25 @@ type ManageProps = {
   canReplace: boolean;
 };
 
-export function ManageGroupsDialog({ open, groups, onRename, onReplace, onDelete, onClose, canReplace }: ManageProps) {
+export function ManageGroupsDialog({
+  open,
+  groups,
+  onApply,
+  onRename,
+  onReplace,
+  onDelete,
+  onClose,
+  canReplace,
+}: ManageProps) {
   const { t } = useI18n();
   return (
     <Dialog
       open={open}
       title={t('groups.manageTitle')}
       description={t('groups.manageDescription')}
+      icon="layers"
       onClose={onClose}
-      width={560}
+      width={600}
     >
       {groups.length === 0 ? (
         <p className={styles.empty}>{t('groups.empty')}</p>
@@ -110,6 +123,7 @@ export function ManageGroupsDialog({ open, groups, onRename, onReplace, onDelete
               key={group.id}
               group={group}
               canReplace={canReplace}
+              onApply={() => onApply(group.id)}
               onRename={(name) => onRename(group.id, name)}
               onReplace={() => onReplace(group.id)}
               onDelete={() => onDelete(group.id)}
@@ -124,12 +138,14 @@ export function ManageGroupsDialog({ open, groups, onRename, onReplace, onDelete
 function GroupRow({
   group,
   canReplace,
+  onApply,
   onRename,
   onReplace,
   onDelete,
 }: {
   group: ViewportGroup;
   canReplace: boolean;
+  onApply: () => void;
   onRename: (name: string) => void;
   onReplace: () => void;
   onDelete: () => void;
@@ -149,6 +165,9 @@ function GroupRow({
 
   return (
     <li className={styles.row}>
+      <span className={styles.rowIcon} aria-hidden="true">
+        <Icon name="layers" size={16} />
+      </span>
       <div className={styles.rowMain}>
         <input
           className={`field ${styles.nameInput}`}
@@ -172,8 +191,17 @@ function GroupRow({
         </span>
       </div>
       <div className={styles.rowActions}>
-        <IconButton icon="reset" label={t('groups.update')} onClick={onReplace} disabled={!canReplace} />
-        <IconButton icon="trash" tone="danger" label={t('groups.delete', { name: group.name })} onClick={onDelete} />
+        <Button size="sm" icon="layers" onClick={onApply} aria-label={t('groups.applyLabel', { name: group.name })}>
+          {t('groups.apply')}
+        </Button>
+        <IconButton icon="reset" size="sm" label={t('groups.update')} onClick={onReplace} disabled={!canReplace} />
+        <IconButton
+          icon="trash"
+          size="sm"
+          tone="danger"
+          label={t('groups.delete', { name: group.name })}
+          onClick={onDelete}
+        />
       </div>
     </li>
   );

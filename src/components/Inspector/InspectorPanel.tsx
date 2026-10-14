@@ -93,7 +93,9 @@ export function InspectorPanel(props: Props) {
             <span className={styles.emptyIcon} data-picking={props.picking || undefined}>
               <Icon name="inspect" size={22} />
             </span>
-            <p className={styles.emptyTitle}>{props.picking ? t('inspector.pickingTitle') : t('inspector.emptyTitle')}</p>
+            <p className={styles.emptyTitle}>
+              {props.picking ? t('inspector.pickingTitle') : t('inspector.emptyTitle')}
+            </p>
             <p className={styles.emptyBody}>{t('inspector.emptyBody')}</p>
             {!props.picking && (
               <Button variant="primary" icon="inspect" onClick={props.onPick}>
@@ -136,7 +138,7 @@ export function InspectorPanel(props: Props) {
                     </span>
                     <span className={styles.rowName}>{row.name}</span>
                     <span className={styles.rowWidth}>{row.width}</span>
-                    <RowState info={row.info} />
+                    <RowState info={row.info} changed={changing.has('size')} />
                   </button>
                   {row.info?.visible && (
                     <dl className={styles.props}>
@@ -144,7 +146,11 @@ export function InspectorPanel(props: Props) {
                         const value = propertyValue(row.info!, property);
                         if (!value) return null;
                         return (
-                          <div key={property} className={styles.prop} data-changed={changing.has(property) || undefined}>
+                          <div
+                            key={property}
+                            className={styles.prop}
+                            data-changed={changing.has(property) || undefined}
+                          >
                             <dt>{t(PROPERTY_KEYS[property])}</dt>
                             <dd>{value}</dd>
                           </div>
@@ -162,13 +168,13 @@ export function InspectorPanel(props: Props) {
   );
 }
 
-function RowState({ info }: { info: ElementInfo | null | undefined }) {
+function RowState({ info, changed }: { info: ElementInfo | null | undefined; changed: boolean }) {
   const { t } = useI18n();
   if (info === undefined) return <span className={styles.stateMuted}>{t('inspector.waiting')}</span>;
   if (info === null) return <span className={styles.stateWarn}>{t('inspector.missing')}</span>;
   if (!info.visible) return <span className={styles.stateWarn}>{t('inspector.hidden')}</span>;
   return (
-    <span className={styles.stateSize} data-testid="inspector-size">
+    <span className={styles.stateSize} data-changed={changed || undefined} data-testid="inspector-size">
       {info.width} × {info.height}
     </span>
   );

@@ -1,22 +1,27 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { CheckKind } from '../agent/protocol';
+import type { CheckKind, ElementInfo, MediaReport } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
 import { Banner } from '../components/Banner/Banner';
+import { CommandPalette, type PaletteCommand } from '../components/CommandPalette/CommandPalette';
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
 import { ErrorState } from '../components/ErrorState/ErrorState';
 import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/GroupDialogs';
 import { HelpDialog } from '../components/HelpDialog/HelpDialog';
+import { InspectorPanel, type InspectorRow } from '../components/Inspector/InspectorPanel';
 import { LiveCssDialog } from '../components/LiveCssDialog/LiveCssDialog';
 import { RULER_SIZE } from '../components/Ruler/Ruler';
 import { SettingsDialog } from '../components/SettingsDialog/SettingsDialog';
 import { SiteAccessDialog } from '../components/SiteAccessDialog/SiteAccessDialog';
 import { ToastProvider, useToast } from '../components/Toast/Toast';
+import { TooltipLayer } from '../components/Tooltip/TooltipLayer';
 import { CARD_CHROME_WIDTH, MIN_CARD_WIDTH, ViewportCard } from '../components/ViewportCard/ViewportCard';
 import { Welcome } from '../components/Welcome/Welcome';
-import { WorkspaceBar } from '../components/WorkspaceBar/WorkspaceBar';
+import { WorkspaceBar, type ToolToggle } from '../components/WorkspaceBar/WorkspaceBar';
+import { DockStatus, ZoomDock } from '../components/ZoomDock/ZoomDock';
 import { useFrameAgents } from '../hooks/useFrameAgents';
+import { useNavigationHistory } from '../hooks/useNavigationHistory';
 import { usePersistentSettings } from '../hooks/usePersistentSettings';
 import { useShortcuts } from '../hooks/useShortcuts';
 import { useSiteAccess } from '../hooks/useSiteAccess';
@@ -24,54 +29,80 @@ import { useStableDomOrder } from '../hooks/useStableDomOrder';
 import { useTheme } from '../hooks/useTheme';
 import { I18nProvider, useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
-import { resolveLanguage, type Language } from '../i18n/translate';
+import { createTranslator, resolveLanguage, type Language } from '../i18n/translate';
+import { composeSheet, type SheetEntry } from '../services/composite';
 import type { PreviewAdapter } from '../services/preview-adapter';
 import {
   blobToDataUrl,
   canCapture,
   captureElement,
   captureElementImage,
+  copyImageToClipboard,
+  copyText,
   requestCapturePermission,
 } from '../services/screenshot';
 import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
 import { createSettingsExport, defaultViewports, parseSettingsFile } from '../services/storage';
-import { breakpointEdges, breakpointFor } from '../data/breakpoints';
+import { breakpointEdges, breakpointFor, breakpointSet } from '../data/breakpoints';
 import { fitZoomForAll } from '../state/fit';
 import { isOneTimeUrl, pageOf } from '../state/follow';
 import { buildReportHtml, type ReportCard } from '../state/report';
 import { createGroup, findGroupTemplates, uniqueGroupName } from '../state/groups';
 import type { SettingsAction } from '../state/settings-reducer';
+import { sizeClassOf } from '../state/size-class';
 import {
   canAddViewport,
+  clampZoom,
   createViewport,
   fromTemplates,
+  isSortedByWidth,
+  nextZoom,
   rotateVisible,
   setZoomForAll,
+  sortByWidth,
   stepZoom,
 } from '../state/viewports';
-import type { ViewportConfig, BreakpointerSettings } from '../types';
+import type { BreakpointSetId, ColorScheme, ViewportConfig, BreakpointerSettings, WorkspaceLayout } from '../types';
 import { MAX_VIEWPORTS } from '../utils/constants';
 import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
+import { modShortcut } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
 import { displayHost, isLocalHost, parsePreviewUrl, toSafeHref, type UrlParseError } from '../utils/url';
-import { TopBar, type ToolToggle } from './TopBar';
+import { buildCommands } from './commands';
+import { TopBar, type CaptureKind } from './TopBar';
 import { usePan, useWheelZoom } from './workspace-gestures';
 import styles from './Viewer.module.css';
 
 const WORKSPACE_GAP = 20;
 const WORKSPACE_PADDING = 24;
-const DEFAULT_CARD_CHROME_HEIGHT = 86;
+/** Space kept free under the cards for the zoom dock. */
+const WORKSPACE_BOTTOM = 92;
+const DEFAULT_CARD_CHROME_HEIGHT = 72;
 /** Pixels kept free when fitting, so rounding never pushes a card onto a new row. */
 const FIT_SLACK = 2;
 
-type DialogName = 'add' | 'saveGroup' | 'manageGroups' | 'access' | 'capture' | 'settings' | 'help' | 'css';
+type DialogName = 'add' | 'saveGroup' | 'manageGroups' | 'access' | 'capture' | 'settings' | 'help' | 'css' | 'palette';
 
 /** Height of the viewports made by "Test breakpoint edges". */
 const EDGE_VIEWPORT_HEIGHT = 800;
 
 type ProbeState = 'idle' | 'checking' | 'reachable' | 'unreachable' | 'unknown';
+
+/** How a navigation is recorded in the workspace tab's history. */
+type HistoryMode = 'push' | 'replace' | 'none';
+
+type InspectorState = {
+  open: boolean;
+  /** Hovering a preview outlines elements; a click picks one. */
+  picking: boolean;
+  selector: string | null;
+  /** Each card's answer, for the frame (generation) that gave it. */
+  results: Record<string, { generation: string; info: ElementInfo | null }>;
+};
+
+const CLOSED_INSPECTOR: InspectorState = { open: false, picking: false, selector: null, results: {} };
 
 export type ViewerProps = {
   initialSettings: BreakpointerSettings;
@@ -82,7 +113,6 @@ export type ViewerProps = {
   /** This workspace tab, for messages from the agents in its preview frames. */
   tabId: number | null;
   version: string;
-  /** No settings were stored yet: fit the default viewports once a page loads. */
   /** Fit the viewports once: after the first page is shown (first run), or right away (group from the popup). */
   autoFit: 'none' | 'afterFirstPage' | 'now';
 };
@@ -102,6 +132,7 @@ export function ViewerApp(props: ViewerProps) {
           resolvedTheme={resolvedTheme}
           language={language}
         />
+        <TooltipLayer />
       </ToastProvider>
     </I18nProvider>
   );
@@ -113,6 +144,8 @@ type WorkspaceProps = ViewerProps & {
   resolvedTheme: 'light' | 'dark';
   language: Language;
 };
+
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve, 60)));
 
 function Workspace({
   settings,
@@ -129,6 +162,7 @@ function Workspace({
 }: WorkspaceProps) {
   const { t } = useI18n();
   const toast = useToast();
+  const english = useMemo(() => createTranslator('en'), []);
 
   const [address, setAddress] = useState(initialUrl?.href ?? initialInput);
   const [addressError, setAddressError] = useState<MessageKey | null>(
@@ -149,23 +183,56 @@ function Workspace({
   const [strays, setStrays] = useState<Record<string, boolean>>({});
   // Inspection tools for this session (not saved).
   const [outlines, setOutlines] = useState(false);
+  const [hideScrollbars, setHideScrollbars] = useState(false);
   const [liveCss, setLiveCss] = useState('');
   const [highlights, setHighlights] = useState<Record<string, CheckKind | null>>({});
   const [commandShortcuts, setCommandShortcuts] = useState({ open: '', preview: '' });
+  // Focus mode: one viewport on its own, at its own zoom (nothing is saved).
+  const [focus, setFocus] = useState<{ id: string; zoom: number } | null>(null);
+  const [inspector, setInspector] = useState<InspectorState>(CLOSED_INSPECTOR);
+  const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
 
   const addressRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
   const pendingCapture = useRef<(() => Promise<void>) | null>(null);
 
   const siteAccess = useSiteAccess(currentUrl);
+  const navigation = useNavigationHistory();
   const { viewports } = settings;
   const visible = useMemo(() => viewports.filter((vp) => !vp.hidden), [viewports]);
   // The zoom all visible viewports share (e.g. after Fit), if any.
   const commonZoom =
     visible.length > 0 && visible.every((vp) => vp.zoom === visible[0]!.zoom) ? visible[0]!.zoom : null;
   const host = currentUrl ? displayHost(currentUrl) : null;
+  const focused = focus && visible.some((vp) => vp.id === focus.id) ? focus : null;
+  const paletteShortcut = modShortcut('K');
 
   /* ---------- Navigation ---------- */
+
+  const resetInspection = useCallback(
+    () => setInspector((state) => (state.selector ? { ...state, selector: null, results: {} } : state)),
+    [],
+  );
+
+  /** Shows `url` in every preview and records it (address bar, recent pages, the tab's history). */
+  const showPage = useCallback(
+    (url: URL, mode: HistoryMode) => {
+      setAddressError(null);
+      setAddress(url.href);
+      setSrcOverrides({});
+      setStrays({});
+      resetInspection();
+      if (currentUrl?.href === url.href) setReloadAll((n) => n + 1);
+      setCurrentUrl(url);
+      setProbeRun((n) => n + 1);
+      dispatch({ type: 'visitUrl', url: url.href });
+      const search = `?${new URLSearchParams({ url: url.href })}`;
+      if (mode === 'push' && currentUrl?.href !== url.href) history.pushState(null, '', search);
+      else if (mode !== 'none') history.replaceState(null, '', search);
+    },
+    [currentUrl, dispatch, resetInspection],
+  );
 
   const navigate = useCallback(
     (input: string) => {
@@ -176,22 +243,32 @@ function Workspace({
         return;
       }
       const url = result.url;
-      setAddressError(null);
-      setAddress(url.href);
-      setSrcOverrides({});
-      setStrays({});
-      if (currentUrl?.href === url.href) setReloadAll((n) => n + 1);
       // A dev server is rarely on port 80: suggest adding the port.
       if (isLocalHost(url.hostname) && !url.port && !/:\d/.test(input)) {
         toast({ message: t('url.hint.localPort', { host: url.hostname }), tone: 'info' });
       }
-      setCurrentUrl(url);
-      setProbeRun((n) => n + 1);
-      dispatch({ type: 'visitUrl', url: url.href });
-      history.replaceState(null, '', `?${new URLSearchParams({ url: url.href })}`);
+      showPage(url, 'push');
     },
-    [currentUrl, dispatch, t, toast],
+    [showPage, t, toast],
   );
+
+  // Back and forward (buttons, Alt+←/→, mouse buttons) move between previewed pages.
+  useEffect(() => {
+    const onPopState = () => {
+      const href = toSafeHref(new URLSearchParams(location.search).get('url'));
+      if (href) {
+        showPage(new URL(href), 'none');
+        return;
+      }
+      setCurrentUrl(null);
+      setAddress('');
+      setSrcOverrides({});
+      setStrays({});
+      resetInspection();
+    };
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, [resetInspection, showPage]);
 
   useEffect(() => {
     let active = true;
@@ -281,7 +358,7 @@ function Workspace({
 
   /** The largest common zoom at which `list` fits in the visible workspace. */
   const computeFitZoom = useCallback(
-    (list: ViewportConfig[]) => {
+    (list: ViewportConfig[], layout: WorkspaceLayout = settings.layout) => {
       const element = workspaceRef.current;
       if (!element) return null;
       const cards = element.querySelector<HTMLElement>('[data-cards]');
@@ -293,9 +370,9 @@ function Workspace({
         list,
         {
           width: element.clientWidth - WORKSPACE_PADDING * 2 - FIT_SLACK,
-          height: element.clientHeight - top - WORKSPACE_PADDING - FIT_SLACK,
+          height: element.clientHeight - top - WORKSPACE_BOTTOM - FIT_SLACK,
         },
-        settings.layout,
+        layout,
         {
           chromeHeight,
           chromeWidth: CARD_CHROME_WIDTH + rulerSize,
@@ -308,22 +385,52 @@ function Workspace({
     [settings.layout, settings.showRulers],
   );
 
+  /** The zoom at which one viewport fills the workspace on its own (focus mode). */
+  const focusZoom = useCallback(
+    (vp: ViewportConfig) => computeFitZoom([{ ...vp, hidden: false }], 'wrap') ?? vp.zoom,
+    [computeFitZoom],
+  );
+
   const fit = useCallback(() => {
+    if (focused) {
+      const vp = visible.find((item) => item.id === focused.id);
+      if (vp) setFocus({ id: vp.id, zoom: focusZoom(vp) });
+      return;
+    }
     const zoom = computeFitZoom(viewports);
     if (zoom !== null) dispatch({ type: 'setZoomForAll', zoom });
-  }, [computeFitZoom, dispatch, viewports]);
+  }, [computeFitZoom, dispatch, focusZoom, focused, viewports, visible]);
 
-  // First run: once a page is shown, fit the default viewports to this screen.
-  const fitOnStart = useRef(autoFit !== 'none');
-  // First run without a page: fit again once a page replaces the welcome panel.
-  const fitAfterFirstPage = useRef(autoFit === 'afterFirstPage' && !initialUrl);
+  const zoomTo = (zoom: number) => {
+    if (focused) setFocus({ ...focused, zoom: clampZoom(zoom) });
+    else dispatch({ type: 'setZoomForAll', zoom });
+  };
+
+  const zoomStep = (direction: 1 | -1) => {
+    if (focused) setFocus({ ...focused, zoom: nextZoom(focused.zoom, direction) });
+    else dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, direction) });
+  };
+
+  const toggleFocus = (id: string) => {
+    if (focused?.id === id) {
+      setFocus(null);
+      return;
+    }
+    const vp = visible.find((item) => item.id === id);
+    if (!vp) return;
+    setFocus({ id, zoom: focusZoom(vp) });
+    requestAnimationFrame(() => workspaceRef.current?.scrollTo({ top: 0, left: 0 }));
+  };
+
+  // First run (or a group from the popup): fit the viewports to this screen once a
+  // page is shown — before that, the welcome panel takes the room they will have.
+  const fitPending = useRef(autoFit !== 'none');
   useEffect(() => {
-    if (!fitOnStart.current && !(fitAfterFirstPage.current && currentUrl)) return;
+    if (!fitPending.current || !currentUrl) return;
     // Wait until the site-access tip (which takes space) has been decided.
-    if (currentUrl && siteAccess.site === null) return;
+    if (siteAccess.site === null) return;
     const frame = requestAnimationFrame(() => {
-      fitOnStart.current = false;
-      if (currentUrl) fitAfterFirstPage.current = false;
+      fitPending.current = false;
       fit();
     });
     return () => cancelAnimationFrame(frame);
@@ -336,6 +443,7 @@ function Workspace({
     // Built-in groups are fitted to this screen; saved groups keep their zoom.
     const zoom = id.startsWith('builtin:') ? computeFitZoom(next) : null;
     if (zoom !== null) next = setZoomForAll(next, zoom);
+    setFocus(null);
     replaceViewports(next, t('groups.applied', { name: group.name }));
   };
 
@@ -384,27 +492,100 @@ function Workspace({
 
   /* ---------- Screenshots ---------- */
 
-  const runCapture = async (element: HTMLElement, label: string[]) => {
-    const parts = ['breakpointer', host ?? 'page', ...label].map(fileNamePart);
-    const fileName = `${parts.join('_')}_${timestamp()}.png`;
-    const result = await captureElement(element, fileName);
-    if (!result.ok) toast({ message: t('capture.failed'), tone: 'error' });
-    else if (result.partial) toast({ message: t('capture.partial'), tone: 'info' });
-    else toast({ message: t('capture.saved', { file: result.fileName }), tone: 'success' });
-  };
-
-  const capture = async (element: HTMLElement | null, label: string[]) => {
+  /** Runs a capture now, or after explaining and asking for the permission screenshots need. */
+  const withCapture = async (run: () => Promise<void>) => {
     if (!currentUrl) {
       toast({ message: t('capture.notReady'), tone: 'info' });
       return;
     }
-    if (!element) return;
     if (await canCapture()) {
-      await runCapture(element, label);
+      await run();
       return;
     }
-    pendingCapture.current = () => runCapture(element, label);
+    pendingCapture.current = run;
     setDialog('capture');
+  };
+
+  const capture = (element: HTMLElement | null, label: string[]) =>
+    withCapture(async () => {
+      if (!element) return;
+      const parts = ['breakpointer', host ?? 'page', ...label].map(fileNamePart);
+      const fileName = `${parts.join('_')}_${timestamp()}.png`;
+      const result = await captureElement(element, fileName);
+      if (!result.ok) toast({ message: t('capture.failed'), tone: 'error' });
+      else if (result.partial) toast({ message: t('capture.partial'), tone: 'info' });
+      else toast({ message: t('capture.saved', { file: result.fileName }), tone: 'success' });
+    });
+
+  const copyCapture = (element: HTMLElement | null) =>
+    withCapture(async () => {
+      if (!element) return;
+      const image = await captureElementImage(element);
+      const copied = image ? await copyImageToClipboard(image.blob) : false;
+      toast(
+        copied
+          ? { message: t('capture.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      );
+    });
+
+  const cardLabel = (vp: ViewportConfig) =>
+    [
+      `${vp.width} × ${vp.height}`,
+      breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
+      vp.colorScheme ? t(vp.colorScheme === 'dark' ? 'card.schemeDark' : 'card.schemeLight') : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+
+  /** Every visible preview in one labelled image. */
+  const captureAll = () =>
+    withCapture(async () => {
+      if (!currentUrl || busy) return;
+      if (visible.length === 0) {
+        toast({ message: t('report.nothing'), tone: 'info' });
+        return;
+      }
+      setBusy('sheet');
+      try {
+        // Focus mode hides the other previews; they must be on screen to be captured.
+        if (focused) {
+          setFocus(null);
+          await nextFrame();
+        }
+        const entries: SheetEntry[] = [];
+        for (const [index, vp] of visible.entries()) {
+          toast({
+            message: t('capture.allProgress', { current: index + 1, total: visible.length }),
+            tone: 'info',
+            key: 'sheet',
+          });
+          const stage = document.querySelector<HTMLElement>(`[data-viewport-id="${CSS.escape(vp.id)}"] [data-stage]`);
+          const shot = stage ? await captureElementImage(stage) : null;
+          if (shot) entries.push({ image: shot.blob, title: vp.name, subtitle: cardLabel(vp) });
+        }
+        const title = visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
+        const sheet = await composeSheet(entries, {
+          heading: title,
+          url: currentUrl.href,
+          footer: `Breakpointer · ${new Date().toLocaleString(language)}`,
+        });
+        if (!sheet) throw new Error('Nothing captured');
+        const fileName = `breakpointer-all_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.png`;
+        downloadBlob(sheet, fileName);
+        toast({ message: t('capture.saved', { file: fileName }), tone: 'success', key: 'sheet' });
+      } catch (error) {
+        console.warn('[Breakpointer] Capturing all viewports failed.', error);
+        toast({ message: t('capture.failed'), tone: 'error', key: 'sheet' });
+      } finally {
+        setBusy(null);
+      }
+    });
+
+  const onCapture = (kind: CaptureKind) => {
+    if (kind === 'all') void captureAll();
+    else if (kind === 'copy') void copyCapture(workspaceRef.current);
+    else void capture(workspaceRef.current, ['workspace']);
   };
 
   const allowCapture = async () => {
@@ -448,6 +629,7 @@ function Workspace({
   };
 
   const resetWorkspace = () => {
+    setFocus(null);
     replaceViewports(
       defaultViewports((id) => t(`preset.${id}` as MessageKey)),
       t('toast.reset'),
@@ -457,23 +639,6 @@ function Workspace({
 
   // The toolbar button and T always visibly switch: light ↔ dark (System is set in Settings).
   const toggleTheme = () => dispatch({ type: 'setTheme', theme: resolvedTheme === 'dark' ? 'light' : 'dark' });
-
-  /* ---------- Shortcuts ---------- */
-
-  useShortcuts({
-    focusAddress: () => addressRef.current?.focus(),
-    reload: () => currentUrl && reloadAllPreviews(),
-    add: () => setDialog('add'),
-    groups: () => document.querySelector<HTMLButtonElement>('[data-groups-trigger]')?.click(),
-    fit,
-    zoomIn: () => dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, 1) }),
-    zoomOut: () => dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, -1) }),
-    layout: () => dispatch({ type: 'setLayout', layout: settings.layout === 'wrap' ? 'row' : 'wrap' }),
-    rulers: () => dispatch({ type: 'setShowRulers', showRulers: !settings.showRulers }),
-    capture: () => void capture(workspaceRef.current, ['workspace']),
-    theme: toggleTheme,
-    help: () => setDialog('help'),
-  });
 
   // A page opened from the popup, context menu, command or keyword (?url=) counts as a visit.
   const recordedInitialVisit = useRef(false);
@@ -507,6 +672,7 @@ function Workspace({
         : Object.fromEntries(Object.entries(map).filter(([id]) => ids.has(id)));
     setSrcOverrides(keepVisible);
     setStrays(keepVisible);
+    if (focus && !ids.has(focus.id)) setFocus(null);
   }
 
   /* ---------- Frame agents (sync, checks, inspection) ---------- */
@@ -545,20 +711,62 @@ function Workspace({
     followedUrl.current = next;
     setSrcOverrides((overrides) => ({ [cardId]: overrides[cardId] ?? current }));
     setStrays({});
+    resetInspection();
     setCurrentUrl(new URL(next));
     setAddress(next);
     setAddressError(null);
     setProbeRun((n) => n + 1);
     dispatch({ type: 'visitUrl', url: next });
-    history.replaceState(null, '', `?${new URLSearchParams({ url: next })}`);
+    history.pushState(null, '', `?${new URLSearchParams({ url: next })}`);
     return true;
+  };
+
+  /* ---------- Inspector ---------- */
+
+  const stopPicking = () => {
+    setInspector((state) => ({ ...state, picking: false }));
+    agents.broadcast({ type: 'inspect', on: false });
+  };
+
+  const closeInspector = () => {
+    setInspector(CLOSED_INSPECTOR);
+    agents.broadcast({ type: 'inspect', on: false });
+    agents.broadcast({ type: 'select', selector: null });
+  };
+
+  const startPicking = () => {
+    setInspector((state) => ({ ...state, open: true, picking: true }));
+    agents.broadcast({ type: 'inspect', on: true });
+    hintAccess(t('tools.inspect'));
+  };
+
+  /** The toolbar toggle and I: open the inspector and pick, or close it. */
+  const toggleInspector = () => {
+    if (inspector.open) closeInspector();
+    else startPicking();
+  };
+
+  const clearSelection = () => {
+    setInspector((state) => ({ ...state, selector: null, results: {} }));
+    agents.broadcast({ type: 'select', selector: null });
+  };
+
+  const onEscape = () => {
+    if (inspector.picking) stopPicking();
+    else if (focused) setFocus(null);
+    else if (inspector.open) closeInspector();
   };
 
   const agents = useFrameAgents(tabId, generations, {
     onHello: (cardId) => {
       agents.send(cardId, { type: 'checks', enabled: settings.checks });
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
+      if (hideScrollbars) agents.send(cardId, { type: 'scrollbars', hidden: true });
       if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
+      const scheme = viewports.find((vp) => vp.id === cardId)?.colorScheme;
+      if (scheme) agents.send(cardId, { type: 'colorScheme', scheme });
+      if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
+      if (inspector.selector) agents.send(cardId, { type: 'select', selector: inspector.selector });
       setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
     },
     onNavigate: (cardId, href, { user, newDocument }) => {
@@ -571,17 +779,66 @@ function Workspace({
       const stray = !current || pageOf(href) !== pageOf(current);
       setStrays((map) => (Boolean(map[cardId]) === stray ? map : { ...map, [cardId]: stray }));
     },
-    onScroll: (cardId, ratio) => {
-      if (settings.sync.scroll) agents.broadcast({ type: 'scrollTo', ratio }, cardId);
+    onScroll: (cardId, ratio, anchor) => {
+      if (settings.sync.scroll) agents.broadcast({ type: 'scrollTo', ratio, anchor }, cardId);
     },
-    onZoom: (direction) => dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, direction) }),
+    onZoom: (direction) => zoomStep(direction),
+    onPick: (cardId, selector, element) => {
+      const generation = generations[cardId];
+      if (!generation) return;
+      setInspector((state) => ({
+        ...state,
+        open: true,
+        picking: false,
+        selector,
+        results: { [cardId]: { generation, info: element } },
+      }));
+      agents.broadcast({ type: 'inspect', on: false });
+      agents.broadcast({ type: 'select', selector });
+    },
+    onElement: (cardId, selector, element) => {
+      const generation = generations[cardId];
+      if (!generation) return;
+      setInspector((state) =>
+        state.selector === selector
+          ? { ...state, results: { ...state.results, [cardId]: { generation, info: element } } }
+          : state,
+      );
+    },
+    onKey: (_cardId, key) => {
+      if (key === 'Escape') onEscape();
+    },
   });
-  const { broadcast } = agents;
+  const { broadcast, send } = agents;
 
   // Keep every connected frame in step with the tools (new frames get them on hello).
   useEffect(() => broadcast({ type: 'checks', enabled: settings.checks }), [broadcast, settings.checks]);
   useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
+  useEffect(() => broadcast({ type: 'scrollbars', hidden: hideScrollbars }), [broadcast, hideScrollbars]);
   useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
+  const schemeKey = visible.map((vp) => `${vp.id}:${vp.colorScheme ?? ''}`).join(' ');
+  useEffect(() => {
+    for (const entry of schemeKey.split(' ')) {
+      const [id, scheme] = entry.split(':');
+      if (id) send(id, { type: 'colorScheme', scheme: (scheme || null) as ColorScheme | null });
+    }
+  }, [schemeKey, send]);
+
+  // Breakpoints found in the page's own stylesheets, from a preview showing the workspace's page.
+  const siteMedia: MediaReport | null = (() => {
+    if (!currentUrl) return null;
+    for (const vp of visible) {
+      const frame = agents.frameOf(vp.id);
+      if (frame?.media && pageOf(frame.href) === pageOf(currentUrl.href)) return frame.media;
+    }
+    return null;
+  })();
+  const siteBreakpoints = siteMedia?.breakpoints ?? null;
+  // Dragged edges snap to the breakpoints in use.
+  const snapWidths =
+    breakpointSet(settings.breakpoints, settings.customBreakpoints, siteBreakpoints ?? [])?.breakpoints.map(
+      (breakpoint) => breakpoint.min,
+    ) ?? [];
 
   const reloadAllPreviews = () => {
     setSrcOverrides({});
@@ -634,6 +891,12 @@ function Workspace({
         if (on) hintAccess(t('tools.outlines'));
         break;
       }
+      case 'scrollbars': {
+        const on = !hideScrollbars;
+        setHideScrollbars(on);
+        if (on) hintAccess(t('tools.scrollbars'));
+        break;
+      }
       case 'grid':
         dispatch({ type: 'setGrid', grid: { show: !settings.grid.show } });
         break;
@@ -651,6 +914,23 @@ function Workspace({
     if (on) hintAccess(t('workspace.sync'));
   };
 
+  const setBreakpoints = (set: BreakpointSetId) => {
+    dispatch({ type: 'setBreakpoints', breakpoints: set });
+    if (set !== 'site' || !currentUrl) return;
+    if (siteAccess.site === false) hintAccess(t('breakpoints.site'));
+    else if (siteMedia && siteMedia.breakpoints.length === 0)
+      toast({
+        message: siteMedia.unreadable ? t('breakpoints.siteUnreadable') : t('breakpoints.siteNone'),
+        tone: 'info',
+        key: 'site-breakpoints',
+      });
+  };
+
+  const setColorScheme = (vp: ViewportConfig, scheme: ColorScheme | null) => {
+    dispatch({ type: 'updateViewport', id: vp.id, patch: { colorScheme: scheme } });
+    if (scheme) hintAccess(t('card.colorScheme'));
+  };
+
   const applyLiveCss = (css: string) => {
     setLiveCss(css);
     setDialog(null);
@@ -659,7 +939,12 @@ function Workspace({
   };
 
   const testEdges = () => {
-    const edges = breakpointEdges(settings.breakpoints, settings.customBreakpoints, MAX_VIEWPORTS);
+    const edges = breakpointEdges(
+      settings.breakpoints,
+      settings.customBreakpoints,
+      MAX_VIEWPORTS,
+      siteBreakpoints ?? [],
+    );
     if (edges.length === 0) {
       toast({ message: t('tools.noEdges'), tone: 'info' });
       return;
@@ -669,6 +954,7 @@ function Workspace({
     );
     const zoom = computeFitZoom(next);
     if (zoom !== null) next = setZoomForAll(next, zoom);
+    setFocus(null);
     replaceViewports(
       next,
       next.length === 1 ? t('tools.edgesAppliedOne') : t('tools.edgesApplied', { count: next.length }),
@@ -684,6 +970,19 @@ function Workspace({
     replaceViewports(rotateVisible(viewports), count === 1 ? t('tools.rotatedOne') : t('tools.rotated', { count }));
   };
 
+  const sortViewports = () => {
+    if (isSortedByWidth(viewports)) {
+      toast({ message: t('tools.alreadySorted'), tone: 'info', key: 'sort' });
+      return;
+    }
+    replaceViewports(sortByWidth(viewports), t('tools.sorted'));
+  };
+
+  const scrollAllToTop = () => {
+    hintAccess(t('palette.scrollTop'));
+    broadcast({ type: 'scrollTo', ratio: 0 });
+  };
+
   const toggleSaved = () => {
     if (!currentUrl) return;
     const saved = settings.savedPages.includes(currentUrl.href);
@@ -697,13 +996,15 @@ function Workspace({
 
   /* ---------- Report ---------- */
 
-  const [reporting, setReporting] = useState(false);
-
   const runReport = async () => {
     if (!currentUrl) return;
     const list = visible;
-    setReporting(true);
+    setBusy('report');
     try {
+      if (focused) {
+        setFocus(null);
+        await nextFrame();
+      }
       const cards: ReportCard[] = [];
       for (const [index, vp] of list.entries()) {
         toast({
@@ -718,7 +1019,7 @@ function Workspace({
           width: vp.width,
           height: vp.height,
           zoom: vp.zoom,
-          breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints),
+          breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
           image: shot ? await blobToDataUrl(shot.blob) : null,
           checks: settings.checks ? (agents.frameOf(vp.id)?.report ?? null) : null,
         });
@@ -732,28 +1033,128 @@ function Workspace({
       console.warn('[Breakpointer] Report failed.', error);
       toast({ message: t('report.failed'), tone: 'error', key: 'report' });
     } finally {
-      setReporting(false);
+      setBusy(null);
     }
   };
 
-  const exportReport = async () => {
-    if (!currentUrl || reporting) return;
+  const exportReport = () => {
+    if (!currentUrl || busy) return;
     if (visible.length === 0) {
       toast({ message: t('report.nothing'), tone: 'info' });
       return;
     }
-    if (await canCapture()) {
-      await runReport();
-      return;
-    }
-    pendingCapture.current = runReport;
-    setDialog('capture');
+    void withCapture(runReport);
   };
 
-  /* ---------- Gestures ---------- */
+  /* ---------- Shortcuts and gestures ---------- */
 
-  useWheelZoom(workspaceRef, (direction) => dispatch({ type: 'setZoomForAll', zoom: stepZoom(viewports, direction) }));
+  useShortcuts({
+    focusAddress: () => addressRef.current?.focus(),
+    reload: () => currentUrl && reloadAllPreviews(),
+    add: () => setDialog('add'),
+    groups: () => document.querySelector<HTMLButtonElement>('[data-groups-trigger]')?.click(),
+    fit,
+    zoomIn: () => zoomStep(1),
+    zoomOut: () => zoomStep(-1),
+    layout: () => dispatch({ type: 'setLayout', layout: settings.layout === 'wrap' ? 'row' : 'wrap' }),
+    rulers: () => dispatch({ type: 'setShowRulers', showRulers: !settings.showRulers }),
+    capture: () => void capture(workspaceRef.current, ['workspace']),
+    theme: toggleTheme,
+    help: () => setDialog('help'),
+    palette: () => (dialog === 'palette' ? setDialog(null) : openPalette()),
+    inspect: toggleInspector,
+    escape: onEscape,
+  });
+
+  useWheelZoom(stageRef, (direction) => zoomStep(direction));
   const panLayer = usePan(workspaceRef);
+
+  /* ---------- Command palette ---------- */
+
+  // A snapshot of the commands, taken when the palette opens (it closes again when one runs).
+  const [paletteCommands, setPaletteCommands] = useState<PaletteCommand[]>([]);
+  const openPalette = () => {
+    setPaletteCommands(
+      buildCommands({
+        t,
+        en: english,
+        settings,
+        hasUrl: Boolean(currentUrl),
+        canAdd: canAddViewport(viewports),
+        focusedId: focused?.id ?? null,
+        outlines,
+        hideScrollbars,
+        liveCss: Boolean(liveCss),
+        inspecting: inspector.open,
+        actions: {
+          reloadAll: reloadAllPreviews,
+          openInTab: () => currentUrl && void adapter.openInTab(currentUrl.href),
+          scrollTop: scrollAllToTop,
+          navigate,
+          addPreset: (preset, name) => addViewport({ name, width: preset.width, height: preset.height }),
+          openAdd: () => setDialog('add'),
+          applyGroup,
+          saveGroup: () => setDialog('saveGroup'),
+          manageGroups: () => setDialog('manageGroups'),
+          toggleVisible: (id) => toggleVisible(id),
+          showAll: () => dispatch({ type: 'showAll' }),
+          focus: toggleFocus,
+          fit,
+          zoomTo,
+          setLayout: (layout) => dispatch({ type: 'setLayout', layout }),
+          rotateAll,
+          sortByWidth: sortViewports,
+          edges: testEdges,
+          toggleTool,
+          toggleRulers: () => dispatch({ type: 'setShowRulers', showRulers: !settings.showRulers }),
+          setBreakpoints,
+          liveCss: () => setDialog('css'),
+          inspect: toggleInspector,
+          capture: onCapture,
+          report: exportReport,
+          setTheme: (theme) => dispatch({ type: 'setTheme', theme }),
+          setLanguage: (lang) => dispatch({ type: 'setLanguage', language: lang }),
+          openSettings: () => setDialog('settings'),
+          siteAccess: () => setDialog('access'),
+          help: () => setDialog('help'),
+          exportSettings,
+        },
+      }),
+    );
+    setDialog('palette');
+  };
+
+  const commandFromQuery = (query: string): PaletteCommand | null => {
+    if (/\s/.test(query)) return null;
+    const result = parsePreviewUrl(query);
+    if (!result.ok) return null;
+    return {
+      id: 'preview-typed',
+      section: t('palette.section.page'),
+      icon: 'globe',
+      title: t('palette.preview', { url: result.url.href }),
+      run: () => navigate(result.url.href),
+    };
+  };
+
+  function addViewport(viewport: { name: string; width: number; height: number }) {
+    if (!canAddViewport(viewports)) {
+      toast({ message: t('add.limit', { max: MAX_VIEWPORTS }), tone: 'info' });
+      return;
+    }
+    // A new viewport would stay out of sight in focus mode.
+    setFocus(null);
+    dispatch({
+      type: 'addViewport',
+      viewport: commonZoom === null ? viewport : { ...viewport, zoom: commonZoom },
+    });
+    toast({ message: t('add.added', { name: viewport.name }), tone: 'success', key: 'added' });
+  }
+
+  function toggleVisible(id: string) {
+    const vp = viewports.find((item) => item.id === id);
+    if (vp) dispatch({ type: 'updateViewport', id, patch: { hidden: !vp.hidden } });
+  }
 
   // Chrome doesn't tell the page when a frame was refused, so the tip shows
   // for any site that isn't allowed yet (unless the site is simply unreachable).
@@ -765,8 +1166,29 @@ function Workspace({
     !dismissedHosts.includes(currentUrl.hostname),
   );
 
+  const inspectorRows: InspectorRow[] = visible.map((vp) => {
+    const result = inspector.results[vp.id];
+    return {
+      id: vp.id,
+      name: vp.name,
+      width: vp.width,
+      height: vp.height,
+      sizeClass: sizeClassOf(vp.width, vp.height),
+      info: result && result.generation === generations[vp.id] ? result.info : undefined,
+    };
+  });
+
+  const revealCard = (id: string) => {
+    if (focused && focused.id !== id) setFocus(null);
+    requestAnimationFrame(() =>
+      document
+        .querySelector(`[data-viewport-id="${CSS.escape(id)}"]`)
+        ?.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' }),
+    );
+  };
+
   const renderCards = () => (
-    <div className={styles.cards} data-layout={settings.layout} data-cards>
+    <div className={styles.cards} data-layout={settings.layout} data-focus={focused ? '' : undefined} data-cards>
       {domOrder.map((id) => {
         const index = visible.findIndex((item) => item.id === id);
         const vp = visible[index];
@@ -784,11 +1206,16 @@ function Workspace({
             canDuplicate={canAddViewport(viewports)}
             breakpointSet={settings.breakpoints}
             customBreakpoints={settings.customBreakpoints}
+            siteBreakpoints={siteBreakpoints ?? undefined}
+            snapWidths={snapWidths}
             grid={settings.grid}
             checks={settings.checks ? (agents.frameOf(vp.id)?.report ?? null) : null}
             highlighted={highlights[vp.id] ?? null}
             onHighlight={(kind) => highlight(vp.id, kind)}
             showRulers={settings.showRulers}
+            focused={focused?.id === vp.id}
+            concealed={Boolean(focused && focused.id !== vp.id)}
+            zoomOverride={focused?.id === vp.id ? focused.zoom : undefined}
             onRename={(name) => dispatch({ type: 'updateViewport', id: vp.id, patch: { name } })}
             onResize={(size) => dispatch({ type: 'updateViewport', id: vp.id, patch: size })}
             onZoom={(zoom) => dispatch({ type: 'updateViewport', id: vp.id, patch: { zoom } })}
@@ -797,9 +1224,18 @@ function Workspace({
             onReload={() => reloadCard(vp.id)}
             onCapture={(stage) =>
               // The image is taken as shown on screen, so the name says at which zoom.
-              void capture(stage, [vp.name, `${vp.width}x${vp.height}`, `${Math.round(vp.zoom * 100)}pct`])
+              void capture(stage, [
+                vp.name,
+                `${vp.width}x${vp.height}`,
+                `${Math.round((focused?.id === vp.id ? focused.zoom : vp.zoom) * 100)}pct`,
+              ])
             }
-            onOpenInTab={() => src && void adapter.openInTab(src)}
+            onCopy={(stage) => void copyCapture(stage)}
+            // The page this preview shows now (it may have followed a link on its own).
+            onOpenInTab={() => {
+              const page = agents.frameOf(vp.id)?.href ?? cardSrc(vp.id);
+              if (page) void adapter.openInTab(toSafeHref(page) ?? src ?? page);
+            }}
             onOpenInWindow={async () => {
               if (!src) return;
               const size = await adapter.openInWindow(src, { width: vp.width, height: vp.height }).catch(() => null);
@@ -808,22 +1244,35 @@ function Workspace({
                 toast({ message: t('window.clamped', size), tone: 'info' });
             }}
             onDuplicate={() => {
+              setFocus(null);
               dispatch({ type: 'duplicateViewport', id: vp.id });
               toast({ message: t('toast.duplicated', { name: vp.name }), tone: 'success' });
             }}
             onHide={() => dispatch({ type: 'updateViewport', id: vp.id, patch: { hidden: true } })}
             onRemove={() => removeViewport(vp)}
+            onFocus={() => toggleFocus(vp.id)}
+            onColorScheme={(scheme) => setColorScheme(vp, scheme)}
           />
         ) : null;
       })}
     </div>
   );
 
+  const welcome = !currentUrl && (
+    <Welcome
+      savedPages={settings.savedPages}
+      recentUrls={settings.rememberRecent ? settings.recentUrls : []}
+      paletteShortcut={paletteShortcut}
+      onOpen={navigate}
+      onTryExample={() => navigate('https://example.com')}
+    />
+  );
+
   const renderContent = () => {
     if (viewports.length === 0) {
       return (
         <>
-          {!currentUrl && <Welcome onTryExample={() => navigate('https://example.com')} />}
+          {welcome}
           <ErrorState icon="layers" title={t('empty.noViewportsTitle')} body={t('empty.noViewportsBody')}>
             <Button variant="primary" icon="plus" onClick={() => setDialog('add')}>
               {t('toolbar.addViewport')}
@@ -846,11 +1295,13 @@ function Workspace({
     }
     return (
       <>
-        {!currentUrl && <Welcome onTryExample={() => navigate('https://example.com')} />}
+        {welcome}
         {renderCards()}
       </>
     );
   };
+
+  const focusedViewport = focused ? visible.find((vp) => vp.id === focused.id) : undefined;
 
   return (
     <div className={styles.app}>
@@ -862,63 +1313,70 @@ function Workspace({
         hasUrl={Boolean(currentUrl)}
         secure={currentUrl ? currentUrl.protocol === 'https:' : null}
         siteAllowed={siteAccess.site}
-        groups={settings.groups}
-        canAddViewport={canAddViewport(viewports)}
+        canGoBack={navigation.canGoBack}
+        canGoForward={navigation.canGoForward}
+        onBack={() => history.back()}
+        onForward={() => history.forward()}
         onAddressChange={(value) => {
           setAddress(value);
           if (addressError) setAddressError(null);
         }}
-        onSubmit={() => navigate(address)}
+        onSubmit={(value) => navigate(value ?? address)}
         onReloadAll={reloadAllPreviews}
         onOpenInTab={() => currentUrl && void adapter.openInTab(currentUrl.href)}
-        onApplyGroup={applyGroup}
-        onSaveGroup={() => setDialog('saveGroup')}
-        onManageGroups={() => setDialog('manageGroups')}
-        onAddViewport={() => setDialog('add')}
-        onCapture={() => void capture(workspaceRef.current, ['workspace'])}
+        onPalette={openPalette}
+        paletteShortcut={paletteShortcut}
+        onCapture={onCapture}
         onSiteAccess={() => setDialog('access')}
         onToggleTheme={toggleTheme}
         resolvedTheme={resolvedTheme}
         onSettings={() => setDialog('settings')}
         onHelp={() => setDialog('help')}
-        host={host}
         savedPages={settings.savedPages}
         saved={Boolean(currentUrl && settings.savedPages.includes(currentUrl.href))}
         onToggleSaved={toggleSaved}
+      />
+      <WorkspaceBar
+        viewports={viewports}
+        groups={settings.groups}
+        canAddViewport={canAddViewport(viewports)}
+        breakpoints={settings.breakpoints}
+        siteBreakpoints={siteBreakpoints}
+        showRulers={settings.showRulers}
+        sync={settings.sync.scroll || settings.sync.navigation}
+        showGrid={settings.grid.show}
+        inspecting={inspector.open}
         tools={{
           syncScroll: settings.sync.scroll,
           syncNavigation: settings.sync.navigation,
           checks: settings.checks,
           outlines,
+          scrollbars: hideScrollbars,
           grid: settings.grid.show,
           liveCss: Boolean(liveCss),
         }}
+        hasUrl={Boolean(currentUrl)}
+        siteAllowed={siteAccess.site}
+        host={host}
+        focusedId={focused?.id ?? null}
+        onToggleVisible={toggleVisible}
+        onMoveTo={(id, index) => dispatch({ type: 'moveViewportTo', id, index })}
+        onApplyGroup={applyGroup}
+        onSaveGroup={() => setDialog('saveGroup')}
+        onManageGroups={() => setDialog('manageGroups')}
+        onAddViewport={() => setDialog('add')}
+        onBreakpoints={setBreakpoints}
+        onRulers={(showRulers) => dispatch({ type: 'setShowRulers', showRulers })}
+        onSync={setSyncAll}
+        onGrid={(show) => dispatch({ type: 'setGrid', grid: { show } })}
+        onInspect={toggleInspector}
         onTool={toggleTool}
         onLiveCss={() => setDialog('css')}
         onEdges={testEdges}
         onRotateAll={rotateAll}
-        onReport={() => void exportReport()}
+        onSortByWidth={sortViewports}
+        onReport={exportReport}
         onAllowSite={() => void allowSite()}
-      />
-      <WorkspaceBar
-        viewports={viewports}
-        layout={settings.layout}
-        breakpoints={settings.breakpoints}
-        showRulers={settings.showRulers}
-        sync={settings.sync.scroll || settings.sync.navigation}
-        showGrid={settings.grid.show}
-        onSync={setSyncAll}
-        onGrid={(show) => dispatch({ type: 'setGrid', grid: { show } })}
-        onToggleVisible={(id) => {
-          const vp = viewports.find((item) => item.id === id);
-          if (vp) dispatch({ type: 'updateViewport', id, patch: { hidden: !vp.hidden } });
-        }}
-        onMoveTo={(id, index) => dispatch({ type: 'moveViewportTo', id, index })}
-        onZoomAll={(zoom) => dispatch({ type: 'setZoomForAll', zoom })}
-        onFit={fit}
-        onLayout={(layout) => dispatch({ type: 'setLayout', layout })}
-        onBreakpoints={(breakpoints) => dispatch({ type: 'setBreakpoints', breakpoints })}
-        onRulers={(showRulers) => dispatch({ type: 'setShowRulers', showRulers })}
       />
       {probe === 'unreachable' && host && currentUrl && (
         // The previews stay: each frame shows Chrome's own error page too.
@@ -965,9 +1423,75 @@ function Workspace({
           }}
         />
       )}
-      <main ref={workspaceRef} className={styles.workspace} aria-label={t('workspace.region')} data-testid="workspace">
-        {renderContent()}
-      </main>
+      <div className={styles.body}>
+        <div ref={stageRef} className={styles.stage}>
+          <main
+            ref={workspaceRef}
+            className={styles.workspace}
+            aria-label={t('workspace.region')}
+            data-testid="workspace"
+          >
+            {renderContent()}
+          </main>
+          {visible.length > 0 && (
+            <ZoomDock
+              zoom={focused ? focused.zoom : commonZoom}
+              disabled={visible.length === 0}
+              onZoom={zoomTo}
+              onStep={zoomStep}
+              onFit={fit}
+              layout={settings.layout}
+              onLayout={(layout) => dispatch({ type: 'setLayout', layout })}
+              focused={Boolean(focused)}
+              status={
+                focusedViewport ? (
+                  <DockStatus
+                    icon="maximize"
+                    testId="focus-status"
+                    action={t('focus.exit')}
+                    onAction={() => setFocus(null)}
+                  >
+                    {t('focus.label')} <strong>{focusedViewport.name}</strong>
+                  </DockStatus>
+                ) : inspector.picking ? (
+                  <DockStatus
+                    icon="inspect"
+                    testId="inspect-status"
+                    action={t('inspector.stopPicking')}
+                    onAction={stopPicking}
+                  >
+                    {t('inspector.pickingHint')}
+                  </DockStatus>
+                ) : null
+              }
+            />
+          )}
+        </div>
+        {inspector.open && (
+          <InspectorPanel
+            picking={inspector.picking}
+            selector={inspector.selector}
+            rows={inspectorRows}
+            needsAccess={Boolean(currentUrl && siteAccess.site === false)}
+            host={host}
+            busy={requesting}
+            onPick={() => (inspector.picking ? stopPicking() : startPicking())}
+            onClear={clearSelection}
+            onClose={closeInspector}
+            onReveal={revealCard}
+            onCopySelector={(selector) =>
+              void copyText(selector).then((copied) =>
+                toast(
+                  copied
+                    ? { message: t('inspector.copied'), tone: 'success', key: 'copy' }
+                    : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+                ),
+              )
+            }
+            onAllowSite={() => void allowSite()}
+          />
+        )}
+      </div>
       {panLayer && (
         <div
           className={styles.panLayer}
@@ -982,15 +1506,18 @@ function Workspace({
         />
       )}
 
+      <CommandPalette
+        open={dialog === 'palette'}
+        commands={paletteCommands}
+        fromQuery={commandFromQuery}
+        onClose={() => setDialog((current) => (current === 'palette' ? null : current))}
+      />
       <AddViewportDialog
         open={dialog === 'add'}
         canAdd={canAddViewport(viewports)}
+        viewports={viewports}
         onAdd={(viewport) => {
-          dispatch({
-            type: 'addViewport',
-            viewport: commonZoom === null ? viewport : { ...viewport, zoom: commonZoom },
-          });
-          toast({ message: t('add.added', { name: viewport.name }), tone: 'success', key: 'added' });
+          addViewport(viewport);
           setDialog(null);
         }}
         onClose={() => setDialog(null)}
@@ -1011,6 +1538,10 @@ function Workspace({
         open={dialog === 'manageGroups'}
         groups={settings.groups}
         canReplace={viewports.length > 0}
+        onApply={(id) => {
+          setDialog(null);
+          applyGroup(id);
+        }}
         onRename={(id, name) => dispatch({ type: 'renameGroup', id, name })}
         onReplace={(id) => {
           const group = settings.groups.find((item) => item.id === id);
@@ -1056,9 +1587,10 @@ function Workspace({
         open={dialog === 'settings'}
         settings={settings}
         version={version}
+        siteBreakpoints={siteBreakpoints}
         onTheme={(theme) => dispatch({ type: 'setTheme', theme })}
-        onLanguage={(language) => dispatch({ type: 'setLanguage', language })}
-        onBreakpoints={(breakpoints) => dispatch({ type: 'setBreakpoints', breakpoints })}
+        onLanguage={(lang) => dispatch({ type: 'setLanguage', language: lang })}
+        onBreakpoints={setBreakpoints}
         onCustomBreakpoints={(breakpoints) => dispatch({ type: 'setCustomBreakpoints', breakpoints })}
         onSync={(sync) => dispatch({ type: 'setSync', sync })}
         onChecks={setChecks}
@@ -1093,7 +1625,12 @@ function Workspace({
         onAllowSite={() => void allowSite()}
         onClose={() => setDialog(null)}
       />
-      <HelpDialog open={dialog === 'help'} onClose={() => setDialog(null)} commandShortcuts={commandShortcuts} />
+      <HelpDialog
+        open={dialog === 'help'}
+        onClose={() => setDialog(null)}
+        commandShortcuts={commandShortcuts}
+        paletteShortcut={paletteShortcut}
+      />
     </div>
   );
 }

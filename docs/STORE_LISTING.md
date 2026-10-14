@@ -4,15 +4,15 @@ Copy-ready text and the answers the store asks for. Assets live in `brand/` (see
 
 ## Basics
 
-| Field                      | Value                                                                                  |
-| -------------------------- | -------------------------------------------------------------------------------------- |
-| Name (from manifest)       | Breakpointer — Responsive Viewport Tester                                              |
-| Category                   | Developer Tools                                                                        |
-| Languages                  | English (default), Vietnamese                                                          |
-| Store icon                 | `brand/store/store-icon-128.png`                                                       |
-| Small promo tile (440×280) | `brand/store/promo-small-440x280.png` · VI: `promo-small-440x280-vi.png`               |
-| Marquee (1400×560)         | `brand/store/promo-marquee-1400x560.png` · VI: `promo-marquee-1400x560-vi.png`         |
-| Screenshots (1280×800)     | `brand/store/screenshots/en/1-workspace.png` … `5-checks.png` · VI: `screenshots/vi/…` |
+| Field                      | Value                                                                                                                                                                                                                                 |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Name (from manifest)       | Breakpointer — Responsive Viewport Tester                                                                                                                                                                                             |
+| Category                   | Developer Tools                                                                                                                                                                                                                       |
+| Languages                  | English (default), Vietnamese                                                                                                                                                                                                         |
+| Store icon                 | `brand/store/store-icon-128.png`                                                                                                                                                                                                      |
+| Small promo tile (440×280) | `brand/store/promo-small-440x280.png` · VI: `promo-small-440x280-vi.png`                                                                                                                                                              |
+| Marquee (1400×560)         | `brand/store/promo-marquee-1400x560.png` · VI: `promo-marquee-1400x560-vi.png`                                                                                                                                                        |
+| Screenshots (1280×800)     | Upload five, in this order: `1-workspace`, `6-inspector`, `8-resize`, `7-palette`, `5-checks` (all in `brand/store/screenshots/en/`, `.png`) · VI: `screenshots/vi/…` · also available: `2-groups`, `3-add-viewport`, `4-dark-rulers` |
 
 ## Short description (≤ 132 characters)
 
@@ -27,23 +27,27 @@ Breakpointer shows any website at several viewport sizes side by side, right in 
 
 **Preview fast**
 • Click the toolbar button and choose “Preview this page”, right-click any page or link, press Alt+Shift+P, or type “bpt” and a URL in the address bar.
-• 22 common sizes for phones, foldables, tablets, laptops and desktops, plus any custom size.
-• Rotate, resize, rename, reorder, duplicate, hide and reload each viewport.
-• Zoom each preview or press Fit to see everything on one screen.
+• 22 common sizes for phones, foldables, tablets, laptops and desktops (search by name or size), plus any custom size.
+• Drag a preview's edge to resize it and watch the page reflow live — it snaps to your breakpoints.
+• Press Ctrl/⌘ + K to search every command, size, group and page.
 
-**Check responsive layouts**
-• Scroll one preview and the others follow; click a link and every preview opens it.
+**Find where it breaks**
+• Inspector: click an element in one preview and compare its size, display, font, spacing and layout at every size — what changes is highlighted.
+• Breakpoints read from the page's own CSS, plus Tailwind, Bootstrap or your own — label every viewport and test both sides of each breakpoint.
+• Light and dark side by side: show any preview with the page's light or dark styles.
 • Responsive checks find sideways scrolling (and the element causing it), a missing viewport tag, tiny text and small touch targets — highlight them right in the page.
-• Layout outlines, a column grid and live CSS applied to every size at once, to try a fix before you change your code.
-• Breakpoint labels for Tailwind, Bootstrap or your own breakpoints, and one click to test both sides of every breakpoint.
-• Pixel rulers, screenshots of a single preview or the whole workspace, and an HTML report of every size with its issues.
+• Scroll one preview and the others show the same content; click a link and every preview opens it.
+• Layout outlines, a column grid, pixel rulers, hidden scrollbars and live CSS applied to every size at once.
+
+**Share what you see**
+• Screenshots of one preview or the workspace, every viewport in one labelled image, copy to the clipboard, and an HTML report of every size with its issues.
 • Open any preview in a real window of the exact size.
 
 **Work your way**
 • Save viewport groups like “Checkout QA” and switch in one click; six built-in groups included.
-• Star the pages you test often; zoom with Ctrl/⌘ + wheel and pan with Space + drag.
+• Focus on one viewport, go back and forward between pages, star the pages you test often, zoom with Ctrl/⌘ + wheel and pan with Space + drag.
 • Export and import your setup to share it with your team.
-• Light and dark themes, keyboard shortcuts, English and Vietnamese.
+• A clean light and dark design, keyboard shortcuts for everything, English and Vietnamese.
 
 **Private by design**
 • No account, no analytics, no server. Settings stay in your browser.
@@ -60,23 +64,27 @@ Breakpointer hiển thị bất kỳ website nào ở nhiều kích thước vie
 
 **Xem trước thật nhanh**
 • Bấm nút trên thanh công cụ và chọn “Xem trước trang này”, chuột phải vào trang hoặc liên kết, nhấn Alt+Shift+P, hoặc gõ “bpt” và URL trên thanh địa chỉ.
-• 22 kích thước phổ biến cho điện thoại, máy gập, máy tính bảng, laptop và máy bàn, cùng kích thước tùy chỉnh.
-• Xoay, đổi kích thước, đổi tên, sắp xếp, nhân bản, ẩn và tải lại từng viewport.
-• Thu phóng từng bản xem trước hoặc bấm “Vừa màn hình” để thấy tất cả trên một màn hình.
+• 22 kích thước phổ biến cho điện thoại, máy gập, máy tính bảng, laptop và máy bàn (tìm theo tên hoặc kích thước), cùng kích thước tùy chỉnh.
+• Kéo cạnh bản xem trước để đổi kích thước và xem trang dàn lại ngay — tự bắt dính vào breakpoint.
+• Nhấn Ctrl/⌘ + K để tìm mọi lệnh, kích thước, nhóm và trang.
 
-**Kiểm tra bố cục responsive**
-• Cuộn một bản xem trước thì các bản khác cuộn theo; bấm liên kết thì mọi bản cùng mở trang đó.
+**Tìm chỗ bị vỡ**
+• Soi phần tử: bấm một phần tử ở một bản xem trước để so sánh kích thước, display, font, khoảng cách và bố cục ở mọi kích thước — chỗ thay đổi được đánh dấu.
+• Breakpoint đọc từ chính CSS của trang, cùng Tailwind, Bootstrap hoặc của riêng bạn — gắn nhãn mọi viewport và thử hai bên mỗi breakpoint.
+• Sáng và tối cạnh nhau: hiển thị bản xem trước với kiểu sáng hoặc tối của trang.
 • Kiểm tra responsive phát hiện cuộn ngang (và phần tử gây ra), thiếu thẻ viewport, chữ quá nhỏ và vùng chạm quá nhỏ — đánh dấu ngay trên trang.
-• Viền bố cục, lưới cột và CSS trực tiếp áp dụng cho mọi kích thước cùng lúc, để thử cách sửa trước khi đổi code.
-• Nhãn breakpoint Tailwind, Bootstrap hoặc breakpoint của riêng bạn, và một cú bấm để thử hai bên mọi breakpoint.
-• Thước đo pixel, chụp ảnh một bản xem trước hoặc cả vùng làm việc, và báo cáo HTML cho mọi kích thước kèm các vấn đề.
+• Cuộn một bản xem trước thì các bản khác hiện đúng nội dung đó; bấm liên kết thì mọi bản cùng mở trang đó.
+• Viền bố cục, lưới cột, thước đo pixel, ẩn thanh cuộn và CSS trực tiếp áp dụng cho mọi kích thước cùng lúc.
+
+**Chia sẻ điều bạn thấy**
+• Chụp một bản xem trước hoặc cả vùng làm việc, ghép mọi viewport thành một ảnh có nhãn, chép vào bộ nhớ tạm, và xuất báo cáo HTML cho mọi kích thước kèm các vấn đề.
 • Mở bất kỳ bản xem trước nào trong một cửa sổ thật đúng kích thước.
 
 **Làm việc theo cách của bạn**
 • Lưu nhóm viewport như “Kiểm thử thanh toán” và chuyển đổi chỉ với một cú bấm; có sẵn sáu nhóm.
-• Đánh dấu sao những trang hay kiểm tra; thu phóng bằng Ctrl/⌘ + lăn chuột và kéo vùng làm việc bằng Space + kéo.
+• Tập trung vào một viewport, quay lại/tới giữa các trang, đánh dấu sao trang hay kiểm tra, thu phóng bằng Ctrl/⌘ + lăn chuột và kéo vùng làm việc bằng Space + kéo.
 • Xuất và nhập cấu hình để chia sẻ với nhóm của bạn.
-• Giao diện sáng và tối, phím tắt, tiếng Anh và tiếng Việt.
+• Thiết kế sáng và tối gọn gàng, phím tắt cho mọi thứ, tiếng Anh và tiếng Việt.
 
 **Tôn trọng quyền riêng tư**
 • Không tài khoản, không theo dõi, không máy chủ. Cài đặt chỉ nằm trong trình duyệt của bạn.
@@ -91,14 +99,14 @@ Breakpointer thay đổi kích thước viewport; không giả lập user agent,
 
 **Permission justifications**
 
-| Permission                               | Justification                                                                                                                                                                                                                                                                                                                                                                                                  |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `storage`                                | Saves the user's viewport sizes, saved groups and preferences locally so the workspace is restored next time.                                                                                                                                                                                                                                                                                                  |
-| `activeTab`                              | When the user clicks the toolbar button, uses the keyboard shortcut or the context menu, reads the current tab's URL so that page can be previewed. No access otherwise.                                                                                                                                                                                                                                       |
-| `contextMenus`                           | Adds “Preview this page/link in Breakpointer” to the right-click menu.                                                                                                                                                                                                                                                                                                                                         |
-| `declarativeNetRequestWithHostAccess`    | Many sites send X-Frame-Options or CSP frame-ancestors, which prevents showing them in the preview frames. For sites the user explicitly allows, a session rule removes these headers only for sub-frame requests in the Breakpointer tab. It does nothing without user-granted host access and never affects normal browsing.                                                                                 |
-| `scripting`                              | While a Breakpointer workspace tab is open, registers the extension's own packaged script so it runs inside the preview frames of sites the user has allowed (synced scrolling and navigation, responsive checks, layout outlines, user-entered live CSS). The script exits at once in any other frame, reports only to the workspace tab, and is unregistered when the last workspace closes. No remote code. |
-| Optional host permissions (`<all_urls>`) | Requested at runtime only when the user clicks “Allow on this site” (only that site is requested) or “Allow on all sites”, or when they first take a screenshot (`chrome.tabs.captureVisibleTab` requires `<all_urls>`). Users can revoke access in the extension.                                                                                                                                             |
+| Permission                               | Justification                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `storage`                                | Saves the user's viewport sizes, saved groups and preferences locally so the workspace is restored next time.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| `activeTab`                              | When the user clicks the toolbar button, uses the keyboard shortcut or the context menu, reads the current tab's URL so that page can be previewed. No access otherwise.                                                                                                                                                                                                                                                                                                                                            |
+| `contextMenus`                           | Adds “Preview this page/link in Breakpointer” to the right-click menu.                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `declarativeNetRequestWithHostAccess`    | Many sites send X-Frame-Options or CSP frame-ancestors, which prevents showing them in the preview frames. For sites the user explicitly allows, a session rule removes these headers only for sub-frame requests in the Breakpointer tab. It does nothing without user-granted host access and never affects normal browsing.                                                                                                                                                                                      |
+| `scripting`                              | While a Breakpointer workspace tab is open, registers the extension's own packaged script so it runs inside the preview frames of sites the user has allowed (synced scrolling and navigation, responsive checks, the element inspector, reading the page's breakpoints from its stylesheets, light/dark page colours, layout outlines, user-entered live CSS). The script exits at once in any other frame, reports only to the workspace tab, and is unregistered when the last workspace closes. No remote code. |
+| Optional host permissions (`<all_urls>`) | Requested at runtime only when the user clicks “Allow on this site” (only that site is requested) or “Allow on all sites”, or when they first take a screenshot (`chrome.tabs.captureVisibleTab` requires `<all_urls>`). Users can revoke access in the extension.                                                                                                                                                                                                                                                  |
 
 **Remote code:** No. All code, including the script that runs in previews, is packaged with the extension. Live CSS is CSS text the user types for their own previews; it is never executed as code.
 

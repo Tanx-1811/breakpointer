@@ -27,8 +27,9 @@ export function LiveCssDialog(props: Props) {
       open={props.open}
       title={t('css.title')}
       description={t('css.description')}
+      icon="code"
       onClose={props.onClose}
-      width={640}
+      width={680}
     >
       {/* Mounted while open, so the draft starts from what is applied. */}
       <Editor {...props} />

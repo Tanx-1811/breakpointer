@@ -42,7 +42,11 @@ export function siteBreakpointSet(widths: number[]): BreakpointSet | null {
  * The breakpoints in use, or null when labels are off. `custom` is the user's
  * own list; `site` the widths detected in the previewed page's stylesheets.
  */
-export function breakpointSet(set: BreakpointSetId, custom: Breakpoint[] = [], site: number[] = []): BreakpointSet | null {
+export function breakpointSet(
+  set: BreakpointSetId,
+  custom: Breakpoint[] = [],
+  site: number[] = [],
+): BreakpointSet | null {
   if (set === 'none') return null;
   if (set === 'custom') return { base: 'base', breakpoints: [...custom].sort((a, b) => a.min - b.min) };
   if (set === 'site') return siteBreakpointSet(site);

@@ -4,23 +4,29 @@
   gap: 14px;
   width: 360px;
   padding: 16px;
+  background:
+    radial-gradient(120% 70% at 0% 0%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%), var(--bg);
 }
 
 .header {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
+}
+
+.headerText {
+  min-width: 0;
 }
 
 .title {
   margin: 0;
-  font-size: 15px;
+  font-size: 15.5px;
   font-weight: 700;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
 
 .subtitle {
-  margin: 0;
+  margin: 1px 0 0;
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -28,33 +34,58 @@
 .card {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 12px;
+  gap: 12px;
+  padding: 13px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-lg);
   background: var(--surface);
+  box-shadow: var(--shadow-sm);
 }
 
 .label {
   margin: 0;
   color: var(--text-muted);
   font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-weight: 650;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .page {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
 
-.pageIcon {
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex: none;
-  margin-top: 2px;
-  color: var(--text-subtle);
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--avatar) 14%, var(--surface));
+  color: var(--avatar);
+  font-weight: 750;
+  font-size: 15px;
+}
+
+:global(html[data-theme='dark']) .avatar {
+  background: color-mix(in srgb, var(--avatar) 26%, var(--surface));
+  color: color-mix(in srgb, var(--avatar) 45%, #fff);
+}
+
+.avatar::before {
+  content: attr(data-letter);
+}
+
+.avatarSmall {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  font-size: 12px;
 }
 
 .pageText {
@@ -64,10 +95,19 @@
 }
 
 .host {
-  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
   overflow: hidden;
+  font-weight: 650;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.lock {
+  flex: none;
+  color: var(--success);
 }
 
 .url {
@@ -82,31 +122,78 @@
   width: 100%;
 }
 
+.buttonKbd {
+  margin-left: 6px;
+  border-color: rgb(255 255 255 / 30%);
+  background: rgb(255 255 255 / 14%);
+  color: inherit;
+}
+
+:global(html[data-theme='dark']) .buttonKbd {
+  border-color: rgb(0 0 0 / 25%);
+  background: rgb(0 0 0 / 10%);
+}
+
 .muted {
+  display: flex;
+  gap: 8px;
   margin: 0;
   color: var(--text-muted);
   font-size: 13px;
+  line-height: 1.45;
+}
+
+.mutedIcon {
+  flex: none;
+  margin-top: 2px;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
   margin: 0;
 }
 
-.field select {
-  width: 100%;
-}
-
 .inputRow {
+  position: relative;
   display: flex;
-  gap: 6px;
+  align-items: center;
 }
 
-.inputRow input {
+.inputIcon {
+  position: absolute;
+  left: 10px;
+  color: var(--text-subtle);
+  pointer-events: none;
+}
+
+.input {
   flex: 1;
   min-width: 0;
+  height: 36px;
+  padding-left: 32px;
+  padding-right: 42px;
+  border-radius: var(--radius-md);
+}
+
+.go {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.go:hover {
+  background: var(--accent);
+  color: var(--accent-text);
 }
 
 .error {
@@ -115,7 +202,7 @@
   font-size: 12px;
 }
 
-.recent {
+.list {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -124,32 +211,27 @@
   list-style: none;
 }
 
-.recentItem {
+.item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
   width: 100%;
-  padding: 5px 8px;
+  padding: 5px 8px 5px 5px;
   border: 0;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: transparent;
   color: var(--text);
   font-size: 13px;
   text-align: left;
 }
 
-.recentItem span {
+.itemText {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.recentItem svg {
-  flex: none;
-  color: var(--text-subtle);
-}
-
-.recentItem:hover {
+.item:hover {
   background: var(--surface-hover);
 }
 

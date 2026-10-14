@@ -80,8 +80,9 @@ export function mediaQueryEdges(text: string): number[] {
 
 /** Swaps `prefers-color-scheme: dark` and `light`, so a page in a light browser shows its dark styles (or back). */
 export function swapColorScheme(text: string): string {
-  return text.replace(/(prefers-color-scheme\s*:\s*)(dark|light)/gi, (_, prefix: string, scheme: string) =>
-    `${prefix}${scheme.toLowerCase() === 'dark' ? 'light' : 'dark'}`,
+  return text.replace(
+    /(prefers-color-scheme\s*:\s*)(dark|light)/gi,
+    (_, prefix: string, scheme: string) => `${prefix}${scheme.toLowerCase() === 'dark' ? 'light' : 'dark'}`,
   );
 }
 

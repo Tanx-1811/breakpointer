@@ -11,7 +11,7 @@
   gap: 8px 10px;
   padding: 10px 12px;
   border: 1px solid var(--warning-border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: var(--warning-bg);
   color: var(--warning-text);
   font-size: 13px;
@@ -22,18 +22,25 @@
 }
 
 .label {
-  font-weight: 500;
+  font-weight: 550;
+  font-size: 13px;
 }
 
 .textarea {
   width: 100%;
-  min-height: 220px;
-  padding: 10px 12px;
+  min-height: 240px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
   font-family: var(--font-mono);
   font-size: 13px;
-  line-height: 1.55;
+  line-height: 1.6;
   resize: vertical;
   tab-size: 2;
+}
+
+.textarea:focus-visible {
+  background: var(--surface);
 }
 
 .hint {

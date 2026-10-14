@@ -11,6 +11,7 @@
   border-radius: var(--radius-lg);
   background: var(--surface-glass);
   box-shadow: var(--shadow-dock);
+  max-width: calc(100% - 32px);
   transform: translateX(-50%);
   backdrop-filter: blur(14px) saturate(1.4);
 }
@@ -30,4 +31,29 @@
   height: 18px;
   margin: 0 3px;
   background: var(--border);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-left: 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.statusIcon {
+  flex: none;
+  color: var(--accent);
+}
+
+.statusText {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.statusText strong {
+  font-weight: 650;
 }

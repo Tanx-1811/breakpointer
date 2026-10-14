@@ -89,7 +89,7 @@ export function PreviewFrame({ src, width, height, zoom, title, onBack, name, na
         data-viewport-height={height}
       />
       {(navigatedAway ?? navigated) && onBack && (
-        <button type="button" className={styles.navigated} onClick={onBack} title={t('frame.navigatedHint')}>
+        <button type="button" className={styles.navigated} onClick={onBack} data-tooltip={t('frame.navigatedHint')}>
           {t('frame.navigated')}
         </button>
       )}

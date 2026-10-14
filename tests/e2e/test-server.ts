@@ -62,6 +62,27 @@ const ISSUES_PAGE = `<!doctype html>
 </body>
 </html>`;
 
+/** Light and dark styles chosen with prefers-color-scheme. */
+const SCHEME_PAGE = page(
+  'Scheme page',
+  `<meta name="color-scheme" content="light dark">
+  <style>body { background: rgb(255, 255, 255); color: rgb(20, 20, 20); }
+  @media (prefers-color-scheme: dark) { body { background: rgb(0, 0, 0); color: rgb(240, 240, 240); } }</style>`,
+);
+
+/** An element whose layout changes at 768px, for the inspector. */
+const INSPECT_PAGE = page(
+  'Inspect page',
+  `<style>#target { display: block; padding: 12px; background: #eef; font-size: 18px; }
+  @media (min-width: 768px) { #target { display: flex; gap: 16px; padding: 24px; } }</style>
+  <script>addEventListener('DOMContentLoaded', () => {
+    const main = document.createElement('main');
+    main.append(Object.assign(document.createElement('div'), { id: 'target', textContent: 'Inspect this box' }));
+    main.append(Object.assign(document.createElement('a'), { id: 'away', href: '/linked', textContent: 'A link' }));
+    document.body.append(main);
+  });</script>`,
+);
+
 type Route = { headers?: Record<string, string>; body: string };
 
 let counter = 0;
@@ -72,6 +93,8 @@ const routes: Record<string, Route | (() => Route)> = {
   '/long': { body: LONG_PAGE },
   '/linked': { body: page('Linked page') },
   '/issues': { body: ISSUES_PAGE },
+  '/scheme': { body: SCHEME_PAGE },
+  '/inspect': { body: INSPECT_PAGE },
   // A site that sends narrow screens to another page, which sends wide screens back.
   '/bounce': {
     body: page(

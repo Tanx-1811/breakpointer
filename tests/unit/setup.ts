@@ -27,6 +27,9 @@ if (!HTMLElement.prototype.showPopover) {
   };
 }
 
+// jsdom doesn't lay out, so it has no scrolling.
+if (!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView = () => {};
+
 // A minimal in-memory stand-in for the extension APIs used by the code under test.
 const store = new Map<string, unknown>();
 const chromeMock = {

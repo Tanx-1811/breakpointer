@@ -10,10 +10,11 @@
   font-size: 11px;
   font-weight: 700;
   line-height: 1;
+  transition: filter var(--duration-fast) ease;
 }
 
 .badge.ok {
-  background: color-mix(in srgb, var(--success) 14%, transparent);
+  background: var(--success-soft);
   color: var(--success);
 }
 
@@ -30,13 +31,24 @@
 .panel {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
 }
 
 .title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.titleWarn {
+  color: var(--warning-text);
+}
+
+.titleOk {
+  color: var(--success);
 }
 
 .panel > p.ok {
@@ -50,16 +62,17 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .issue {
-  padding: 8px 10px;
+  padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
+  background: var(--surface);
 }
 
 .issueHead {
@@ -91,26 +104,34 @@
 
 .highlight {
   flex: none;
-  height: 24px;
-  padding: 0 8px;
+  height: 26px;
+  padding: 0 9px;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-sm);
   background: var(--surface);
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 550;
+  box-shadow: var(--shadow-xs);
+}
+
+.highlight:hover {
+  background: var(--surface-hover);
 }
 
 .highlight[aria-pressed='true'] {
-  border-color: var(--danger);
+  border-color: var(--danger-border);
+  background: var(--danger-soft);
   color: var(--danger);
 }
 
 .samples {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  margin: 6px 0 0 22px;
-  padding: 0;
+  gap: 3px;
+  margin: 8px 0 0 22px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
   list-style: none;
   font-size: 12px;
 }

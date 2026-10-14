@@ -49,6 +49,20 @@ test.describe('accessibility (axe, WCAG 2.1 AA)', () => {
       expect(await seriousViolations(page)).toEqual([]);
       await page.keyboard.press('Escape');
 
+      // The command palette and the inspector.
+      await page.keyboard.press('Control+k');
+      await expect(page.getByTestId('command-palette')).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+      await page.locator('body').click({ position: { x: 5, y: 400 } });
+      await page.keyboard.press('i');
+      await expect(page.getByTestId('inspector')).toBeVisible();
+      await expect(page.getByTestId('inspect-status')).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+      await page.keyboard.press('Escape');
+      await expect(page.getByTestId('inspector')).toBeHidden();
+
       await page.getByRole('button', { name: 'Settings' }).click();
       await expect(page.getByRole('dialog', { name: 'Settings' }).getByTestId('breakpoint-name').first()).toBeVisible();
       expect(await seriousViolations(page)).toEqual([]);

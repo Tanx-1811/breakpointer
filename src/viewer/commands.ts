@@ -10,7 +10,6 @@ import type {
   BreakpointerSettings,
   LanguagePreference,
   ThemePreference,
-  ViewportConfig,
   ViewportPreset,
   WorkspaceLayout,
 } from '../types';
@@ -61,6 +60,7 @@ export type CommandContext = {
   canAdd: boolean;
   focusedId: string | null;
   outlines: boolean;
+  hideScrollbars: boolean;
   liveCss: boolean;
   inspecting: boolean;
   actions: CommandActions;
@@ -89,15 +89,42 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     key: MessageKey,
     command: Omit<PaletteCommand, 'title' | 'keywords'> & { keywords?: string },
     params?: Record<string, string | number>,
-  ) => add({ ...command, title: t(key, params), keywords: [en(key, params), command.keywords].filter(Boolean).join(' ') });
+  ) =>
+    add({ ...command, title: t(key, params), keywords: [en(key, params), command.keywords].filter(Boolean).join(' ') });
 
   /* ---------- Page ---------- */
-  named('address.reloadAll', { id: 'reload', section: section.page, icon: 'reload', shortcut: 'R', disabled: !ctx.hasUrl, run: actions.reloadAll });
-  named('address.openInTab', { id: 'open-tab', section: section.page, icon: 'external', disabled: !ctx.hasUrl, run: actions.openInTab });
-  named('palette.scrollTop', { id: 'scroll-top', section: section.page, icon: 'chevronUp', disabled: !ctx.hasUrl, run: actions.scrollTop });
+  named('address.reloadAll', {
+    id: 'reload',
+    section: section.page,
+    icon: 'reload',
+    shortcut: 'R',
+    disabled: !ctx.hasUrl,
+    run: actions.reloadAll,
+  });
+  named('address.openInTab', {
+    id: 'open-tab',
+    section: section.page,
+    icon: 'external',
+    disabled: !ctx.hasUrl,
+    run: actions.openInTab,
+  });
+  named('palette.scrollTop', {
+    id: 'scroll-top',
+    section: section.page,
+    icon: 'chevronUp',
+    disabled: !ctx.hasUrl,
+    run: actions.scrollTop,
+  });
 
   /* ---------- Viewports ---------- */
-  named('workspace.fit', { id: 'fit', section: section.viewports, icon: 'fit', shortcut: 'F', keywords: en('workspace.fitHint'), run: actions.fit });
+  named('workspace.fit', {
+    id: 'fit',
+    section: section.viewports,
+    icon: 'fit',
+    shortcut: 'F',
+    keywords: en('workspace.fitHint'),
+    run: actions.fit,
+  });
   for (const vp of settings.viewports) {
     const size = `${vp.width} × ${vp.height}`;
     if (!vp.hidden)
@@ -105,7 +132,8 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
         id: `focus-${vp.id}`,
         section: section.viewports,
         icon: ctx.focusedId === vp.id ? 'minimize' : 'maximize',
-        title: ctx.focusedId === vp.id ? t('palette.unfocus', { name: vp.name }) : t('palette.focus', { name: vp.name }),
+        title:
+          ctx.focusedId === vp.id ? t('palette.unfocus', { name: vp.name }) : t('palette.focus', { name: vp.name }),
         keywords: `${en('palette.focus', { name: vp.name })} ${vp.width}`,
         hint: size,
         run: () => actions.focus(vp.id),
@@ -127,7 +155,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
   named('tools.edges', { id: 'edges', section: section.viewports, icon: 'ruler', run: actions.edges });
 
   /* ---------- Add viewport ---------- */
-  named('toolbar.addViewport', { id: 'add', section: section.add, icon: 'plus', shortcut: 'A', disabled: !ctx.canAdd, run: actions.openAdd });
+  named('toolbar.addViewport', {
+    id: 'add',
+    section: section.add,
+    icon: 'plus',
+    shortcut: 'A',
+    disabled: !ctx.canAdd,
+    run: actions.openAdd,
+  });
   for (const preset of PRESETS) {
     const name = t(`preset.${preset.id}` as MessageKey);
     add({
@@ -171,19 +206,52 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     });
   }
   named('groups.save', { id: 'group-save', section: section.groups, icon: 'save', run: actions.saveGroup });
-  named('groups.manage', { id: 'group-manage', section: section.groups, icon: 'settings', disabled: settings.groups.length === 0, run: actions.manageGroups });
+  named('groups.manage', {
+    id: 'group-manage',
+    section: section.groups,
+    icon: 'settings',
+    disabled: settings.groups.length === 0,
+    run: actions.manageGroups,
+  });
 
   /* ---------- Tools ---------- */
-  named('tools.inspect', { id: 'inspect', section: section.tools, icon: 'inspect', shortcut: 'I', checked: ctx.inspecting, run: actions.inspect });
+  named('tools.inspect', {
+    id: 'inspect',
+    section: section.tools,
+    icon: 'inspect',
+    shortcut: 'I',
+    checked: ctx.inspecting,
+    run: actions.inspect,
+  });
   const toggle = (id: ToolToggle, key: MessageKey, checked: boolean) =>
-    named(key, { id: `tool-${id}`, section: section.tools, icon: TOOL_ICONS[id], checked, run: () => actions.toggleTool(id) });
+    named(key, {
+      id: `tool-${id}`,
+      section: section.tools,
+      icon: TOOL_ICONS[id],
+      checked,
+      run: () => actions.toggleTool(id),
+    });
   toggle('syncScroll', 'tools.syncScroll', settings.sync.scroll);
   toggle('syncNavigation', 'tools.syncNavigation', settings.sync.navigation);
   toggle('checks', 'tools.checks', settings.checks);
   toggle('outlines', 'tools.outlines', ctx.outlines);
+  toggle('scrollbars', 'tools.scrollbars', ctx.hideScrollbars);
   toggle('grid', 'tools.grid', settings.grid.show);
-  named('workspace.rulers', { id: 'rulers', section: section.tools, icon: 'ruler', shortcut: 'M', checked: settings.showRulers, run: actions.toggleRulers });
-  named('tools.liveCss', { id: 'live-css', section: section.tools, icon: 'code', checked: ctx.liveCss || undefined, run: actions.liveCss });
+  named('workspace.rulers', {
+    id: 'rulers',
+    section: section.tools,
+    icon: 'ruler',
+    shortcut: 'M',
+    checked: settings.showRulers,
+    run: actions.toggleRulers,
+  });
+  named('tools.liveCss', {
+    id: 'live-css',
+    section: section.tools,
+    icon: 'code',
+    checked: ctx.liveCss || undefined,
+    run: actions.liveCss,
+  });
   for (const set of ['tailwind', 'bootstrap', 'custom', 'site', 'none'] as const) {
     named(
       'palette.breakpoints',
@@ -200,34 +268,128 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
 
   /* ---------- View ---------- */
   for (const zoom of ZOOM_OPTIONS) {
-    named('palette.zoomTo', { id: `zoom-${zoom}`, section: section.view, icon: 'search', run: () => actions.zoomTo(zoom) }, { zoom: formatZoom(zoom) });
+    named(
+      'palette.zoomTo',
+      { id: `zoom-${zoom}`, section: section.view, icon: 'search', run: () => actions.zoomTo(zoom) },
+      { zoom: formatZoom(zoom) },
+    );
   }
-  named('palette.layoutWrap', { id: 'layout-wrap', section: section.view, icon: 'wrap', checked: settings.layout === 'wrap' || undefined, run: () => actions.setLayout('wrap') });
-  named('palette.layoutRow', { id: 'layout-row', section: section.view, icon: 'row', checked: settings.layout === 'row' || undefined, run: () => actions.setLayout('row') });
-  named('palette.themeLight', { id: 'theme-light', section: section.view, icon: 'sun', run: () => actions.setTheme('light') });
-  named('palette.themeDark', { id: 'theme-dark', section: section.view, icon: 'moon', run: () => actions.setTheme('dark') });
-  named('palette.themeSystem', { id: 'theme-system', section: section.view, icon: 'system', run: () => actions.setTheme('system') });
+  named('palette.layoutWrap', {
+    id: 'layout-wrap',
+    section: section.view,
+    icon: 'wrap',
+    checked: settings.layout === 'wrap' || undefined,
+    run: () => actions.setLayout('wrap'),
+  });
+  named('palette.layoutRow', {
+    id: 'layout-row',
+    section: section.view,
+    icon: 'row',
+    checked: settings.layout === 'row' || undefined,
+    run: () => actions.setLayout('row'),
+  });
+  named('palette.themeLight', {
+    id: 'theme-light',
+    section: section.view,
+    icon: 'sun',
+    run: () => actions.setTheme('light'),
+  });
+  named('palette.themeDark', {
+    id: 'theme-dark',
+    section: section.view,
+    icon: 'moon',
+    run: () => actions.setTheme('dark'),
+  });
+  named('palette.themeSystem', {
+    id: 'theme-system',
+    section: section.view,
+    icon: 'system',
+    run: () => actions.setTheme('system'),
+  });
 
   /* ---------- Capture & export ---------- */
-  named('capture.workspace', { id: 'capture', section: section.capture, icon: 'camera', shortcut: 'S', disabled: !ctx.hasUrl, run: () => actions.capture('workspace') });
-  named('capture.all', { id: 'capture-all', section: section.capture, icon: 'gallery', disabled: !ctx.hasUrl, run: () => actions.capture('all') });
-  named('capture.copy', { id: 'capture-copy', section: section.capture, icon: 'clipboard', disabled: !ctx.hasUrl, run: () => actions.capture('copy') });
-  named('tools.report', { id: 'report', section: section.capture, icon: 'report', disabled: !ctx.hasUrl, run: actions.report });
+  named('capture.workspace', {
+    id: 'capture',
+    section: section.capture,
+    icon: 'camera',
+    shortcut: 'S',
+    disabled: !ctx.hasUrl,
+    run: () => actions.capture('workspace'),
+  });
+  named('capture.all', {
+    id: 'capture-all',
+    section: section.capture,
+    icon: 'gallery',
+    disabled: !ctx.hasUrl,
+    run: () => actions.capture('all'),
+  });
+  named('capture.copy', {
+    id: 'capture-copy',
+    section: section.capture,
+    icon: 'clipboard',
+    disabled: !ctx.hasUrl,
+    run: () => actions.capture('copy'),
+  });
+  named('tools.report', {
+    id: 'report',
+    section: section.capture,
+    icon: 'report',
+    disabled: !ctx.hasUrl,
+    run: actions.report,
+  });
   named('settings.export', { id: 'export', section: section.capture, icon: 'download', run: actions.exportSettings });
 
   /* ---------- Saved and recent pages ---------- */
   const recent = settings.recentUrls.filter((url) => !settings.savedPages.includes(url));
   for (const url of settings.savedPages)
-    add({ id: `saved-${url}`, section: section.pages, icon: 'star', title: shortUrl(url), keywords: url, run: () => actions.navigate(url) });
+    add({
+      id: `saved-${url}`,
+      section: section.pages,
+      icon: 'star',
+      title: shortUrl(url),
+      keywords: url,
+      run: () => actions.navigate(url),
+    });
   for (const url of recent)
-    add({ id: `recent-${url}`, section: section.pages, icon: 'clock', title: shortUrl(url), keywords: url, run: () => actions.navigate(url) });
+    add({
+      id: `recent-${url}`,
+      section: section.pages,
+      icon: 'clock',
+      title: shortUrl(url),
+      keywords: url,
+      run: () => actions.navigate(url),
+    });
 
   /* ---------- Preferences ---------- */
-  named('toolbar.settings', { id: 'settings', section: section.preferences, icon: 'settings', run: actions.openSettings });
-  named('toolbar.siteAccess', { id: 'site-access', section: section.preferences, icon: 'shield', run: actions.siteAccess });
+  named('toolbar.settings', {
+    id: 'settings',
+    section: section.preferences,
+    icon: 'settings',
+    run: actions.openSettings,
+  });
+  named('toolbar.siteAccess', {
+    id: 'site-access',
+    section: section.preferences,
+    icon: 'shield',
+    run: actions.siteAccess,
+  });
   named('toolbar.help', { id: 'help', section: section.preferences, icon: 'help', shortcut: '?', run: actions.help });
-  add({ id: 'lang-en', section: section.preferences, icon: 'globe', title: 'English', keywords: 'language ngon ngu', run: () => actions.setLanguage('en') });
-  add({ id: 'lang-vi', section: section.preferences, icon: 'globe', title: 'Tiếng Việt', keywords: 'language ngon ngu vietnamese', run: () => actions.setLanguage('vi') });
+  add({
+    id: 'lang-en',
+    section: section.preferences,
+    icon: 'globe',
+    title: 'English',
+    keywords: 'language ngon ngu',
+    run: () => actions.setLanguage('en'),
+  });
+  add({
+    id: 'lang-vi',
+    section: section.preferences,
+    icon: 'globe',
+    title: 'Tiếng Việt',
+    keywords: 'language ngon ngu vietnamese',
+    run: () => actions.setLanguage('vi'),
+  });
 
   return commands;
 }
@@ -237,5 +399,6 @@ const TOOL_ICONS: Record<ToolToggle, PaletteCommand['icon']> = {
   syncNavigation: 'link',
   checks: 'check',
   outlines: 'outline',
+  scrollbars: 'eyeOff',
   grid: 'columns',
 };

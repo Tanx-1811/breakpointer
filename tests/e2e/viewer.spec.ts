@@ -99,7 +99,7 @@ test.describe('previews', () => {
 test.describe('address bar', () => {
   test('explains why addresses with credentials cannot be previewed', async ({ openViewer }) => {
     const page = await openViewer();
-    const input = page.getByRole('textbox', { name: 'Website address' });
+    const input = page.getByRole('combobox', { name: 'Website address' });
     await input.fill('https://admin:secret@example.com');
     await input.press('Enter');
     await expect(page.getByRole('alert')).toContainText('username or password');
@@ -108,7 +108,7 @@ test.describe('address bar', () => {
 
   test('rejects invalid addresses with a helpful message', async ({ openViewer }) => {
     const page = await openViewer();
-    const input = page.getByRole('textbox', { name: 'Website address' });
+    const input = page.getByRole('combobox', { name: 'Website address' });
     await input.fill('chrome://settings');
     await input.press('Enter');
     await expect(page.getByRole('alert')).toHaveText('Only http:// and https:// pages can be previewed.');
@@ -120,7 +120,7 @@ test.describe('address bar', () => {
 
   test('accepts bare hosts and keeps the address in the URL', async ({ openViewer, server }) => {
     const page = await openViewer();
-    const input = page.getByRole('textbox', { name: 'Website address' });
+    const input = page.getByRole('combobox', { name: 'Website address' });
     await input.fill(server.url('/demo').replace('http://', ''));
     await input.press('Enter');
     await expect(page.getByTestId('preview-frame')).toHaveCount(3);
@@ -436,7 +436,7 @@ test.describe('settings', () => {
     await page.getByRole('button', { name: 'Settings' }).click();
     await page.getByRole('switch', { name: 'Remember recent addresses' }).click();
     await page.keyboard.press('Escape');
-    const input = page.getByRole('textbox', { name: 'Website address' });
+    const input = page.getByRole('combobox', { name: 'Website address' });
     await input.fill(server.url('/demo'));
     await input.press('Enter');
     await expect.poll(async () => (await storedSettings(page))?.recentUrls).toEqual([server.url('/demo')]);
@@ -447,7 +447,7 @@ test.describe('tools', () => {
   test('keyboard shortcuts and help', async ({ openViewer }) => {
     const page = await openViewer();
     await page.locator('body').press('/');
-    await expect(page.getByRole('textbox', { name: 'Website address' })).toBeFocused();
+    await expect(page.getByRole('combobox', { name: 'Website address' })).toBeFocused();
     await page.locator('body').click({ position: { x: 5, y: 300 } });
     await page.keyboard.press('?');
     const help = page.getByRole('dialog', { name: 'Help & keyboard shortcuts' });

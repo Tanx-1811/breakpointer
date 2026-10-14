@@ -1,40 +1,22 @@
 import { readFile } from 'node:fs/promises';
-import type { Frame, Page } from '@playwright/test';
+import type { Frame } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { card, clickInFrame, previewFrames, previewWidths, storedSettings } from './helpers';
-
-/** The preview of `path` at a given layout width. */
-async function frameAt(page: Page, path: string, width: number): Promise<Frame> {
-  await expect.poll(() => previewWidths(page, path)).toContain(width);
-  for (const frame of previewFrames(page, path)) {
-    if ((await frame.evaluate(() => window.innerWidth).catch(() => 0)) === width) return frame;
-  }
-  throw new Error(`No ${width}px preview of ${path}`);
-}
+import {
+  agentsReady,
+  card,
+  clickInFrame,
+  frameAt,
+  openTools,
+  previewFrames,
+  previewWidths,
+  storedSettings,
+} from './helpers';
 
 const scrollRatio = (frame: Frame) =>
   frame.evaluate(() => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
     return max > 0 ? Math.round((window.scrollY / max) * 100) / 100 : 0;
   });
-
-/** Waits until the frame agent in every preview of `path` has started. */
-async function agentsReady(page: Page, path: string) {
-  await expect
-    .poll(async () => {
-      const frames = previewFrames(page, path);
-      if (frames.length < 3) return false;
-      // The agent runs in an isolated world; its effects are visible in the DOM only once asked, so
-      // wait for the checks it reports instead (they are on by default).
-      return (await page.getByTestId('checks-badge').count()) === 3;
-    })
-    .toBe(true);
-}
-
-async function openTools(page: Page) {
-  await page.getByRole('button', { name: 'Tools' }).click();
-  return page.getByRole('menu', { name: 'Tools' });
-}
 
 test.describe('tools inside previews', () => {
   test('scrolling one preview scrolls the others', async ({ openViewer, server }) => {

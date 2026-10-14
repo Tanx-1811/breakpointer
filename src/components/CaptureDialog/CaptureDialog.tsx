@@ -15,7 +15,7 @@ type Props = {
 export function CaptureDialog({ open, onAllow, onClose, busy }: Props) {
   const { t } = useI18n();
   return (
-    <Dialog open={open} title={t('capture.title')} onClose={onClose} width={480}>
+    <Dialog open={open} title={t('capture.title')} icon="camera" onClose={onClose} width={500}>
       <p className={styles.body}>{t('capture.description')}</p>
       <p className={styles.privacy}>{t('access.privacy')}</p>
       <div className={styles.footer}>

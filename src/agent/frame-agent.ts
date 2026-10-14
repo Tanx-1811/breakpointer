@@ -150,7 +150,11 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       if (element === document.documentElement || element === document.body) break;
       if (element.hasAttribute(OVERLAY_ATTRIBUTE) || fixedOrSticky(element)) continue;
       const chain: Element[] = [];
-      for (let node: Element | null = element; node && node !== document.body && chain.length < 3; node = node.parentElement)
+      for (
+        let node: Element | null = element;
+        node && node !== document.body && chain.length < 3;
+        node = node.parentElement
+      )
         chain.push(node);
       return {
         selectors: chain.map(cssPath),
@@ -166,7 +170,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   const scrollToAnchor = (anchor: ScrollAnchor): boolean => {
     for (const [index, selector] of anchor.selectors.entries()) {
-      let element: Element | null = null;
+      let element: Element | null;
       try {
         element = document.querySelector(selector);
       } catch {
@@ -775,6 +779,12 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         setStyle(
           'bp-outlines',
           command.on ? '*{outline:1px solid rgba(99,102,241,.55) !important;outline-offset:-1px !important}' : '',
+        );
+        break;
+      case 'scrollbars':
+        setStyle(
+          'bp-scrollbars',
+          command.hidden ? 'html{scrollbar-width:none !important}html::-webkit-scrollbar{display:none !important}' : '',
         );
         break;
       case 'css':

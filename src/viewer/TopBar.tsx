@@ -24,7 +24,8 @@ type Props = {
   onBack: () => void;
   onForward: () => void;
   onAddressChange: (value: string) => void;
-  onSubmit: () => void;
+  /** Submits the typed address, or a suggestion picked from the list. */
+  onSubmit: (value?: string) => void;
   onReloadAll: () => void;
   onOpenInTab: () => void;
   onPalette: () => void;

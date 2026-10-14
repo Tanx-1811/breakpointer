@@ -1,6 +1,6 @@
 # Breakpointer — Product & Delivery Plan
 
-> **Version:** 0.2.0 · **Status:** V1 plus the v0.2 inspection toolkit, built and tested; ready for store preparation
+> **Version:** 0.3.0 · **Status:** V1, the v0.2 inspection toolkit and the v0.3 redesign and pro toolkit, built and tested; ready for store preparation
 > **Source:** refines the original planning brief (`plan.md`) into a delivery plan with decisions, status and acceptance criteria.
 
 **Product goal:** help people check how a website looks at several viewport sizes, side by side, directly in Chrome — reliably, with minimal permissions, and honest about limits.
@@ -17,6 +17,7 @@
 | M2 — Working MVP               | Toolbar, workspace, presets, custom sizes, add/remove/reload/rotate, zoom, persistence, errors | ✅ Done                            | `src/`, `tests/e2e/viewer.spec.ts`                                      |
 | M3 — Quality & packaging       | Tests, accessibility, permission review, store assets, packaged build                          | ✅ Done (store submission pending) | `tests/`, `brand/`, `docs/STORE_LISTING.md`, `npm run package`          |
 | v0.2 — Inspection toolkit      | Sync, responsive checks, outlines, live CSS, grid, custom breakpoints, saved pages, report     | ✅ Done                            | [§3](#v02--inspection-toolkit--delivered), `tests/e2e/tools.spec.ts`    |
+| v0.3 — Redesign & pro toolkit  | New design system, command palette, inspector, drag to resize, site breakpoints, page colours  | ✅ Done                            | [§3](#v03--redesign-and-pro-toolkit--delivered), `features.spec.ts`     |
 | M4 — Feedback-driven iteration | Small user group, privacy-respecting feedback, prioritise next features                        | ⏳ Next                            | [§8](#8-milestone-4--feedback-and-iteration)                            |
 
 ---
@@ -40,6 +41,14 @@
 | D13 | The agent works only on sites the user allowed; it returns at once unless it is a preview frame directly in a Breakpointer workspace | No new install warning, no new host access; same consent as showing blocked sites                                                                                       | —                                                                                    |
 | D14 | Sync scrolling, sync navigation and responsive checks are on by default (switchable); outlines and live CSS last one session         | They help on every page and are cheap; injected styles shouldn't surprise users later                                                                                   | Feedback                                                                             |
 | D15 | Reports are a self-contained HTML file made in the browser (screenshots + checks), no scripts                                        | Shareable without a server; consistent with "nothing leaves your browser"                                                                                               | Demand for PDF or hosted reports                                                     |
+| D16 | A small in-house design system: tokens in `styles/global.css`, CSS Modules, native controls styled (no UI library)                   | Keeps React as the only runtime dependency, full control of both themes, accessible native behaviour (selects, dialogs, popovers)                                       | A component library would save more than it costs                                    |
+| D17 | Command palette commands are a snapshot taken when it opens                                                                          | Running a command closes the palette, so the snapshot never goes stale; keeps render pure                                                                               | Commands that keep the palette open                                                  |
+| D18 | The inspector finds "the same element" in other previews by a structural selector (unique id, else tag and position), not classes    | Responsive frameworks change classes at breakpoints; the DOM structure is what stays the same across widths                                                             | Pages whose structure differs by width (separate mobile markup)                      |
+| D19 | Page colours (light/dark) swap `prefers-color-scheme` in the page's readable stylesheets; no device emulation, no `debugger`         | Works per preview without a new permission; honest about limits (styles chosen by script or in unreadable cross-origin sheets don't follow)                             | Chrome lets an embedder set a frame's preferred colour scheme                        |
+| D20 | Site breakpoints are read from the CSSOM (media rules, imports, `<link media>`); the 12 most used widths are kept                    | No network requests and no new permission; most sites ship several libraries, the most used widths are the meaningful ones                                              | Demand for container queries or height breakpoints                                   |
+| D21 | Each previewed address is a history entry of the workspace tab (`pushState`); back/forward use the Navigation API                    | Chrome's own back button, `Alt+←` and mouse buttons just work; no extra state to store                                                                                  | —                                                                                    |
+| D22 | While an edge is dragged, preview frames ignore the pointer                                                                          | Chrome routes pointer events to a frame of another site under the pointer despite pointer capture                                                                       | Chrome fixes capture across out-of-process frames                                    |
+| D23 | Synced scrolling aligns the same content (element at a reading line), falling back to the scroll ratio                               | Layouts differ by width: the same percentage shows different content, the same element doesn't                                                                          | —                                                                                    |
 
 ---
 
@@ -92,6 +101,16 @@
 - [x] **HTML report** with a screenshot and the checks of every visible viewport.
 - [x] More presets: compact phone, foldables (folded/open), 11″ pro tablet, 14″ laptop, ultrawide, 4K.
 
+### v0.3 — Redesign and pro toolkit — delivered
+
+- [x] **New design system** (colours, depth, motion, type in both themes), redesigned workspace, cards, dialogs, popup and welcome page; floating zoom dock; styled selects; tooltips with shortcuts; two-pane Settings.
+- [x] **Command palette** (`Ctrl/⌘ + K`): actions, presets, groups, pages and settings; preview a typed address; accent-insensitive search.
+- [x] **Drag to resize** with breakpoint snapping, guides and keyboard support; **focus mode**; **back/forward** between previewed pages; **address suggestions**.
+- [x] **Inspector**: pick an element in one preview, compare it at every size, see what changes.
+- [x] **This site's breakpoints** (from its media queries) for labels, snapping, edges and custom breakpoints.
+- [x] **Page colours per viewport** (light/dark styles via `prefers-color-scheme`).
+- [x] **All viewports in one image**, **copy screenshot**, **hide scrollbars**, **sort by width**, **scroll all to top**; synced scrolling by content.
+
 ### Non-goals (unchanged)
 
 No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise that every site embeds, no claim of real-device emulation.
@@ -115,22 +134,22 @@ No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justificati
 
 ## 5. Quality
 
-| Area          | How it's covered                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Logic         | 89 unit tests (URLs, viewport ops, fit, storage validation and import, groups, breakpoints and edges, grid, saved pages, report HTML escaping, i18n completeness, reducer, DNR rule, components)                                                                                                                                                                                                                                               |
-| Behaviour     | 67 end-to-end tests in Chrome for Testing with the real extension: real viewport widths, blocked/allowed sites, frame-busting, add/resize/rotate/remove/undo, groups, persistence, malformed storage, language, theme, rulers, export/import, screenshots, popup, keyboard; synced scroll/navigation, checks and highlight, outlines, live CSS, grid, custom breakpoints, edges, saved pages, report, wheel zoom and pan, tools without access |
-| Accessibility | axe (WCAG 2.1 A/AA, serious+critical) on the workspace, dialogs, Tools menu, checks panel, live CSS, settings and popup in light and dark                                                                                                                                                                                                                                                                                                      |
-| Permissions   | E2E asserts the production manifest's permissions and that no host access exists at install                                                                                                                                                                                                                                                                                                                                                    |
-| CI            | GitHub Actions: lint, format, typecheck, unit, build, e2e, packaged zip artifact                                                                                                                                                                                                                                                                                                                                                               |
-| Manual        | [TESTING.md](TESTING.md) compatibility matrix and release checklist                                                                                                                                                                                                                                                                                                                                                                            |
+| Area          | How it's covered                                                                                                                                                                                                                                                                                                                                                                                      |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Logic         | 115 unit tests (URLs, viewport ops, fit, storage validation and import, groups, breakpoints, site breakpoints and edges, media-query parsing, colour-scheme swapping, selectors, command search, drag snapping, image sheet layout, inspector diffs, grid, saved pages, report HTML escaping, shortcuts, i18n completeness, reducer, DNR rule, components incl. palette, inspector and preset search) |
+| Behaviour     | 79 end-to-end tests in Chrome for Testing with the real extension: everything in v0.2 plus the command palette, back/forward, address suggestions, drag and keyboard resizing with snapping, focus mode, site breakpoints and their edges, the inspector, page colours, hidden scrollbars, the all-in-one image, copying and sorting                                                                  |
+| Accessibility | axe (WCAG 2.1 A/AA, serious+critical) on the workspace, dialogs, Tools menu, checks panel, live CSS, command palette, inspector, settings and popup in light and dark                                                                                                                                                                                                                                 |
+| Permissions   | E2E asserts the production manifest's permissions and that no host access exists at install                                                                                                                                                                                                                                                                                                           |
+| CI            | GitHub Actions: lint, format, typecheck, unit, build, e2e, packaged zip artifact                                                                                                                                                                                                                                                                                                                      |
+| Manual        | [TESTING.md](TESTING.md) compatibility matrix and release checklist                                                                                                                                                                                                                                                                                                                                   |
 
 ---
 
 ## 6. Release plan (M3 → store)
 
-1. `npm run package` → `release/breakpointer-0.2.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
+1. `npm run package` → `release/breakpointer-0.3.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
 2. Create the Chrome Web Store item; upload the zip.
-3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/1–5`, promo tiles `brand/store/promo-*.png`.
+3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/` (the five listed in STORE_LISTING.md), promo tiles `brand/store/promo-*.png`.
 4. Privacy tab: single purpose, permission justifications, "does not collect user data", link to a hosted copy of [PRIVACY.md](PRIVACY.md).
 5. Provide a support contact (email or GitHub issues).
 6. Submit for review; publish as **unlisted** first for the M4 test group, then public.
@@ -169,20 +188,21 @@ Success signals (only from opt-in feedback): successful preview starts, how ofte
 
 ---
 
-## 9. Roadmap after V1 (ideas, ordered by expected value)
+## 9. Roadmap (ideas, ordered by expected value)
 
-**Delivered in v0.2:** synchronized scrolling and navigation, custom breakpoints, overflow and other responsive checks, a simple report (see §3).
+**Delivered in v0.2:** synchronized scrolling and navigation, custom breakpoints, overflow and other responsive checks, a simple report. **Delivered in v0.3:** the responsive inspector (an element compared at every size), the page's own breakpoints, drag to resize, page colours, the command palette and the redesign (see §3).
 
-**v0.3 — polish from feedback**
+**v0.4 — polish from feedback**
 
 - "Allow for this session" site access.
 - Per-group breakpoint sets; remember live CSS snippets.
+- Compare two addresses (e.g. production and staging) side by side with the same viewports.
 - More languages if requested.
 
-**V2 — Responsive Inspector**
+**V2 — Deeper inspection**
 
-- Inspect an element's box at each size (click in one preview, highlight it in all).
-- Compare two viewport configurations side by side.
+- Container-query and height breakpoints; measure distances between elements.
+- Inspector: follow the element while navigating; export its comparison to the report.
 
 **V3 — Visual regression**
 

@@ -2,7 +2,9 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { CommandPalette } from '../../src/components/CommandPalette/CommandPalette';
 import { AddViewportDialog } from '../../src/components/DevicePresetPicker/AddViewportDialog';
+import { InspectorPanel } from '../../src/components/Inspector/InspectorPanel';
 import { Menu } from '../../src/components/Menu/Menu';
 import { ViewportCard, type ViewportCardActions } from '../../src/components/ViewportCard/ViewportCard';
 import { I18nProvider } from '../../src/i18n/I18nProvider';
@@ -20,11 +22,14 @@ function actions(): ViewportCardActions {
     onMove: vi.fn(),
     onReload: vi.fn(),
     onCapture: vi.fn(),
+    onCopy: vi.fn(),
     onOpenInTab: vi.fn(),
     onOpenInWindow: vi.fn(),
     onDuplicate: vi.fn(),
     onHide: vi.fn(),
     onRemove: vi.fn(),
+    onFocus: vi.fn(),
+    onColorScheme: vi.fn(),
   };
 }
 
@@ -172,5 +177,130 @@ describe('Menu', () => {
     expect(first).not.toHaveBeenCalled();
     expect(screen.queryByRole('menu')).toBeNull();
     expect(trigger).toHaveFocus();
+  });
+});
+
+describe('CommandPalette', () => {
+  it('filters as you type and runs the highlighted command with Enter', async () => {
+    const user = userEvent.setup();
+    const reload = vi.fn();
+    const add = vi.fn();
+    const onClose = vi.fn();
+    wrap(
+      <CommandPalette
+        open
+        commands={[
+          { id: 'reload', section: 'Page', title: 'Reload all previews', run: reload },
+          { id: 'add', section: 'Add viewport', title: 'Add Tablet', keywords: '768x1024 iPad', run: add },
+        ]}
+        onClose={onClose}
+      />,
+    );
+    const input = screen.getByRole('combobox', { name: 'Search commands, sizes, groups and pages' });
+    expect(screen.getAllByRole('option')).toHaveLength(2);
+    await user.type(input, 'ipad');
+    expect(screen.getAllByRole('option').map((option) => option.textContent)).toEqual([
+      expect.stringContaining('Add Tablet'),
+    ]);
+    await user.keyboard('{Enter}');
+    expect(onClose).toHaveBeenCalled();
+    expect(add).toHaveBeenCalled();
+    expect(reload).not.toHaveBeenCalled();
+  });
+
+  it('offers to preview a typed address', async () => {
+    const user = userEvent.setup();
+    const go = vi.fn();
+    wrap(
+      <CommandPalette
+        open
+        commands={[]}
+        fromQuery={(query) => ({ id: 'go', section: 'Page', title: `Preview ${query}`, run: go })}
+        onClose={() => {}}
+      />,
+    );
+    await user.type(screen.getByRole('combobox'), 'example.com');
+    expect(screen.getByRole('option', { name: /Preview example.com/ })).toHaveAttribute('aria-selected', 'true');
+    await user.keyboard('{Enter}');
+    expect(go).toHaveBeenCalled();
+  });
+});
+
+describe('InspectorPanel', () => {
+  const base = {
+    picking: false,
+    needsAccess: false,
+    host: 'example.com',
+    busy: false,
+    onPick: vi.fn(),
+    onClear: vi.fn(),
+    onClose: vi.fn(),
+    onReveal: vi.fn(),
+    onCopySelector: vi.fn(),
+    onAllowSite: vi.fn(),
+  };
+  const info = (width: number, display: string) => ({
+    label: 'main > h1',
+    width,
+    height: 40,
+    top: 0,
+    left: 0,
+    visible: display !== 'none',
+    display,
+    position: 'static',
+    fontSize: '24px',
+    lineHeight: '32px',
+    fontWeight: '700',
+    margin: '0',
+    padding: '0',
+    layout: '',
+  });
+
+  it('invites to pick an element when nothing is selected', () => {
+    wrap(<InspectorPanel {...base} selector={null} rows={[]} />);
+    expect(screen.getByText('Compare an element at every size')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Pick an element' })).not.toHaveLength(0);
+  });
+
+  it('lists the element in every viewport and marks what changes', () => {
+    wrap(
+      <InspectorPanel
+        {...base}
+        selector="main > h1:nth-of-type(1)"
+        rows={[
+          { id: 'a', name: 'Phone', width: 375, height: 667, sizeClass: 'phone', info: info(343, 'block') },
+          { id: 'b', name: 'Laptop', width: 1366, height: 768, sizeClass: 'laptop', info: info(800, 'flex') },
+          { id: 'c', name: 'Tablet', width: 768, height: 1024, sizeClass: 'tablet', info: null },
+        ]}
+      />,
+    );
+    expect(screen.getByText('main > h1')).toBeInTheDocument();
+    expect(screen.getAllByTestId('inspector-size').map((size) => size.textContent)).toEqual(['343 × 40', '800 × 40']);
+    expect(screen.getByText('Not on this page')).toBeInTheDocument();
+    const changed = document.querySelectorAll('[data-changed]');
+    expect([...changed].map((item) => item.textContent)).toEqual(['Displayblock', 'Displayflex']);
+  });
+});
+
+describe('AddViewportDialog search', () => {
+  it('filters presets by name or size and marks sizes already in the workspace', async () => {
+    const user = userEvent.setup();
+    wrap(
+      <AddViewportDialog
+        open
+        canAdd
+        viewports={[createViewport({ name: 'Phone', width: 375, height: 667 })]}
+        onAdd={() => {}}
+        onClose={() => {}}
+      />,
+    );
+    expect(within(screen.getByTestId('preset-mobile-m')).getByText('Already in the workspace')).toBeInTheDocument();
+    await user.type(screen.getByRole('searchbox', { name: 'Search presets' }), '1024');
+    expect(screen.getByTestId('preset-tablet-m')).toBeInTheDocument();
+    expect(screen.queryByTestId('preset-mobile-m')).toBeNull();
+    await user.clear(screen.getByRole('searchbox', { name: 'Search presets' }));
+    await user.click(screen.getByRole('radio', { name: 'Desktop' }));
+    expect(screen.getByTestId('preset-desktop-4k')).toBeInTheDocument();
+    expect(screen.queryByTestId('preset-tablet-m')).toBeNull();
   });
 });

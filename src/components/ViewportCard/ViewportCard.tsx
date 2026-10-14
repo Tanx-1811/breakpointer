@@ -1,4 +1,4 @@
-import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import type { CheckKind, CheckReport } from '../../agent/protocol';
 import { breakpointFor } from '../../data/breakpoints';
 import { useI18n } from '../../i18n/I18nProvider';
@@ -15,6 +15,7 @@ import { Icon } from '../Icon/Icon';
 import { Menu, type MenuEntry } from '../Menu/Menu';
 import { PreviewFrame } from '../PreviewFrame/PreviewFrame';
 import { RULER_SIZE, Ruler } from '../Ruler/Ruler';
+import { Select } from '../Select/Select';
 import styles from './ViewportCard.module.css';
 
 export { formatZoom };
@@ -82,22 +83,29 @@ type Props = ViewportCardActions & {
   zoomOverride?: number;
 };
 
-type Drag = { width: number; height: number; snapped: number | null; axis: 'x' | 'y' | 'xy' };
+type Drag = {
+  axis: 'x' | 'y' | 'xy';
+  width: number;
+  height: number;
+  snapped: number | null;
+  /** Where the drag started (pointer and size). */
+  startX: number;
+  startY: number;
+  startWidth: number;
+  startHeight: number;
+};
 
 export function ViewportCard(props: Props) {
   const { viewport, src, reloadKey, index, count, canDuplicate, breakpointSet, showRulers } = props;
   const { t } = useI18n();
   const stageRef = useRef<HTMLDivElement>(null);
-  const dragOrigin = useRef<{ x: number; y: number; width: number; height: number } | null>(null);
   const [drag, setDrag] = useState<Drag | null>(null);
 
   const { name, orientation, colorScheme } = viewport;
   const width = drag?.width ?? viewport.width;
   const height = drag?.height ?? viewport.height;
   const zoom = props.zoomOverride ?? viewport.zoom;
-  const zoomOptions = ZOOM_OPTIONS.includes(viewport.zoom)
-    ? ZOOM_OPTIONS
-    : [...ZOOM_OPTIONS, viewport.zoom].sort((a, b) => a - b);
+  const zoomOptions = ZOOM_OPTIONS.includes(zoom) ? ZOOM_OPTIONS : [...ZOOM_OPTIONS, zoom].sort((a, b) => a - b);
   const breakpoint = breakpointFor(breakpointSet, width, props.customBreakpoints, props.siteBreakpoints);
   const rulerSize = showRulers ? RULER_SIZE : 0;
   const contentWidth = Math.round(width * zoom) + rulerSize;
@@ -170,22 +178,42 @@ export function ViewportCard(props: Props) {
 
   /* ---------- Resizing by dragging an edge ---------- */
 
-  const startDrag = (axis: Drag['axis']) => (event: PointerEvent<HTMLElement>) => {
+  // While dragging, preview frames must not take the pointer: Chrome sends the
+  // events to a frame from another site under the pointer, despite pointer capture.
+  const dragAxis = drag?.axis;
+  useLayoutEffect(() => {
+    if (!dragAxis) return;
+    const root = document.documentElement;
+    root.dataset.resizing = dragAxis;
+    return () => {
+      delete root.dataset.resizing;
+    };
+  }, [dragAxis]);
+
+  const startDrag = (axis: Drag['axis'], event: PointerEvent<HTMLElement>) => {
     if (event.button !== 0) return;
     event.preventDefault();
+    // Capturing the pointer keeps the drag going over the preview frames.
     event.currentTarget.setPointerCapture(event.pointerId);
-    dragOrigin.current = { x: event.clientX, y: event.clientY, width: viewport.width, height: viewport.height };
-    setDrag({ width: viewport.width, height: viewport.height, snapped: null, axis });
+    setDrag({
+      axis,
+      width: viewport.width,
+      height: viewport.height,
+      snapped: null,
+      startX: event.clientX,
+      startY: event.clientY,
+      startWidth: viewport.width,
+      startHeight: viewport.height,
+    });
   };
 
   const moveDrag = (event: PointerEvent<HTMLElement>) => {
-    const origin = dragOrigin.current;
-    if (!origin || !drag) return;
+    if (!drag) return;
     // Shift: steps of 10px. Alt: no snapping to breakpoints.
     const step = event.shiftKey ? 10 : undefined;
     const next = { ...drag };
     if (drag.axis !== 'y') {
-      const result = resolveDrag(origin.width + (event.clientX - origin.x) / zoom, {
+      const result = resolveDrag(drag.startWidth + (event.clientX - drag.startX) / zoom, {
         targets: event.altKey ? [] : snapWidths,
         threshold: SNAP_DISTANCE / zoom,
         step,
@@ -193,29 +221,26 @@ export function ViewportCard(props: Props) {
       next.width = result.value;
       next.snapped = result.snapped;
     }
-    if (drag.axis !== 'x') next.height = resolveDrag(origin.height + (event.clientY - origin.y) / zoom, { step }).value;
+    if (drag.axis !== 'x')
+      next.height = resolveDrag(drag.startHeight + (event.clientY - drag.startY) / zoom, { step }).value;
     if (next.width !== drag.width || next.height !== drag.height || next.snapped !== drag.snapped) setDrag(next);
   };
 
   const endDrag = (commit: boolean) => {
-    // Pointer up and the loss of pointer capture both end a drag; only the first counts.
-    if (!dragOrigin.current) return;
-    const final = drag;
-    dragOrigin.current = null;
+    if (!drag) return;
     setDrag(null);
-    if (!commit || !final) return;
+    if (!commit) return;
     const patch: { width?: number; height?: number } = {};
-    if (final.width !== viewport.width) patch.width = final.width;
-    if (final.height !== viewport.height) patch.height = final.height;
+    if (drag.width !== viewport.width) patch.width = drag.width;
+    if (drag.height !== viewport.height) patch.height = drag.height;
     if (patch.width !== undefined || patch.height !== undefined) props.onResize(patch);
   };
 
   const handleProps = (axis: Drag['axis']) => ({
-    onPointerDown: startDrag(axis),
+    onPointerDown: (event: PointerEvent<HTMLElement>) => startDrag(axis, event),
     onPointerMove: moveDrag,
     onPointerUp: () => endDrag(true),
     onPointerCancel: () => endDrag(false),
-    onLostPointerCapture: () => endDrag(true),
   });
 
   const onHandleKey = (axis: 'x' | 'y') => (event: KeyboardEvent<HTMLDivElement>) => {
@@ -226,7 +251,8 @@ export function ViewportCard(props: Props) {
     if (next !== current) props.onResize(axis === 'x' ? { width: next } : { height: next });
   };
 
-  const guides = drag && drag.axis !== 'y' ? snapWidths.filter((value) => value < width) : [];
+  // Breakpoints within the dragged width, including the one the edge snapped to.
+  const guides = drag && drag.axis !== 'y' ? snapWidths.filter((value) => value <= width) : [];
 
   return (
     <section
@@ -354,10 +380,12 @@ export function ViewportCard(props: Props) {
           <label className="visually-hidden" htmlFor={`zoom-${viewport.id}`}>
             {t('card.zoomLabel', { name })}
           </label>
-          <select
+          <Select
             id={`zoom-${viewport.id}`}
-            className={`field ${styles.zoom}`}
-            value={viewport.zoom}
+            size="sm"
+            mono
+            className={styles.zoom}
+            value={zoom}
             onChange={(event) => props.onZoom(Number(event.target.value))}
             data-tooltip={t('card.zoomHint')}
             disabled={props.zoomOverride !== undefined}
@@ -367,7 +395,7 @@ export function ViewportCard(props: Props) {
                 {formatZoom(option)}
               </option>
             ))}
-          </select>
+          </Select>
         </div>
       </header>
 
@@ -401,13 +429,20 @@ export function ViewportCard(props: Props) {
               />
             ) : (
               <div className={styles.placeholder} style={{ width: width * zoom, height: height * zoom }}>
-                <span className={styles.placeholderIcon}>
-                  <Icon name={SIZE_CLASS_ICONS[sizeClass]} size={22} />
-                </span>
-                <span className={styles.placeholderSize}>
-                  {width} × {height}
-                </span>
-                <span className={styles.placeholderHint}>{t('card.placeholder')}</span>
+                {/* Only what fits at this zoom. */}
+                {width * zoom >= 64 && height * zoom >= 64 && (
+                  <span className={styles.placeholderIcon}>
+                    <Icon name={SIZE_CLASS_ICONS[sizeClass]} size={22} />
+                  </span>
+                )}
+                {width * zoom >= 96 && (
+                  <span className={styles.placeholderSize}>
+                    {width} × {height}
+                  </span>
+                )}
+                {width * zoom >= 170 && height * zoom >= 150 && (
+                  <span className={styles.placeholderHint}>{t('card.placeholder')}</span>
+                )}
               </div>
             )}
             {props.grid?.show && <GridOverlay grid={props.grid} width={width} height={height} zoom={zoom} />}
@@ -417,6 +452,7 @@ export function ViewportCard(props: Props) {
                 className={styles.guide}
                 style={{ left: value * zoom }}
                 data-snapped={drag?.snapped === value || undefined}
+                data-edge={value >= width - 1 || undefined}
                 aria-hidden="true"
               >
                 <span className={styles.guideLabel}>{value}</span>

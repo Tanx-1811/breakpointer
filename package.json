@@ -1,7 +1,7 @@
 {
   "name": "breakpointer",
   "private": true,
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Preview websites at multiple viewport sizes and check responsive layouts directly in Chrome.",
   "type": "module",
   "scripts": {

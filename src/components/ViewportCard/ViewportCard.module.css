@@ -247,19 +247,26 @@
 
 .zoom {
   flex: none;
+}
+
+.zoom select {
   height: 24px;
-  padding: 0 4px;
+  padding-left: 6px;
+  padding-right: 22px;
   border-color: transparent;
   background: transparent;
   box-shadow: none;
   color: var(--text-muted);
-  font-family: var(--font-mono);
   font-size: 12px;
 }
 
-.zoom:hover:not(:disabled) {
+.zoom select:hover:not(:disabled) {
   border-color: var(--border);
   background: var(--surface-hover);
+}
+
+.zoom svg {
+  right: 6px;
 }
 
 .error {
@@ -419,6 +426,16 @@
 
 .guide[data-snapped] {
   border-left: 2px solid var(--breakpoint);
+}
+
+/* At the frame's edge (where the dragged edge snapped): drawn just inside, label on the left. */
+.guide[data-edge] {
+  margin-left: -2px;
+}
+
+.guide[data-edge] .guideLabel {
+  left: auto;
+  right: 4px;
 }
 
 .guideLabel {

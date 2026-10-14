@@ -57,7 +57,8 @@ export function TooltipLayer() {
     };
 
     const onPointerOver = (event: PointerEvent) => {
-      if (event.pointerType === 'touch') return;
+      // No tooltips on touch, or while dragging (a resize handle, a chip…).
+      if (event.pointerType === 'touch' || event.buttons !== 0) return;
       const target = tooltipTarget(event.target);
       if (target === current) return;
       if (!target) {

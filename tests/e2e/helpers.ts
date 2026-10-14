@@ -1,4 +1,4 @@
-import type { Frame, Page } from '@playwright/test';
+import { expect, type Frame, type Page } from '@playwright/test';
 
 /** Frames whose URL contains `path`, i.e. the previews of that page. */
 export function previewFrames(page: Page, path: string): Frame[] {
@@ -51,7 +51,14 @@ export async function clickInFrame(page: Page, frame: Frame, selector: string) {
     return { x: rect.left + Math.min(rect.width / 2, 20), y: rect.top + rect.height / 2, width: innerWidth };
   }, selector);
   const zoom = box.width / point.width;
-  await page.mouse.click(box.x + point.x * zoom, box.y + point.y * zoom);
+  const x = box.x + point.x * zoom;
+  const y = box.y + point.y * zoom;
+  // Move first and let the card's hover transitions finish (Chrome updates
+  // its hit-testing for the out-of-process frame meanwhile): a click right on
+  // arrival is sometimes not delivered to the frame.
+  await page.mouse.move(x, y, { steps: 2 });
+  await page.waitForTimeout(400);
+  await page.mouse.click(x, y);
 }
 
 export function card(page: Page, name: string) {
@@ -63,4 +70,31 @@ export async function storedSettings(page: Page): Promise<Record<string, unknown
     async () =>
       (await chrome.storage.local.get('breakpointer.settings'))['breakpointer.settings'] as Record<string, unknown>,
   );
+}
+
+/** The preview of `path` at a given layout width. */
+export async function frameAt(page: Page, path: string, width: number): Promise<Frame> {
+  await expect.poll(() => previewWidths(page, path)).toContain(width);
+  for (const frame of previewFrames(page, path)) {
+    if ((await frame.evaluate(() => window.innerWidth).catch(() => 0)) === width) return frame;
+  }
+  throw new Error(`No ${width}px preview of ${path}`);
+}
+
+/** Waits until the frame agent in every preview of `path` has started. */
+export async function agentsReady(page: Page, path: string, count = 3) {
+  await expect
+    .poll(async () => {
+      const frames = previewFrames(page, path);
+      if (frames.length < count) return false;
+      // The agent runs in an isolated world; its effects are visible in the DOM only once asked, so
+      // wait for the checks it reports instead (they are on by default).
+      return (await page.getByTestId('checks-badge').count()) === count;
+    })
+    .toBe(true);
+}
+
+export async function openTools(page: Page) {
+  await page.getByRole('button', { name: 'Tools' }).click();
+  return page.getByRole('menu', { name: 'Tools' });
 }

@@ -50,15 +50,21 @@ export type PresetNamer = (presetId: string) => string;
 
 const englishNamer: PresetNamer = (id) => en[`preset.${id}` as MessageKey] ?? id;
 
+/**
+ * The first-run viewports. Their ids are fixed, so two workspace tabs opened
+ * on a fresh install create the same workspace instead of replacing each
+ * other's (which would reload every preview).
+ */
 export function defaultViewports(name: PresetNamer = englishNamer): ViewportConfig[] {
   return DEFAULT_PRESET_IDS.map((id) => {
     const preset = findPreset(id)!;
-    return createViewport({
+    const viewport = createViewport({
       name: name(id),
       width: preset.width,
       height: preset.height,
       zoom: suggestedZoom(preset.width, preset.height),
     });
+    return { ...viewport, id: `default-${id}` };
   });
 }
 

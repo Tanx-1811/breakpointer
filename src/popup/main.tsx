@@ -16,6 +16,7 @@ async function bootstrap() {
   const tabUrl = href ? new URL(href) : null;
   const inWorkspace = Boolean(tabs[0]?.url?.startsWith(chrome.runtime.getURL('viewer/')));
   const shortcut = commands.find((command) => command.name === '_execute_action')?.shortcut ?? '';
+  const previewShortcut = commands.find((command) => command.name === 'preview-current-page')?.shortcut ?? '';
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
@@ -25,6 +26,7 @@ async function bootstrap() {
         restricted={Boolean(tabUrl && isRestrictedHost(tabUrl))}
         inWorkspace={inWorkspace}
         shortcut={shortcut}
+        previewShortcut={previewShortcut}
       />
     </StrictMode>,
   );

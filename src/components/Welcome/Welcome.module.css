@@ -1,40 +1,205 @@
 .welcome {
   width: 100%;
-  max-width: 920px;
-  margin: 8px auto 28px;
-  padding: 28px;
+  max-width: 1040px;
+  margin: 4px auto 28px;
+  padding: 32px 36px 28px;
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   background:
-    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 55%),
+    radial-gradient(90% 120% at 0% 0%, color-mix(in srgb, var(--accent) 9%, transparent) 0%, transparent 60%),
+    radial-gradient(60% 90% at 100% 0%, color-mix(in srgb, var(--breakpoint) 8%, transparent) 0%, transparent 60%),
     var(--surface);
   box-shadow: var(--shadow-card);
 }
 
-.intro {
+.hero {
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: center;
+  gap: 32px;
+}
+
+.heroText {
+  flex: 1 1 420px;
+  min-width: 0;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 3px 10px 3px 8px;
+  border: 1px solid var(--accent-border);
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.eyebrowDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--breakpoint);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--breakpoint) 22%, transparent);
 }
 
 .title {
-  margin: 2px 0 6px;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
+  margin: 0 0 10px;
+  font-size: clamp(26px, 3.2vw, 34px);
+  font-weight: 750;
+  line-height: 1.12;
+  letter-spacing: -0.025em;
 }
 
 .body {
   margin: 0;
-  max-width: 680px;
+  max-width: 560px;
   color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 22px;
+  margin-top: 22px;
+}
+
+.tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.tips span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.art {
+  flex: 0 1 340px;
+  width: 340px;
+  max-width: 40%;
+  height: auto;
+}
+
+.frame,
+.frameFront {
+  fill: var(--surface);
+  stroke: var(--border-strong);
+  stroke-width: 1.5;
+}
+
+.frameFront {
+  filter: drop-shadow(0 8px 14px rgb(16 24 40 / 16%));
+}
+
+.screen {
+  fill: var(--surface-2);
+}
+
+.accent {
+  fill: var(--accent);
+  opacity: 0.85;
+}
+
+.strong {
+  fill: color-mix(in srgb, var(--text) 75%, transparent);
+}
+
+.muted {
+  fill: var(--surface-3);
+}
+
+.card {
+  fill: var(--surface);
+  stroke: var(--border);
+}
+
+.tag {
+  fill: var(--breakpoint);
+}
+
+.tagLine {
+  fill: none;
+  stroke: var(--breakpoint);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 4;
+}
+
+.pages {
+  margin-top: 26px;
+}
+
+.pagesTitle {
+  margin: 0 0 10px;
+  color: var(--text-subtle);
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pageList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.page {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 300px;
+  height: 32px;
+  padding: 0 12px 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  font-size: 13px;
+  box-shadow: var(--shadow-xs);
+  transition:
+    background-color var(--duration-fast) ease,
+    border-color var(--duration-fast) ease;
+}
+
+.page:hover {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+}
+
+.pageIcon {
+  flex: none;
+  color: var(--text-subtle);
+}
+
+.pageIcon[data-saved] {
+  color: var(--breakpoint);
+  fill: currentColor;
+}
+
+.pageUrl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .steps {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
   gap: 12px;
-  margin: 22px 0 0;
+  margin: 26px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -44,8 +209,8 @@
   gap: 12px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  background: var(--surface);
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--surface) 70%, transparent);
 }
 
 .stepIcon {
@@ -55,7 +220,7 @@
   flex: none;
   width: 34px;
   height: 34px;
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius);
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -64,9 +229,9 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  margin: 0 0 4px;
+  margin: 1px 0 4px;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 .stepNumber {
@@ -79,10 +244,11 @@
   margin: 0;
   color: var(--text-muted);
   font-size: 13px;
+  line-height: 1.5;
 }
 
-.actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 20px;
+@media (max-width: 860px) {
+  .art {
+    display: none;
+  }
 }

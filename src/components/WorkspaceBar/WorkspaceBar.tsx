@@ -11,7 +11,7 @@ import { Menu, type MenuEntry } from '../Menu/Menu';
 import { Select } from '../Select/Select';
 import styles from './WorkspaceBar.module.css';
 
-export type ToolToggle = 'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'grid';
+export type ToolToggle = 'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'scrollbars' | 'grid';
 export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 type Props = {
@@ -228,6 +228,7 @@ export function WorkspaceBar(props: Props) {
     toolToggle('syncNavigation', 'tools.syncNavigation'),
     toolToggle('checks', 'tools.checks'),
     toolToggle('outlines', 'tools.outlines'),
+    toolToggle('scrollbars', 'tools.scrollbars'),
     toolToggle('grid', 'tools.grid'),
     {
       id: 'liveCss',
@@ -306,7 +307,11 @@ export function WorkspaceBar(props: Props) {
                   onClick={() => props.onToggleVisible(vp.id)}
                   onKeyDown={(event) => onChipKeyDown(event, vp, index)}
                 >
-                  <Icon name={vp.hidden ? 'eyeOff' : SIZE_CLASS_ICONS[sizeClass]} size={14} className={styles.chipIcon} />
+                  <Icon
+                    name={vp.hidden ? 'eyeOff' : SIZE_CLASS_ICONS[sizeClass]}
+                    size={14}
+                    className={styles.chipIcon}
+                  />
                   <span className={styles.chipName}>{vp.name}</span>
                   <span className={styles.chipSize}>{vp.width}</span>
                   {vp.colorScheme && (

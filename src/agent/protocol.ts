@@ -105,6 +105,8 @@ export type AgentCommand =
   | { type: 'ping' }
   | { type: 'scrollTo'; ratio: number; anchor?: ScrollAnchor }
   | { type: 'outlines'; on: boolean }
+  /** Hide the page's scrollbars, like on phones and tablets (they take no room there). */
+  | { type: 'scrollbars'; hidden: boolean }
   | { type: 'css'; css: string }
   | { type: 'highlight'; kind: CheckKind | null }
   | { type: 'checks'; enabled: boolean }

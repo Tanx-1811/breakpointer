@@ -1,7 +1,9 @@
+import type { ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { WorkspaceLayout } from '../../types';
 import { MAX_ZOOM, MIN_ZOOM, ZOOM_OPTIONS } from '../../utils/constants';
 import { Button, IconButton } from '../Button/Button';
+import { Icon, type IconName } from '../Icon/Icon';
 import { Segmented } from '../Segmented/Segmented';
 import { Select } from '../Select/Select';
 import { formatZoom } from '../../utils/format';
@@ -19,16 +21,25 @@ type Props = {
   onLayout: (layout: WorkspaceLayout) => void;
   /** In focus mode the dock zooms the focused viewport only. */
   focused: boolean;
+  /** A mode that is on (focus, inspecting), shown at the start of the dock. */
+  status?: ReactNode;
 };
 
 /** Floating controls at the bottom of the workspace: zoom, fit and layout. */
-export function ZoomDock({ zoom, disabled, onZoom, onStep, onFit, layout, onLayout, focused }: Props) {
+export function ZoomDock({ zoom, disabled, onZoom, onStep, onFit, layout, onLayout, focused, status }: Props) {
   const { t } = useI18n();
-  const options = zoom === null || ZOOM_OPTIONS.includes(zoom) ? ZOOM_OPTIONS : [...ZOOM_OPTIONS, zoom].sort((a, b) => a - b);
+  const options =
+    zoom === null || ZOOM_OPTIONS.includes(zoom) ? ZOOM_OPTIONS : [...ZOOM_OPTIONS, zoom].sort((a, b) => a - b);
   const mixed = !disabled && zoom === null;
 
   return (
     <div className={styles.dock} role="group" aria-label={t('dock.label')} data-testid="zoom-dock">
+      {status && (
+        <>
+          {status}
+          <span className={styles.divider} aria-hidden="true" />
+        </>
+      )}
       <IconButton
         icon="minus"
         size="sm"
@@ -72,7 +83,15 @@ export function ZoomDock({ zoom, disabled, onZoom, onStep, onFit, layout, onLayo
         disabled={disabled || (zoom !== null && zoom >= MAX_ZOOM)}
       />
       <span className={styles.divider} aria-hidden="true" />
-      <Button size="sm" variant="ghost" icon="fit" onClick={onFit} tooltip={t('workspace.fitHint')} shortcut="F" disabled={disabled}>
+      <Button
+        size="sm"
+        variant="ghost"
+        icon="fit"
+        onClick={onFit}
+        tooltip={t('workspace.fitHint')}
+        shortcut="F"
+        disabled={disabled}
+      >
         {t('workspace.fit')}
       </Button>
       <span className={styles.divider} aria-hidden="true" />
@@ -88,5 +107,30 @@ export function ZoomDock({ zoom, disabled, onZoom, onStep, onFit, layout, onLayo
         ]}
       />
     </div>
+  );
+}
+
+/** What the workspace is doing (e.g. "Focused on Phone"), with a button to stop. Esc stops it too. */
+export function DockStatus({
+  icon,
+  children,
+  action,
+  onAction,
+  testId,
+}: {
+  icon: IconName;
+  children: ReactNode;
+  action: string;
+  onAction: () => void;
+  testId?: string;
+}) {
+  return (
+    <span className={styles.status} role="status" data-testid={testId}>
+      <Icon name={icon} size={15} className={styles.statusIcon} />
+      <span className={styles.statusText}>{children}</span>
+      <Button size="sm" variant="subtle" shortcut="Esc" tooltip={action} onClick={onAction}>
+        {action}
+      </Button>
+    </span>
   );
 }

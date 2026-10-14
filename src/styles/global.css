@@ -282,6 +282,23 @@ code {
   font-family: var(--font-mono);
 }
 
+/* Resizing a preview by its edge: frames don't take the pointer, and the cursor stays. */
+html[data-resizing] iframe {
+  pointer-events: none;
+}
+
+html[data-resizing='x'] * {
+  cursor: ew-resize !important;
+}
+
+html[data-resizing='y'] * {
+  cursor: ns-resize !important;
+}
+
+html[data-resizing='xy'] * {
+  cursor: nwse-resize !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

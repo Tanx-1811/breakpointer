@@ -8,9 +8,11 @@ import { openViewer } from '../shared/viewer-url';
 import { builtInGroupName } from '../state/groups';
 import type { BreakpointerSettings } from '../types';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
+import { shortHash } from '../utils/hash';
 import { displayHost, parsePreviewUrl } from '../utils/url';
 import { Button } from '../components/Button/Button';
 import { Icon, Logo } from '../components/Icon/Icon';
+import { Select } from '../components/Select/Select';
 import styles from './Popup.module.css';
 
 type Props = {
@@ -21,7 +23,10 @@ type Props = {
   restricted?: boolean;
   /** The popup was opened on the Breakpointer workspace itself. */
   inWorkspace?: boolean;
+  /** Shortcut that opens this popup. */
   shortcut: string;
+  /** Shortcut that previews the current tab directly. */
+  previewShortcut?: string;
 };
 
 export function PopupApp(props: Props) {
@@ -33,7 +38,29 @@ export function PopupApp(props: Props) {
   );
 }
 
-function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
+const AVATAR_COLORS = ['#4f46e5', '#0d9488', '#7c3aed', '#d97706', '#e11d48', '#0284c7', '#059669', '#c026d3'];
+
+/** A coloured letter for a site, so pages are easy to tell apart at a glance. */
+function SiteAvatar({ url, size = 'md' }: { url: string; size?: 'md' | 'sm' }) {
+  let host = url;
+  try {
+    host = displayHost(new URL(url));
+  } catch {
+    // Keep the text as it is.
+  }
+  const color = AVATAR_COLORS[Number.parseInt(shortHash(host), 36) % AVATAR_COLORS.length];
+  return (
+    <span
+      className={`${styles.avatar} ${size === 'sm' ? styles.avatarSmall : ''}`}
+      // The letter is drawn by CSS so it isn't part of the button's text.
+      data-letter={host.charAt(0).toUpperCase()}
+      style={{ ['--avatar' as string]: color }}
+      aria-hidden="true"
+    />
+  );
+}
+
+function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewShortcut }: Props) {
   const { t } = useI18n();
   const [address, setAddress] = useState('');
   const [error, setError] = useState<MessageKey | null>(null);
@@ -65,8 +92,8 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
   return (
     <div className={styles.popup}>
       <header className={styles.header}>
-        <Logo size={28} />
-        <div>
+        <Logo size={30} />
+        <div className={styles.headerText}>
           <h1 className={styles.title}>Breakpointer</h1>
           <p className={styles.subtitle}>{t('welcome.title')}</p>
         </div>
@@ -79,9 +106,12 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
         {tabUrl ? (
           <>
             <div className={styles.page}>
-              <Icon name={tabUrl.protocol === 'https:' ? 'lock' : 'globe'} size={15} className={styles.pageIcon} />
+              <SiteAvatar url={tabUrl.href} />
               <div className={styles.pageText}>
-                <span className={styles.host}>{displayHost(tabUrl)}</span>
+                <span className={styles.host}>
+                  {tabUrl.protocol === 'https:' && <Icon name="lock" size={12} className={styles.lock} />}
+                  {displayHost(tabUrl)}
+                </span>
                 <span className={styles.url} title={tabUrl.href}>
                   {tabUrl.href}
                 </span>
@@ -89,21 +119,26 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
             </div>
             <Button
               variant="primary"
+              size="lg"
               icon="arrowRight"
               className={styles.wide}
               onClick={() => void open(tabUrl.href)}
               autoFocus
             >
               {t('popup.previewThis')}
+              {previewShortcut && <kbd className={styles.buttonKbd}>{previewShortcut}</kbd>}
             </Button>
           </>
         ) : (
           <p className={styles.muted}>
-            {inWorkspace
-              ? t('popup.inWorkspace')
-              : restricted
-                ? t('popup.cannotPreviewStore')
-                : t('popup.cannotPreview')}
+            <Icon name="info" size={15} className={styles.mutedIcon} />
+            <span>
+              {inWorkspace
+                ? t('popup.inWorkspace')
+                : restricted
+                  ? t('popup.cannotPreviewStore')
+                  : t('popup.cannotPreview')}
+            </span>
           </p>
         )}
       </section>
@@ -112,7 +147,7 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
         <label htmlFor={groupId} className={styles.label}>
           {t('popup.openWith')}
         </label>
-        <select id={groupId} className="field" value={group} onChange={(event) => setGroup(event.target.value)}>
+        <Select id={groupId} wide icon="layers" value={group} onChange={(event) => setGroup(event.target.value)}>
           <option value="">
             {t('popup.openWithCurrent')} ({settings.viewports.length})
           </option>
@@ -132,7 +167,7 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
               ))}
             </optgroup>
           )}
-        </select>
+        </Select>
       </div>
 
       <form
@@ -147,9 +182,10 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
           {t('popup.another')}
         </label>
         <div className={styles.inputRow}>
+          <Icon name="globe" size={15} className={styles.inputIcon} />
           <input
             id={inputId}
-            className="field"
+            className={`field ${styles.input}`}
             inputMode="url"
             autoComplete="off"
             spellCheck={false}
@@ -162,9 +198,9 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
               setError(null);
             }}
           />
-          <Button type="submit" aria-label={t('address.submit')} title={t('address.submit')}>
+          <button type="submit" className={styles.go} aria-label={t('address.submit')} title={t('address.submit')}>
             <Icon name="arrowRight" size={16} />
-          </Button>
+          </button>
         </div>
         {error && (
           <p id={errorId} role="alert" className={styles.error}>
@@ -178,12 +214,12 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
           <h2 id="saved" className={styles.label}>
             {t('popup.saved')}
           </h2>
-          <ul className={styles.recent} data-testid="popup-saved">
+          <ul className={styles.list} data-testid="popup-saved">
             {saved.map((url) => (
               <li key={url}>
-                <button type="button" className={styles.recentItem} onClick={() => void open(url)} title={url}>
-                  <Icon name="star" size={13} />
-                  <span>{shortUrl(url)}</span>
+                <button type="button" className={styles.item} onClick={() => void open(url)} title={url}>
+                  <SiteAvatar url={url} size="sm" />
+                  <span className={styles.itemText}>{shortUrl(url)}</span>
                 </button>
               </li>
             ))}
@@ -196,12 +232,12 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut }: Props) {
           <h2 id="recent" className={styles.label}>
             {t('popup.recent')}
           </h2>
-          <ul className={styles.recent}>
+          <ul className={styles.list}>
             {recent.map((url) => (
               <li key={url}>
-                <button type="button" className={styles.recentItem} onClick={() => void open(url)} title={url}>
-                  <Icon name="globe" size={13} />
-                  <span>{shortUrl(url)}</span>
+                <button type="button" className={styles.item} onClick={() => void open(url)} title={url}>
+                  <SiteAvatar url={url} size="sm" />
+                  <span className={styles.itemText}>{shortUrl(url)}</span>
                 </button>
               </li>
             ))}

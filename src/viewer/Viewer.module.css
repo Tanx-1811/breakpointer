@@ -184,7 +184,7 @@
 .cards {
   display: flex;
   align-items: flex-start;
-  gap: 24px 20px;
+  gap: 20px;
 }
 
 .cards[data-layout='wrap'] {
@@ -194,6 +194,12 @@
 .cards[data-layout='row'] {
   flex-wrap: nowrap;
   width: max-content;
+}
+
+/* Focus mode: the one card on show sits in the middle. */
+.cards[data-focus] {
+  justify-content: center;
+  width: auto;
 }
 
 /* Space + drag: covers the workspace so preview frames don't take the pointer. */
@@ -206,50 +212,4 @@
 
 .panLayer[data-dragging] {
   cursor: grabbing;
-}
-
-/* A floating pill at the top of the workspace (focus mode, inspector). */
-.modePill {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: calc(100% - 32px);
-  padding: 5px 5px 5px 12px;
-  border: 1px solid var(--accent-border);
-  border-radius: 999px;
-  background: var(--surface-glass);
-  color: var(--text);
-  font-size: 13px;
-  box-shadow: var(--shadow-md);
-  transform: translateX(-50%);
-  backdrop-filter: blur(10px);
-  white-space: nowrap;
-}
-
-.modePill strong {
-  font-weight: 650;
-}
-
-.modeIcon {
-  flex: none;
-  color: var(--accent);
-}
-
-.modeText {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.modeSize {
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
-
-:global(html[data-capturing]) .modePill {
-  visibility: hidden;
 }

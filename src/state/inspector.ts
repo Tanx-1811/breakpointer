@@ -36,7 +36,9 @@ export function changingProperties(infos: (ElementInfo | null | undefined)[]): S
   if (shown.length < 2) return changing;
   for (const property of INSPECTED_PROPERTIES) {
     const values =
-      property === 'size' ? shown.map((info) => String(info.height)) : shown.map((info) => propertyValue(info, property));
+      property === 'size'
+        ? shown.map((info) => String(info.height))
+        : shown.map((info) => propertyValue(info, property));
     if (new Set(values).size > 1) changing.add(property);
   }
   return changing;

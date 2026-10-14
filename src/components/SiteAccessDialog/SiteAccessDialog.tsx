@@ -34,7 +34,14 @@ export function SiteAccessDialog(props: Props) {
   const sitePatterns = granted.filter((pattern) => pattern !== '<all_urls>');
 
   return (
-    <Dialog open={open} title={t('access.title')} description={t('access.description')} onClose={onClose} width={560}>
+    <Dialog
+      open={open}
+      title={t('access.title')}
+      description={t('access.description')}
+      icon="shield"
+      onClose={onClose}
+      width={580}
+    >
       <p className={styles.privacy}>
         <Icon name="shieldCheck" size={16} />
         {t('access.privacy')}
