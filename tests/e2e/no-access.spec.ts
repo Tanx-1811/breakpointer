@@ -73,6 +73,7 @@ test.describe('without site access', () => {
       'contextMenus',
       'declarativeNetRequestWithHostAccess',
       'scripting',
+      'sidePanel',
     ]);
     const granted = await page.evaluate(() => chrome.permissions.getAll());
     expect(granted.origins ?? []).toEqual([]);

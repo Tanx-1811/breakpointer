@@ -39,6 +39,32 @@ export function embedRuleForTab(tabId: number): chrome.declarativeNetRequest.Rul
   };
 }
 
+/**
+ * The rule for preview frames outside a workspace tab — the floating preview
+ * (Document Picture-in-Picture) and the side panel — which Chrome doesn't tie
+ * to the workspace's tab. It matches frames that Breakpointer's own pages load
+ * (their initiator is this extension), on sites the user allowed. A fixed id,
+ * far above any tab id.
+ */
+export const EXTENSION_FRAMES_RULE_ID = 2_000_000_001;
+
+export function embedRuleForExtensionFrames(extensionId: string): chrome.declarativeNetRequest.Rule {
+  const { action } = embedRuleForTab(0);
+  return {
+    id: EXTENSION_FRAMES_RULE_ID,
+    priority: 1,
+    action,
+    condition: { initiatorDomains: [extensionId], resourceTypes: ['sub_frame'] },
+  };
+}
+
+export async function enableEmbeddingForExtensionFrames(): Promise<void> {
+  await chrome.declarativeNetRequest.updateSessionRules({
+    removeRuleIds: [EXTENSION_FRAMES_RULE_ID],
+    addRules: [embedRuleForExtensionFrames(chrome.runtime.id)],
+  });
+}
+
 export async function enableEmbeddingForTab(tabId: number): Promise<void> {
   await chrome.declarativeNetRequest.updateSessionRules({
     removeRuleIds: [tabId],
@@ -52,5 +78,5 @@ export async function disableEmbeddingForTab(tabId: number): Promise<void> {
 
 export async function tabsWithEmbedding(): Promise<number[]> {
   const rules = await chrome.declarativeNetRequest.getSessionRules();
-  return rules.map((rule) => rule.id);
+  return rules.map((rule) => rule.id).filter((id) => id !== EXTENSION_FRAMES_RULE_ID);
 }

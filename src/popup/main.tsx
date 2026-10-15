@@ -27,6 +27,7 @@ async function bootstrap() {
         inWorkspace={inWorkspace}
         shortcut={shortcut}
         previewShortcut={previewShortcut}
+        windowId={tabs[0]?.windowId}
       />
     </StrictMode>,
   );

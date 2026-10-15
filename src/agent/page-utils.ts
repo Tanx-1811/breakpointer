@@ -110,6 +110,81 @@ export function mentionsReducedMotion(text: string): boolean {
   return /prefers-reduced-motion/i.test(text);
 }
 
+/**
+ * Makes `prefers-contrast: more` queries match in a browser without the
+ * preference: `more` and `no-preference` swap, and the bare
+ * `(prefers-contrast)` (true with any preference) becomes `no-preference`.
+ */
+export function swapPrefersContrast(text: string): string {
+  return text.replace(
+    /(prefers-contrast)(\s*:\s*(more|no-preference))?(?=\s*\))/gi,
+    (_, feature: string, _value: string | undefined, keyword: string | undefined) => {
+      if (!keyword) return `${feature}: no-preference`;
+      return `${feature}: ${keyword.toLowerCase() === 'more' ? 'no-preference' : 'more'}`;
+    },
+  );
+}
+
+export function mentionsPrefersContrast(text: string): boolean {
+  return /prefers-contrast/i.test(text);
+}
+
+const MEDIA_TYPE = /^(not\s+)?(only\s+)?(all|print|screen|speech|tv|projection|handheld|braille|embossed|aural|tty)\b/i;
+
+/**
+ * Rewrites a media query list as if the page were printed: queries for print
+ * (or all media) match, queries for the screen don't. `not` is kept in its
+ * meaning ("not screen" matches when printing). Queries without a media type
+ * are left as they are.
+ */
+export function printMedia(text: string): string {
+  return splitQueries(text)
+    .map((query) => {
+      const match = MEDIA_TYPE.exec(query);
+      if (!match) return query;
+      const negated = Boolean(match[1]);
+      const type = match[3]!.toLowerCase();
+      const rest = query.slice(match[0].length);
+      const matchesPrint = type === 'all' || type === 'print';
+      if (negated) return matchesPrint ? `not all${rest}` : 'all';
+      return matchesPrint ? `all${rest}` : 'not all';
+    })
+    .join(', ');
+}
+
+export function mentionsMediaType(text: string): boolean {
+  return /\b(print|screen)\b/i.test(text);
+}
+
+/** The minimum text spacing WCAG 2.2 (1.4.12) says content must survive, as a style sheet. */
+export const TEXT_SPACING_CSS =
+  '*{line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}p{margin-bottom:2em !important}';
+
+/**
+ * How an image's file size compares to the size it is shown at: below 1 the
+ * picture is stretched (blurry), above 3 it is much larger than needed.
+ */
+export function imageDensity(natural: number, shown: number): { density: number; tone: 'low' | 'ok' | 'high' } {
+  const density = shown > 0 ? natural / shown : 0;
+  return { density, tone: density < 1 ? 'low' : density > 3 ? 'high' : 'ok' };
+}
+
+/**
+ * Keyboard (Tab) order: elements with a positive `tabIndex` first, from the
+ * lowest, then the others in document order. `items` are in document order.
+ */
+export function tabOrder<T extends { tabIndex: number }>(items: T[]): T[] {
+  const positive = items.filter((item) => item.tabIndex > 0);
+  const natural = items.filter((item) => item.tabIndex === 0);
+  return [
+    ...positive
+      .map((item, index) => ({ item, index }))
+      .sort((a, b) => a.item.tabIndex - b.item.tabIndex || a.index - b.index)
+      .map(({ item }) => item),
+    ...natural,
+  ];
+}
+
 const ACCENTED: Record<string, string> = {
   a: 'å', b: 'ƀ', c: 'ç', d: 'ð', e: 'é', f: 'ƒ', g: 'ĝ', h: 'ĥ', i: 'î', j: 'ĵ', k: 'ķ', l: 'ļ', m: 'ɱ',
   n: 'ñ', o: 'ö', p: 'þ', q: 'ǫ', r: 'ŕ', s: 'š', t: 'ţ', u: 'û', v: 'ṽ', w: 'ŵ', x: 'ẋ', y: 'ý', z: 'ž',

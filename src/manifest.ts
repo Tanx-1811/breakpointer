@@ -10,6 +10,7 @@ import pkg from '../package.json' with { type: 'json' };
  * - contextMenus: "Preview in Breakpointer" on pages and links.
  * - declarativeNetRequestWithHostAccess: lets previews of sites the user has
  *   explicitly allowed ignore frame-blocking headers, inside the viewer tab only.
+ * - sidePanel: a quick preview of the current tab in Chrome's side panel.
  * Host access is optional and requested at runtime, per site or for all sites.
  */
 export function createManifest(mode: string): chrome.runtime.ManifestV3 {
@@ -39,7 +40,15 @@ export function createManifest(mode: string): chrome.runtime.ManifestV3 {
       service_worker: 'service-worker.js',
       type: 'module',
     },
-    permissions: ['storage', 'activeTab', 'contextMenus', 'declarativeNetRequestWithHostAccess', 'scripting'],
+    permissions: [
+      'storage',
+      'activeTab',
+      'contextMenus',
+      'declarativeNetRequestWithHostAccess',
+      'scripting',
+      'sidePanel',
+    ],
+    side_panel: { default_path: 'sidepanel/sidepanel.html' },
     optional_host_permissions: ['<all_urls>'],
     // Kept unusual on purpose: a common word would hijack ordinary searches (e.g. "vp bank").
     omnibox: { keyword: 'bpt' },

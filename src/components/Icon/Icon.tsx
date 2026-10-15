@@ -79,6 +79,7 @@ const PATHS = {
   beaker: 'M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.7 3h10.6a2 2 0 0 0 1.7-3l-5-9V3M7.4 15h9.2',
   split: 'M3 5h18v14H3zM12 5v14M6 9h3M15 9h3',
   overlay: 'M4 4h11v11H4zM9 9h11v11H9z',
+  pip: 'M3 5h18v14H3zM12 11h7v6h-7z',
   pause: 'M9 5v14M15 5v14',
   text: 'M5 7V5h14v2M12 5v14M9 19h6',
   palette: 'M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3.5 3H16a2 2 0 0 0-1.5 3.3c.6.7.2 2.7-2.5 2.7z',

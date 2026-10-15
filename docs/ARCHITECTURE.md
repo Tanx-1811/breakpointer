@@ -73,6 +73,8 @@ Notes from the spike:
 - **Fetch Metadata.** Some sites don't send frame-blocking headers but refuse any request that says it is for a frame (`Sec-Fetch-Dest: iframe`): Facebook answers with its "Sorry, something went wrong" page (HTTP 400), Instagram says the profile isn't available. The rule sets `Sec-Fetch-Dest: document` on preview requests, as when the page is opened in a tab (checked against 16 popular sites: it fixes Facebook, Instagram and Threads and changes nothing for the others). `Sec-Fetch-Site` stays `cross-site` for the first load. Like the header removal, it only acts on allowed sites, in the viewer tab.
 - **Signed-in sites.** With access to a site, Chrome sends all its cookies — `SameSite=Lax` and `Strict` too — with the preview's own load and with every request the page makes afterwards (its API calls, links, forms), and the frame shares the site's `localStorage` and IndexedDB with your tabs, so you stay signed in. Without access, only `SameSite=None` cookies are sent. Two limits remain: the page's scripts can't read `SameSite=Lax`/`Strict` cookies through `document.cookie` (apps that copy a CSRF token from such a cookie into their requests may fail), and `sessionStorage` starts empty, as in a new tab. Sign-in pages of identity providers usually refuse frames; sign in in a tab first. Verified by `tests/e2e/sign-in.spec.ts`.
 
+- **Frames outside the workspace tab.** Chrome doesn't tie the frames of the floating preview (Document Picture-in-Picture) or of the side panel to the workspace's tab, so the tab-scoped rule can't reach them (checked: neither the workspace's tab id nor "no tab" matches them). A second session rule (`embedRuleForExtensionFrames`, a fixed id far above any tab id) has the same action and matches sub-frame requests whose initiator is this extension (`initiatorDomains: [extension id]`): only frames Breakpointer's own pages load, on allowed sites. Links followed inside those frames are initiated by the site and aren't covered; the floating preview and the side panel follow the workspace's or the tab's address instead.
+
 ## Reachability check
 
 Without host access an extension page can't tell "down" from "up but restricted": a `no-cors` request also fails for sites that send `Cross-Origin-Resource-Policy` (x.com, stackoverflow.com). So `PreviewAdapter.probe` only runs with access to the site, using a CORS-exempt `GET` (any HTTP status = reachable; DNS/TLS/connection failure = unreachable; timeout = unknown), and the result only adds a banner — previews are never hidden, since each frame shows Chrome's own error page anyway.
@@ -133,9 +135,14 @@ A preview can show the page's light or dark styles whatever the browser prefers 
 The Simulate menu's in-page tools are session state in the workspace, sent to every agent and to each new frame on `hello`.
 
 - **Longer text** (`stress.pseudo`): `pseudoLocalize` (`agent/page-utils.ts`, unit tested) accents letters, doubles vowels until the text is about 40% longer and wraps it in brackets (a missing `]` means the text was cut off). The agent walks the body's text nodes (at most 20 000 per pass) and `placeholder` attributes, skipping `script`, `style`, `code`, `pre`, `kbd`, `samp`, `var`, `textarea`, `template`, editable content and its own overlay, and keeps each node's original and translated text. The `MutationObserver` translates text the page adds or changes later; a node that still shows the translated text is left alone, so its own edits never loop. Switching off puts the original back where the page hasn't changed it since.
+- **Text spacing** (`stress.spacing`): an injected style with the WCAG 2.2 (1.4.12) minimums — line height 1.5, paragraph spacing 2em, letter spacing 0.12em, word spacing 0.16em — so text that gets cut off or overlaps shows at once.
 - **Right to left** (`stress.rtl`): sets `dir="rtl"` on `<html>` (and on `<body>` when the page sets `dir` there), remembering the attributes to restore them.
-- **Prefer reduced motion** (`reducedMotion`): the same media-list rewrite as [page colours](#page-colours) — when the browser doesn't prefer reduced motion, `prefers-reduced-motion: reduce` and `no-preference` are swapped (`swapReducedMotion`; the bare `(prefers-reduced-motion)` becomes `no-preference`), with the original text kept per media list. Colour scheme and motion overrides combine in `applyMediaOverrides`. Motion chosen by script (`matchMedia`) doesn't follow.
+- **Prefer reduced motion**, **prefer more contrast** and **print styles** (`preferences`): the same media-list rewrite as [page colours](#page-colours) — when the browser doesn't prefer reduced motion, `prefers-reduced-motion: reduce` and `no-preference` are swapped (`swapReducedMotion`; the bare `(prefers-reduced-motion)` becomes `no-preference`), with the original text kept per media list. `prefers-contrast: more` is swapped the same way (`swapPrefersContrast`; `less` and `custom` stay false). Print styles rewrite each query's media type (`printMedia`): `print` and `all` match, `screen` and other types don't, `not` keeps its meaning, and queries without a type stay as they are — so `@media print` rules, `<link media="print">` sheets and `@import … print` apply, and `@media screen` rules don't. All the overrides combine in `applyMediaOverrides`. What a page decides in script (`matchMedia`, `window.print` handlers) doesn't follow.
 - **Pause animations** (`animations`): an injected style sets `animation-play-state: paused` and `transition: none` on everything, for steady screenshots.
+
+## Image sizes and tab order
+
+`annotate` turns on labels the agent draws over the page, in their own closed shadow root (`pointer-events: none`, not seen by the checks), redrawn after scrolling, resizing, image loads and page changes, for what is in view (at most 400 labels): **image sizes** — shown size, file size (`naturalWidth`, which already accounts for the `srcset` density) and density (`imageDensity`: below 1 red, stretched; above 3 amber, much larger than needed); **tab order** — the focusable elements in keyboard order (`tabOrder`: positive `tabindex` first, then document order), each outlined and numbered, positive `tabindex` in amber. Nothing about them leaves the frame.
 
 ## Vision simulations
 
@@ -155,6 +162,22 @@ Both are layers inside the card's stage, above the frame, so they work on every 
 ## Colour contrast
 
 `components/ContrastDialog` keeps the text and background colours for the session. `state/contrast.ts` parses hex (3, 4, 6, 8 digits) and `rgb()`/`rgba()` colours, blends a translucent text colour over the background, computes the WCAG 2 relative luminance and contrast ratio, and grades it against AA/AAA for normal and large text and 3:1 for non-text contrast. Ratios are truncated to two decimals, never rounded up past a threshold. "Pick from screen" uses Chrome's `EyeDropper` API (no permission); the dialog stays open but out of sight, without its backdrop, while the eyedropper is open, so the colour under it can be picked as it really is.
+
+## Real windows
+
+`services/windows.ts` opens one popup window per visible viewport (`chrome.windows.create`, no permission needed), places them side by side on the screen the workspace is on (`state/window-layout.ts`: rows like the workspace, then cascaded; the window frame is measured on the first one), and corrects each window until its content area — the page's layout viewport — has the viewport's size (`fitWindowContent`, also used by a card's "Open in a window of this size"). Chrome keeps windows on its screen; when it refuses a position, it places the window itself. The workspace keeps the windows' ids for the session: they load each new address the workspace previews, can be brought to the front, captured (`captureVisibleTab` per window, in one labelled image) or closed together, and drop out when closed by hand. They are ordinary top-level pages, so everything a tab can do works there: sign-in, cookies read by scripts, bot checks, sites that refuse frames. The in-page tools don't run in them.
+
+## Floating preview
+
+`P` opens a Document Picture-in-Picture window (`documentPictureInPicture.requestWindow`, from the click): a window that stays on top of every other window, filled by the workspace itself. `components/FloatingPreview` renders into it with a React portal (React listens for events on portal containers, so its controls work there); the workspace's stylesheets are copied into its document with absolute URLs and its theme follows. It shows the workspace's page in a frame at one viewport (the focused one, else the narrowest), scaled to fit the window as the user resizes it, and follows the workspace's address. Its frame gets the [rule for frames outside the workspace tab](#embedding-rule).
+
+## Side panel
+
+`src/sidepanel/` is Chrome's side panel (`sidePanel` permission, `side_panel.default_path`). It shows a page in a frame at one preset size (portrait or landscape, kept in settings as `sidePanel`), scaled to the panel's width. The popup ("Preview in the side panel") and the context menu open it straight from the click (`chrome.sidePanel.open`, which Chrome only allows then), passing the address in the panel's path (`setOptions`). It follows the active tab (`tabs.onActivated`, `onUpdated`, `windows.onFocusChanged`) only where Breakpointer may read the tab's address — sites the user allowed, or right after they clicked Breakpointer (activeTab) — so no "tabs" permission is needed. Typing an address stops following until it is turned on again. Its frames get the [rule for frames outside the workspace tab](#embedding-rule).
+
+## Full-page screenshots
+
+A card's "Full-page screenshot" (sites you allow, with screenshot access) shows that preview on its own, fitted to the screen, asks its agent for the page and window heights (`pageMetrics`), then for each screen (`state/full-page.ts`: one per window height, the last one against the bottom, at most 30) asks it to scroll there (`captureScroll`, which also hides fixed and stuck elements after the first screen so headers and cookie bars appear once, and answers `scrolled` once painted), waits a moment for lazy content, and captures the frame (`captureVisibleTab`, at most two a second). `stitchSlices` draws each screen where it was on the page, at the capture's resolution (scaled down when longer than Chrome's canvas limit). Then the page's scroll position, its fixed elements and the workspace's focus are put back. Requests to the agent wait for their answer (`askAgent`, keyed by card and reply type, with a timeout).
 
 ## Inspector
 
@@ -185,7 +208,9 @@ src/
   manifest.ts              Manifest generated at build time (version from package.json)
   background/              Service worker: context menus, omnibox "bpt", commands,
                            first-run welcome, embedding-rule cleanup
-  popup/                   Toolbar popup: preview current tab, pick a group, saved and recent pages
+  popup/                   Toolbar popup: preview current tab, pick a group, saved and recent pages,
+                           open the side panel
+  sidepanel/               Chrome side panel: the browsed page at a preset size
   viewer/                  The workspace page (Viewer.tsx composes everything; TopBar,
                            commands.ts builds the command palette, workspace gestures)
   components/              UI building blocks (cards, dock, palette, inspector, dialogs,
@@ -195,19 +220,22 @@ src/
                            navigation history
   services/
     preview-adapter.ts     Rendering mechanism boundary (iframe adapter)
-    embed-rules.ts         DNR session rule for the viewer tab
+    embed-rules.ts         DNR session rules: the viewer tab, and Breakpointer's own frames elsewhere
     site-access.ts         Optional host permissions
     screenshot.ts          captureVisibleTab + crop to an element; clipboard
-    composite.ts           All viewports in one image (canvas)
+    composite.ts           All viewports in one image; full-page stitching (canvas)
+    windows.ts             Real windows: open side by side at exact sizes, follow, close
     frame-agents.ts        Register/unregister the agent; messages to and from it
     storage.ts             Settings validation, load/save, export/import
   state/                   Pure, unit-tested state logic (viewports, groups, fit, reducer,
                            breakpoint validation, check texts, report HTML, command search,
                            drag snapping, image sheet layout, inspector diffs, size classes,
-                           A/B comparison, contrast, measuring, vision matrices)
+                           A/B comparison, contrast, measuring, vision matrices, window
+                           placement, full-page slices)
   data/                    Presets, built-in groups, framework and site breakpoints
   i18n/                    English (source of truth) and Vietnamese UI strings
   shared/viewer-url.ts     Builds viewer URLs (used by popup and service worker)
+  shared/side-panel.ts     Opens the side panel with an address (popup and context menu)
   styles/global.css        Design tokens (both themes) and shared control styles
 ```
 
@@ -218,7 +246,7 @@ Data flows one way: `Viewer` owns the settings via `useReducer` (`state/settings
 - One key, `breakpointer.settings`, in `chrome.storage.local`. Shape: `BreakpointerSettings` in `src/types/index.ts` (`version: 1`).
 - Everything read from storage or an imported file goes through `parseSettings`, which validates each field independently, clamps numbers, drops invalid entries, de-duplicates ids, caps list sizes and falls back to defaults. Unknown or older versions are read leniently.
 - Recent addresses are stored only when the user turns on "Remember recent addresses" (off by default) and are cleared when it is turned off. Exports never include recent or last addresses; saved pages (starred by the user) are included.
-- v0.2 added `customBreakpoints`, `grid`, `sync`, `checks` and `savedPages`; v0.3 added the `site` breakpoint set, an optional `colorScheme` (`light`/`dark`) per viewport and saved-group viewport, and `cssSnippets` (name and CSS, at most 20; saving under an existing name replaces it). Older stored data simply gets their defaults. Importing a file only replaces the settings the file contains, so an older export keeps the newer settings as they are.
+- v0.2 added `customBreakpoints`, `grid`, `sync`, `checks` and `savedPages`; v0.3 added the `site` breakpoint set, an optional `colorScheme` (`light`/`dark`) per viewport and saved-group viewport, `cssSnippets` (name and CSS, at most 20; saving under an existing name replaces it), `grid.baseline` (0, 4, 8, 12, 16 or 24 px) and `sidePanel` (a preset id and its orientation). The side panel changes its own setting by reading, changing and saving the stored settings (`updateStoredSettings`); open workspaces follow the change. Older stored data simply gets their defaults. Importing a file only replaces the settings the file contains, so an older export keeps the newer settings as they are.
 - On the very first run the defaults are saved at once. The default viewports have fixed ids (`default-<preset>`), so two workspace tabs opened on a fresh install write the same workspace instead of replacing each other's (which would reload every preview).
 - Two open workspace tabs each keep their own state; the last change saved wins.
 

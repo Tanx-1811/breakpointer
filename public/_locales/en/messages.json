@@ -30,5 +30,13 @@
   "omniboxDefault": {
     "message": "Preview <match>%s</match> at multiple screen sizes",
     "description": "Address bar suggestion after typing the keyword."
+  },
+  "menuSidePanelPage": {
+    "message": "Preview this page in the side panel",
+    "description": "Context menu item on a page: Breakpointer side panel."
+  },
+  "menuSidePanelLink": {
+    "message": "Preview link in the side panel",
+    "description": "Context menu item on a link: Breakpointer side panel."
   }
 }

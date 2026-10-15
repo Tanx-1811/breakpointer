@@ -14,3 +14,16 @@
     inset 1px 0 rgb(225 29 72 / 28%),
     inset -1px 0 rgb(225 29 72 / 28%);
 }
+
+/* A line at the bottom of every baseline step (the step is set in --baseline, already scaled). */
+.baseline {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(var(--baseline) - 1px),
+    rgb(37 99 235 / 32%) calc(var(--baseline) - 1px),
+    rgb(37 99 235 / 32%) var(--baseline)
+  );
+}

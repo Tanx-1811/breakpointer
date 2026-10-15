@@ -102,6 +102,8 @@ type Props = ViewportCardActions & {
   onStopCompare?: () => void;
   /** The HTTP status the preview's page was served with, when known (from its agent). */
   httpStatus?: number;
+  /** Captures the whole page, scrolling the preview screen by screen. */
+  onFullPage?: () => void;
 };
 
 type Drag = {
@@ -149,6 +151,17 @@ export function ViewportCard(props: Props) {
       disabled: !canDuplicate,
       onSelect: props.onDuplicate,
     },
+    ...(props.onFullPage
+      ? [
+          {
+            id: 'full-page',
+            label: t('card.menuFullPage'),
+            icon: 'image',
+            disabled: !src,
+            onSelect: props.onFullPage,
+          } satisfies MenuEntry,
+        ]
+      : []),
     {
       id: 'copy',
       label: t('card.menuCopyImage'),

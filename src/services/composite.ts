@@ -26,6 +26,41 @@ function fit(context: CanvasRenderingContext2D, text: string, width: number): st
   return `${text.slice(0, end)}…`;
 }
 
+/** Canvases taller than this fail in Chrome; longer pages are scaled down to fit. */
+const MAX_CANVAS_SIDE = 32_000;
+
+/**
+ * One tall PNG from screens captured while scrolling a preview: each slice is
+ * drawn where it was on the page (`y`, CSS pixels), so the last one, captured
+ * against the bottom, overlaps the one before it exactly.
+ */
+export async function stitchSlices(
+  slices: { image: Blob; y: number }[],
+  viewportHeight: number,
+  totalHeight: number,
+): Promise<Blob | null> {
+  if (slices.length === 0) return null;
+  const bitmaps = await Promise.all(slices.map((slice) => createImageBitmap(slice.image)));
+  try {
+    const first = bitmaps[0]!;
+    // Captures are in screen pixels: how many per CSS pixel of the page.
+    const scale = first.height / viewportHeight;
+    const fit = Math.min(1, MAX_CANVAS_SIDE / Math.max(1, totalHeight * scale));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(first.width * fit);
+    canvas.height = Math.round(totalHeight * scale * fit);
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    bitmaps.forEach((bitmap, index) => {
+      const top = Math.round(slices[index]!.y * scale * fit);
+      context.drawImage(bitmap, 0, top, Math.round(bitmap.width * fit), Math.round(bitmap.height * fit));
+    });
+    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+  } finally {
+    bitmaps.forEach((bitmap) => bitmap.close());
+  }
+}
+
 /**
  * One PNG with every preview side by side, each labelled with its name and
  * size, under the page's title and address — ready to drop into a ticket or chat.

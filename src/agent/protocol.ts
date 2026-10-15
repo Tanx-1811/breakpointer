@@ -112,7 +112,11 @@ export type AgentEvent =
   /** The selected element at this size (null when the page has no such element). */
   | { type: 'element'; selector: string; element: ElementInfo | null }
   /** A key the workspace handles was pressed inside the preview (only while inspecting). */
-  | { type: 'key'; key: 'Escape' };
+  | { type: 'key'; key: 'Escape' }
+  /** Answer to `pageMetrics`: the page's height and the window's, in CSS pixels. */
+  | { type: 'metrics'; scrollHeight: number; viewportHeight: number; scrollY: number }
+  /** Answer to `captureScroll`, once the page has painted at its new position. */
+  | { type: 'scrolled'; y: number };
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
 
@@ -135,11 +139,22 @@ export type AgentCommand =
   /** Also report scrolls the workspace caused (a design overlay follows them); reports the position at once. */
   | { type: 'trackScroll'; on: boolean }
   /**
-   * Layout stress tests: pseudo-translated text (longer, accented, in brackets)
-   * and right-to-left direction. The original text and direction are restored.
+   * Layout stress tests: pseudo-translated text (longer, accented, in brackets),
+   * right-to-left direction and WCAG text spacing. Everything is restored.
    */
-  | { type: 'stress'; pseudo: boolean; rtl: boolean }
-  /** Show the page's `prefers-reduced-motion: reduce` styles whatever the browser prefers. */
-  | { type: 'reducedMotion'; on: boolean }
+  | { type: 'stress'; pseudo: boolean; rtl: boolean; spacing: boolean }
+  /**
+   * The page's styles for preferences the browser doesn't have:
+   * `prefers-reduced-motion: reduce`, `prefers-contrast: more`, and `@media print`.
+   */
+  | { type: 'preferences'; reducedMotion: boolean; moreContrast: boolean; print: boolean }
+  /** Labels drawn over the page: each image's sizes, and the keyboard (Tab) order. */
+  | { type: 'annotate'; images: boolean; tabOrder: boolean }
+  /** Full-page screenshots: report the page's size… */
+  | { type: 'pageMetrics' }
+  /** …scroll to `y` (hiding fixed and stuck elements after the first screen) and say when painted… */
+  | { type: 'captureScroll'; y: number; hideFixed: boolean }
+  /** …and show those elements again. */
+  | { type: 'captureEnd' }
   /** Freeze CSS animations and transitions (for steady screenshots). */
   | { type: 'animations'; paused: boolean };

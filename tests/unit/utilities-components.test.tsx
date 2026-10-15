@@ -383,6 +383,8 @@ describe('WorkspaceBar utilities', () => {
         outlines: false,
         scrollbars: false,
         grid: false,
+        imageSizes: false,
+        tabOrder: false,
         liveCss: false,
       },
       hasUrl: true,
@@ -417,7 +419,16 @@ describe('WorkspaceBar utilities', () => {
     wrap(
       <WorkspaceBar
         {...props()}
-        simulate={{ vision: 'none', reduceMotion: false, pauseAnimations: false, pseudo: true, rtl: false }}
+        simulate={{
+          vision: 'none',
+          reduceMotion: false,
+          moreContrast: false,
+          print: false,
+          pauseAnimations: false,
+          pseudo: true,
+          rtl: false,
+          spacing: false,
+        }}
         onVision={onVision}
         onSimulate={onSimulate}
       />,

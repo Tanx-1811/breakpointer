@@ -95,6 +95,9 @@ const UTILITIES_PAGE = page(
   'Utilities page',
   `<style>#motion { outline: 0 solid transparent; }
   @media (prefers-reduced-motion: reduce) { #motion { outline: 3px solid rgb(255, 0, 0); } }
+  @media (prefers-contrast: more) { #motion { color: rgb(0, 0, 255); } }
+  @media print { #code { display: none; } }
+  @media screen { #label { font-style: italic; } }
   @keyframes spin { to { transform: rotate(360deg); } }
   #spinner { width: 24px; height: 24px; background: #6366f1; animation: spin 1s linear infinite; }
   section { height: 700px; border-top: 1px solid #ccc; }</style>
@@ -105,6 +108,9 @@ const UTILITIES_PAGE = page(
       Object.assign(document.createElement('div'), { id: 'motion', textContent: 'Moving banner' }),
       Object.assign(document.createElement('div'), { id: 'spinner' }),
       Object.assign(document.createElement('code'), { id: 'code', textContent: 'const keep = true;' }),
+      Object.assign(document.createElement('a'), { id: 'first', href: '#first', textContent: 'First link' }),
+      Object.assign(document.createElement('button'), { id: 'second', textContent: 'Second' }),
+      Object.assign(document.createElement('a'), { id: 'jump', href: '#jump', tabIndex: 1, textContent: 'Jumps the queue' }),
     );
     for (let i = 1; i <= 4; i++) document.body.append(Object.assign(document.createElement('section'), { textContent: 'Section ' + i }));
   });</script>`,

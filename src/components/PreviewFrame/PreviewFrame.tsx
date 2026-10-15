@@ -7,7 +7,7 @@ import styles from './PreviewFrame.module.css';
  * Sandbox flags: everything a normal page needs, except navigating the top
  * window. That stops "frame-busting" scripts from replacing the workspace.
  */
-const SANDBOX = [
+export const SANDBOX = [
   'allow-scripts',
   'allow-same-origin',
   'allow-forms',
@@ -21,7 +21,7 @@ const SANDBOX = [
 ].join(' ');
 
 /** Features a page would normally have in a tab (video, fullscreen, clipboard…). */
-const ALLOW = 'fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write; web-share';
+export const ALLOW = 'fullscreen; autoplay; encrypted-media; picture-in-picture; clipboard-write; web-share';
 
 const SLOW_AFTER_MS = 12000;
 

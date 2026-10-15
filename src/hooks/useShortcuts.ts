@@ -21,6 +21,7 @@ export type ShortcutAction =
   | 'prevViewport'
   | 'nextViewport'
   | 'actualSize'
+  | 'floating'
   | 'escape';
 
 export type ShortcutHandlers = Partial<Record<ShortcutAction, () => void>>;
@@ -44,6 +45,7 @@ const LETTER_KEYS: Record<string, ShortcutAction> = {
   KeyX: 'measure',
   KeyC: 'contrast',
   KeyO: 'outlines',
+  KeyP: 'floating',
   BracketLeft: 'prevViewport',
   BracketRight: 'nextViewport',
   Digit0: 'actualSize',

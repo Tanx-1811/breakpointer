@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { CheckKind, ElementInfo, MediaReport } from '../agent/protocol';
+import type { AgentCommand, AgentEvent, CheckKind, ElementInfo, MediaReport } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
@@ -8,6 +8,7 @@ import { CommandPalette, type PaletteCommand } from '../components/CommandPalett
 import { CompareDialog } from '../components/CompareDialog/CompareDialog';
 import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
 import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
+import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/FloatingPreview/FloatingPreview';
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
 import { ErrorState } from '../components/ErrorState/ErrorState';
 import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/GroupDialogs';
@@ -40,20 +41,32 @@ import { useTheme } from '../hooks/useTheme';
 import { I18nProvider, useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
 import { createTranslator, resolveLanguage, type Language } from '../i18n/translate';
-import { composeSheet, type SheetEntry } from '../services/composite';
+import { composeSheet, stitchSlices, type SheetEntry } from '../services/composite';
 import type { PreviewAdapter } from '../services/preview-adapter';
 import {
   blobToDataUrl,
   canCapture,
   captureElement,
   captureElementImage,
+  captureWindowImage,
   copyImageToClipboard,
   copyText,
   requestCapturePermission,
 } from '../services/screenshot';
 import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
+import { enableEmbeddingForExtensionFrames } from '../services/embed-rules';
 import { hasSiteAccess, requestSiteAccess } from '../services/site-access';
+import {
+  closeWindows,
+  focusOwnWindow,
+  focusWindows,
+  navigateWindowTabs,
+  onWindowClosed,
+  openWindowsSideBySide,
+  screenArea,
+  type ManagedWindow,
+} from '../services/windows';
 import { createSettingsExport, defaultViewports, normalizeSnippetName, parseSettingsFile } from '../services/storage';
 import { breakpointEdges, breakpointFor, breakpointSet } from '../data/breakpoints';
 import {
@@ -67,6 +80,7 @@ import {
   type CompareTarget,
 } from '../state/compare';
 import { fitZoomForAll } from '../state/fit';
+import { slicePositions, stitchedHeight } from '../state/full-page';
 import { comparisonMarkdown } from '../state/inspector';
 import { isOneTimeUrl, pageOf } from '../state/follow';
 import { buildReportHtml, type ReportCard } from '../state/report';
@@ -134,13 +148,21 @@ type DialogName =
   | 'contrast'
   | 'compare';
 
+/** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
+type PictureInPictureHost = Window & {
+  documentPictureInPicture?: { requestWindow(options: { width: number; height: number }): Promise<Window> };
+};
+
 /** One preview: a visible viewport, or (when comparing two addresses) its B side. */
 type CardEntry = { id: string; viewport: ViewportConfig; compare: boolean };
 
 const SIMULATE_LABELS: Record<SimulateToggle, MessageKey> = {
   pseudo: 'stress.pseudo',
   rtl: 'stress.rtl',
+  spacing: 'stress.spacing',
   reduceMotion: 'motion.reduce',
+  moreContrast: 'prefs.moreContrast',
+  print: 'prefs.print',
   pauseAnimations: 'animations.pause',
 };
 
@@ -253,9 +275,12 @@ function Workspace({
   // Utilities for this session (not saved).
   const [measuring, setMeasuring] = useState(false);
   const [vision, setVision] = useState<VisionMode>('none');
-  const [stress, setStress] = useState({ pseudo: false, rtl: false });
-  const [reduceMotion, setReduceMotion] = useState(false);
+  const [stress, setStress] = useState({ pseudo: false, rtl: false, spacing: false });
+  // The page's styles for preferences the browser doesn't have.
+  const [preferences, setPreferences] = useState({ reducedMotion: false, moreContrast: false, print: false });
   const [pauseAnimations, setPauseAnimations] = useState(false);
+  // Labels drawn over the previews.
+  const [annotate, setAnnotate] = useState({ images: false, tabOrder: false });
   const [contrastColors, setContrastColors] = useState<ContrastColors>({ text: '#1f2430', background: '#ffffff' });
   // Comparing two addresses: every visible viewport also shows a B preview.
   const [compare, setCompare] = useState<CompareTarget | null>(null);
@@ -264,6 +289,10 @@ function Workspace({
   // The scroll position of previews with a design overlay (it moves with the page).
   const [overlayScroll, setOverlayScroll] = useState<Record<string, number>>({});
   const overlayUrls = useRef(new Set<string>());
+  // Viewports opened as real Chrome windows (they follow the workspace's address).
+  const [realWindows, setRealWindows] = useState<ManagedWindow[]>([]);
+  // The always-on-top floating preview, and which viewport it shows.
+  const [floating, setFloating] = useState<{ pip: Window; viewportId: string } | null>(null);
 
   const addressRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLElement>(null);
@@ -282,10 +311,13 @@ function Workspace({
   const paletteShortcut = modShortcut('K');
   const simulateState: SimulateState = {
     vision,
-    reduceMotion,
+    reduceMotion: preferences.reducedMotion,
+    moreContrast: preferences.moreContrast,
+    print: preferences.print,
     pauseAnimations,
     pseudo: stress.pseudo,
     rtl: stress.rtl,
+    spacing: stress.spacing,
   };
 
   // Each visible viewport is a card; when comparing, its B side is a second card next to it.
@@ -923,7 +955,11 @@ function Workspace({
     else if (vision !== 'none') setVision('none');
   };
 
+  // Requests to an agent that wait for its answer (full-page screenshots).
+  const pendingReplies = useRef(new Map<string, (reply: AgentEvent) => void>());
+
   const agents = useFrameAgents(tabId, generations, {
+    onReply: (cardId, reply) => pendingReplies.current.get(`${cardId}:${reply.type}`)?.(reply),
     onHello: (cardId) => {
       agents.send(cardId, { type: 'checks', enabled: settings.checks });
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
@@ -931,8 +967,10 @@ function Workspace({
       if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
       const scheme = viewports.find((vp) => vp.id === viewportIdOf(cardId))?.colorScheme;
       if (scheme) agents.send(cardId, { type: 'colorScheme', scheme });
-      if (stress.pseudo || stress.rtl) agents.send(cardId, { type: 'stress', pseudo: stress.pseudo, rtl: stress.rtl });
-      if (reduceMotion) agents.send(cardId, { type: 'reducedMotion', on: true });
+      if (stress.pseudo || stress.rtl || stress.spacing) agents.send(cardId, { type: 'stress', ...stress });
+      if (preferences.reducedMotion || preferences.moreContrast || preferences.print)
+        agents.send(cardId, { type: 'preferences', ...preferences });
+      if (annotate.images || annotate.tabOrder) agents.send(cardId, { type: 'annotate', ...annotate });
       if (pauseAnimations) agents.send(cardId, { type: 'animations', paused: true });
       if (overlays[cardId]) agents.send(cardId, { type: 'trackScroll', on: true });
       if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
@@ -1000,8 +1038,9 @@ function Workspace({
   useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
   useEffect(() => broadcast({ type: 'scrollbars', hidden: hideScrollbars }), [broadcast, hideScrollbars]);
   useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
-  useEffect(() => broadcast({ type: 'stress', pseudo: stress.pseudo, rtl: stress.rtl }), [broadcast, stress]);
-  useEffect(() => broadcast({ type: 'reducedMotion', on: reduceMotion }), [broadcast, reduceMotion]);
+  useEffect(() => broadcast({ type: 'stress', ...stress }), [broadcast, stress]);
+  useEffect(() => broadcast({ type: 'preferences', ...preferences }), [broadcast, preferences]);
+  useEffect(() => broadcast({ type: 'annotate', ...annotate }), [broadcast, annotate]);
   useEffect(() => broadcast({ type: 'animations', paused: pauseAnimations }), [broadcast, pauseAnimations]);
   // When the inspector's selection goes (cleared, closed, another page), previews drop its outline too.
   useEffect(() => {
@@ -1099,6 +1138,14 @@ function Workspace({
       case 'grid':
         dispatch({ type: 'setGrid', grid: { show: !settings.grid.show } });
         break;
+      case 'imageSizes':
+      case 'tabOrder': {
+        const key = tool === 'imageSizes' ? 'images' : 'tabOrder';
+        const on = !annotate[key];
+        setAnnotate({ ...annotate, [key]: on });
+        if (on) hintAccess(t(tool === 'imageSizes' ? 'tools.imageSizes' : 'tools.tabOrder'));
+        break;
+      }
     }
   };
 
@@ -1207,8 +1254,9 @@ function Workspace({
   /** Simulations inside the previews (stress tests, page preferences) need the site's permission. */
   const toggleSimulate = (toggle: SimulateToggle) => {
     const on = !simulateState[toggle];
-    if (toggle === 'pseudo' || toggle === 'rtl') setStress({ ...stress, [toggle]: on });
-    else if (toggle === 'reduceMotion') setReduceMotion(on);
+    if (toggle === 'pseudo' || toggle === 'rtl' || toggle === 'spacing') setStress({ ...stress, [toggle]: on });
+    else if (toggle === 'reduceMotion') setPreferences({ ...preferences, reducedMotion: on });
+    else if (toggle === 'moreContrast' || toggle === 'print') setPreferences({ ...preferences, [toggle]: on });
     else setPauseAnimations(on);
     if (on) hintAccess(t(SIMULATE_LABELS[toggle]));
   };
@@ -1339,6 +1387,237 @@ function Workspace({
     );
   };
 
+  /* ---------- Real windows ---------- */
+
+  // The address the real windows show; they follow the workspace's.
+  const windowsHref = useRef<string | null>(null);
+  const realWindowsRef = useRef(realWindows);
+  useLayoutEffect(() => {
+    realWindowsRef.current = realWindows;
+  });
+  const shownHref = currentUrl?.href ?? null;
+  useEffect(() => {
+    if (!shownHref || shownHref === windowsHref.current) return;
+    windowsHref.current = shownHref;
+    const tabs = realWindowsRef.current.map((item) => item.tabId);
+    if (tabs.length) void navigateWindowTabs(tabs, shownHref);
+  }, [shownHref]);
+  // The user can close them one by one.
+  useEffect(
+    () =>
+      onWindowClosed((windowId) =>
+        setRealWindows((list) =>
+          list.some((item) => item.windowId === windowId) ? list.filter((item) => item.windowId !== windowId) : list,
+        ),
+      ),
+    [],
+  );
+
+  /** Every visible viewport as a real window of its size, side by side: works for any site and any sign-in. */
+  const openRealWindows = async () => {
+    if (!currentUrl) return;
+    if (visible.length === 0) {
+      toast({ message: t('report.nothing'), tone: 'info' });
+      return;
+    }
+    const url = currentUrl.href;
+    const list = visible;
+    toast({ message: t('windows.opening', { count: list.length }), tone: 'info', key: 'windows' });
+    try {
+      if (realWindowsRef.current.length) await closeWindows(realWindowsRef.current.map((item) => item.windowId));
+      windowsHref.current = url;
+      const opened = await openWindowsSideBySide(
+        url,
+        list.map((vp) => ({ viewportId: vp.id, width: vp.width, height: vp.height })),
+        screenArea(),
+      );
+      if (opened.length === 0) throw new Error('No window opened');
+      setRealWindows(opened);
+      const clamped = opened.filter((item) => {
+        const vp = list.find((viewport) => viewport.id === item.viewportId);
+        return vp && (vp.width !== item.width || vp.height !== item.height);
+      }).length;
+      toast(
+        clamped
+          ? { message: t('windows.openedClamped', { count: opened.length, clamped }), tone: 'info', key: 'windows' }
+          : { message: t('windows.opened', { count: opened.length }), tone: 'success', key: 'windows' },
+      );
+    } catch (error) {
+      console.warn('[Breakpointer] Opening windows failed.', error);
+      toast({ message: t('windows.failed'), tone: 'error', key: 'windows' });
+    }
+  };
+
+  const closeRealWindows = () => {
+    void closeWindows(realWindows.map((item) => item.windowId));
+    setRealWindows([]);
+  };
+
+  /** Each real window as captured on screen (at full resolution), in one labelled image. */
+  const captureRealWindows = () =>
+    withCapture(async () => {
+      if (!currentUrl || busy || realWindows.length === 0) return;
+      setBusy('sheet');
+      try {
+        const entries: SheetEntry[] = [];
+        for (const [index, item] of realWindows.entries()) {
+          toast({
+            message: t('windows.captureProgress', { current: index + 1, total: realWindows.length }),
+            tone: 'info',
+            key: 'sheet',
+          });
+          const image = await captureWindowImage(item.windowId);
+          const vp = viewports.find((viewport) => viewport.id === item.viewportId);
+          if (image) entries.push({ image, title: vp?.name ?? '', subtitle: `${item.width} × ${item.height}` });
+        }
+        await focusOwnWindow();
+        const sheet = await composeSheet(entries, {
+          heading: displayHost(currentUrl),
+          url: currentUrl.href,
+          footer: `Breakpointer · ${new Date().toLocaleString(language)}`,
+        });
+        if (!sheet) throw new Error('Nothing captured');
+        const fileName = `breakpointer-windows_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.png`;
+        downloadBlob(sheet, fileName);
+        toast({ message: t('capture.saved', { file: fileName }), tone: 'success', key: 'sheet' });
+      } catch (error) {
+        console.warn('[Breakpointer] Capturing windows failed.', error);
+        toast({ message: t('capture.failed'), tone: 'error', key: 'sheet' });
+      } finally {
+        setBusy(null);
+      }
+    });
+
+  /* ---------- Full-page screenshots ---------- */
+
+  /** Sends `command` to a card's agent and waits for its `reply`. */
+  const askAgent = <T extends AgentEvent['type']>(cardId: string, command: AgentCommand, reply: T, timeoutMs = 4000) =>
+    new Promise<Extract<AgentEvent, { type: T }>>((resolve, reject) => {
+      const key = `${cardId}:${reply}`;
+      const timer = setTimeout(() => {
+        pendingReplies.current.delete(key);
+        reject(new Error(`No ${reply} from the preview`));
+      }, timeoutMs);
+      pendingReplies.current.set(key, (event) => {
+        clearTimeout(timer);
+        pendingReplies.current.delete(key);
+        resolve(event as Extract<AgentEvent, { type: T }>);
+      });
+      agents.send(cardId, command);
+    });
+
+  /**
+   * The whole page of one preview in a tall PNG: the preview is shown on its own (so all of it is on
+   * screen), scrolled screen by screen and captured, then the screens are stitched together.
+   */
+  const captureFullPage = (cardId: string) =>
+    withCapture(async () => {
+      const card = cards.find((item) => item.id === cardId);
+      if (!card || !currentUrl || busy) return;
+      if (!agents.frameOf(cardId)) {
+        hintAccess(t('card.menuFullPage'));
+        return;
+      }
+      const vp = card.viewport;
+      const previousFocus = focused;
+      setBusy('sheet');
+      try {
+        setFocus({ id: vp.id, zoom: focusZoom(vp) });
+        await nextFrame();
+        await nextFrame();
+        const metrics = await askAgent(cardId, { type: 'pageMetrics' }, 'metrics');
+        const { positions, partial } = slicePositions(metrics.scrollHeight, metrics.viewportHeight);
+        const slices: { image: Blob; y: number }[] = [];
+        for (const [index, y] of positions.entries()) {
+          toast({
+            message: t('capture.fullPageProgress', { current: index + 1, total: positions.length }),
+            tone: 'info',
+            key: 'sheet',
+          });
+          const done = await askAgent(cardId, { type: 'captureScroll', y, hideFixed: index > 0 }, 'scrolled');
+          // Lazy content and images get a moment to appear.
+          await new Promise((resolve) => setTimeout(resolve, 150));
+          const stage = stageOf(cardId);
+          const shot = stage ? await captureElementImage(stage) : null;
+          if (shot) slices.push({ image: shot.blob, y: done.y });
+        }
+        agents.send(cardId, { type: 'captureEnd' });
+        agents.send(cardId, { type: 'captureScroll', y: metrics.scrollY, hideFixed: false });
+        const image = await stitchSlices(
+          slices,
+          metrics.viewportHeight,
+          stitchedHeight(positions, metrics.viewportHeight),
+        );
+        if (!image) throw new Error('Nothing captured');
+        const parts = [
+          'breakpointer-fullpage',
+          displayHost(currentUrl),
+          card.compare ? `${vp.name} B` : vp.name,
+          `${vp.width}x${vp.height}`,
+        ];
+        const fileName = `${parts.map(fileNamePart).join('_')}_${timestamp()}.png`;
+        downloadBlob(image, fileName);
+        toast(
+          partial
+            ? {
+                message: t('capture.fullPagePartial', { count: positions.length, file: fileName }),
+                tone: 'info',
+                key: 'sheet',
+              }
+            : { message: t('capture.saved', { file: fileName }), tone: 'success', key: 'sheet' },
+        );
+      } catch (error) {
+        console.warn('[Breakpointer] Full-page screenshot failed.', error);
+        agents.send(cardId, { type: 'captureEnd' });
+        toast({ message: t('capture.failed'), tone: 'error', key: 'sheet' });
+      } finally {
+        setFocus(previousFocus);
+        setBusy(null);
+      }
+    });
+
+  /* ---------- Floating preview ---------- */
+
+  const openFloating = async () => {
+    if (floating) {
+      floating.pip.focus();
+      return;
+    }
+    const api = (window as PictureInPictureHost).documentPictureInPicture;
+    if (!api) {
+      toast({ message: t('floating.unsupported'), tone: 'info', key: 'floating' });
+      return;
+    }
+    // The focused viewport, else the narrowest one (a phone, usually).
+    const target =
+      (focused && visible.find((vp) => vp.id === focused.id)) ?? [...visible].sort((a, b) => a.width - b.width)[0];
+    if (!target) return;
+    const scale = Math.min(
+      1,
+      (window.screen.availHeight * 0.75) / (target.height + FLOATING_TOOLBAR),
+      (window.screen.availWidth * 0.5) / target.width,
+    );
+    try {
+      const pip = await api.requestWindow({
+        width: Math.max(260, Math.round(target.width * scale)),
+        height: Math.round(target.height * scale) + FLOATING_TOOLBAR,
+      });
+      adoptStyles(document, pip.document);
+      // Its frames don't belong to the workspace's tab: they get the rule for Breakpointer's own frames.
+      await enableEmbeddingForExtensionFrames().catch(() => {});
+      pip.addEventListener('pagehide', () => setFloating(null), { once: true });
+      setFloating({ pip, viewportId: target.id });
+    } catch (error) {
+      console.warn('[Breakpointer] The floating preview could not open.', error);
+      toast({ message: t('floating.failed'), tone: 'error', key: 'floating' });
+    }
+  };
+
+  const closeFloating = () => {
+    floating?.pip.close();
+    setFloating(null);
+  };
+
   const toggleSaved = () => {
     if (!currentUrl) return;
     const saved = settings.savedPages.includes(currentUrl.href);
@@ -1429,6 +1708,7 @@ function Workspace({
     prevViewport: () => cycleFocus(-1),
     nextViewport: () => cycleFocus(1),
     actualSize: () => visible.length > 0 && zoomTo(1),
+    floating: () => void openFloating(),
     escape: onEscape,
   });
 
@@ -1450,11 +1730,13 @@ function Workspace({
         focusedId: focused?.id ?? null,
         outlines,
         hideScrollbars,
+        annotate,
         liveCss: Boolean(liveCss),
         inspecting: inspector.open,
         measuring,
         comparing: compare !== null,
         simulate: simulateState,
+        windowsOpen: realWindows.length > 0,
         actions: {
           reloadAll: reloadAllPreviews,
           openInTab: () => currentUrl && void adapter.openInTab(currentUrl.href),
@@ -1498,6 +1780,11 @@ function Workspace({
           setVision,
           toggleSimulate,
           applySnippet: applyLiveCss,
+          openWindows: () => void openRealWindows(),
+          closeWindows: closeRealWindows,
+          captureWindows: () => void captureRealWindows(),
+          floating: () => void openFloating(),
+          fullPage: (id) => void captureFullPage(id),
         },
       }),
     );
@@ -1622,6 +1909,7 @@ function Workspace({
             grid={settings.grid}
             checks={settings.checks ? (agents.frameOf(card.id)?.report ?? null) : null}
             httpStatus={agents.frameOf(card.id)?.status}
+            onFullPage={() => void captureFullPage(card.id)}
             highlighted={highlights[card.id] ?? null}
             onHighlight={(kind) => highlight(card.id, kind)}
             showRulers={settings.showRulers}
@@ -1752,6 +2040,8 @@ function Workspace({
         onSubmit={(value) => navigate(value ?? address)}
         onReloadAll={reloadAllPreviews}
         onOpenInTab={() => currentUrl && void adapter.openInTab(currentUrl.href)}
+        onOpenWindows={() => void openRealWindows()}
+        onFloating={() => void openFloating()}
         onPalette={openPalette}
         paletteShortcut={paletteShortcut}
         onCapture={onCapture}
@@ -1783,6 +2073,10 @@ function Workspace({
         onStopCompare={stopCompare}
         onVision={setVision}
         onSimulate={toggleSimulate}
+        windowsOpen={realWindows.length > 0}
+        onOpenWindows={() => void openRealWindows()}
+        onCloseWindows={closeRealWindows}
+        onFloating={() => void openFloating()}
         tools={{
           syncScroll: settings.sync.scroll,
           syncNavigation: settings.sync.navigation,
@@ -1790,6 +2084,8 @@ function Workspace({
           outlines,
           scrollbars: hideScrollbars,
           grid: settings.grid.show,
+          imageSizes: annotate.images,
+          tabOrder: annotate.tabOrder,
           liveCss: Boolean(liveCss),
         }}
         hasUrl={Boolean(currentUrl)}
@@ -1839,6 +2135,32 @@ function Workspace({
             : t('compare.bannerFixed', { target: compareLabel(compare) })}
         </Banner>
       )}
+      {realWindows.length > 0 && (
+        <Banner
+          tone="info"
+          icon="window"
+          testId="windows-banner"
+          actions={
+            <>
+              <Button
+                size="sm"
+                icon="window"
+                onClick={() => void focusWindows(realWindows.map((item) => item.windowId))}
+              >
+                {t('windows.focus')}
+              </Button>
+              <Button size="sm" icon="camera" onClick={() => void captureRealWindows()}>
+                {t('windows.capture')}
+              </Button>
+              <Button size="sm" variant="ghost" icon="close" onClick={closeRealWindows}>
+                {t('windows.close')}
+              </Button>
+            </>
+          }
+        >
+          {realWindows.length === 1 ? t('windows.bannerOne') : t('windows.banner', { count: realWindows.length })}
+        </Banner>
+      )}
       {probe === 'unreachable' && host && currentUrl && (
         // The previews stay: each frame shows Chrome's own error page too.
         <Banner
@@ -1873,6 +2195,7 @@ function Workspace({
           busy={requesting}
           onAllow={() => void allowSite()}
           onOpenInTab={() => void adapter.openInTab(currentUrl.href)}
+          onOpenWindows={() => void openRealWindows()}
           onDismiss={() => {
             const next = [...dismissedHosts.filter((host) => host !== currentUrl.hostname), currentUrl.hostname];
             setDismissedHosts(next);
@@ -2103,6 +2426,18 @@ function Workspace({
         onSaveSnippet={saveSnippet}
         onDeleteSnippet={deleteSnippet}
       />
+      {floating && (
+        <FloatingPreview
+          pipWindow={floating.pip}
+          src={src}
+          viewports={visible.map(({ id, name, width, height }) => ({ id, name, width, height }))}
+          viewportId={floating.viewportId}
+          theme={resolvedTheme}
+          onViewport={(id) => setFloating((current) => current && { ...current, viewportId: id })}
+          onWorkspace={() => void focusOwnWindow()}
+          onClose={closeFloating}
+        />
+      )}
       <ContrastDialog
         open={dialog === 'contrast'}
         colors={contrastColors}

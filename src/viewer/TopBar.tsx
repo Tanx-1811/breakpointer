@@ -28,6 +28,10 @@ type Props = {
   onSubmit: (value?: string) => void;
   onReloadAll: () => void;
   onOpenInTab: () => void;
+  /** Opens every viewport as a real window of its size. */
+  onOpenWindows?: () => void;
+  /** Opens the always-on-top floating preview. */
+  onFloating?: () => void;
   onPalette: () => void;
   paletteShortcut: string;
   onCapture: (kind: CaptureKind) => void;
@@ -122,6 +126,26 @@ export function TopBar(props: Props) {
           onClick={props.onOpenInTab}
           disabled={!props.hasUrl}
         />
+        {props.onOpenWindows && (
+          <IconButton
+            icon="window"
+            size="sm"
+            label={t('windows.open')}
+            onClick={props.onOpenWindows}
+            disabled={!props.hasUrl}
+            data-testid="open-windows"
+          />
+        )}
+        {props.onFloating && (
+          <IconButton
+            icon="pip"
+            size="sm"
+            label={t('floating.open')}
+            shortcut="P"
+            onClick={props.onFloating}
+            data-testid="open-floating"
+          />
+        )}
       </div>
 
       <div className={styles.topActions}>

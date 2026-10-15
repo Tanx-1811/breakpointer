@@ -25,6 +25,8 @@ export type GridSettings = {
   gutter: number;
   /** Outer margin on each side, in CSS pixels. */
   margin: number;
+  /** Horizontal lines every this many CSS pixels (a baseline grid); 0 = none. */
+  baseline: number;
 };
 
 /** Features that need the in-frame agent (only on sites the user allowed). */
@@ -54,6 +56,9 @@ export type ViewportConfig = {
 
 /** A viewport inside a saved group, without identity or visibility. */
 export type ViewportTemplate = Pick<ViewportConfig, 'name' | 'width' | 'height' | 'zoom' | 'colorScheme'>;
+
+/** The side panel shows one preset size, portrait or landscape. */
+export type SidePanelSettings = { preset: string; landscape: boolean };
 
 /** A piece of live CSS the user saved to use again. */
 export type CssSnippet = {
@@ -93,6 +98,8 @@ export type BreakpointerSettings = {
   savedPages: string[];
   /** Live CSS saved by the user, to apply again in one click. */
   cssSnippets: CssSnippet[];
+  /** The size shown in Chrome's side panel. */
+  sidePanel: SidePanelSettings;
   activeUrl?: string;
 };
 

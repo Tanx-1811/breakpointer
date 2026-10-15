@@ -133,12 +133,15 @@ describe('grid', () => {
   });
 
   it('sanitizes stored grid settings', () => {
-    expect(parseSettings({ grid: { show: true, columns: 7, gutter: -4, margin: 999 } }).grid).toEqual({
+    expect(parseSettings({ grid: { show: true, columns: 7, gutter: -4, margin: 999, baseline: 5 } }).grid).toEqual({
       show: true,
       columns: 'auto',
       gutter: 0,
       margin: 200,
+      // Only the offered baseline steps are kept.
+      baseline: 0,
     });
+    expect(parseSettings({ grid: { baseline: 8 } }).grid.baseline).toBe(8);
     expect(parseSettings({ grid: { columns: 12, gutter: 32.6 } }).grid).toMatchObject({
       show: false,
       columns: 12,

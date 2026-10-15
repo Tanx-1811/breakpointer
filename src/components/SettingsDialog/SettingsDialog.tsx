@@ -11,7 +11,13 @@ import type {
   SyncSettings,
   ThemePreference,
 } from '../../types';
-import { GRID_COLUMN_OPTIONS, MAX_CUSTOM_BREAKPOINTS, MAX_GRID_SPACING, MAX_RECENT_URLS } from '../../utils/constants';
+import {
+  BASELINE_OPTIONS,
+  GRID_COLUMN_OPTIONS,
+  MAX_CUSTOM_BREAKPOINTS,
+  MAX_GRID_SPACING,
+  MAX_RECENT_URLS,
+} from '../../utils/constants';
 import { Button, IconButton } from '../Button/Button';
 import { BreakpointEditor } from './BreakpointEditor';
 import { Dialog } from '../Dialog/Dialog';
@@ -323,6 +329,20 @@ function SettingsBody(props: Props) {
               max={MAX_GRID_SPACING}
               onCommit={(margin) => props.onGrid({ margin })}
             />
+            <label className={styles.inlineField}>
+              <span>{t('settings.gridBaseline')}</span>
+              <Select
+                size="sm"
+                value={String(settings.grid.baseline)}
+                onChange={(event) => props.onGrid({ baseline: Number(event.target.value) })}
+              >
+                {BASELINE_OPTIONS.map((option) => (
+                  <option key={option} value={String(option)}>
+                    {option === 0 ? t('settings.gridBaselineOff') : `${option}px`}
+                  </option>
+                ))}
+              </Select>
+            </label>
           </div>
         </Section>
 

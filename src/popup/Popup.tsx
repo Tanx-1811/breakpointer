@@ -4,6 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 import { I18nProvider, useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
 import { resolveLanguage } from '../i18n/translate';
+import { openSidePanel } from '../shared/side-panel';
 import { openViewer } from '../shared/viewer-url';
 import { builtInGroupName } from '../state/groups';
 import type { BreakpointerSettings } from '../types';
@@ -27,6 +28,8 @@ type Props = {
   shortcut: string;
   /** Shortcut that previews the current tab directly. */
   previewShortcut?: string;
+  /** The window the popup belongs to (for the side panel). */
+  windowId?: number;
 };
 
 export function PopupApp(props: Props) {
@@ -60,7 +63,7 @@ function SiteAvatar({ url, size = 'md' }: { url: string; size?: 'md' | 'sm' }) {
   );
 }
 
-function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewShortcut }: Props) {
+function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewShortcut, windowId }: Props) {
   const { t } = useI18n();
   const [address, setAddress] = useState('');
   const [error, setError] = useState<MessageKey | null>(null);
@@ -249,6 +252,18 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewSho
         <Button variant="ghost" size="sm" icon="layers" onClick={() => void open()}>
           {t('popup.openWorkspace')}
         </Button>
+        {windowId !== undefined && (
+          <Button
+            variant="ghost"
+            size="sm"
+            icon="panel"
+            data-testid="popup-sidepanel"
+            // Opened straight from the click: Chrome only opens side panels in response to one.
+            onClick={() => void openSidePanel(windowId, tabUrl?.href).then(() => window.close())}
+          >
+            {t('sidepanel.open')}
+          </Button>
+        )}
         {shortcut && (
           <span className={styles.shortcut}>
             {t('popup.shortcut')} <kbd>{shortcut}</kbd>

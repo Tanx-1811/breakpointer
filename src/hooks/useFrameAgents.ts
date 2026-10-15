@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { AgentCommand, CheckReport, ElementInfo, MediaReport, ScrollAnchor } from '../agent/protocol';
+import type { AgentCommand, AgentEvent, CheckReport, ElementInfo, MediaReport, ScrollAnchor } from '../agent/protocol';
 import { listenToAgents, parseFrameName, pingAgents, sendToAgent } from '../services/frame-agents';
 
 /** A navigation this soon after a click or key press in the preview counts as the user's. */
@@ -45,6 +45,8 @@ export type FrameAgentHandlers = {
   onElement: (cardId: string, selector: string, element: ElementInfo | null) => void;
   /** A key the workspace handles was pressed inside a preview. */
   onKey: (cardId: string, key: 'Escape') => void;
+  /** An answer to a request (`pageMetrics`, `captureScroll`). */
+  onReply?: (cardId: string, reply: Extract<AgentEvent, { type: 'metrics' | 'scrolled' }>) => void;
 };
 
 /**
@@ -169,6 +171,10 @@ export function useFrameAgents(
           break;
         case 'key':
           handlersRef.current.onKey(cardId, message.key);
+          break;
+        case 'metrics':
+        case 'scrolled':
+          if (sameFrame) handlersRef.current.onReply?.(cardId, message);
           break;
       }
     });

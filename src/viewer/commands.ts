@@ -39,6 +39,11 @@ export type CommandActions = {
   setVision?: (mode: VisionMode) => void;
   toggleSimulate?: (toggle: SimulateToggle) => void;
   applySnippet?: (css: string) => void;
+  openWindows?: () => void;
+  closeWindows?: () => void;
+  captureWindows?: () => void;
+  floating?: () => void;
+  fullPage?: (cardId: string) => void;
   navigate: (url: string) => void;
   addPreset: (preset: ViewportPreset, name: string) => void;
   openAdd: () => void;
@@ -79,11 +84,15 @@ export type CommandContext = {
   focusedId: string | null;
   outlines: boolean;
   hideScrollbars: boolean;
+  /** Image size and tab order labels in the previews. */
+  annotate?: { images: boolean; tabOrder: boolean };
   liveCss: boolean;
   inspecting: boolean;
   measuring?: boolean;
   comparing?: boolean;
   simulate?: SimulateState;
+  /** Viewports are open as real windows. */
+  windowsOpen?: boolean;
   actions: CommandActions;
 };
 
@@ -152,6 +161,32 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       icon: 'link',
       disabled: !ctx.hasUrl,
       run: actions.copyAddress,
+    });
+  if (ctx.windowsOpen && actions.closeWindows && actions.captureWindows) {
+    named('windows.capture', {
+      id: 'windows-capture',
+      section: section.page,
+      icon: 'camera',
+      run: actions.captureWindows,
+    });
+    named('windows.close', { id: 'windows-close', section: section.page, icon: 'window', run: actions.closeWindows });
+  } else if (actions.openWindows)
+    named('windows.open', {
+      id: 'windows-open',
+      section: section.page,
+      icon: 'window',
+      keywords: 'real window popup sign in login',
+      disabled: !ctx.hasUrl,
+      run: actions.openWindows,
+    });
+  if (actions.floating)
+    named('floating.open', {
+      id: 'floating',
+      section: section.page,
+      icon: 'pip',
+      shortcut: 'P',
+      keywords: 'picture in picture always on top float pip',
+      run: actions.floating,
     });
   if (ctx.comparing && actions.swapCompare && actions.compare && actions.stopCompare) {
     named('compare.swap', { id: 'compare-swap', section: section.page, icon: 'swap', run: actions.swapCompare });
@@ -305,6 +340,10 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
   toggle('outlines', 'tools.outlines', ctx.outlines);
   toggle('scrollbars', 'tools.scrollbars', ctx.hideScrollbars);
   toggle('grid', 'tools.grid', settings.grid.show);
+  if (ctx.annotate) {
+    toggle('imageSizes', 'tools.imageSizes', ctx.annotate.images);
+    toggle('tabOrder', 'tools.tabOrder', ctx.annotate.tabOrder);
+  }
   named('workspace.rulers', {
     id: 'rulers',
     section: section.tools,
@@ -393,9 +432,12 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     });
   };
   simulate('reduceMotion', 'motion.reduce', 'pause', 'prefers-reduced-motion accessibility');
+  simulate('moreContrast', 'prefs.moreContrast', 'contrast', 'prefers-contrast high contrast accessibility');
+  simulate('print', 'prefs.print', 'report', 'print media printer');
   simulate('pauseAnimations', 'animations.pause', 'pause', 'freeze transition');
   simulate('pseudo', 'stress.pseudo', 'text', 'pseudo localization translation i18n');
   simulate('rtl', 'stress.rtl', 'arrowLeft', 'rtl arabic hebrew direction');
+  simulate('spacing', 'stress.spacing', 'text', 'wcag text spacing letter word line height');
 
   /* ---------- View ---------- */
   for (const zoom of ZOOM_OPTIONS) {
@@ -447,6 +489,19 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     disabled: !ctx.hasUrl,
     run: () => actions.capture('workspace'),
   });
+  const { fullPage } = actions;
+  if (fullPage)
+    for (const vp of settings.viewports.filter((item) => !item.hidden))
+      add({
+        id: `full-page-${vp.id}`,
+        section: section.capture,
+        icon: 'image',
+        title: t('palette.fullPage', { name: vp.name }),
+        keywords: `${en('palette.fullPage', { name: vp.name })} ${vp.width} screenshot long scroll`,
+        hint: `${vp.width} × ${vp.height}`,
+        disabled: !ctx.hasUrl,
+        run: () => fullPage(vp.id),
+      });
   named('capture.all', {
     id: 'capture-all',
     section: section.capture,
@@ -532,4 +587,6 @@ const TOOL_ICONS: Record<ToolToggle, PaletteCommand['icon']> = {
   outlines: 'outline',
   scrollbars: 'eyeOff',
   grid: 'columns',
+  imageSizes: 'image',
+  tabOrder: 'keyboard',
 };

@@ -12,11 +12,13 @@ import { Menu, type MenuEntry } from '../Menu/Menu';
 import { Select } from '../Select/Select';
 import styles from './WorkspaceBar.module.css';
 
-export type ToolToggle = 'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'scrollbars' | 'grid';
+export type ToolToggle =
+  'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'scrollbars' | 'grid' | 'imageSizes' | 'tabOrder';
 export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 /** Simulations that run inside the previews (sites the user allowed). */
-export type SimulateToggle = 'reduceMotion' | 'pauseAnimations' | 'pseudo' | 'rtl';
+export type SimulateToggle =
+  'reduceMotion' | 'moreContrast' | 'print' | 'pauseAnimations' | 'pseudo' | 'rtl' | 'spacing';
 export type SimulateState = Record<SimulateToggle, boolean> & { vision: VisionMode };
 
 export const VISION_KEYS: Record<VisionMode, MessageKey> = {
@@ -68,6 +70,11 @@ type Props = {
   onCompare?: () => void;
   onStopCompare?: () => void;
   onVision?: (mode: VisionMode) => void;
+  /** Viewports are open as real windows. */
+  windowsOpen?: boolean;
+  onOpenWindows?: () => void;
+  onCloseWindows?: () => void;
+  onFloating?: () => void;
   onSimulate?: (toggle: SimulateToggle) => void;
   onTool: (tool: ToolToggle) => void;
   onLiveCss: () => void;
@@ -258,6 +265,31 @@ export function WorkspaceBar(props: Props) {
       disabled: !props.hasUrl,
       onSelect: props.onCompare,
     });
+  if (props.windowsOpen && props.onCloseWindows)
+    utilityEntries.push({
+      id: 'windows-close',
+      label: t('windows.close'),
+      icon: 'window',
+      onSelect: props.onCloseWindows,
+    });
+  else if (props.onOpenWindows)
+    utilityEntries.push({
+      id: 'windows-open',
+      label: t('windows.open'),
+      description: t('windows.openHint'),
+      icon: 'window',
+      disabled: !props.hasUrl,
+      onSelect: props.onOpenWindows,
+    });
+  if (props.onFloating)
+    utilityEntries.push({
+      id: 'floating',
+      label: t('floating.open'),
+      description: t('floating.openHint'),
+      icon: 'pip',
+      shortcut: 'P',
+      onSelect: props.onFloating,
+    });
   if (utilityEntries.length)
     utilityEntries.unshift(
       { kind: 'separator', id: 'tools-sep-utilities' },
@@ -286,6 +318,8 @@ export function WorkspaceBar(props: Props) {
     toolToggle('outlines', 'tools.outlines'),
     toolToggle('scrollbars', 'tools.scrollbars'),
     toolToggle('grid', 'tools.grid'),
+    toolToggle('imageSizes', 'tools.imageSizes', 'tools.imageSizesHint'),
+    toolToggle('tabOrder', 'tools.tabOrder', 'tools.tabOrderHint'),
     {
       id: 'liveCss',
       label: t('tools.liveCss'),
@@ -337,19 +371,25 @@ export function WorkspaceBar(props: Props) {
     { kind: 'separator', id: 'simulate-sep1' },
     { kind: 'heading', id: 'preferences', label: t('simulate.preferences') },
     simulateToggle('reduceMotion', 'motion.reduce', 'motion.reduceHint'),
+    simulateToggle('moreContrast', 'prefs.moreContrast', 'prefs.moreContrastHint'),
+    simulateToggle('print', 'prefs.print', 'prefs.printHint'),
     simulateToggle('pauseAnimations', 'animations.pause', 'animations.pauseHint'),
     { kind: 'separator', id: 'simulate-sep2' },
     { kind: 'heading', id: 'stress', label: t('simulate.stress') },
     simulateToggle('pseudo', 'stress.pseudo', 'stress.pseudoHint'),
     simulateToggle('rtl', 'stress.rtl', 'stress.rtlHint'),
+    simulateToggle('spacing', 'stress.spacing', 'stress.spacingHint'),
   ];
   const simulating = Boolean(
     simulate &&
     (simulate.vision !== 'none' ||
       simulate.reduceMotion ||
+      simulate.moreContrast ||
+      simulate.print ||
       simulate.pauseAnimations ||
       simulate.pseudo ||
-      simulate.rtl),
+      simulate.rtl ||
+      simulate.spacing),
   );
 
   const siteCount = props.siteBreakpoints?.length ?? 0;

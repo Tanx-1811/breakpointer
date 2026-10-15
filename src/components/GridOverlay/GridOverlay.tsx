@@ -39,6 +39,13 @@ export function GridOverlay({ grid, width, height, zoom }: Props) {
       {Array.from({ length: columns }, (_, index) => (
         <span key={index} className={styles.column} />
       ))}
+      {grid.baseline > 0 && (
+        <span
+          className={styles.baseline}
+          style={{ ['--baseline' as string]: `${grid.baseline * zoom}px` }}
+          data-testid="baseline-grid"
+        />
+      )}
     </div>
   );
 }

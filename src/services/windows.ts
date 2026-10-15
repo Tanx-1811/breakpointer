@@ -39,10 +39,15 @@ export async function fitWindowContent(windowId: number, tabId: number, size: Si
     const dy = size.height - inner.height;
     if (dx === 0 && dy === 0) break;
     const current = await chrome.windows.get(windowId);
-    await chrome.windows.update(windowId, {
-      width: (current.width ?? size.width) + dx,
-      height: (current.height ?? size.height) + dy,
-    });
+    const resized = await chrome.windows
+      .update(windowId, {
+        width: (current.width ?? size.width) + dx,
+        height: (current.height ?? size.height) + dy,
+      })
+      .then(() => true)
+      .catch(() => false);
+    // Chrome keeps a window on its screen: this is as close as it gets.
+    if (!resized) break;
     await sleep(150);
     inner = (await contentSize(tabId)) ?? inner;
   }
@@ -79,7 +84,12 @@ export async function openWindowsSideBySide(
     );
   for (const [index, item] of items.entries()) {
     const rect = rects()[index]!;
-    const created = await chrome.windows.create({ url, type: 'popup', focused: index === items.length - 1, ...rect });
+    const focused = index === items.length - 1;
+    // Chrome refuses a position mostly off its screen (the page's idea of the
+    // screen can differ, e.g. when zoomed): then it places the window itself.
+    const created = await chrome.windows
+      .create({ url, type: 'popup', focused, ...rect })
+      .catch(() => chrome.windows.create({ url, type: 'popup', focused, width: rect.width, height: rect.height }));
     const windowId = created?.id;
     const tabId = created?.tabs?.[0]?.id;
     if (windowId === undefined || tabId === undefined) continue;
@@ -87,7 +97,7 @@ export async function openWindowsSideBySide(
       const inner = await contentSize(tabId);
       if (inner) {
         frame = { width: Math.max(0, rect.width - inner.width), height: Math.max(0, rect.height - inner.height) };
-        await chrome.windows.update(windowId, rects()[0]!);
+        await chrome.windows.update(windowId, rects()[0]!).catch(() => {});
       }
     }
     const achieved = await fitWindowContent(windowId, tabId, item);
@@ -109,6 +119,12 @@ export async function closeWindows(windowIds: number[]): Promise<void> {
 /** Brings the windows to the front, in order (the last one ends up on top). */
 export async function focusWindows(windowIds: number[]): Promise<void> {
   for (const id of windowIds) await chrome.windows.update(id, { focused: true }).catch(() => {});
+}
+
+/** Brings the window this page is in back to the front. */
+export async function focusOwnWindow(): Promise<void> {
+  const current = await chrome.windows.getCurrent().catch(() => null);
+  if (current?.id !== undefined) await chrome.windows.update(current.id, { focused: true }).catch(() => {});
 }
 
 /** Loads `url` in the windows' tabs (they follow the workspace's address). */

@@ -14,13 +14,20 @@ import {
   compressBox,
   cssPath,
   describeElement,
+  imageDensity,
   mediaQueryEdges,
   mentionsColorScheme,
+  mentionsMediaType,
+  mentionsPrefersContrast,
   mentionsReducedMotion,
+  printMedia,
   pseudoLocalize,
   scheduler,
   swapColorScheme,
+  swapPrefersContrast,
   swapReducedMotion,
+  tabOrder,
+  TEXT_SPACING_CSS,
 } from './page-utils';
 import {
   AGENT_SOURCE,
@@ -564,10 +571,18 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   let colorScheme: ColorSchemeOverride = null;
   let reduceMotion = false;
+  let moreContrast = false;
+  let printing = false;
   const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
   const systemReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const systemContrast = window.matchMedia('(prefers-contrast: more)');
   const originalMedia = new WeakMap<object, string>();
-  const overridden = (text: string) => mentionsColorScheme(text) || mentionsReducedMotion(text);
+  const overridden = (text: string) =>
+    mentionsColorScheme(text) ||
+    mentionsReducedMotion(text) ||
+    mentionsPrefersContrast(text) ||
+    mentionsMediaType(text);
+  const overriding = () => colorScheme !== null || reduceMotion || moreContrast || printing;
 
   const mediaReport = (): MediaReport => {
     const counts = new Map<number, number>();
@@ -596,10 +611,13 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   const applyMediaOverrides = () => {
     const swapScheme = colorScheme !== null && (colorScheme === 'dark') !== systemDark.matches;
     const swapMotion = reduceMotion && !systemReduce.matches;
+    const swapContrast = moreContrast && !systemContrast.matches;
     const rewrite = (original: string) => {
       let text = original;
       if (swapScheme) text = swapColorScheme(text);
       if (swapMotion) text = swapReducedMotion(text);
+      if (swapContrast) text = swapPrefersContrast(text);
+      if (printing) text = printMedia(text);
       return text;
     };
     const update = (original: string, current: string, write: (text: string) => void) => {
@@ -632,11 +650,12 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   };
   systemDark.addEventListener('change', applyMediaOverrides);
   systemReduce.addEventListener('change', applyMediaOverrides);
+  systemContrast.addEventListener('change', applyMediaOverrides);
 
   let lastMedia = '';
   /** Re-reads the stylesheets soon (they load and change after the first paint). */
   const mediaScan = scheduler(() => {
-    if (colorScheme !== null || reduceMotion) applyMediaOverrides();
+    if (overriding()) applyMediaOverrides();
     const report = mediaReport();
     const json = JSON.stringify(report);
     if (json === lastMedia) return;
@@ -726,6 +745,136 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     restore(html, originalDir.html);
     restore(body, originalDir.body);
     originalDir = null;
+  };
+
+  /* ---------- Annotations: image sizes and tab order ---------- */
+
+  let annotateImages = false;
+  let annotateTabs = false;
+  let annotations: { host: HTMLElement; layer: HTMLElement } | null = null;
+  const MAX_ANNOTATIONS = 400;
+  const FOCUSABLE =
+    'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, [contenteditable=""], [contenteditable="true"], [tabindex]';
+  const ANNOTATION_CSS = `
+:host{all:initial}
+.label{position:fixed;left:0;top:0;padding:1px 5px;border-radius:4px;font:600 11px/15px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.ok{background:#047857;color:#fff}.low{background:#dc2626;color:#fff}.high{background:#b45309;color:#fff}
+.tab{min-width:20px;text-align:center;border-radius:999px;background:#4f46e5;color:#fff}.tab.positive{background:#b45309}
+.ring{position:fixed;left:0;top:0;box-sizing:border-box;border:1.5px solid rgba(79,70,229,.85);border-radius:3px;pointer-events:none}`;
+
+  const ensureAnnotations = () => {
+    if (annotations?.host.isConnected) return annotations;
+    const host = document.createElement('div');
+    host.setAttribute(OVERLAY_ATTRIBUTE, '');
+    for (const [property, value] of [
+      ['position', 'fixed'],
+      ['inset', '0'],
+      ['pointer-events', 'none'],
+      ['z-index', '2147483646'],
+      ['display', 'block'],
+      ['margin', '0'],
+      ['padding', '0'],
+      ['border', '0'],
+      ['background', 'transparent'],
+    ] as [string, string][])
+      host.style.setProperty(property, value, 'important');
+    const root = host.attachShadow({ mode: 'closed' });
+    const style = document.createElement('style');
+    style.textContent = ANNOTATION_CSS;
+    const layer = document.createElement('div');
+    root.append(style, layer);
+    document.documentElement.append(host);
+    annotations = { host, layer };
+    return annotations;
+  };
+
+  let annotationsQueued = false;
+  /** Redraws the labels of what is in view (after scrolling, resizing or page changes). */
+  function drawAnnotations() {
+    if (annotationsQueued) return;
+    if (!annotateImages && !annotateTabs) {
+      annotations?.host.remove();
+      annotations = null;
+      return;
+    }
+    annotationsQueued = true;
+    requestAnimationFrame(() => {
+      annotationsQueued = false;
+      if (!annotateImages && !annotateTabs) return;
+      const { layer } = ensureAnnotations();
+      const parts: HTMLElement[] = [];
+      const inView = (rect: DOMRect) =>
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.bottom > 0 &&
+        rect.right > 0 &&
+        rect.top < window.innerHeight &&
+        rect.left < window.innerWidth;
+      const place = (element: HTMLElement, rect: DOMRect) => {
+        element.style.transform = `translate(${Math.max(0, Math.min(rect.left, window.innerWidth - 24))}px, ${Math.max(0, rect.top)}px)`;
+      };
+      if (annotateImages) {
+        for (const image of Array.from(document.images)) {
+          if (parts.length >= MAX_ANNOTATIONS) break;
+          const rect = image.getBoundingClientRect();
+          if (!image.naturalWidth || !inView(rect)) continue;
+          const { density, tone } = imageDensity(image.naturalWidth, rect.width);
+          const label = document.createElement('div');
+          label.className = `label ${tone}`;
+          label.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)} · ${image.naturalWidth}×${image.naturalHeight} · ${density.toFixed(1)}x`;
+          place(label, rect);
+          parts.push(label);
+        }
+      }
+      if (annotateTabs) {
+        const focusable = Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE))
+          .slice(0, MAX_SCAN)
+          .filter((element) => element.tabIndex >= 0 && !element.matches(':disabled') && !element.closest('[inert]'));
+        tabOrder(focusable).forEach((element, index) => {
+          if (parts.length >= MAX_ANNOTATIONS * 2) return;
+          const rect = element.getBoundingClientRect();
+          if (!inView(rect) || getComputedStyle(element).visibility === 'hidden') return;
+          const ring = document.createElement('div');
+          ring.className = 'ring';
+          ring.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
+          ring.style.width = `${rect.width}px`;
+          ring.style.height = `${rect.height}px`;
+          const label = document.createElement('div');
+          label.className = `label tab${element.tabIndex > 0 ? ' positive' : ''}`;
+          label.textContent = String(index + 1);
+          place(label, rect);
+          parts.push(ring, label);
+        });
+      }
+      layer.replaceChildren(...parts);
+      // How many labels are drawn (the layer itself is closed to the page; tests read this).
+      annotations!.host.dataset.labels = String(parts.filter((part) => part.classList.contains('label')).length);
+    });
+  }
+  const annotationUpdate = scheduler(drawAnnotations);
+  window.addEventListener('scroll', () => drawAnnotations(), { passive: true });
+  window.addEventListener('resize', () => drawAnnotations());
+  // Images that finish loading get their real size.
+  document.addEventListener(
+    'load',
+    (event) => {
+      if (annotateImages && event.target instanceof HTMLImageElement) annotationUpdate(100);
+    },
+    true,
+  );
+
+  /* ---------- Full-page screenshots ---------- */
+
+  // Fixed and stuck elements (headers, cookie bars) would repeat on every screen: hidden after the first.
+  const FIXED_MARK = 'data-bp-fixed';
+  const setFixedHidden = (hidden: boolean) => {
+    document.querySelectorAll(`[${FIXED_MARK}]`).forEach((element) => element.removeAttribute(FIXED_MARK));
+    setStyle('bp-fixed', hidden ? `[${FIXED_MARK}]{visibility:hidden !important}` : '');
+    if (!hidden) return;
+    for (const element of pageElements()) {
+      const position = getComputedStyle(element).position;
+      if (position === 'fixed' || position === 'sticky') element.setAttribute(FIXED_MARK, '');
+    }
   };
 
   /* ---------- Inspector ---------- */
@@ -966,6 +1115,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     scheduleChecks();
     scheduleElementReport();
+    if (annotateImages || annotateTabs) annotationUpdate(300);
     const styles = records.some((record) =>
       [...record.addedNodes, ...record.removedNodes].some(
         (node) =>
@@ -1031,10 +1181,22 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         colorScheme = command.scheme;
         applyMediaOverrides();
         break;
-      case 'reducedMotion':
-        if (command.on === reduceMotion) break;
-        reduceMotion = command.on;
+      case 'preferences':
+        if (
+          command.reducedMotion === reduceMotion &&
+          command.moreContrast === moreContrast &&
+          command.print === printing
+        )
+          break;
+        reduceMotion = command.reducedMotion;
+        moreContrast = command.moreContrast;
+        printing = command.print;
         applyMediaOverrides();
+        break;
+      case 'annotate':
+        annotateImages = command.images;
+        annotateTabs = command.tabOrder;
+        drawAnnotations();
         break;
       case 'animations':
         setStyle(
@@ -1051,10 +1213,31 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           else untranslate();
         }
         setRtl(command.rtl);
+        setStyle('bp-text-spacing', command.spacing ? TEXT_SPACING_CSS : '');
         break;
       case 'trackScroll':
         trackScroll = command.on;
         if (trackScroll) reportScroll(true);
+        break;
+      case 'pageMetrics':
+        send({
+          type: 'metrics',
+          scrollHeight: document.documentElement.scrollHeight,
+          viewportHeight: window.innerHeight,
+          scrollY: Math.round(window.scrollY),
+        });
+        break;
+      case 'captureScroll':
+        setFixedHidden(command.hideFixed);
+        // Not a scroll other previews should follow.
+        ignoreScrollUntil = performance.now() + 500;
+        window.scrollTo({ top: command.y, behavior: 'instant' });
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => send({ type: 'scrolled', y: Math.round(window.scrollY) })),
+        );
+        break;
+      case 'captureEnd':
+        setFixedHidden(false);
         break;
       case 'inspect':
         inspecting = command.on;

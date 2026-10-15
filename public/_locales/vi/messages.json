@@ -30,5 +30,13 @@
   "omniboxDefault": {
     "message": "Xem trước <match>%s</match> ở nhiều kích thước màn hình",
     "description": "Gợi ý trên thanh địa chỉ sau khi gõ từ khóa."
+  },
+  "menuSidePanelPage": {
+    "message": "Xem trước trang này ở thanh bên",
+    "description": "Context menu item on a page: Breakpointer side panel."
+  },
+  "menuSidePanelLink": {
+    "message": "Xem trước liên kết ở thanh bên",
+    "description": "Context menu item on a link: Breakpointer side panel."
   }
 }

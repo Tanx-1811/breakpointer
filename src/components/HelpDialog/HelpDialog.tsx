@@ -21,6 +21,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['X'], label: 'help.measure' },
   { keys: ['C'], label: 'help.contrast' },
   { keys: ['O'], label: 'help.outlines' },
+  { keys: ['P'], label: 'help.floating' },
   { keys: ['[', ']'], label: 'help.cycleFocus' },
   { keys: ['S'], label: 'help.capture' },
   { keys: ['T'], label: 'help.theme' },

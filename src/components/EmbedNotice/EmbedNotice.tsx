@@ -7,6 +7,8 @@ type Props = {
   host: string;
   onAllow: () => void;
   onOpenInTab: () => void;
+  /** Opens every viewport as a real window (works for any site). */
+  onOpenWindows?: () => void;
   onDismiss: () => void;
   onNeverShow: () => void;
   /** A permission prompt is open. */
@@ -18,7 +20,7 @@ type Props = {
  * embedding page when a frame was blocked, so this explains the likely cause
  * and offers both fixes up front.
  */
-export function EmbedNotice({ host, onAllow, onOpenInTab, onDismiss, onNeverShow, busy }: Props) {
+export function EmbedNotice({ host, onAllow, onOpenInTab, onOpenWindows, onDismiss, onNeverShow, busy }: Props) {
   const { t } = useI18n();
   return (
     <div className={styles.notice} role="note" data-testid="embed-notice">
@@ -31,6 +33,11 @@ export function EmbedNotice({ host, onAllow, onOpenInTab, onDismiss, onNeverShow
         <Button size="sm" icon="external" onClick={onOpenInTab}>
           {t('access.noticeOpen')}
         </Button>
+        {onOpenWindows && (
+          <Button size="sm" icon="window" onClick={onOpenWindows}>
+            {t('windows.open')}
+          </Button>
+        )}
         <Button size="sm" variant="ghost" onClick={onNeverShow}>
           {t('access.noticeNever')}
         </Button>

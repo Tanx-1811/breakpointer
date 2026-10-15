@@ -94,6 +94,10 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
     panel.style.left = `${left}px`;
     panel.style.top = `${top}px`;
     panel.dataset.placement = placement;
+    // A menu taller than the screen scrolls: arrow keys reach every item (each one scrolls into view),
+    // and the list itself can take keyboard focus too, as a scrolling region should.
+    if (panel.scrollHeight > panel.clientHeight + 1) panel.tabIndex = 0;
+    else panel.removeAttribute('tabindex');
     items()[0]?.focus();
   }, [open, align]);
 

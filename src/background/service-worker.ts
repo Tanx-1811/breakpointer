@@ -1,5 +1,6 @@
 import { disableEmbeddingForTab, tabsWithEmbedding } from '../services/embed-rules';
 import { agentRegistered, ensureAgentRegistered, unregisterAgent } from '../services/frame-agents';
+import { openSidePanel } from '../shared/side-panel';
 import { openViewer, viewerUrl } from '../shared/viewer-url';
 import { parsePreviewUrl, toSafeHref } from '../utils/url';
 
@@ -8,6 +9,8 @@ const WEB_PAGES = ['http://*/*', 'https://*/*'];
 
 const MENU_PREVIEW_PAGE = 'preview-page';
 const MENU_PREVIEW_LINK = 'preview-link';
+const MENU_SIDE_PANEL_PAGE = 'side-panel-page';
+const MENU_SIDE_PANEL_LINK = 'side-panel-link';
 
 /* ---------- Install: context menus and a first-run welcome ---------- */
 
@@ -25,6 +28,18 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
       contexts: ['link'],
       targetUrlPatterns: WEB_PAGES,
     });
+    chrome.contextMenus.create({
+      id: MENU_SIDE_PANEL_PAGE,
+      title: chrome.i18n.getMessage('menuSidePanelPage'),
+      contexts: ['page'],
+      documentUrlPatterns: WEB_PAGES,
+    });
+    chrome.contextMenus.create({
+      id: MENU_SIDE_PANEL_LINK,
+      title: chrome.i18n.getMessage('menuSidePanelLink'),
+      contexts: ['link'],
+      targetUrlPatterns: WEB_PAGES,
+    });
   });
   if (reason === chrome.runtime.OnInstalledReason.INSTALL) void openViewer();
 });
@@ -34,8 +49,14 @@ chrome.runtime.onStartup.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  const url = toSafeHref(info.menuItemId === MENU_PREVIEW_LINK ? info.linkUrl : info.pageUrl);
+  const link = info.menuItemId === MENU_PREVIEW_LINK || info.menuItemId === MENU_SIDE_PANEL_LINK;
+  const url = toSafeHref(link ? info.linkUrl : info.pageUrl);
   if (!url) return;
+  if (info.menuItemId === MENU_SIDE_PANEL_PAGE || info.menuItemId === MENU_SIDE_PANEL_LINK) {
+    // Straight from the click, which is what lets Chrome open the side panel.
+    if (tab?.windowId !== undefined) void openSidePanel(tab.windowId, url).catch(() => {});
+    return;
+  }
   void openViewer({ url }, tab?.index === undefined ? {} : { index: tab.index + 1, windowId: tab.windowId });
 });
 

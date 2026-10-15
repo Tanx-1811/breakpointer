@@ -469,6 +469,9 @@ describe('command palette', () => {
     const simulate = {
       vision: 'tritanopia',
       reduceMotion: true,
+      moreContrast: false,
+      print: false,
+      spacing: false,
       pauseAnimations: false,
       pseudo: false,
       rtl: false,

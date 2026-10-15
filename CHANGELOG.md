@@ -32,6 +32,13 @@ A redesigned workspace and a professional toolkit: find, inspect and fix respons
 - **Inspector → Copy table**: the comparison as a Markdown table, ready for a ticket or a pull request.
 - A preview the site served with an error (a refused frame, a bot check, a missing sign-in) shows **HTTP 403** (or whichever status) on its card, with what to try.
 - Shortcuts `[` / `]` (focus the previous / next viewport), `0` (zoom to 100%), `O` (layout outlines), `X` (measure) and `C` (contrast); commands to scroll every preview to the bottom and to copy the page address.
+- **Real windows** (toolbar or Tools → Open as real windows): every visible viewport as its own Chrome window with a content area of the exact size, placed side by side. They are normal pages, so sign-in, bot checks and sites that refuse previews all work; they follow the address you preview, and you can show, capture (all windows in one image) or close them together.
+- **Floating preview** (`P`): a small always-on-top window (Document Picture-in-Picture) with the page at one viewport size — keep a phone-sized preview next to your editor. It follows the workspace's address; switch the viewport or reload from its toolbar.
+- **Side panel**: preview the page you're browsing at a phone (or any preset) size in Chrome's side panel, from the popup or by right-clicking a page or link. It follows the active tab on sites you allow, remembers its size and opens the workspace in one click.
+- **Full-page screenshot** (card menu or palette): the whole page of a preview in one tall PNG, captured screen by screen, with fixed headers and cookie bars shown only once.
+- **Simulate** menu — **text spacing** (WCAG 1.4.12), **prefer more contrast** (`prefers-contrast: more`) and **print styles** (`@media print` at each width).
+- **Image sizes** and **tab order** (Tools, sites you allow): labels over the page with each image's shown size, file size and density (red: stretched, amber: far larger than needed), or numbers in keyboard order (amber: a positive `tabindex`).
+- **Baseline grid**: horizontal lines every 4–24px with the column grid (Settings → Column grid).
 
 ### Changed
 
@@ -40,7 +47,8 @@ A redesigned workspace and a professional toolkit: find, inspect and fix respons
 - The first-run fit waits until a page is shown, so the welcome panel no longer shrinks the previews, and the previews start loading at the fitted zoom (no jump in size). The first-run viewports have fixed ids, so two tabs opened on a fresh install no longer reload each other's previews.
 - The address bar is a combobox with its own suggestion list (was a `datalist`).
 - "Open in new tab" from a card opens the page that preview shows now.
-- A dialog whose content doesn't fit (such as Help on a small screen) can be scrolled from the keyboard; menus are taller before they scroll.
+- A dialog or menu whose content doesn't fit (such as Help on a small screen) can be scrolled from the keyboard; menus are taller before they scroll.
+- New permission `sidePanel` (no warning at install) for the side panel. See the [privacy policy](docs/PRIVACY.md).
 
 ### Fixed
 

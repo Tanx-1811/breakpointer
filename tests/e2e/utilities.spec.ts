@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
@@ -179,6 +180,96 @@ test.describe('utilities', () => {
     await again.getByRole('menuitemcheckbox', { name: /^Pause animations/ }).click();
     await page.keyboard.press('Escape');
     await expect.poll(() => state(375)).toEqual(before);
+  });
+
+  test('text spacing, more contrast and print styles apply to every preview and go away', async ({
+    openViewer,
+    server,
+  }) => {
+    const page = await openViewer({ url: server.url('/utilities') });
+    await agentsReady(page, '/utilities');
+    const state = async () =>
+      (await frameAt(page, '/utilities', 375)).evaluate(() => ({
+        letterSpacing: getComputedStyle(document.querySelector('#label')!).letterSpacing,
+        color: getComputedStyle(document.querySelector('#motion')!).color,
+        code: getComputedStyle(document.querySelector('#code')!).display,
+        labelStyle: getComputedStyle(document.querySelector('#label')!).fontStyle,
+      }));
+    const before = await state();
+    expect(before.code).not.toBe('none');
+    expect(before.labelStyle).toBe('italic');
+
+    const menu = await openSimulate(page);
+    await menu.getByRole('menuitemcheckbox', { name: /^Text spacing/ }).click();
+    await menu.getByRole('menuitemcheckbox', { name: /^Prefer more contrast/ }).click();
+    await menu.getByRole('menuitemcheckbox', { name: /^Print styles/ }).click();
+    await page.keyboard.press('Escape');
+    await expect.poll(state).toEqual({
+      // 0.12em of 16px.
+      letterSpacing: '1.92px',
+      color: 'rgb(0, 0, 255)',
+      code: 'none',
+      labelStyle: 'normal',
+    });
+
+    const again = await openSimulate(page);
+    await again.getByRole('menuitemcheckbox', { name: /^Text spacing/ }).click();
+    await again.getByRole('menuitemcheckbox', { name: /^Prefer more contrast/ }).click();
+    await again.getByRole('menuitemcheckbox', { name: /^Print styles/ }).click();
+    await page.keyboard.press('Escape');
+    await expect.poll(state).toEqual(before);
+  });
+
+  test('image sizes and tab order are labelled in the page', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/utilities') });
+    await agentsReady(page, '/utilities');
+    const labels = async () =>
+      (await frameAt(page, '/utilities', 1366)).evaluate(
+        () => document.querySelector('[data-breakpointer-overlay][data-labels]')?.getAttribute('data-labels') ?? null,
+      );
+    const tools = await openTools(page);
+    await tools.getByRole('menuitemcheckbox', { name: /^Tab order/ }).click();
+    await page.keyboard.press('Escape');
+    // The field, two links and the button.
+    await expect.poll(labels).toBe('4');
+    await (await openTools(page)).getByRole('menuitemcheckbox', { name: /^Tab order/ }).click();
+    await page.keyboard.press('Escape');
+    await expect.poll(labels).toBeNull();
+
+    // An image shown at 180px from a 1px file.
+    await page.getByTestId('address-input').fill(server.url('/cover'));
+    await page.keyboard.press('Enter');
+    await agentsReady(page, '/cover');
+    await (await openTools(page)).getByRole('menuitemcheckbox', { name: /^Image sizes/ }).click();
+    await page.keyboard.press('Escape');
+    await expect
+      .poll(async () =>
+        (await frameAt(page, '/cover', 1366)).evaluate(
+          () => document.querySelector('[data-breakpointer-overlay][data-labels]')?.getAttribute('data-labels') ?? null,
+        ),
+      )
+      .toBe('1');
+  });
+
+  test('a full-page screenshot captures the whole page of a preview', async ({ openViewer, server }) => {
+    const page = await openViewer({ url: server.url('/long') });
+    await agentsReady(page, '/long');
+    const phone = await frameAt(page, '/long', 375);
+    const scrollHeight = await phone.evaluate(() => document.documentElement.scrollHeight);
+
+    const download = page.waitForEvent('download');
+    await card(page, 'Phone').getByRole('button', { name: 'More actions for Phone' }).click();
+    await page.getByRole('menuitem', { name: 'Full-page screenshot' }).click();
+    const file = await (await download).path();
+    const png = await readFile(file);
+    // PNG header: width and height of the image.
+    const width = png.readUInt32BE(16);
+    const height = png.readUInt32BE(20);
+    // As tall as the page relative to its width (captured at the preview's zoom and the screen's density).
+    expect(height / width).toBeCloseTo(scrollHeight / 375, 1);
+    // The preview is back where it was, with the others.
+    await expect(page.getByTestId('focus-status')).toHaveCount(0);
+    expect(await phone.evaluate(() => window.scrollY)).toBe(0);
   });
 
   test('checks flag blurry images and fixed elements covering the screen', async ({ openViewer, server }) => {

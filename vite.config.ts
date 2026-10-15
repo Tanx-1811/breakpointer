@@ -71,6 +71,7 @@ export default defineConfig(({ mode }) => ({
       input: {
         popup: resolve(root, 'popup/popup.html'),
         viewer: resolve(root, 'viewer/viewer.html'),
+        sidepanel: resolve(root, 'sidepanel/sidepanel.html'),
         'service-worker': resolve(root, 'background/service-worker.ts'),
       },
       output: {

@@ -14,6 +14,7 @@ import type {
   BreakpointSetId,
   ColorScheme,
   CssSnippet,
+  SidePanelSettings,
   GridColumns,
   GridSettings,
   LanguagePreference,
@@ -26,6 +27,7 @@ import type {
 } from '../types';
 import {
   DEFAULT_ZOOM,
+  BASELINE_OPTIONS,
   GRID_COLUMN_OPTIONS,
   MAX_BREAKPOINT_NAME,
   MAX_CSS_SNIPPETS,
@@ -91,10 +93,21 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     recentUrls: [],
     savedPages: [],
     cssSnippets: [],
+    sidePanel: { ...DEFAULT_SIDE_PANEL },
   };
 }
 
-export const DEFAULT_GRID: GridSettings = { show: false, columns: 'auto', gutter: 24, margin: 16 };
+export const DEFAULT_SIDE_PANEL: SidePanelSettings = { preset: 'mobile-m', landscape: false };
+
+function parseSidePanel(raw: unknown): SidePanelSettings {
+  if (!isRecord(raw)) return { ...DEFAULT_SIDE_PANEL };
+  return {
+    preset: typeof raw.preset === 'string' && findPreset(raw.preset) ? raw.preset : DEFAULT_SIDE_PANEL.preset,
+    landscape: raw.landscape === true,
+  };
+}
+
+export const DEFAULT_GRID: GridSettings = { show: false, columns: 'auto', gutter: 24, margin: 16, baseline: 0 };
 export const DEFAULT_CUSTOM_BREAKPOINTS: Breakpoint[] = [
   { name: 'sm', min: 640 },
   { name: 'md', min: 768 },
@@ -232,6 +245,7 @@ function parseGrid(raw: unknown): GridSettings {
     columns,
     gutter: spacing(raw.gutter, DEFAULT_GRID.gutter),
     margin: spacing(raw.margin, DEFAULT_GRID.margin),
+    baseline: (BASELINE_OPTIONS as readonly unknown[]).includes(raw.baseline) ? (raw.baseline as number) : 0,
   };
 }
 
@@ -274,6 +288,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     recentUrls: rememberRecent ? parseRecentUrls(raw.recentUrls) : [],
     savedPages: parseUrlList(raw.savedPages, MAX_SAVED_PAGES),
     cssSnippets: parseSnippets(raw.cssSnippets),
+    sidePanel: parseSidePanel(raw.sidePanel),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;
@@ -296,6 +311,13 @@ export async function loadSettings(name?: PresetNamer): Promise<BreakpointerSett
 
 export async function saveSettings(settings: BreakpointerSettings): Promise<void> {
   await chrome.storage.local.set({ [STORAGE_KEY]: settings });
+}
+
+/** Changes stored settings from a page without its own copy (the side panel); open workspaces follow. */
+export async function updateStoredSettings(
+  update: (settings: BreakpointerSettings) => BreakpointerSettings,
+): Promise<void> {
+  await saveSettings(update(await loadSettings()));
 }
 
 /** Calls back with the raw stored value whenever settings change in storage (e.g. from another tab). */
