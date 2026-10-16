@@ -2,6 +2,9 @@ import { expect, test } from './fixtures';
 import { previewWidths } from './helpers';
 
 test.describe('viewports as real windows', () => {
+  // Otherwise Playwright resizes each new window to its emulated viewport.
+  test.use({ realWindows: true });
+
   test('open side by side at their sizes, follow the address and close together', async ({
     context,
     openViewer,
@@ -14,8 +17,7 @@ test.describe('viewports as real windows', () => {
     await page.getByTestId('open-windows').click();
     await expect(page.getByTestId('windows-banner')).toContainText('3 viewports are open as real windows');
     await expect.poll(() => windows('/responsive').length).toBe(3);
-    // Each window's content area has the viewport's size. (Playwright emulates a 1440px viewport in every
-    // page of the test browser, so the size is read from Chrome instead of the page; the headless screen
+    // Each window's content area has the viewport's size, as Chrome reports it. (The headless screen
     // can't fit the laptop's window exactly, so the two smaller ones are checked.)
     const sizes = () =>
       page.evaluate(async () =>

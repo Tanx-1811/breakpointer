@@ -6,6 +6,7 @@ import {
   SCAN_STEPS,
   nearestSample,
   rangeText,
+  scanCoverage,
   scanFindings,
   scanWidths,
   validScanOptions,
@@ -152,7 +153,8 @@ function ScanBody(props: Props) {
         },
         () => stop.current,
       );
-      props.onResult({ page: src, options, height, samples: found, complete: !stop.current });
+      // Stopped before the first width: the last result (if any) stays.
+      if (found.length) props.onResult({ page: src, options, height, samples: found, complete: !stop.current });
     } catch (scanError) {
       console.warn('[Breakpointer] The width scan failed.', scanError);
       setFailed(true);
@@ -168,6 +170,7 @@ function ScanBody(props: Props) {
   };
 
   const findings = useMemo(() => scanFindings(samples), [samples]);
+  const coverage = useMemo(() => (shown ? scanCoverage(shown.options, shown.samples) : null), [shown]);
   const readout = range ? describeWidth(cursor ?? probeWidth, samples, findings, t, language) : '';
 
   return (
@@ -268,19 +271,26 @@ function ScanBody(props: Props) {
         {running && progress ? (
           <>
             <span className={styles.progressTrack} aria-hidden="true">
-              <span
-                className={styles.progressFill}
-                style={{ width: `${Math.min(100, (progress.done / Math.max(1, progress.total)) * 100)}%` }}
-              />
+              <span className={styles.progressFill} style={{ width: `${percentDone(progress)}%` }} />
             </span>
-            {t('scan.progress', { width: progress.width, done: progress.done, total: progress.total })}
+            {/* Every probe changes this line: screen readers hear the share done, in tens. */}
+            <span aria-hidden="true">
+              {t('scan.progress', { width: progress.width, done: progress.done, total: progress.total })}
+            </span>
+            <span className="visually-hidden">
+              {t('scan.running', { percent: Math.floor(percentDone(progress) / 10) * 10 })}
+            </span>
           </>
         ) : failed ? (
           <span className={styles.error}>{t('scan.failed')}</span>
         ) : src && !props.connected && !props.needsAccess ? (
           t('scan.loading')
-        ) : shown && !shown.complete ? (
-          t('scan.stopped', { width: shown.samples.at(-1)?.width ?? shown.options.from })
+        ) : shown && coverage && coverage.to < shown.options.to ? (
+          t('scan.stopped', { width: coverage.to, from: coverage.from })
+        ) : shown && coverage && !shown.complete && coverage.accuracy > 1 ? (
+          t('scan.stoppedEdges', { accuracy: coverage.accuracy })
+        ) : shown && coverage && coverage.accuracy > 1 ? (
+          t('scan.checkedLimit', { count: shown.samples.length, accuracy: coverage.accuracy })
         ) : shown ? (
           t('scan.checked', { count: shown.samples.length })
         ) : range ? (
@@ -318,17 +328,18 @@ function ScanBody(props: Props) {
             onChange={(event) => pick(Number(event.target.value))}
             aria-valuetext={`${probeWidth}px`}
           />
-          <output className={styles.readout} aria-live="polite">
+          {/* Announced when the slider moves, not on every probe or pointer move. */}
+          <output className={styles.readout} aria-live={running || cursor !== null ? 'off' : 'polite'}>
             {readout}
           </output>
         </div>
       )}
 
-      {!running && shown && (
+      {!running && shown && coverage && (
         <section className={styles.findings} aria-label={t('scan.widths')}>
           {findings.length === 0 ? (
             <p className={styles.ok} data-testid="scan-none">
-              <Icon name="check" size={15} /> {t('scan.none', { from: shown.options.from, to: shown.options.to })}
+              <Icon name="check" size={15} /> {t('scan.none', { from: coverage.from, to: coverage.to })}
             </p>
           ) : (
             <ul className={styles.findingList}>
@@ -382,6 +393,8 @@ function ScanBody(props: Props) {
     </div>
   );
 }
+
+const percentDone = (progress: ScanProgress) => Math.min(100, (progress.done / Math.max(1, progress.total)) * 100);
 
 function readOptions(draft: { from: string; to: string; step: number }): ScanOptions | null {
   return validScanOptions({ from: Number(draft.from), to: Number(draft.to), step: draft.step });

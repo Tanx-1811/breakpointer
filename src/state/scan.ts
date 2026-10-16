@@ -59,6 +59,13 @@ export const issueSignature = (sample: ScanSample) =>
 
 export type ScanProgress = { done: number; total: number; width: number };
 
+/** Neighbouring samples whose issues differ and that are more than 1px apart: an edge not found exactly yet. */
+const openGaps = (samples: ScanSample[]) =>
+  samples
+    .slice(1)
+    .map((sample, index) => [samples[index]!, sample] as const)
+    .filter(([a, b]) => b.width - a.width > 1 && issueSignature(a) !== issueSignature(b));
+
 /**
  * Checks the page at every width of the first pass, then between any two
  * neighbouring widths whose issues differ, halves the gap until they are one
@@ -85,7 +92,7 @@ export async function scanWidths(
     // Kept under the width asked for (the preview waits until it has that width before answering).
     found.set(width, { ...sample, width });
     done++;
-    onProgress?.({ done, total: Math.max(total, done), width }, sorted());
+    onProgress?.({ done, total: Math.min(MAX_SCAN_PROBES, Math.max(total, done)), width }, sorted());
     return found.get(width);
   };
 
@@ -95,22 +102,38 @@ export async function scanWidths(
   }
 
   // Gaps between neighbours whose issues differ, narrowed until they are 1px wide.
-  const gaps = (samples: ScanSample[]) =>
-    samples
-      .slice(1)
-      .map((sample, index) => [samples[index]!, sample] as const)
-      .filter(([a, b]) => b.width - a.width > 1 && issueSignature(a) !== issueSignature(b));
-  let pending = gaps(sorted());
+  let pending = openGaps(sorted());
   total = done + pending.length * perChange;
   while (pending.length && !stopped() && done < MAX_SCAN_PROBES) {
     for (const [a, b] of pending) {
       if (stopped()) break;
       await check(Math.floor((a.width + b.width) / 2));
     }
-    pending = gaps(sorted());
+    pending = openGaps(sorted());
     total = Math.max(total, done + pending.length * Math.max(1, perChange - 1));
   }
   return sorted();
+}
+
+/**
+ * What a scan's samples cover: the widths from `from` to `to` were checked, and
+ * each issue's edges are exact to `accuracy` px — 1 when the scan finished, more
+ * when it was stopped (or reached its limit) before narrowing every gap.
+ */
+export type ScanCoverage = { from: number; to: number; accuracy: number };
+
+export function scanCoverage(options: ScanOptions, samples: ScanSample[]): ScanCoverage {
+  const last = samples.at(-1)?.width ?? options.from;
+  const accuracy = Math.max(1, ...openGaps(samples).map(([a, b]) => b.width - a.width));
+  return { from: options.from, to: Math.min(options.to, last), accuracy };
+}
+
+/** What a reader of the results should know about a scan that didn't finish (nothing when it did). */
+export function coverageNotes(options: ScanOptions, coverage: ScanCoverage, t: Translate): string[] {
+  const notes: string[] = [];
+  if (coverage.to < options.to) notes.push(t('scan.partial', { from: coverage.from, to: coverage.to }));
+  if (coverage.accuracy > 1) notes.push(t('scan.approximate', { accuracy: coverage.accuracy }));
+  return notes;
 }
 
 /** A run of widths where an issue was found, both ends included, with the width where it is worst. */
@@ -170,14 +193,17 @@ export function nearestSample(samples: ScanSample[], width: number): ScanSample 
 
 /** The scan as a Markdown table: each issue with the widths where it was found. */
 export function scanMarkdown(page: string, options: ScanOptions, samples: ScanSample[], t: Translate): string {
-  const heading = t('scan.markdown', { page, from: options.from, to: options.to });
+  const coverage = scanCoverage(options, samples);
+  const heading = [t('scan.markdown', { page, from: options.from, to: options.to }), ...coverageNotes(options, coverage, t)]
+    .map((line) => `${line}\n`)
+    .join('\n');
   const findings = scanFindings(samples);
-  if (findings.length === 0) return `${heading}\n\n${t('scan.none', { from: options.from, to: options.to })}\n`;
+  if (findings.length === 0) return `${heading}\n${t('scan.none', { from: coverage.from, to: coverage.to })}\n`;
   const rows = findings.map(({ kind, ranges }) => {
     const widths = ranges
       .map((range) => `${rangeText(range, t)} (${issueCell(range.peak.issue)} @ ${range.peak.width}px)`)
       .join(', ');
     return `| ${t(CHECK_KIND_KEYS[kind])} | ${widths} |`;
   });
-  return [heading, '', `| ${t('audit.check')} | ${t('scan.widths')} |`, '| --- | --- |', ...rows, ''].join('\n');
+  return [heading, `| ${t('audit.check')} | ${t('scan.widths')} |`, '| --- | --- |', ...rows, ''].join('\n');
 }

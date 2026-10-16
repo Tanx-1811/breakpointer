@@ -28,6 +28,13 @@ export const CHECK_HINT_KEYS: Record<CheckKind, MessageKey> = {
 };
 
 /**
+ * Numbers the frame agent wrote ("0.243", "2.85:1 · #777 / #fff", "11.5px")
+ * with the UI language's decimal separator. Not for text taken from the page.
+ */
+export const localNumbers = (text: string, t: Translate) =>
+  text.replace(/(\d)\.(\d)/g, (_, before: string, after: string) => `${before}${t('format.decimal')}${after}`);
+
+/**
  * The issue in a few words, where the check is named already: "184px too
  * wide", "3 elements · 2.85:1", "CLS 0.24"…
  */
@@ -41,9 +48,9 @@ export function issueValue(issue: CheckIssue, t: Translate): string {
     case 'fixed-cover':
       return issue.detail ? t('checks.value.cover', { amount: issue.detail }) : count;
     case 'layout-shift':
-      return `CLS ${issue.detail ?? ''}`.trim();
+      return `CLS ${localNumbers(issue.detail ?? '', t)}`.trim();
     case 'low-contrast':
-      return issue.detail ? `${count} · ${issue.detail}:1` : count;
+      return issue.detail ? `${count} · ${localNumbers(issue.detail, t)}:1` : count;
     default:
       return count;
   }
@@ -74,12 +81,14 @@ export function issueDetail(issue: CheckIssue, t: Translate): string {
     case 'fixed-cover':
       return t('checks.detail.fixedCover', { amount: issue.detail ?? '' });
     case 'layout-shift':
-      return t('checks.detail.layoutShift', { amount: issue.detail ?? '' });
+      return t('checks.detail.layoutShift', { amount: localNumbers(issue.detail ?? '', t) });
     case 'low-contrast':
-      if (issue.detail)
+      if (issue.detail) {
+        const ratio = localNumbers(issue.detail, t);
         return issue.count === 1
-          ? t('checks.detail.lowContrastOne', { ratio: issue.detail })
-          : t('checks.detail.lowContrast', { count: issue.count, ratio: issue.detail });
+          ? t('checks.detail.lowContrastOne', { ratio })
+          : t('checks.detail.lowContrast', { count: issue.count, ratio });
+      }
       break;
   }
   return issue.count === 1 ? t('checks.detail.countOne') : t('checks.detail.count', { count: issue.count });

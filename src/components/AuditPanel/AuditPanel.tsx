@@ -14,7 +14,7 @@ import {
   typeValue,
   type StatMetric,
 } from '../../state/audit';
-import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue } from '../../state/checks';
+import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue, localNumbers } from '../../state/checks';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
@@ -188,9 +188,13 @@ function IssuesTab(props: Props) {
           ? checked.length === 1
             ? t('audit.summaryNoneOne')
             : t('audit.summaryNone', { count: checked.length })
-          : groups.length === 1
-            ? t('audit.summaryOneKind', { count: checked.length })
-            : t('audit.summary', { kinds: groups.length, count: checked.length })}
+          : checked.length === 1
+            ? groups.length === 1
+              ? t('audit.summaryOneKindOnePreview')
+              : t('audit.summaryOnePreview', { kinds: groups.length })
+            : groups.length === 1
+              ? t('audit.summaryOneKind', { count: checked.length })
+              : t('audit.summary', { kinds: groups.length, count: checked.length })}
       </p>
       {unchecked.length > 0 && (
         <p className={styles.muted}>{t('audit.notChecked', { names: unchecked.map((row) => row.name).join(', ') })}</p>
@@ -246,7 +250,7 @@ function IssuesTab(props: Props) {
                   {samples.slice(0, 3).map((sample, index) => (
                     <li key={`${sample.selector}-${index}`}>
                       <code>{sample.selector}</code>
-                      {sample.detail && <span>{sample.detail}</span>}
+                      {sample.detail && <span>{localNumbers(sample.detail, t)}</span>}
                     </li>
                   ))}
                 </ul>
@@ -319,7 +323,11 @@ function Metric({
                 {warning && <span className="visually-hidden"> · {t('audit.needsImprovement')}</span>}
               </span>
               {metric === 'transferred' && row.stats.unknownSize > 0 && (
-                <span className={styles.barNote}>{t('audit.unknownFiles', { count: row.stats.unknownSize })}</span>
+                <span className={styles.barNote}>
+                  {row.stats.unknownSize === 1
+                    ? t('audit.unknownFilesOne')
+                    : t('audit.unknownFiles', { count: row.stats.unknownSize })}
+                </span>
               )}
               {density !== null && (
                 <span className={styles.barNote}>

@@ -371,9 +371,11 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     }
     const elements = flagged.get(kind) ?? [];
     elements.forEach((element) => element.setAttribute(MARK, kind));
+    // The tint is an inset shadow, not a background: the contrast check reads
+    // backgrounds, and a highlighted element must keep its own.
     setStyle(
       'bp-highlight',
-      `[${MARK}]{outline:2px dashed #e11d48 !important;outline-offset:-2px !important;background-color:rgba(225,29,72,.08) !important}`,
+      `[${MARK}]{outline:2px dashed #e11d48 !important;outline-offset:-2px !important;box-shadow:inset 0 0 0 100vmax rgba(225,29,72,.08) !important}`,
     );
     if (scroll && elements[0]) reveal(elements[0]);
   };
@@ -433,6 +435,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   /** The colour of the page's canvas where nothing else is painted: white, or dark for dark pages. */
   const canvasColor = (): Rgb => {
     const probe = document.createElement('div');
+    // Not an HTML page (an SVG or XML file shown on its own): no CSS box to ask.
+    if (!(probe instanceof HTMLElement)) return WHITE;
     probe.setAttribute(OVERLAY_ATTRIBUTE, '');
     probe.style.cssText = 'position:absolute;width:0;height:0;background-color:Canvas';
     document.documentElement.append(probe);

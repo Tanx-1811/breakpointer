@@ -451,10 +451,12 @@ function SettingsBody(props: Props) {
                         {entry.page}
                       </span>
                       <span className={styles.snapshotMeta}>
-                        {t('settings.snapshotsPage', {
-                          count: entry.count,
-                          size: formatBytes(entry.bytes, language),
-                        })}
+                        {entry.count === 1
+                          ? t('settings.snapshotsPageOne', { size: formatBytes(entry.bytes, language) })
+                          : t('settings.snapshotsPage', {
+                              count: entry.count,
+                              size: formatBytes(entry.bytes, language),
+                            })}
                       </span>
                       <IconButton
                         icon="trash"

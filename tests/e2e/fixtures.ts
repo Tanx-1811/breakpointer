@@ -8,6 +8,12 @@ export type ExtensionOptions = {
 };
 
 type Fixtures = {
+  /**
+   * Leave windows at their real size: no viewport is emulated (the browser
+   * window is 1440×900 instead). With an emulated viewport, Playwright resizes
+   * every new window to it shortly after the window opens.
+   */
+  realWindows: boolean;
   context: BrowserContext;
   extensionId: string;
   viewerUrl: (params?: Record<string, string>) => string;
@@ -30,14 +36,20 @@ export const test = base.extend<Fixtures, WorkerFixtures>({
     { scope: 'worker' },
   ],
 
-  context: async ({ extensionDir }, provide) => {
+  realWindows: [false, { option: true }],
+
+  context: async ({ extensionDir, realWindows }, provide) => {
     const path = resolve(import.meta.dirname, '../..', extensionDir);
     const context = await chromium.launchPersistentContext('', {
       channel: 'chromium',
       headless: !process.env.HEADED,
-      viewport: { width: 1440, height: 900 },
+      viewport: realWindows ? null : { width: 1440, height: 900 },
       acceptDownloads: true,
-      args: [`--disable-extensions-except=${path}`, `--load-extension=${path}`],
+      args: [
+        `--disable-extensions-except=${path}`,
+        `--load-extension=${path}`,
+        ...(realWindows ? ['--window-size=1440,900'] : []),
+      ],
     });
     await provide(context);
     await context.close();

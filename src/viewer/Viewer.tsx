@@ -87,7 +87,15 @@ import { fitZoomForAll } from '../state/fit';
 import { slicePositions, stitchedHeight } from '../state/full-page';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
 import { CHECK_KIND_KEYS, withoutKinds } from '../state/checks';
-import { SCAN_CARD_ID, rangeText, scanFindings, scanMarkdown, type ScanSample } from '../state/scan';
+import {
+  SCAN_CARD_ID,
+  coverageNotes,
+  rangeText,
+  scanCoverage,
+  scanFindings,
+  scanMarkdown,
+  type ScanSample,
+} from '../state/scan';
 import { viewportKey, type SnapshotPage } from '../state/snapshots';
 import { workspaceLink } from '../state/workspace-link';
 import { clearSnapshots, deletePageSnapshots, snapshotPages } from '../services/snapshot-store';
@@ -887,7 +895,7 @@ function Workspace({
   useEffect(() => {
     if (announcedLink.current || !replacedViewports) return;
     announcedLink.current = true;
-    withUndo(t('link.opened', { count: viewports.length }), () =>
+    withUndo(viewports.length === 1 ? t('link.openedOne') : t('link.opened', { count: viewports.length }), () =>
       dispatch({ type: 'replaceViewports', viewports: replacedViewports }),
     );
   }, [dispatch, replacedViewports, t, viewports.length, withUndo]);
@@ -1807,7 +1815,9 @@ function Workspace({
       const changed = compared.filter((result) => result.status === 'compared' && result.ratio > 0).length;
       toast({
         message: changed
-          ? t('visual.summary', { changed, total: compared.length })
+          ? compared.length === 1
+            ? t('visual.summaryOnly')
+            : t('visual.summary', { changed, total: compared.length })
           : compared.length
             ? t('visual.summaryNone')
             : t('visual.none'),
@@ -2002,11 +2012,14 @@ function Workspace({
         });
       }
       // The last width scan of this page, and the element being inspected, if any.
+      const coverage = scanResult && scanCoverage(scanResult.options, scanResult.samples);
       const scan =
-        scanResult && scanResult.page === currentUrl.href
+        scanResult && coverage && scanResult.page === currentUrl.href
           ? {
               from: scanResult.options.from,
               to: scanResult.options.to,
+              checkedTo: coverage.to,
+              notes: coverageNotes(scanResult.options, coverage, t),
               findings: scanFindings(scanResult.samples).map(({ kind, ranges }) => ({
                 name: t(CHECK_KIND_KEYS[kind]),
                 widths: ranges.map((range) => rangeText(range, t)).join(', '),

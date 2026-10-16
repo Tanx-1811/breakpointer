@@ -115,6 +115,7 @@ function Toggle({
   onClick,
   testId,
   count,
+  countLabel,
 }: {
   pressed: boolean;
   label: string;
@@ -125,13 +126,15 @@ function Toggle({
   testId?: string;
   /** A small count after the label (e.g. kinds of issue found). */
   count?: number;
+  /** The accessible name while a count shows (the label with the count in words). */
+  countLabel?: string;
 }) {
   return (
     <button
       type="button"
       className={styles.toggle}
       aria-pressed={pressed}
-      aria-label={label}
+      aria-label={count && countLabel ? countLabel : label}
       data-tooltip={tooltip}
       data-shortcut={shortcut}
       onClick={onClick}
@@ -621,6 +624,9 @@ export function WorkspaceBar(props: Props) {
               onClick={props.onAudit}
               testId="audit-toggle"
               count={props.issueKinds}
+              countLabel={t(props.issueKinds === 1 ? 'workspace.auditCountOne' : 'workspace.auditCount', {
+                count: props.issueKinds ?? 0,
+              })}
             />
           )}
           {props.onMeasure && (

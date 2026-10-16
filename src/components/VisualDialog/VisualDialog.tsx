@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import { formatChange } from '../../state/image-diff';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
@@ -62,6 +62,25 @@ function VisualBody(props: Props) {
   const { t, language } = useI18n();
   const { rows } = props;
   const [selected, setSelected] = useState<string | null>(null);
+  const gridRef = useRef<HTMLUListElement>(null);
+  // Where focus goes once the grid shows again: the button that had it is gone
+  // (the comparison closed, or a capture was accepted).
+  const focusAfter = useRef<{ key: string; to: 'view' | 'tile' } | null>(null);
+  useEffect(() => {
+    const target = focusAfter.current;
+    if (!target || !gridRef.current) return;
+    focusAfter.current = null;
+    const tile = [...gridRef.current.querySelectorAll<HTMLElement>('[data-key]')].find(
+      (item) => item.dataset.key === target.key,
+    );
+    const view = target.to === 'view' ? tile?.querySelector<HTMLElement>('[data-action="view"]') : null;
+    (view ?? tile)?.focus();
+  });
+  const accept = (key: string) => {
+    focusAfter.current = { key, to: 'tile' };
+    setSelected(null);
+    props.onAccept(key);
+  };
   const hasBaseline = rows.some((row) => row.baseline);
   const compared = rows.filter((row) => row.result?.status === 'compared');
   const changed = compared.filter((row) => row.result?.status === 'compared' && row.result.ratio > 0);
@@ -92,7 +111,9 @@ function VisualBody(props: Props) {
         <span className={styles.summary} role="status" data-testid="visual-summary">
           {compared.length
             ? changed.length
-              ? t('visual.summary', { changed: changed.length, total: compared.length })
+              ? compared.length === 1
+                ? t('visual.summaryOnly')
+                : t('visual.summary', { changed: changed.length, total: compared.length })
               : t('visual.summaryNone')
             : hasBaseline
               ? t('visual.baselineFrom', { date: date(latest, language) })
@@ -111,18 +132,21 @@ function VisualBody(props: Props) {
           result={detail.result}
           baseline={detail.baseline}
           busy={props.busy}
-          onBack={() => setSelected(null)}
-          onAccept={() => props.onAccept(detail.key)}
+          onBack={() => {
+            focusAfter.current = { key: detail.key, to: 'view' };
+            setSelected(null);
+          }}
+          onAccept={() => accept(detail.key)}
         />
       ) : (
-        <ul className={styles.grid}>
+        <ul className={styles.grid} ref={gridRef}>
           {rows.map((row) => (
             <Tile
               key={row.key}
               row={row}
               busy={props.busy}
               onView={() => setSelected(row.key)}
-              onAccept={() => props.onAccept(row.key)}
+              onAccept={() => accept(row.key)}
             />
           ))}
         </ul>
@@ -173,7 +197,7 @@ function Tile({
         ? 'failed'
         : 'idle';
   return (
-    <li className={styles.tile} data-testid="visual-tile" data-state={tone} data-key={row.key}>
+    <li className={styles.tile} data-testid="visual-tile" data-state={tone} data-key={row.key} tabIndex={-1}>
       <div className={styles.thumb}>
         {image ? (
           <img src={image} alt={t('visual.imageLabel', { name: row.name, state })} />
@@ -204,6 +228,7 @@ function Tile({
               icon="eye"
               onClick={onView}
               aria-label={t('visual.viewLabel', { name: row.name })}
+              data-action="view"
             >
               {t('visual.view')}
             </Button>
@@ -214,7 +239,9 @@ function Tile({
               icon="check"
               onClick={onAccept}
               disabled={busy}
-              aria-label={t('visual.acceptLabel', { name: row.name })}
+              aria-label={t(result.status === 'missing' ? 'visual.saveThisLabel' : 'visual.acceptLabel', {
+                name: row.name,
+              })}
             >
               {result.status === 'missing' ? t('visual.saveThis') : t('visual.accept')}
             </Button>
@@ -244,9 +271,12 @@ function Detail({
   const [mode, setMode] = useState<Mode>(result.ratio > 0 ? 'diff' : 'side');
   const [split, setSplit] = useState(50);
   const sliderId = useId();
+  const sectionRef = useRef<HTMLElement>(null);
+  // The button that opened the comparison is gone: focus moves to Back.
+  useEffect(() => sectionRef.current?.querySelector<HTMLElement>('button')?.focus(), []);
   const percent = (value: number, total: number) => `${(value / total) * 100}%`;
   return (
-    <section className={styles.detail} aria-label={row.name} data-testid="visual-detail">
+    <section className={styles.detail} aria-label={row.name} data-testid="visual-detail" ref={sectionRef}>
       <div className={styles.detailHead}>
         <Button size="sm" variant="ghost" icon="arrowLeft" onClick={onBack}>
           {t('visual.back')}

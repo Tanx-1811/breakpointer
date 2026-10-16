@@ -1,7 +1,7 @@
 import type { CheckReport, PageStats } from '../agent/protocol';
 import type { Language, Translate } from '../i18n/translate';
 import { STAT_KEYS, STAT_METRICS, formatStat } from './audit';
-import { CHECK_KIND_KEYS, issueDetail } from './checks';
+import { CHECK_KIND_KEYS, issueDetail, localNumbers } from './checks';
 
 export type ReportCard = {
   name: string;
@@ -18,7 +18,15 @@ export type ReportCard = {
 };
 
 /** What a width scan found: each kind of issue and its widths, already written out. */
-export type ReportScan = { from: number; to: number; findings: { name: string; widths: string }[] };
+export type ReportScan = {
+  from: number;
+  to: number;
+  findings: { name: string; widths: string }[];
+  /** The last width checked, when the scan stopped early (defaults to `to`). */
+  checkedTo?: number;
+  /** What to know about a scan that didn't finish, already written out. */
+  notes?: string[];
+};
 
 /** The inspector's comparison of one element: a header and one row per viewport, as text. */
 export type ReportInspector = { selector: string; header: string[]; rows: string[][] };
@@ -111,7 +119,7 @@ export function buildReportHtml(input: ReportInput, t: Translate): string {
           ? `<ul class="samples">${issue.samples
               .map(
                 (sample) =>
-                  `<li><code>${escapeHtml(sample.selector)}</code>${sample.detail ? ` · ${escapeHtml(sample.detail)}` : ''}</li>`,
+                  `<li><code>${escapeHtml(sample.selector)}</code>${sample.detail ? ` · ${escapeHtml(localNumbers(sample.detail, t))}` : ''}</li>`,
               )
               .join('')}</ul>`
           : '';
@@ -144,7 +152,7 @@ ${STAT_METRICS.map(
   const scanSection = input.scan
     ? `<section>
 <h2>${escapeHtml(t('report.scan', { from: input.scan.from, to: input.scan.to }))}</h2>
-${
+${(input.scan.notes ?? []).map((note) => `<p class="muted">${escapeHtml(note)}</p>\n`).join('')}${
   input.scan.findings.length
     ? `<table>
 <thead><tr><th>${escapeHtml(t('audit.check'))}</th><th>${escapeHtml(t('scan.widths'))}</th></tr></thead>
@@ -154,7 +162,7 @@ ${input.scan.findings
   .join('\n')}
 </tbody>
 </table>`
-    : `<p class="ok">✓ ${escapeHtml(t('scan.none', { from: input.scan.from, to: input.scan.to }))}</p>`
+    : `<p class="ok">✓ ${escapeHtml(t('scan.none', { from: input.scan.from, to: input.scan.checkedTo ?? input.scan.to }))}</p>`
 }
 </section>`
     : '';

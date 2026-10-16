@@ -145,14 +145,15 @@ const number = (value: number, locale: string, digits = 0) =>
 
 /** "18 kB", "1.4 MB" (decimal units, as Chrome's DevTools). */
 export function formatBytes(bytes: number, locale = 'en'): string {
-  if (bytes < 1000) return `${number(bytes, locale)} B`;
-  if (bytes < 1_000_000) return `${number(bytes / 1000, locale)} kB`;
+  // Compared once rounded, so 999.6 kB reads "1.0 MB", not "1,000 kB".
+  if (Math.round(bytes) < 1000) return `${number(bytes, locale)} B`;
+  if (Math.round(bytes / 1000) < 1000) return `${number(bytes / 1000, locale)} kB`;
   return `${number(bytes / 1_000_000, locale, 1)} MB`;
 }
 
 /** "850 ms", "1.8 s". */
 export function formatMs(ms: number, locale = 'en'): string {
-  return ms < 1000 ? `${number(ms, locale)} ms` : `${number(ms / 1000, locale, 1)} s`;
+  return Math.round(ms) < 1000 ? `${number(ms, locale)} ms` : `${number(ms / 1000, locale, 1)} s`;
 }
 
 /** "3.1 MP", "0.4 MP", "< 0.1 MP". */

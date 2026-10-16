@@ -1,6 +1,6 @@
 import type { CheckKind, CheckReport } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
-import { CHECK_KIND_KEYS, canHighlight, issueDetail } from '../../state/checks';
+import { CHECK_KIND_KEYS, canHighlight, issueDetail, localNumbers } from '../../state/checks';
 import { Icon } from '../Icon/Icon';
 import { Popover } from '../Popover/Popover';
 import styles from './ChecksBadge.module.css';
@@ -73,7 +73,7 @@ export function ChecksBadge({ report, highlighted, onHighlight }: Props) {
                       {issue.samples.slice(0, 5).map((sample, index) => (
                         <li key={`${sample.selector}-${index}`}>
                           <code>{sample.selector}</code>
-                          {sample.detail && <span>{sample.detail}</span>}
+                          {sample.detail && <span>{localNumbers(sample.detail, t)}</span>}
                         </li>
                       ))}
                     </ul>
