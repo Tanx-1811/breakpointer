@@ -186,6 +186,26 @@ const AUDIT_PAGE = page(
   }, 400));</script>`,
 );
 
+/**
+ * Text that keeps its own background: a small dark badge (to highlight), and
+ * white text that a closed shadow root shows on a dark box of its own.
+ */
+const ROBUST_PAGE = page(
+  'Robust page',
+  `<style>body { background: #fff; color: #111; } #badge { background: #111; color: #fff; font-size: 10px; padding: 2px 4px; }</style>
+  <script>
+    customElements.define('x-banner', class extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'closed' }).innerHTML =
+          '<div style="background: #1e3a8a; color: #fff; padding: 8px"><slot></slot></div>';
+      }
+    });
+    addEventListener('DOMContentLoaded', () => document.body.insertAdjacentHTML('beforeend',
+      '<p><span id="badge">NEW</span> A new feature</p><x-banner><p id="slotted">Sale ends today</p></x-banner>'));
+  </script>`,
+);
+
 /** For the width scanner: wider than the screen below 400px, tiny text below 768px. */
 const SCAN_PAGE = `<!doctype html>
 <html lang="en">
@@ -245,6 +265,7 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/cover': { body: COVER_PAGE },
   '/audit': { body: AUDIT_PAGE },
   '/scan': { body: SCAN_PAGE },
+  '/robust': { body: ROBUST_PAGE },
   // A site that sends narrow screens to another page, which sends wide screens back.
   '/bounce': {
     body: page(

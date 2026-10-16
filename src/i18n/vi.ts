@@ -880,7 +880,8 @@ export const vi: Record<MessageKey, string> = {
   'scan.loading': 'Đang tải trang…',
   'scan.progress': 'Đang kiểm tra {width}px… {done}/khoảng {total}',
   'scan.stopped': 'Đã dừng ở {width}px: đã kiểm tra các chiều rộng từ {from} đến {width} px.',
-  'scan.stoppedEdges': 'Đã dừng khi đang thu hẹp các mốc: các mốc chính xác trong khoảng {accuracy} px.',
+  'scan.stoppedEdges':
+    'Đã dừng khi đang thu hẹp: chỗ các vấn đề bắt đầu, kết thúc chỉ chính xác trong khoảng {accuracy} px.',
   'scan.running': 'Đang quét… {percent}%',
   'scan.failed': 'Bản xem trước không phản hồi nữa. Hãy thử lại.',
   'scan.ready': 'Bấm Quét để kiểm tra trang từ {from} đến {to} px.',
@@ -903,10 +904,10 @@ export const vi: Record<MessageKey, string> = {
   'scan.invalid': 'Hãy nhập chiều rộng là số nguyên từ {min} đến {max}, số đầu nhỏ hơn số sau.',
   'scan.checked': 'Đã kiểm tra {count} chiều rộng',
   'scan.checkedLimit':
-    'Đã kiểm tra {count} chiều rộng, mức tối đa của một lần quét: các mốc chính xác trong khoảng {accuracy} px.',
+    'Đã kiểm tra {count} chiều rộng, mức tối đa của một lần quét: chỗ các vấn đề bắt đầu, kết thúc chỉ chính xác trong khoảng {accuracy} px.',
   'scan.partial': 'Đã dừng sớm: chỉ kiểm tra các chiều rộng từ {from} đến {to} px.',
   'scan.approximate':
-    'Các mốc chính xác trong khoảng {accuracy} px: lần quét kết thúc trước khi thu hẹp hết đến từng pixel.',
+    'Chỗ các vấn đề bắt đầu, kết thúc chỉ chính xác trong khoảng {accuracy} px: lần quét kết thúc trước khi thu hẹp hết đến từng pixel.',
   'help.scan': 'Quét mọi chiều rộng',
   'tools.visual': 'Kiểm tra hình ảnh…',
   'tools.visualHint': 'Lưu ảnh mốc của mọi viewport, so sánh sau, xem phần nào thay đổi',

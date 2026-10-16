@@ -81,6 +81,7 @@ Run on a clean Chrome profile with the packaged build (`npm run package`, then l
 | 58  | Workspace link                | Tools → Copy workspace link; open the link in a new tab                                                 | The same page with the same viewports (names, page colours); Undo puts back the previous viewports                                                     |
 | 59  | Until Chrome closes           | On a site that blocks previews: "Until Chrome closes"; restart Chrome                                   | The site shows in previews; Site access tags it "Until Chrome closes"; after the restart the access is gone (Keep makes it permanent)                  |
 | 60  | Shortcuts and colours         | `1`–`8`; Simulate → Page colours of every preview → Dark                                                | That viewport on its own (again: all); every preview dark, with Undo                                                                                   |
+| 61  | Scan in the background        | `W`, Thorough step over 320–1920; switch to another tab for 20 s, come back; then Stop                  | The scan waited and carries on; after Stop: "Stopped at …px: the widths from 320 to … px were checked", with the findings so far                       |
 
 ## Release checklist
 

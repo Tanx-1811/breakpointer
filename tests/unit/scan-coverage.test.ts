@@ -45,7 +45,7 @@ describe('what a width scan covered', () => {
     expect(coverage).toEqual({ from: 320, to: 448, accuracy: 32 });
     expect(coverageNotes(options, coverage, t)).toEqual([
       'Stopped early: only the widths from 320 to 448 px were checked.',
-      'Edges are accurate to 32 px: the scan ended before narrowing them all to the pixel.',
+      'Where issues start and stop is accurate to 32 px: the scan ended before narrowing it all to the pixel.',
     ]);
   });
 
@@ -66,7 +66,7 @@ describe('what a width scan covered', () => {
     // Two halvings of the 32px gap leave 8px.
     expect(coverage.accuracy).toBe(8);
     expect(coverageNotes(options, coverage, t)).toEqual([
-      'Edges are accurate to 8 px: the scan ended before narrowing them all to the pixel.',
+      'Where issues start and stop is accurate to 8 px: the scan ended before narrowing it all to the pixel.',
     ]);
   });
 

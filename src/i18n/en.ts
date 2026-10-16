@@ -879,7 +879,7 @@ export const en = {
   'scan.loading': 'Loading the page…',
   'scan.progress': 'Checking {width}px… {done} of about {total}',
   'scan.stopped': 'Stopped at {width}px: the widths from {from} to {width} px were checked.',
-  'scan.stoppedEdges': 'Stopped while narrowing the edges: they are accurate to {accuracy} px.',
+  'scan.stoppedEdges': 'Stopped while narrowing: where issues start and stop is accurate to {accuracy} px.',
   'scan.running': 'Scanning… {percent}%',
   'scan.failed': 'The preview stopped answering. Try again.',
   'scan.ready': 'Press Scan to check the page from {from} to {to} px.',
@@ -901,9 +901,11 @@ export const en = {
   'scan.chart': 'Issues and page height from {from} to {to} px',
   'scan.invalid': 'Enter whole widths from {min} to {max}, the first smaller than the second.',
   'scan.checked': '{count} widths checked',
-  'scan.checkedLimit': '{count} widths checked, the most one scan checks: edges are accurate to {accuracy} px.',
+  'scan.checkedLimit':
+    '{count} widths checked, the most one scan checks: where issues start and stop is accurate to {accuracy} px.',
   'scan.partial': 'Stopped early: only the widths from {from} to {to} px were checked.',
-  'scan.approximate': 'Edges are accurate to {accuracy} px: the scan ended before narrowing them all to the pixel.',
+  'scan.approximate':
+    'Where issues start and stop is accurate to {accuracy} px: the scan ended before narrowing it all to the pixel.',
   'help.scan': 'Scan every width',
   'tools.visual': 'Visual check…',
   'tools.visualHint': 'Save a baseline of every viewport, compare later, see what moved',
