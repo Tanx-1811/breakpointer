@@ -201,8 +201,8 @@ export type AgentReply = Extract<AgentEvent, { type: AgentReplyType }>;
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
 
-/** Workspace → agent. A request that is answered carries an `id`, sent back with its answer. */
-export type AgentCommand = (
+/** Workspace → agent. */
+type Command =
   /** Say hello again (the workspace started listening after the page loaded). */
   | { type: 'ping' }
   /**
@@ -258,5 +258,7 @@ export type AgentCommand = (
   /** Answer `typeScale`. */
   | { type: 'getTypeScale' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
-  | { type: 'getElementRect'; selector: string; reveal: boolean }
-) & { id?: number };
+  | { type: 'getElementRect'; selector: string; reveal: boolean };
+
+/** A command as sent: a request that is answered carries an `id`, sent back with its answer. */
+export type AgentCommand = Command & { id?: number };

@@ -153,8 +153,8 @@ ${STAT_METRICS.map(
     ? `<section>
 <h2>${escapeHtml(t('report.scan', { from: input.scan.from, to: input.scan.to }))}</h2>
 ${(input.scan.notes ?? []).map((note) => `<p class="muted">${escapeHtml(note)}</p>\n`).join('')}${
-  input.scan.findings.length
-    ? `<table>
+        input.scan.findings.length
+          ? `<table>
 <thead><tr><th>${escapeHtml(t('audit.check'))}</th><th>${escapeHtml(t('scan.widths'))}</th></tr></thead>
 <tbody>
 ${input.scan.findings
@@ -162,8 +162,8 @@ ${input.scan.findings
   .join('\n')}
 </tbody>
 </table>`
-    : `<p class="ok">✓ ${escapeHtml(t('scan.none', { from: input.scan.from, to: input.scan.checkedTo ?? input.scan.to }))}</p>`
-}
+          : `<p class="ok">✓ ${escapeHtml(t('scan.none', { from: input.scan.from, to: input.scan.checkedTo ?? input.scan.to }))}</p>`
+      }
 </section>`
     : '';
 

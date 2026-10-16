@@ -194,7 +194,10 @@ export function nearestSample(samples: ScanSample[], width: number): ScanSample 
 /** The scan as a Markdown table: each issue with the widths where it was found. */
 export function scanMarkdown(page: string, options: ScanOptions, samples: ScanSample[], t: Translate): string {
   const coverage = scanCoverage(options, samples);
-  const heading = [t('scan.markdown', { page, from: options.from, to: options.to }), ...coverageNotes(options, coverage, t)]
+  const heading = [
+    t('scan.markdown', { page, from: options.from, to: options.to }),
+    ...coverageNotes(options, coverage, t),
+  ]
     .map((line) => `${line}\n`)
     .join('\n');
   const findings = scanFindings(samples);

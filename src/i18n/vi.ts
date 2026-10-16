@@ -905,7 +905,8 @@ export const vi: Record<MessageKey, string> = {
   'scan.checkedLimit':
     'Đã kiểm tra {count} chiều rộng, mức tối đa của một lần quét: các mốc chính xác trong khoảng {accuracy} px.',
   'scan.partial': 'Đã dừng sớm: chỉ kiểm tra các chiều rộng từ {from} đến {to} px.',
-  'scan.approximate': 'Các mốc chính xác trong khoảng {accuracy} px: lần quét kết thúc trước khi thu hẹp hết đến từng pixel.',
+  'scan.approximate':
+    'Các mốc chính xác trong khoảng {accuracy} px: lần quét kết thúc trước khi thu hẹp hết đến từng pixel.',
   'help.scan': 'Quét mọi chiều rộng',
   'tools.visual': 'Kiểm tra hình ảnh…',
   'tools.visualHint': 'Lưu ảnh mốc của mọi viewport, so sánh sau, xem phần nào thay đổi',

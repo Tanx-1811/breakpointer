@@ -60,6 +60,7 @@ import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
 import { markSeen } from '../services/whats-new';
 import { enableEmbeddingForExtensionFrames } from '../services/embed-rules';
+import { forgetSessionGrants } from '../services/session-access';
 import { hasSiteAccess, requestSiteAccess } from '../services/site-access';
 import {
   closeWindows,
@@ -72,6 +73,7 @@ import {
   type ManagedWindow,
 } from '../services/windows';
 import { createSettingsExport, defaultViewports, normalizeSnippetName, parseSettingsFile } from '../services/storage';
+import { viewerUrl } from '../shared/viewer-url';
 import { breakpointEdges, breakpointFor, breakpointSet } from '../data/breakpoints';
 import {
   compareCardId,
@@ -137,6 +139,7 @@ import {
   isLocalHost,
   looksLikeAddress,
   parsePreviewUrl,
+  siteAccessPattern,
   toSafeHref,
   type UrlParseError,
 } from '../utils/url';
@@ -919,7 +922,7 @@ function Workspace({
 
   /** A link that opens this page with these viewports in Breakpointer, for a teammate. */
   const copyWorkspaceLink = () => {
-    const link = workspaceLink(chrome.runtime.getURL('viewer/viewer.html'), currentUrl?.href ?? null, visible);
+    const link = workspaceLink(viewerUrl(), currentUrl?.href ?? null, visible);
     void copyText(link).then((copied) =>
       toast(
         copied
@@ -1552,6 +1555,8 @@ function Workspace({
       toast({ message: t('access.denied'), tone: 'error' });
       return;
     }
+    // Allowed for good now, even if it was allowed until Chrome closes before.
+    await forgetSessionGrants([siteAccessPattern(url)]);
     toast({ message: t('access.granted', { host: displayHost(url) }), tone: 'success' });
     // Load the B previews again, now that the site may appear in frames.
     setCardReloads((map) => {
