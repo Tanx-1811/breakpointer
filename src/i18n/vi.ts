@@ -573,6 +573,13 @@ export const vi: Record<MessageKey, string> = {
   'checks.kind.upscaledImages': 'Ảnh hiển thị lớn hơn kích thước thật',
   'checks.kind.fixedCover': 'Phần tử cố định che nhiều màn hình',
   'checks.detail.fixedCover': 'Các phần tử cố định hoặc dính (sticky) che {amount} màn hình.',
+  'checks.kind.clippedText': 'Chữ bị khung cắt mất',
+  'checks.kind.lowContrast': 'Chữ có độ tương phản thấp',
+  'checks.kind.layoutShift': 'Bố cục bị xê dịch khi tải',
+  'checks.detail.lowContrast': '{count} phần tử · thấp nhất {ratio}:1 (AA cần 4,5:1, chữ lớn cần 3:1)',
+  'checks.detail.lowContrastOne': '1 phần tử · {ratio}:1 (AA cần 4,5:1, chữ lớn cần 3:1)',
+  'checks.detail.layoutShift':
+    'Điểm xê dịch bố cục (CLS) {amount} (tốt: dưới 0,1). Hãy chừa sẵn chỗ cho ảnh, nội dung nhúng và phần tải sau.',
 
   'toolbar.simulate': 'Mô phỏng',
   'simulate.hint': 'Thị lực, tùy chọn của trang và thử độ bền bố cục',

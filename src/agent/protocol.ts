@@ -16,7 +16,26 @@ export type CheckKind =
   /** Images shown larger than their real size (they look blurry). */
   | 'upscaled-images'
   /** Fixed or stuck elements covering much of a phone or tablet screen. */
-  | 'fixed-cover';
+  | 'fixed-cover'
+  /** Text cut off by its own box (overflow hidden, without an ellipsis). */
+  | 'clipped-text'
+  /** Text whose contrast with a known, solid background is under WCAG AA (4.5:1, 3:1 for large text). */
+  | 'low-contrast'
+  /** The layout moved while the page loaded: a cumulative layout shift of 0.1 or more. */
+  | 'layout-shift';
+
+/** Every check, in the order they are shown. */
+export const CHECK_KINDS: readonly CheckKind[] = [
+  'overflow',
+  'viewport-meta',
+  'small-text',
+  'tap-targets',
+  'clipped-text',
+  'low-contrast',
+  'upscaled-images',
+  'fixed-cover',
+  'layout-shift',
+];
 
 export type CheckSample = {
   /** A short CSS-like description, e.g. "div.hero > img". */
@@ -84,6 +103,54 @@ export type ElementInfo = {
   layout: string;
 };
 
+/** Where an element is in the preview's window (CSS pixels), e.g. to crop a screenshot to it. */
+export type ElementRect = { x: number; y: number; width: number; height: number };
+
+/**
+ * Numbers about how the page loaded at this size — never its content. Sizes are
+ * what the browser reports: other sites' files only count when they share their
+ * timing (`Timing-Allow-Origin`), and files from the cache weigh nothing.
+ */
+export type PageStats = {
+  /** Files the page loaded after the document (scripts, styles, images, fonts, API calls). */
+  requests: number;
+  /** Bytes transferred for the document and the files whose size is known. */
+  transferred: number;
+  /** Files whose size isn't known (another site that doesn't share it, or the cache). */
+  unknownSize: number;
+  /** Images shown on the page (loaded, visible). */
+  images: number;
+  /** Pixels of those image files (their natural size)… */
+  imagePixels: number;
+  /** …and of the area they are shown at, in CSS pixels. */
+  shownPixels: number;
+  /** Elements in the document. */
+  elements: number;
+  /** The page's height in CSS pixels. */
+  height: number;
+  /** Largest contentful paint, in milliseconds from the start of the navigation; null when not reported. */
+  lcp: number | null;
+  /** Cumulative layout shift: the worst burst of layout shifts while the page was used. */
+  cls: number;
+  /** Web fonts loaded. */
+  fonts: number;
+};
+
+/** The type used by one kind of element (the first one shown), for the type scale. */
+export type TypeSample = {
+  /** e.g. "h1", "p", "button". */
+  tag: string;
+  /** How many of them the page shows. */
+  count: number;
+  /** In CSS pixels. */
+  fontSize: number;
+  /** In CSS pixels; null for `normal`. */
+  lineHeight: number | null;
+  fontWeight: string;
+  /** The first family of the font stack, e.g. "Inter". */
+  fontFamily: string;
+};
+
 /** Agent → workspace. `name` identifies the preview frame (its iframe `name`). */
 export type AgentEvent =
   /**
@@ -116,7 +183,19 @@ export type AgentEvent =
   /** Answer to `pageMetrics`: the page's height and the window's, in CSS pixels. */
   | { type: 'metrics'; scrollHeight: number; viewportHeight: number; scrollY: number }
   /** Answer to `captureScroll`, once the page has painted at its new position. */
-  | { type: 'scrolled'; y: number };
+  | { type: 'scrolled'; y: number }
+  /** Answer to `scanProbe`: the checks at that width (the window's real width) and the page's height. */
+  | { type: 'scanned'; width: number; report: CheckReport; height: number }
+  /** Answer to `getStats`. */
+  | { type: 'stats'; stats: PageStats }
+  /** Answer to `getTypeScale`. */
+  | { type: 'typeScale'; samples: TypeSample[] }
+  /** Answer to `getElementRect` (null when the element isn't shown). */
+  | { type: 'elementRect'; rect: ElementRect | null };
+
+/** Events that answer a request from the workspace. */
+export type AgentReplyType = 'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'elementRect';
+export type AgentReply = Extract<AgentEvent, { type: AgentReplyType }>;
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
 
@@ -124,13 +203,19 @@ export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: str
 export type AgentCommand =
   /** Say hello again (the workspace started listening after the page loaded). */
   | { type: 'ping' }
-  | { type: 'scrollTo'; ratio: number; anchor?: ScrollAnchor }
+  /**
+   * Scroll to `ratio` of the page (or to the content of `anchor`). With `y`, to
+   * that position instead — the one a preview had before it reloaded — once the
+   * page is tall enough (it may still be loading).
+   */
+  | { type: 'scrollTo'; ratio: number; anchor?: ScrollAnchor; y?: number }
   | { type: 'outlines'; on: boolean }
   /** Hide the page's scrollbars, like on phones and tablets (they take no room there). */
   | { type: 'scrollbars'; hidden: boolean }
   | { type: 'css'; css: string }
   | { type: 'highlight'; kind: CheckKind | null }
-  | { type: 'checks'; enabled: boolean }
+  /** Run the checks (all but those in `skip`), or stop. */
+  | { type: 'checks'; enabled: boolean; skip?: CheckKind[] }
   | { type: 'colorScheme'; scheme: ColorSchemeOverride }
   /** Pick mode: hovering outlines elements, a click selects one instead of activating it. */
   | { type: 'inspect'; on: boolean }
@@ -148,8 +233,11 @@ export type AgentCommand =
    * `prefers-reduced-motion: reduce`, `prefers-contrast: more`, and `@media print`.
    */
   | { type: 'preferences'; reducedMotion: boolean; moreContrast: boolean; print: boolean }
-  /** Labels drawn over the page: each image's sizes, and the keyboard (Tab) order. */
-  | { type: 'annotate'; images: boolean; tabOrder: boolean }
+  /**
+   * Labels drawn over the page: each image's sizes, the keyboard (Tab) order,
+   * and the columns and rows of grid containers and the direction of flex ones.
+   */
+  | { type: 'annotate'; images: boolean; tabOrder: boolean; layout?: boolean }
   /** Full-page screenshots: report the page's size… */
   | { type: 'pageMetrics' }
   /** …scroll to `y` (hiding fixed and stuck elements after the first screen) and say when painted… */
@@ -157,4 +245,15 @@ export type AgentCommand =
   /** …and show those elements again. */
   | { type: 'captureEnd' }
   /** Freeze CSS animations and transitions (for steady screenshots). */
-  | { type: 'animations'; paused: boolean };
+  | { type: 'animations'; paused: boolean }
+  /**
+   * The width scanner: once the window is `width` wide (the workspace resizes
+   * the frame), run the checks and answer `scanned`.
+   */
+  | { type: 'scanProbe'; width: number }
+  /** Answer `stats`. */
+  | { type: 'getStats' }
+  /** Answer `typeScale`. */
+  | { type: 'getTypeScale' }
+  /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
+  | { type: 'getElementRect'; selector: string; reveal: boolean };

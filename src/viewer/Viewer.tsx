@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { AgentCommand, AgentEvent, CheckKind, ElementInfo, MediaReport } from '../agent/protocol';
+import type { CheckKind, ElementInfo, MediaReport } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
@@ -955,11 +955,7 @@ function Workspace({
     else if (vision !== 'none') setVision('none');
   };
 
-  // Requests to an agent that wait for its answer (full-page screenshots).
-  const pendingReplies = useRef(new Map<string, (reply: AgentEvent) => void>());
-
   const agents = useFrameAgents(tabId, generations, {
-    onReply: (cardId, reply) => pendingReplies.current.get(`${cardId}:${reply.type}`)?.(reply),
     onHello: (cardId) => {
       agents.send(cardId, { type: 'checks', enabled: settings.checks });
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
@@ -1490,22 +1486,6 @@ function Workspace({
 
   /* ---------- Full-page screenshots ---------- */
 
-  /** Sends `command` to a card's agent and waits for its `reply`. */
-  const askAgent = <T extends AgentEvent['type']>(cardId: string, command: AgentCommand, reply: T, timeoutMs = 4000) =>
-    new Promise<Extract<AgentEvent, { type: T }>>((resolve, reject) => {
-      const key = `${cardId}:${reply}`;
-      const timer = setTimeout(() => {
-        pendingReplies.current.delete(key);
-        reject(new Error(`No ${reply} from the preview`));
-      }, timeoutMs);
-      pendingReplies.current.set(key, (event) => {
-        clearTimeout(timer);
-        pendingReplies.current.delete(key);
-        resolve(event as Extract<AgentEvent, { type: T }>);
-      });
-      agents.send(cardId, command);
-    });
-
   /**
    * The whole page of one preview in a tall PNG: the preview is shown on its own (so all of it is on
    * screen), scrolled screen by screen and captured, then the screens are stitched together.
@@ -1525,7 +1505,7 @@ function Workspace({
         setFocus({ id: vp.id, zoom: focusZoom(vp) });
         await nextFrame();
         await nextFrame();
-        const metrics = await askAgent(cardId, { type: 'pageMetrics' }, 'metrics');
+        const metrics = await agents.ask(cardId, { type: 'pageMetrics' }, 'metrics');
         const { positions, partial } = slicePositions(metrics.scrollHeight, metrics.viewportHeight);
         const slices: { image: Blob; y: number }[] = [];
         for (const [index, y] of positions.entries()) {
@@ -1534,7 +1514,7 @@ function Workspace({
             tone: 'info',
             key: 'sheet',
           });
-          const done = await askAgent(cardId, { type: 'captureScroll', y, hideFixed: index > 0 }, 'scrolled');
+          const done = await agents.ask(cardId, { type: 'captureScroll', y, hideFixed: index > 0 }, 'scrolled');
           // Lazy content and images get a moment to appear.
           await new Promise((resolve) => setTimeout(resolve, 150));
           const stage = stageOf(cardId);

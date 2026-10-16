@@ -575,6 +575,13 @@ export const en = {
   'checks.kind.upscaledImages': 'Images shown larger than their real size',
   'checks.kind.fixedCover': 'Fixed elements cover much of the screen',
   'checks.detail.fixedCover': 'Fixed or sticky elements cover {amount} of the screen.',
+  'checks.kind.clippedText': 'Text cut off by its box',
+  'checks.kind.lowContrast': 'Low-contrast text',
+  'checks.kind.layoutShift': 'The layout shifts while loading',
+  'checks.detail.lowContrast': '{count} elements · lowest {ratio}:1 (AA needs 4.5:1, or 3:1 for large text)',
+  'checks.detail.lowContrastOne': '1 element · {ratio}:1 (AA needs 4.5:1, or 3:1 for large text)',
+  'checks.detail.layoutShift':
+    'Cumulative layout shift {amount} (good: under 0.1). Reserve space for images, embeds and late content.',
 
   'toolbar.simulate': 'Simulate',
   'simulate.hint': 'Vision, page preferences and layout stress tests',

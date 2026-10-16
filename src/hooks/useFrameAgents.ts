@@ -1,6 +1,18 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { AgentCommand, AgentEvent, CheckReport, ElementInfo, MediaReport, ScrollAnchor } from '../agent/protocol';
+import type {
+  AgentCommand,
+  AgentEvent,
+  AgentReply,
+  AgentReplyType,
+  CheckReport,
+  ElementInfo,
+  MediaReport,
+  ScrollAnchor,
+} from '../agent/protocol';
 import { listenToAgents, parseFrameName, pingAgents, sendToAgent } from '../services/frame-agents';
+
+/** How long a request to an agent waits for its answer by default. */
+const ASK_TIMEOUT_MS = 4000;
 
 /** A navigation this soon after a click or key press in the preview counts as the user's. */
 export const USER_NAVIGATION_MS = 10_000;
@@ -45,9 +57,9 @@ export type FrameAgentHandlers = {
   onElement: (cardId: string, selector: string, element: ElementInfo | null) => void;
   /** A key the workspace handles was pressed inside a preview. */
   onKey: (cardId: string, key: 'Escape') => void;
-  /** An answer to a request (`pageMetrics`, `captureScroll`). */
-  onReply?: (cardId: string, reply: Extract<AgentEvent, { type: 'metrics' | 'scrolled' }>) => void;
 };
+
+type PendingReply = { resolve: (reply: AgentReply) => void; reject: (error: Error) => void };
 
 /**
  * Connects the workspace to the agents running in its preview frames.
@@ -63,6 +75,8 @@ export function useFrameAgents(
   const framesRef = useRef(frames);
   const generationsRef = useRef(generations);
   const handlersRef = useRef(handlers);
+  // Requests waiting for an agent's answer, by card and reply type.
+  const pending = useRef(new Map<string, PendingReply>());
   useLayoutEffect(() => {
     generationsRef.current = generations;
     handlersRef.current = handlers;
@@ -174,7 +188,11 @@ export function useFrameAgents(
           break;
         case 'metrics':
         case 'scrolled':
-          if (sameFrame) handlersRef.current.onReply?.(cardId, message);
+        case 'scanned':
+        case 'stats':
+        case 'typeScale':
+        case 'elementRect':
+          if (sameFrame) pending.current.get(`${cardId}:${message.type}`)?.resolve(message);
           break;
       }
     });
@@ -192,11 +210,14 @@ export function useFrameAgents(
     [frames, generations],
   );
 
+  /** Sends a command to a card's agent; false when no agent runs in its current frame. */
   const send = useCallback(
-    (cardId: string, command: AgentCommand) => {
+    (cardId: string, command: AgentCommand): boolean => {
       const frame = framesRef.current[cardId];
-      if (tabId === null || !frame || frame.generation !== generationsRef.current[cardId] || !frame.connected) return;
+      if (tabId === null || !frame || frame.generation !== generationsRef.current[cardId] || !frame.connected)
+        return false;
       sendToAgent(tabId, frame.frameId, command);
+      return true;
     },
     [tabId],
   );
@@ -208,5 +229,48 @@ export function useFrameAgents(
     [send],
   );
 
-  return { frameOf, send, broadcast };
+  /**
+   * Sends `command` to a card's agent and waits for its `reply`. Rejects when no
+   * agent runs there, when it doesn't answer in time, or when the same request
+   * is made again before the answer came.
+   */
+  const ask = useCallback(
+    <T extends AgentReplyType>(cardId: string, command: AgentCommand, reply: T, timeoutMs = ASK_TIMEOUT_MS) =>
+      new Promise<Extract<AgentEvent, { type: T }>>((resolve, reject) => {
+        const key = `${cardId}:${reply}`;
+        pending.current.get(key)?.reject(new Error(`Another ${reply} was requested`));
+        const timer = setTimeout(() => {
+          if (pending.current.get(key) !== entry) return;
+          pending.current.delete(key);
+          reject(new Error(`No ${reply} from the preview`));
+        }, timeoutMs);
+        const settle = () => {
+          clearTimeout(timer);
+          if (pending.current.get(key) === entry) pending.current.delete(key);
+        };
+        const entry: PendingReply = {
+          resolve: (event) => {
+            settle();
+            resolve(event as Extract<AgentEvent, { type: T }>);
+          },
+          reject: (error) => {
+            settle();
+            reject(error);
+          },
+        };
+        pending.current.set(key, entry);
+        if (!send(cardId, command)) entry.reject(new Error('No agent in that preview'));
+      }),
+    [send],
+  );
+
+  // Nothing waits for an answer once the workspace closes.
+  useEffect(() => {
+    const waiting = pending.current;
+    return () => {
+      for (const entry of [...waiting.values()]) entry.reject(new Error('The workspace closed'));
+    };
+  }, []);
+
+  return { frameOf, send, broadcast, ask };
 }
