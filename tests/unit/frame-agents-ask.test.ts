@@ -32,7 +32,10 @@ afterEach(() => vi.useRealTimers());
 function fromAgent(frameId: number, event: AgentEvent, cardId = 'a') {
   act(() => {
     for (const listener of listeners)
-      listener({ ...event, source: AGENT_SOURCE, name: `bp:${cardId}:g1` }, { id: 'extension', tab: { id: TAB } as chrome.tabs.Tab, frameId });
+      listener(
+        { ...event, source: AGENT_SOURCE, name: `bp:${cardId}:g1` },
+        { id: 'extension', tab: { id: TAB } as chrome.tabs.Tab, frameId },
+      );
   });
 }
 
