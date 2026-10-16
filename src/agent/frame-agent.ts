@@ -256,7 +256,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     });
 
   // Where the page was before it reloaded: scrolled back to as soon as the page is
-  // tall enough (it may still be loading), unless the user scrolls first.
+  // tall enough (it may still be loading), unless the user scrolls first. Any
+  // other scroll asked of this page meanwhile wins (stopRestoring).
   let lastWheel = -Infinity;
   window.addEventListener('wheel', () => (lastWheel = performance.now()), { capture: true, passive: true });
   window.addEventListener('touchmove', () => (lastWheel = performance.now()), { capture: true, passive: true });
@@ -273,6 +274,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     };
     attempt();
   };
+  const stopRestoring = () => window.clearTimeout(restoring);
 
   // Where a scroll the workspace caused ended, said once it settles: the workspace
   // keeps every preview's position (to bring it back after a reload).
@@ -351,6 +353,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   /** Scrolls this page only (scrollIntoView could also scroll the workspace); other previews don't follow. */
   const reveal = (element: Element) => {
+    stopRestoring();
     const rect = element.getBoundingClientRect();
     ignoreScrollUntil = performance.now() + 300;
     window.scrollTo({
@@ -579,37 +582,58 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         (Boolean(style.scale) && style.scale !== 'none') ||
         (Boolean(style.rotate) && style.rotate !== 'none');
       const SKIPPED_TEXT = 'pre, code, kbd, samp, [aria-hidden="true"]';
-      // The box a text node belongs to: its nearest ancestor that hides (or scrolls) overflow.
-      // Null when the text is moving, is code, or isn't shown.
-      const ownerBox = (node: Element | null, stop: Element): Element | null => {
-        for (; node && node !== stop; node = node.parentElement) {
-          const style = styleOf(node);
-          if (moving(style) || node.matches(SKIPPED_TEXT)) return null;
-          if (style.visibility !== 'visible' || Number(style.opacity) === 0) return null;
-          if (style.overflowX !== 'visible' || style.overflowY !== 'visible') return node;
-        }
-        return stop;
+      // A box's own text, as a walker visits it: elements under it are passed
+      // through, except those whose text isn't the box's — moving, code, not
+      // shown, or a box of their own (it hides or scrolls overflow) — which are
+      // left out with everything inside them. Blank text isn't visited.
+      const boxText: NodeFilter = (node) => {
+        if (node instanceof Text)
+          return node.data.trim().length < 2 ? NodeFilter.FILTER_SKIP : NodeFilter.FILTER_ACCEPT;
+        const element = node as Element;
+        const style = styleOf(element);
+        return moving(style) ||
+          element.matches(SKIPPED_TEXT) ||
+          style.visibility !== 'visible' ||
+          Number(style.opacity) === 0 ||
+          style.overflowX !== 'visible' ||
+          style.overflowY !== 'visible'
+          ? NodeFilter.FILTER_REJECT
+          : NodeFilter.FILTER_SKIP;
       };
       const masked = (style: CSSStyleDeclaration) =>
         [style.getPropertyValue('mask-image'), style.getPropertyValue('-webkit-mask-image')].some(
           (value) => Boolean(value) && value !== 'none',
         );
-      const range = document.createRange();
-      let budget = MAX_CLIP_TEXT_NODES;
-      for (const element of elements) {
-        if (budget <= 0) break;
+      // Boxes that hide their overflow and have some, smallest first: a page-wide
+      // wrapper mustn't use up the budget before the buttons and badges where text
+      // is usually cut. Reported in page order.
+      const boxes: {
+        element: Element;
+        index: number;
+        rect: DOMRect;
+        style: CSSStyleDeclaration;
+        cutsX: boolean;
+        cutsY: boolean;
+      }[] = [];
+      elements.forEach((element, index) => {
         const style = styleOf(element);
         const cutsX = hides(style.overflowX);
         const cutsY = hides(style.overflowY);
-        if (!cutsX && !cutsY) continue;
+        if (!cutsX && !cutsY) return;
         const clamp = style.getPropertyValue('-webkit-line-clamp');
-        if (style.textOverflow === 'ellipsis' || (clamp && clamp !== 'none') || masked(style)) continue;
-        if (element.matches(SKIPPED_TEXT) || element.closest('[aria-hidden="true"]')) continue;
+        if (style.textOverflow === 'ellipsis' || (clamp && clamp !== 'none') || masked(style)) return;
+        if (element.matches(SKIPPED_TEXT) || element.closest('[aria-hidden="true"]')) return;
         // Most boxes that hide their overflow have nothing to hide.
-        if (element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1)
-          continue;
+        if (element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1) return;
         const rect = element.getBoundingClientRect();
-        if (!visible(rect, style)) continue;
+        if (visible(rect, style)) boxes.push({ element, index, rect, style, cutsX, cutsY });
+      });
+      boxes.sort((a, b) => a.rect.width * a.rect.height - b.rect.width * b.rect.height);
+      const found: { index: number; element: Element; sample: CheckSample }[] = [];
+      const range = document.createRange();
+      let budget = MAX_CLIP_TEXT_NODES;
+      for (const { element, index, rect, style, cutsX, cutsY } of boxes) {
+        if (budget <= 0) break;
         const box = {
           left: rect.left + Number.parseFloat(style.borderLeftWidth),
           top: rect.top + Number.parseFloat(style.borderTopWidth),
@@ -617,12 +641,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           bottom: rect.bottom - Number.parseFloat(style.borderBottomWidth),
         };
         let worst = { x: 0, y: 0 };
-        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, boxText);
         for (let node = walker.nextNode(); node && budget > 0; node = walker.nextNode()) {
           budget--;
-          const text = node as Text;
-          if (text.data.trim().length < 2 || ownerBox(text.parentElement, element) !== element) continue;
-          range.selectNodeContents(text);
+          range.selectNodeContents(node);
           for (const line of range.getClientRects()) {
             const hidden = cutOff(line, box);
             if (!hidden) continue;
@@ -634,14 +656,21 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           }
         }
         if (!worst.x && !worst.y) continue;
-        cut.push(element);
-        if (cutSamples.length < MAX_SAMPLES)
-          cutSamples.push({
+        found.push({
+          index,
+          element,
+          sample: {
             selector: describeElement(element),
             detail: worst.x >= worst.y ? `↔ ${Math.round(worst.x)}px` : `↕ ${Math.round(worst.y)}px`,
-          });
+          },
+        });
       }
       range.detach();
+      found.sort((a, b) => a.index - b.index);
+      for (const { element, sample } of found) {
+        cut.push(element);
+        if (cutSamples.length < MAX_SAMPLES) cutSamples.push(sample);
+      }
       if (cut.length) {
         nextFlagged.set('clipped-text', cut);
         issues.push({ kind: 'clipped-text', count: cut.length, samples: cutSamples });
@@ -719,12 +748,30 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       };
       const overlaps = (a: DOMRect, b: DOMRect) =>
         a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      /**
+       * A shadow root (open or closed) shows this element's children through its
+       * slots, inside boxes of its own that this walk up the page doesn't see.
+       */
+      const hosts = new Map<Element, boolean>();
+      const isShadowHost = (element: Element) => {
+        let host = hosts.get(element);
+        if (host === undefined) {
+          let root = element.shadowRoot;
+          try {
+            root ??= element instanceof HTMLElement ? chrome.dom.openOrClosedShadowRoot(element) : null;
+          } catch {
+            // Not available: open shadow roots are still seen.
+          }
+          hosts.set(element, (host = root !== null));
+        }
+        return host;
+      };
       /** The solid colour behind a line of the element's text, or null when it can't be known. */
       const backgroundBehind = (element: Element, line: DOMRect): Rgb | null => {
         const layers: Rgb[] = [];
         let base: Rgb | null = null;
         for (let node: Element | null = element; node; node = node.parentElement) {
-          if (isUnclear(node)) return null;
+          if (isUnclear(node) || isShadowHost(node)) return null;
           const style = styleOf(node);
           const color = parseCssColor(style.backgroundColor);
           // A colour this check can't read: what is behind the text is unknown.
@@ -1829,6 +1876,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           restoreScroll(command.y);
           break;
         }
+        stopRestoring();
         if (command.anchor && scrollToAnchor(command.anchor)) break;
         window.scrollTo({ top: Math.max(0, command.ratio * maxScroll()), behavior: 'instant' });
         break;
@@ -1915,18 +1963,20 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'pageMetrics':
         send({
           type: 'metrics',
+          id: command.id,
           scrollHeight: document.documentElement.scrollHeight,
           viewportHeight: window.innerHeight,
           scrollY: Math.round(window.scrollY),
         });
         break;
       case 'captureScroll':
+        stopRestoring();
         setFixedHidden(command.hideFixed);
         // Not a scroll other previews should follow.
         ignoreScrollUntil = performance.now() + 500;
         window.scrollTo({ top: command.y, behavior: 'instant' });
         requestAnimationFrame(() =>
-          requestAnimationFrame(() => send({ type: 'scrolled', y: Math.round(window.scrollY) })),
+          requestAnimationFrame(() => send({ type: 'scrolled', id: command.id, y: Math.round(window.scrollY) })),
         );
         break;
       case 'captureEnd':
@@ -1964,28 +2014,42 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'scanProbe': {
         // The workspace resizes the frame; answer once the window has that width
         // and the page's own resize handlers (and its layout) have run.
-        const { width } = command;
+        const { width, id } = command;
         const started = performance.now();
-        const answer = () =>
+        const ready = () => window.innerWidth === width || performance.now() - started > 2000;
+        let answered = false;
+        const answer = () => {
+          if (answered) return;
+          answered = true;
           send({
             type: 'scanned',
+            id,
             width: window.innerWidth,
             report: runChecks(true),
             height: document.documentElement.scrollHeight,
           });
+        };
         const wait = () => {
-          if (window.innerWidth === width || performance.now() - started > 2000)
-            requestAnimationFrame(() => requestAnimationFrame(answer));
+          if (answered) return;
+          if (ready()) requestAnimationFrame(() => requestAnimationFrame(answer));
           else requestAnimationFrame(wait);
         };
         wait();
+        // Chrome stops animation frames in a preview out of sight (the dialog
+        // scrolled): answer anyway, a little later.
+        const late = () => {
+          if (answered) return;
+          if (ready()) answer();
+          else window.setTimeout(late, 200);
+        };
+        window.setTimeout(late, 1000);
         break;
       }
       case 'getStats':
-        send({ type: 'stats', stats: pageStats() });
+        send({ type: 'stats', id: command.id, stats: pageStats() });
         break;
       case 'getTypeScale':
-        send({ type: 'typeScale', samples: typeScale() });
+        send({ type: 'typeScale', id: command.id, samples: typeScale() });
         break;
       case 'getElementRect': {
         let element: Element | null;
@@ -2005,7 +2069,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
               rect && rect.width > 0 && rect.height > 0
                 ? { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
                 : null;
-            send({ type: 'elementRect', rect: shown });
+            send({ type: 'elementRect', id: command.id, rect: shown });
           }),
         );
         break;

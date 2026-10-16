@@ -140,6 +140,7 @@ function ScanBody(props: Props) {
     setRunning(true);
     setLive([]);
     stop.current = false;
+    let checked: ScanSample[] = [];
     try {
       const found = await scanWidths(
         options,
@@ -150,6 +151,7 @@ function ScanBody(props: Props) {
         (next, sofar) => {
           setProgress(next);
           setLive(sofar);
+          checked = sofar;
         },
         () => stop.current,
       );
@@ -158,6 +160,9 @@ function ScanBody(props: Props) {
     } catch (scanError) {
       console.warn('[Breakpointer] The width scan failed.', scanError);
       setFailed(true);
+      // What was found before the preview stopped answering is kept (unless the dialog closed).
+      if (checked.length && !stop.current)
+        props.onResult({ page: src, options, height, samples: checked, complete: false });
     } finally {
       setRunning(false);
       setLive(null);

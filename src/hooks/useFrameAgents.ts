@@ -41,8 +41,8 @@ export type FrameNavigation = {
 };
 
 export type FrameAgentHandlers = {
-  /** A frame's agent started (new page): push the current tool state to it. */
-  onHello: (cardId: string) => void;
+  /** A frame's agent started (new page, at `href`): push the current tool state to it. */
+  onHello: (cardId: string, href: string) => void;
   /** The page inside a frame changed after its first load (link, form, script, single-page-app route). */
   onNavigate: (cardId: string, href: string, navigation: FrameNavigation) => void;
   /**
@@ -59,7 +59,15 @@ export type FrameAgentHandlers = {
   onKey: (cardId: string, key: 'Escape') => void;
 };
 
-type PendingReply = { resolve: (reply: AgentReply) => void; reject: (error: Error) => void };
+type PendingReply = {
+  /** Sent with the request and back with its answer: a late answer to an earlier request is ignored. */
+  id: number;
+  /** The request, to answer the same question asked again with the same answer. */
+  command: string;
+  promise: Promise<AgentReply>;
+  resolve: (reply: AgentReply) => void;
+  reject: (error: Error) => void;
+};
 
 /**
  * Connects the workspace to the agents running in its preview frames.
@@ -77,10 +85,23 @@ export function useFrameAgents(
   const handlersRef = useRef(handlers);
   // Requests waiting for an agent's answer, by card and reply type.
   const pending = useRef(new Map<string, PendingReply>());
+  const lastRequest = useRef(0);
   useLayoutEffect(() => {
     generationsRef.current = generations;
     handlersRef.current = handlers;
   });
+  // A card that left the workspace (a dialog's preview closed, a viewport hidden)
+  // has lost its frame, which can't say goodbye any more: if the card comes back
+  // with the same generation, it isn't connected until its new frame says hello.
+  useLayoutEffect(() => {
+    let next = framesRef.current;
+    for (const cardId of Object.keys(next))
+      if (!(cardId in generations) && next[cardId]!.connected)
+        next = { ...next, [cardId]: { ...next[cardId]!, connected: false, report: null, media: null } };
+    if (next === framesRef.current) return;
+    framesRef.current = next;
+    setFrames(next);
+  }, [generations]);
 
   // The ref is updated synchronously so lookups in the same tick see the latest frames.
   const update = useCallback(
@@ -142,7 +163,7 @@ export function useFrameAgents(
             report: sameFrame && known.href === message.href ? known.report : null,
             media: sameFrame && known.href === message.href ? known.media : null,
           });
-          handlersRef.current.onHello(cardId);
+          handlersRef.current.onHello(cardId, message.href);
           // A second page in the same frame means the preview navigated.
           if (sameFrame && known.href && known.href !== message.href)
             handlersRef.current.onNavigate(cardId, message.href, navigation(true));
@@ -191,9 +212,11 @@ export function useFrameAgents(
         case 'scanned':
         case 'stats':
         case 'typeScale':
-        case 'elementRect':
-          if (sameFrame) pending.current.get(`${cardId}:${message.type}`)?.resolve(message);
+        case 'elementRect': {
+          const waiting = pending.current.get(`${cardId}:${message.type}`);
+          if (sameFrame && waiting && (message.id === undefined || message.id === waiting.id)) waiting.resolve(message);
           break;
+        }
       }
     });
     // Frames that loaded before this listener started say hello again.
@@ -230,15 +253,23 @@ export function useFrameAgents(
   );
 
   /**
-   * Sends `command` to a card's agent and waits for its `reply`. Rejects when no
-   * agent runs there, when it doesn't answer in time, or when the same request
-   * is made again before the answer came.
+   * Sends `command` to a card's agent and waits for its `reply`. The same request
+   * made again before the answer came shares that answer (e.g. the audit panel
+   * and a report both asking for page stats); a different one replaces it, and
+   * the first is rejected. Also rejects when no agent runs there, or when it
+   * doesn't answer in time.
    */
   const ask = useCallback(
-    <T extends AgentReplyType>(cardId: string, command: AgentCommand, reply: T, timeoutMs = ASK_TIMEOUT_MS) =>
-      new Promise<Extract<AgentEvent, { type: T }>>((resolve, reject) => {
-        const key = `${cardId}:${reply}`;
-        pending.current.get(key)?.reject(new Error(`Another ${reply} was requested`));
+    <T extends AgentReplyType>(cardId: string, command: AgentCommand, reply: T, timeoutMs = ASK_TIMEOUT_MS) => {
+      type Reply = Extract<AgentEvent, { type: T }>;
+      const key = `${cardId}:${reply}`;
+      const question = JSON.stringify(command);
+      const waiting = pending.current.get(key);
+      if (waiting?.command === question) return waiting.promise as Promise<Reply>;
+      waiting?.reject(new Error(`Another ${reply} was requested`));
+      const id = ++lastRequest.current;
+      let entry!: PendingReply;
+      const promise = new Promise<AgentReply>((resolve, reject) => {
         const timer = setTimeout(() => {
           if (pending.current.get(key) !== entry) return;
           pending.current.delete(key);
@@ -248,19 +279,25 @@ export function useFrameAgents(
           clearTimeout(timer);
           if (pending.current.get(key) === entry) pending.current.delete(key);
         };
-        const entry: PendingReply = {
+        entry = {
+          id,
+          command: question,
+          promise: null as unknown as Promise<AgentReply>,
           resolve: (event) => {
             settle();
-            resolve(event as Extract<AgentEvent, { type: T }>);
+            resolve(event);
           },
           reject: (error) => {
             settle();
             reject(error);
           },
         };
-        pending.current.set(key, entry);
-        if (!send(cardId, command)) entry.reject(new Error('No agent in that preview'));
-      }),
+      });
+      entry.promise = promise;
+      pending.current.set(key, entry);
+      if (!send(cardId, { ...command, id })) entry.reject(new Error('No agent in that preview'));
+      return promise as Promise<Reply>;
+    },
     [send],
   );
 

@@ -128,7 +128,7 @@ import type {
 } from '../types';
 import { MAX_CSS_SNIPPETS, MAX_LIVE_CSS, MAX_VIEWPORTS } from '../utils/constants';
 import { downloadBlob, fileNamePart, timestamp } from '../utils/download';
-import { modShortcut } from '../utils/platform';
+import { modShortcut, whenVisible } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
 import { createId } from '../utils/id';
@@ -311,10 +311,12 @@ function Workspace({
   // Where each preview's page is scrolled (as its agent last said), and where to scroll a
   // reloaded one back to when its page says hello again.
   const lastScroll = useRef<Record<string, { href: string; y: number }>>({});
-  const scrollToRestore = useRef<Record<string, number>>({});
+  const scrollToRestore = useRef<Record<string, { href: string; y: number }>>({});
   // The audit panel (issues, page stats and type of every preview); it shares the side with the inspector.
   const [audit, setAudit] = useState<{ open: boolean; tab: AuditTab }>({ open: false, tab: 'issues' });
   const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
+  // One capture at a time: each one shows the previews one by one and captures the screen.
+  const capturing = busy !== null || visualBusy;
   // Utilities for this session (not saved).
   const [measuring, setMeasuring] = useState(false);
   const [vision, setVision] = useState<VisionMode>('none');
@@ -397,6 +399,11 @@ function Workspace({
 
   /* ---------- Navigation ---------- */
 
+  // The element being inspected, for work that outlives a render (a capture puts its outline back).
+  const inspectedNow = useRef(inspector.selector);
+  useLayoutEffect(() => {
+    inspectedNow.current = inspector.selector;
+  });
   const resetInspection = useCallback(
     () => setInspector((state) => (state.selector ? { ...state, selector: null, results: {} } : state)),
     [],
@@ -778,7 +785,7 @@ function Workspace({
   /** Every visible preview in one labelled image. */
   const captureAll = () =>
     withCapture(async () => {
-      if (!currentUrl || busy) return;
+      if (!currentUrl || capturing) return;
       if (visible.length === 0) {
         toast({ message: t('report.nothing'), tone: 'info' });
         return;
@@ -1070,7 +1077,7 @@ function Workspace({
   };
 
   const agents = useFrameAgents(tabId, generations, {
-    onHello: (cardId) => {
+    onHello: (cardId, href) => {
       agents.send(cardId, { type: 'checks', enabled: settings.checks, skip: settings.disabledChecks });
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
       if (hideScrollbars) agents.send(cardId, { type: 'scrollbars', hidden: true });
@@ -1087,10 +1094,12 @@ function Workspace({
       if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
       if (inspector.selector) agents.send(cardId, { type: 'select', selector: inspector.selector });
       setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
+      // Back to where a reloaded preview was — on that page only, not on another one
+      // loaded meanwhile or a sign-in page the reload was sent to.
       const restore = scrollToRestore.current[cardId];
-      if (restore !== undefined) {
+      if (restore) {
         delete scrollToRestore.current[cardId];
-        agents.send(cardId, { type: 'scrollTo', ratio: 0, y: restore });
+        if (pageOf(href) === pageOf(restore.href)) agents.send(cardId, { type: 'scrollTo', ratio: 0, y: restore.y });
       }
     },
     onNavigate: (cardId, href, { user, newDocument }) => {
@@ -1240,7 +1249,7 @@ function Workspace({
       const expected = pageFor(id, page);
       if (!frame || !known || !expected || known.y <= 0) continue;
       if (known.href !== frame.href || pageOf(frame.href) !== pageOf(expected)) continue;
-      scrollToRestore.current[id] = known.y;
+      scrollToRestore.current[id] = known;
     }
   };
 
@@ -1467,14 +1476,37 @@ function Workspace({
     hintAccess(t('scan.title'));
   };
 
-  /** Checks the page in the scanner's preview, once it is `width` wide (the checks switched off left out). */
+  /**
+   * Checks the page in the scanner's preview, once it is `width` wide (the checks
+   * switched off left out). The scan waits while the tab is hidden — its preview
+   * isn't laid out then — and asks again when the tab was hidden during a probe.
+   */
   const probeScan = async (width: number): Promise<ScanSample> => {
-    const reply = await agents.ask(SCAN_CARD_ID, { type: 'scanProbe', width }, 'scanned', 6000);
-    return {
-      width: reply.width,
-      height: reply.height,
-      issues: withoutKinds(reply.report, settings.disabledChecks)?.issues ?? [],
-    };
+    for (let attempt = 1; ; attempt++) {
+      await whenVisible();
+      let hidden = false;
+      const onVisibility = () => {
+        if (document.hidden) hidden = true;
+      };
+      document.addEventListener('visibilitychange', onVisibility);
+      try {
+        const reply = await agents
+          .ask(SCAN_CARD_ID, { type: 'scanProbe', width }, 'scanned', 6000)
+          .catch((error: unknown) => {
+            if (hidden && attempt < 3) return null;
+            throw error;
+          });
+        // Not answered, or measured before the preview had that width: ask again.
+        if (!reply || (hidden && reply.width !== width && attempt < 3)) continue;
+        return {
+          width: reply.width,
+          height: reply.height,
+          issues: withoutKinds(reply.report, settings.disabledChecks)?.issues ?? [],
+        };
+      } finally {
+        document.removeEventListener('visibilitychange', onVisibility);
+      }
+    }
   };
 
   const copyScan = (result: ScanResult) =>
@@ -1697,7 +1729,7 @@ function Workspace({
   /** Each real window as captured on screen (at full resolution), in one labelled image. */
   const captureRealWindows = () =>
     withCapture(async () => {
-      if (!currentUrl || busy || realWindows.length === 0) return;
+      if (!currentUrl || capturing || realWindows.length === 0) return;
       setBusy('sheet');
       try {
         const entries: SheetEntry[] = [];
@@ -1775,7 +1807,7 @@ function Workspace({
   /** Captures every viewport while the visual check's dialog steps aside, then hands the captures on. */
   const runVisual = (handle: (captures: Capture[]) => Promise<void>) =>
     withCapture(async () => {
-      if (visualBusy || visualViewports.length === 0) return;
+      if (capturing || visualViewports.length === 0) return;
       setDialog('visual');
       setVisualBusy(true);
       setVisualConcealed(true);
@@ -1857,7 +1889,7 @@ function Workspace({
   const captureFullPage = (cardId: string) =>
     withCapture(async () => {
       const card = cards.find((item) => item.id === cardId);
-      if (!card || !currentUrl || busy) return;
+      if (!card || !currentUrl || capturing) return;
       if (!agents.frameOf(cardId)) {
         hintAccess(t('card.menuFullPage'));
         return;
@@ -2081,7 +2113,7 @@ function Workspace({
   };
 
   const exportReport = () => {
-    if (!currentUrl || busy) return;
+    if (!currentUrl || capturing) return;
     if (visible.length === 0) {
       toast({ message: t('report.nothing'), tone: 'info' });
       return;
@@ -2346,7 +2378,7 @@ function Workspace({
   const captureElementEverywhere = () =>
     withCapture(async () => {
       const selector = inspector.selector;
-      if (!selector || !currentUrl || busy) return;
+      if (!selector || !currentUrl || capturing) return;
       const list = cards.filter((card) => agents.frameOf(card.id));
       const previousFocus = focused;
       const label = inspectorRows.find((row) => row.info)?.info?.label ?? selector;
@@ -2405,7 +2437,8 @@ function Workspace({
       } finally {
         setFocus(previousFocus);
         setBusy(null);
-        broadcast({ type: 'select', selector });
+        // The outline back on the element inspected now (the selection may have changed meanwhile).
+        broadcast({ type: 'select', selector: inspectedNow.current });
       }
     });
 

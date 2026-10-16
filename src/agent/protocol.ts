@@ -183,26 +183,26 @@ export type AgentEvent =
   /** A key the workspace handles was pressed inside the preview (only while inspecting). */
   | { type: 'key'; key: 'Escape' }
   /** Answer to `pageMetrics`: the page's height and the window's, in CSS pixels. */
-  | { type: 'metrics'; scrollHeight: number; viewportHeight: number; scrollY: number }
+  | { type: 'metrics'; id?: number; scrollHeight: number; viewportHeight: number; scrollY: number }
   /** Answer to `captureScroll`, once the page has painted at its new position. */
-  | { type: 'scrolled'; y: number }
+  | { type: 'scrolled'; id?: number; y: number }
   /** Answer to `scanProbe`: the checks at that width (the window's real width) and the page's height. */
-  | { type: 'scanned'; width: number; report: CheckReport; height: number }
+  | { type: 'scanned'; id?: number; width: number; report: CheckReport; height: number }
   /** Answer to `getStats`. */
-  | { type: 'stats'; stats: PageStats }
+  | { type: 'stats'; id?: number; stats: PageStats }
   /** Answer to `getTypeScale`. */
-  | { type: 'typeScale'; samples: TypeSample[] }
+  | { type: 'typeScale'; id?: number; samples: TypeSample[] }
   /** Answer to `getElementRect` (null when the element isn't shown). */
-  | { type: 'elementRect'; rect: ElementRect | null };
+  | { type: 'elementRect'; id?: number; rect: ElementRect | null };
 
-/** Events that answer a request from the workspace. */
+/** Events that answer a request from the workspace; they carry the `id` of the request. */
 export type AgentReplyType = 'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'elementRect';
 export type AgentReply = Extract<AgentEvent, { type: AgentReplyType }>;
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
 
-/** Workspace → agent. */
-export type AgentCommand =
+/** Workspace → agent. A request that is answered carries an `id`, sent back with its answer. */
+export type AgentCommand = (
   /** Say hello again (the workspace started listening after the page loaded). */
   | { type: 'ping' }
   /**
@@ -258,4 +258,5 @@ export type AgentCommand =
   /** Answer `typeScale`. */
   | { type: 'getTypeScale' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
-  | { type: 'getElementRect'; selector: string; reveal: boolean };
+  | { type: 'getElementRect'; selector: string; reveal: boolean }
+) & { id?: number };
