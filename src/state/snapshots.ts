@@ -24,6 +24,22 @@ export type Snapshot = {
   imageHeight: number;
 };
 
+/**
+ * A stored record that is a usable baseline: what the database holds is
+ * checked, not trusted (another version may have written it, or DevTools).
+ */
+export function isSnapshot(value: unknown): value is Snapshot {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Record<string, unknown>;
+  const numbers = ['width', 'height', 'createdAt', 'imageWidth', 'imageHeight'];
+  return (
+    ['id', 'page', 'viewport', 'name'].every((key) => typeof record[key] === 'string') &&
+    numbers.every((key) => typeof record[key] === 'number' && Number.isFinite(record[key])) &&
+    typeof Blob !== 'undefined' &&
+    record.image instanceof Blob
+  );
+}
+
 /** What identifies a viewport's baseline: its size and page colours (not its name, which can change). */
 export function viewportKey(viewport: { width: number; height: number; colorScheme?: ColorScheme }): string {
   return `${viewport.width}x${viewport.height}${viewport.colorScheme ? ` ${viewport.colorScheme}` : ''}`;

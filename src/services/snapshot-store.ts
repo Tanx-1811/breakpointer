@@ -1,4 +1,4 @@
-import { snapshotsToPrune, summarizeSnapshots, type Snapshot, type SnapshotPage } from '../state/snapshots';
+import { isSnapshot, snapshotsToPrune, summarizeSnapshots, type Snapshot, type SnapshotPage } from '../state/snapshots';
 
 /**
  * Baseline screenshots for the visual check, in this extension's own
@@ -55,12 +55,14 @@ function read<T>(request: IDBRequest<T>): Promise<T> {
 export async function snapshotsOf(page: string): Promise<Snapshot[]> {
   const db = await database();
   const index = db.transaction(STORE, 'readonly').objectStore(STORE).index('page');
-  return read(index.getAll(IDBKeyRange.only(page)) as IDBRequest<Snapshot[]>);
+  return (await read(index.getAll(IDBKeyRange.only(page)) as IDBRequest<unknown[]>)).filter(isSnapshot);
 }
 
 async function allSnapshots(): Promise<Snapshot[]> {
   const db = await database();
-  return read(db.transaction(STORE, 'readonly').objectStore(STORE).getAll() as IDBRequest<Snapshot[]>);
+  return (await read(db.transaction(STORE, 'readonly').objectStore(STORE).getAll() as IDBRequest<unknown[]>)).filter(
+    isSnapshot,
+  );
 }
 
 /** Saves (or replaces) baselines, then removes the oldest ones beyond the limit. */

@@ -157,7 +157,10 @@ export function useVisualCheck(url: string | null, open: boolean) {
   const compare = useCallback(
     async (captures: Capture[]) => {
       if (!page) return;
-      const known = baselines?.page === page ? baselines.snapshots : await snapshotsOf(page).catch(() => []);
+      // Read again: they may have changed since shown (deleted in Settings, saved from another tab).
+      await load(page);
+      const shown = latest.current.baselines;
+      const known = shown?.page === page ? shown.snapshots : [];
       const byKey: Record<string, VisualResult> = {};
       for (const { viewport, image } of captures) {
         const key = viewportKey(viewport);
@@ -192,7 +195,7 @@ export function useVisualCheck(url: string | null, open: boolean) {
       if (previous) for (const result of Object.values(previous.byKey)) releaseResult(result);
       return byKey;
     },
-    [baselines, page, releaseResult, track],
+    [load, page, releaseResult, track],
   );
 
   /** Makes a comparison's capture the new baseline of its viewport. */
