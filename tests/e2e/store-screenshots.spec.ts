@@ -270,7 +270,8 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
         if ((await frame.evaluate(() => innerWidth)) === 768)
           await frame.evaluate(() => {
             const heading = document.querySelector('h1');
-            if (heading) heading.textContent = 'Plan your whole team’s week together — in one place, not in twelve tabs.';
+            if (heading)
+              heading.textContent = 'Plan your whole team’s week together — in one place, not in twelve tabs.';
           });
       await dialog.getByTestId('visual-compare').click();
       await expect(dialog.getByTestId('visual-summary')).toHaveText(TEXT[lang].changed, { timeout: 20_000 });
