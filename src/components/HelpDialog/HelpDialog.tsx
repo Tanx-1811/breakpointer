@@ -20,11 +20,13 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['I'], label: 'help.inspect' },
   { keys: ['E'], label: 'help.audit' },
   { keys: ['W'], label: 'help.scan' },
+  { keys: ['V'], label: 'help.visual' },
   { keys: ['X'], label: 'help.measure' },
   { keys: ['C'], label: 'help.contrast' },
   { keys: ['O'], label: 'help.outlines' },
   { keys: ['P'], label: 'help.floating' },
   { keys: ['[', ']'], label: 'help.cycleFocus' },
+  { keys: ['1…8'], label: 'help.focusNumber' },
   { keys: ['S'], label: 'help.capture' },
   { keys: ['T'], label: 'help.theme' },
   { keys: ['Esc'], label: 'help.escape' },
@@ -34,8 +36,13 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['?'], label: 'help.help' },
 ];
 
+/** What this version brings, shown at the top of Help. */
+const NEWS: MessageKey[] = ['news.scan', 'news.audit', 'news.visual', 'news.checks', 'news.inspector', 'news.more'];
+
 type Props = {
   open: boolean;
+  /** "0.4.0": the news are this version's. */
+  version?: string;
   onClose: () => void;
   /** Current bindings from chrome.commands (already formatted for the platform; users can change them). */
   commandShortcuts: { open: string; preview: string };
@@ -43,7 +50,7 @@ type Props = {
   paletteShortcut?: string;
 };
 
-export function HelpDialog({ open, onClose, commandShortcuts, paletteShortcut = 'Ctrl K' }: Props) {
+export function HelpDialog({ open, version, onClose, commandShortcuts, paletteShortcut = 'Ctrl K' }: Props) {
   const { t } = useI18n();
 
   return (
@@ -74,6 +81,18 @@ export function HelpDialog({ open, onClose, commandShortcuts, paletteShortcut = 
           <p className={styles.note}>{t('help.shortcutsNote')}</p>
         </section>
         <section aria-labelledby="help-global">
+          {version && (
+            <div className={styles.news} data-testid="whats-new">
+              <h3 className={styles.heading}>
+                {t('help.whatsNew', { version: version.split('.').slice(0, 2).join('.') })}
+              </h3>
+              <ul className={styles.tips}>
+                {NEWS.map((key) => (
+                  <li key={key}>{t(key)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <h3 id="help-global" className={styles.heading}>
             {t('help.global')}
           </h3>

@@ -2,6 +2,38 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.4.0] — 2026-10-16
+
+Find where it breaks without looking for it: scan every width, audit every size in one place, and check what changed against a baseline.
+
+### Added
+
+- **Scan every width** (`W`, Tools or the palette): the page is resized one width at a time in its own preview and checked at each — every issue's exact first and last width is found to the pixel (a first pass every 8, 16 or 32 px, then halving the gap wherever the issues change). A chart shows each issue's widths, the page's height, this site's breakpoints and your viewports; hover or use the slider to see any width, click a range to jump to its worst width, add a viewport there in one click, or copy the findings as Markdown.
+- **Audit panel** (`E`, or the Audit toggle with its count of issues): every issue of every preview in one place, grouped by check, with a highlight per preview; **Performance** — page weight, requests, image pixels (and how they compare with what the screen needs), largest contentful paint, layout shift, page height, elements and web fonts as bars per preview; **Type** — the font size, line height and weight of headings, paragraphs, links, buttons and fields at every size, with what changes marked. Each tab copies as a Markdown table.
+- **Visual check** (`V`): save a baseline screenshot of every viewport, compare later and see what changed, pixel by pixel — the share of the image that changed, boxes around the areas, and three views (side by side, a slider, the differences). Accept a capture as the new baseline. Baselines stay in this browser (IndexedDB), are listed in Settings and are never exported.
+- Three **new checks**: **text cut off by its box** (a line partly hidden by a box that hides its overflow — ellipses, line clamps, fading masks, carousel slides and animated text are left alone), **low-contrast text** (WCAG AA, where the colour behind the text is known: solid backgrounds, read in any CSS colour space including `oklch()`; text over images, gradients or other content is skipped rather than guessed) and **layout shifts** (cumulative layout shift above 0.1, with the elements that moved). Each check can be switched off in **Settings → Responsive checks**.
+- **Inspector**: hovering shows the element's margin (orange) and padding (green); **Capture at every size** saves the element cut out of every preview, side by side at the same scale.
+- **Grid & flex layouts** (Tools): the columns and rows of every grid container and the direction of every flex container, drawn over the page.
+- **Reloads keep your place**: each preview comes back to where it was scrolled. **Reload automatically** every 5, 10, 30 or 60 seconds (the menu next to Reload, or the palette); it pauses while a dialog is open or the tab is hidden.
+- **Workspace links** (Tools → Copy workspace link): a link that opens the page with your viewports — sizes, names and page colours — for anyone with Breakpointer. Opening one can be undone.
+- **Page colours of every preview** (Simulate menu, palette): show the page's light or dark styles in every preview at once, with undo.
+- **Allow until Chrome closes**: site access that is removed the next time Chrome starts (the blocked-site tip and Site access); keep it for good from Site access.
+- `1`–`8` focus that viewport (again: all of them).
+- Six presets: tall phone (360 × 780), pro phone (402 × 874), Android tablet (800 × 1280), large 2-in-1 (912 × 1368), pro tablet 13″ (1032 × 1376) and HD+ desktop (1600 × 900).
+- Reports include the page stats of every preview, the last width scan of the page and the element being inspected.
+- Help shows what's new after an update (a dot on the Help button until it is opened).
+
+### Changed
+
+- The toolbar's toggles keep their icon (and the Audit count) and move their label to the tooltip below 1500px wide, leaving room for the viewport chips.
+- Visual differences are counted from a faint tint upwards (a white background turning light pink is a change).
+- Image-size labels show "SVG" for vector images instead of a density.
+
+### Fixed
+
+- "Images shown larger than their real size" no longer reports lazy-loading placeholders (files of a pixel or two), and the page stats don't count SVG files as image pixels.
+- The frame agent ignores layout shifts that happen before the page first paints: in a frame Chrome reports the page settling into its size and styles there, which a tab never shows.
+
 ## [0.3.0] — 2026-10-14
 
 A redesigned workspace and a professional toolkit: find, inspect and fix responsive problems faster — then measure, simulate, stress-test and compare what you find.

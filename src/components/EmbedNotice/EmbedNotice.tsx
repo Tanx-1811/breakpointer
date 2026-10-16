@@ -6,6 +6,8 @@ import styles from './EmbedNotice.module.css';
 type Props = {
   host: string;
   onAllow: () => void;
+  /** Allows the site until Chrome closes (the button shows when given). */
+  onAllowSession?: () => void;
   onOpenInTab: () => void;
   /** Opens every viewport as a real window (works for any site). */
   onOpenWindows?: () => void;
@@ -20,7 +22,16 @@ type Props = {
  * embedding page when a frame was blocked, so this explains the likely cause
  * and offers both fixes up front.
  */
-export function EmbedNotice({ host, onAllow, onOpenInTab, onOpenWindows, onDismiss, onNeverShow, busy }: Props) {
+export function EmbedNotice({
+  host,
+  onAllow,
+  onAllowSession,
+  onOpenInTab,
+  onOpenWindows,
+  onDismiss,
+  onNeverShow,
+  busy,
+}: Props) {
   const { t } = useI18n();
   return (
     <div className={styles.notice} role="note" data-testid="embed-notice">
@@ -30,6 +41,18 @@ export function EmbedNotice({ host, onAllow, onOpenInTab, onOpenWindows, onDismi
         <Button size="sm" variant="primary" onClick={onAllow} disabled={busy}>
           {t('access.noticeAllow', { host })}
         </Button>
+        {onAllowSession && (
+          <Button
+            size="sm"
+            icon="clock"
+            onClick={onAllowSession}
+            disabled={busy}
+            tooltip={t('access.allowSessionHint')}
+            data-testid="allow-session"
+          >
+            {t('access.allowSession')}
+          </Button>
+        )}
         <Button size="sm" icon="external" onClick={onOpenInTab}>
           {t('access.noticeOpen')}
         </Button>

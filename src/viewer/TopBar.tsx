@@ -8,6 +8,9 @@ import styles from './Viewer.module.css';
 
 export type CaptureKind = 'workspace' | 'all' | 'copy';
 
+/** Seconds between automatic reloads offered (0: off). */
+export const AUTO_RELOAD_OPTIONS = [0, 5, 10, 30, 60] as const;
+
 type Props = {
   address: string;
   addressError: string | null;
@@ -27,6 +30,9 @@ type Props = {
   /** Submits the typed address, or a suggestion picked from the list. */
   onSubmit: (value?: string) => void;
   onReloadAll: () => void;
+  /** Reload every this many seconds (0: off); the options show when the handler is given. */
+  autoReload?: number;
+  onAutoReload?: (seconds: number) => void;
   onOpenInTab: () => void;
   /** Opens every viewport as a real window of its size. */
   onOpenWindows?: () => void;
@@ -40,6 +46,8 @@ type Props = {
   resolvedTheme: 'light' | 'dark';
   onSettings: () => void;
   onHelp: () => void;
+  /** This version has news the user hasn't seen: the Help button shows a dot. */
+  helpNews?: boolean;
 };
 
 export function TopBar(props: Props) {
@@ -103,6 +111,37 @@ export function TopBar(props: Props) {
           onClick={props.onReloadAll}
           disabled={!props.hasUrl}
         />
+        {props.onAutoReload && (
+          <Menu
+            label={t('reload.menu')}
+            entries={[
+              { kind: 'heading', id: 'reload-auto', label: t('reload.auto') },
+              ...AUTO_RELOAD_OPTIONS.map<MenuEntry>((seconds) => ({
+                id: `reload-${seconds}`,
+                label: seconds === 0 ? t('reload.off') : t('reload.every', { seconds }),
+                radio: true,
+                checked: (props.autoReload ?? 0) === seconds,
+                onSelect: () => props.onAutoReload?.(seconds),
+              })),
+              { kind: 'note', id: 'reload-note', label: t('reload.note') },
+            ]}
+            minWidth={250}
+            trigger={(triggerProps) => (
+              <button
+                type="button"
+                {...triggerProps}
+                className={styles.menuChevron}
+                aria-label={t('reload.menu')}
+                data-tooltip={t('reload.menu')}
+                data-active={props.autoReload ? true : undefined}
+                data-testid="reload-menu"
+                disabled={!props.hasUrl}
+              >
+                <Icon name="chevronDown" size={12} />
+              </button>
+            )}
+          />
+        )}
       </nav>
 
       <div className={styles.addressArea}>
@@ -201,7 +240,14 @@ export function TopBar(props: Props) {
           onClick={props.onToggleTheme}
         />
         <IconButton icon="settings" label={t('toolbar.settings')} onClick={props.onSettings} />
-        <IconButton icon="help" label={t('toolbar.help')} shortcut="?" onClick={props.onHelp} />
+        <IconButton
+          icon="help"
+          label={props.helpNews ? t('toolbar.helpNews') : t('toolbar.help')}
+          shortcut="?"
+          onClick={props.onHelp}
+          className={props.helpNews ? styles.news : undefined}
+          data-testid="help-button"
+        />
       </div>
     </header>
   );

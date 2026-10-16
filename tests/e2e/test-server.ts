@@ -116,7 +116,7 @@ const UTILITIES_PAGE = page(
   });</script>`,
 );
 
-/** A 1×1 image shown at 180px (blurry) and a cookie banner covering half of a phone screen. */
+/** A 4×4 image shown at 180px (blurry) and a cookie banner covering half of a phone screen. */
 const COVER_PAGE = page(
   'Cover page',
   `<style>#photo { display: block; width: 180px; height: 180px; }
@@ -125,7 +125,7 @@ const COVER_PAGE = page(
     document.body.append(Object.assign(document.createElement('img'), {
       id: 'photo',
       alt: 'Photo',
-      src: 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==',
+      src: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAIAAAAmkwkpAAAAEElEQVR4nGM4UWEDRwzEcQBykhfBWhDcSAAAAABJRU5ErkJggg==',
     }));
     document.body.append(Object.assign(document.createElement('div'), { id: 'cookies', textContent: 'We use cookies' }));
   });</script>`,

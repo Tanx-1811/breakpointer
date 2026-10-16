@@ -25,8 +25,30 @@ async function serveDemo(context: BrowserContext, bug = false) {
 type Lang = 'en' | 'vi';
 
 const TEXT = {
-  en: { groups: /Groups/, addViewport: 'Add viewport', mobileQa: /Mobile QA/, highlight: 'Highlight' },
-  vi: { groups: /Nhóm/, addViewport: 'Thêm viewport', mobileQa: /Kiểm thử điện thoại/, highlight: 'Đánh dấu' },
+  en: {
+    groups: /Groups/,
+    addViewport: 'Add viewport',
+    mobileQa: /Mobile QA/,
+    highlight: 'Highlight',
+    scan: 'Scan every width',
+    checked: 'widths checked',
+    visual: 'Visual check',
+    saved: /Baseline saved/,
+    changed: /viewports changed/,
+    view: /^View the comparison of/,
+  },
+  vi: {
+    groups: /Nhóm/,
+    addViewport: 'Thêm viewport',
+    mobileQa: /Kiểm thử điện thoại/,
+    highlight: 'Đánh dấu',
+    scan: 'Quét mọi chiều rộng',
+    checked: 'Đã kiểm tra',
+    visual: 'Kiểm tra hình ảnh',
+    saved: /Đã lưu ảnh mốc/,
+    changed: /viewport thay đổi/,
+    view: /^Xem so sánh của/,
+  },
 } as const;
 
 async function seed(page: Page, viewerUrl: (p?: Record<string, string>) => string, settings: Record<string, unknown>) {
@@ -193,6 +215,68 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.waitForTimeout(500);
       await page.screenshot({ path: resolve(OUT, lang, '8-resize.png') });
       await page.mouse.up();
+    });
+
+    test('width scanner', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, { version: 1, language: lang, theme: 'light', breakpoints: 'site' });
+      await show(page, viewerUrl, 3, true);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('w');
+      const dialog = page.getByRole('dialog', { name: TEXT[lang].scan });
+      await dialog.getByRole('spinbutton').nth(1).fill('1440');
+      await dialog.getByTestId('scan-start').click();
+      await expect(dialog.getByTestId('scan-status')).toContainText(TEXT[lang].checked, { timeout: 60_000 });
+      // Point at the narrowest widths, where the layout breaks.
+      await dialog.getByRole('slider').fill('420');
+      await page.mouse.move(5, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '9-scan.png') });
+    });
+
+    test('audit', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3, true);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('e');
+      await expect(page.getByTestId('audit-group').first()).toBeVisible();
+      await page.mouse.move(5, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '10-audit.png') });
+    });
+
+    test('visual check', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, { version: 1, language: lang, theme: 'light', breakpoints: 'tailwind' });
+      await show(page, viewerUrl, 3);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('v');
+      const dialog = page.getByRole('dialog', { name: TEXT[lang].visual });
+      await dialog.getByTestId('visual-save').click();
+      await expect(page.getByText(TEXT[lang].saved)).toBeVisible({ timeout: 20_000 });
+      // A change on the tablet: a longer heading.
+      for (const frame of previewFrames(page, 'brightside.example'))
+        if ((await frame.evaluate(() => innerWidth)) === 768)
+          await frame.evaluate(() => {
+            const heading = document.querySelector('h1');
+            if (heading) heading.textContent = 'Plan your whole team’s week together — in one place, not in twelve tabs.';
+          });
+      await dialog.getByTestId('visual-compare').click();
+      await expect(dialog.getByTestId('visual-summary')).toHaveText(TEXT[lang].changed, { timeout: 20_000 });
+      await dialog.getByRole('button', { name: TEXT[lang].view }).nth(1).click();
+      await page.waitForTimeout(4500); // let the toasts time out
+      await page.screenshot({ path: resolve(OUT, lang, '11-visual.png') });
     });
 
     test('popup', async ({ context, extensionId }) => {

@@ -10,7 +10,7 @@
  * tab only. Stress tests (pseudo-translated text, right-to-left) change the
  * page only inside the preview and are undone when switched off.
  */
-import { blend, contrastRatio, formatRatio, parseColor, toHex, type Rgb } from '../state/contrast';
+import { blend, contrastRatio, formatRatio, toHex, type Rgb } from '../state/contrast';
 import {
   compressBox,
   cssPath,
@@ -24,6 +24,7 @@ import {
   imageDensity,
   isLargeText,
   isVectorImage,
+  parseCssColor,
   mediaQueryEdges,
   mentionsColorScheme,
   mentionsMediaType,
@@ -273,16 +274,29 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     attempt();
   };
 
+  // Where a scroll the workspace caused ended, said once it settles: the workspace
+  // keeps every preview's position (to bring it back after a reload).
+  let settling = 0;
+  const reportSettled = () => {
+    window.clearTimeout(settling);
+    settling = window.setTimeout(() => reportScroll(true), 300);
+  };
+
   window.addEventListener(
     'scroll',
     () => {
       drawOverlay();
-      if ((performance.now() < ignoreScrollUntil && !trackScroll) || scrollQueued) return;
+      if (performance.now() < ignoreScrollUntil && !trackScroll) {
+        reportSettled();
+        return;
+      }
+      if (scrollQueued) return;
       scrollQueued = true;
       requestAnimationFrame(() => {
         scrollQueued = false;
         const synced = performance.now() < ignoreScrollUntil;
         if (!synced || trackScroll) reportScroll(synced);
+        else reportSettled();
       });
     },
     { passive: true },
@@ -299,7 +313,14 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     if (quietWindows.length > 40) quietWindows.shift();
   };
   const isQuiet = (time: number) => quietWindows.some(([from, to]) => time >= from && time <= to);
-  window.addEventListener('resize', quiet);
+  // Only a real change of size (the workspace resizing the preview) counts: a preview frame first
+  // gets its size late (it starts at 0 × 0), and Chrome also fires resize events that change nothing.
+  let size = { width: window.innerWidth, height: window.innerHeight };
+  window.addEventListener('resize', () => {
+    const next = { width: window.innerWidth, height: window.innerHeight };
+    if (size.width > 0 && size.height > 0 && (next.width !== size.width || next.height !== size.height)) quiet();
+    size = next;
+  });
 
   /* ---------- Styles injected on request ---------- */
 
@@ -399,6 +420,15 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     sources?: { node: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[];
   };
   const shifts: Shift[] = [];
+  /**
+   * Shifts after the page first painted content. Before that nothing was on
+   * screen to be seen moving — and in a frame Chrome reports the page settling
+   * into its size and styles then (scores up to 1 that a tab never shows).
+   */
+  const visibleShifts = () => {
+    const painted = performance.getEntriesByName('first-contentful-paint')[0]?.startTime;
+    return painted === undefined ? [] : shifts.filter((shift) => shift.startTime >= painted);
+  };
 
   /** The colour of the page's canvas where nothing else is painted: white, or dark for dark pages. */
   const canvasColor = (): Rgb => {
@@ -406,7 +436,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     probe.setAttribute(OVERLAY_ATTRIBUTE, '');
     probe.style.cssText = 'position:absolute;width:0;height:0;background-color:Canvas';
     document.documentElement.append(probe);
-    const color = parseColor(getComputedStyle(probe).backgroundColor);
+    const color = parseCssColor(getComputedStyle(probe).backgroundColor);
     probe.remove();
     return color && color.a > 0 ? { ...color, a: 1 } : WHITE;
   };
@@ -526,8 +556,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     }
 
     // 5. Text cut off by its own box: a line of text partly outside an element
-    //    that hides its overflow. An ellipsis or a line clamp cut on purpose, and
-    //    lines fully outside (the other slides of a carousel) are hidden on purpose.
+    //    that hides its overflow. Cut on purpose, and so skipped: an ellipsis, a
+    //    line clamp, a fading mask, lines fully outside (the other slides of a
+    //    carousel), text that is moving (a transform: reveal animations, carousel
+    //    tracks), code, and text that isn't shown or is hidden from assistive tech.
     if (wants('clipped-text')) {
       const cut: Element[] = [];
       const cutSamples: CheckSample[] = [];
@@ -537,14 +569,27 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         if (!style) styles.set(element, (style = getComputedStyle(element)));
         return style;
       };
-      // Text in a nested box that hides (or scrolls) its overflow belongs to that box.
-      const ownerBox = (node: Element | null, stop: Element) => {
+      const moving = (style: CSSStyleDeclaration) =>
+        style.transform !== 'none' ||
+        (Boolean(style.translate) && style.translate !== 'none') ||
+        (Boolean(style.scale) && style.scale !== 'none') ||
+        (Boolean(style.rotate) && style.rotate !== 'none');
+      const SKIPPED_TEXT = 'pre, code, kbd, samp, [aria-hidden="true"]';
+      // The box a text node belongs to: its nearest ancestor that hides (or scrolls) overflow.
+      // Null when the text is moving, is code, or isn't shown.
+      const ownerBox = (node: Element | null, stop: Element): Element | null => {
         for (; node && node !== stop; node = node.parentElement) {
           const style = styleOf(node);
+          if (moving(style) || node.matches(SKIPPED_TEXT)) return null;
+          if (style.visibility !== 'visible' || Number(style.opacity) === 0) return null;
           if (style.overflowX !== 'visible' || style.overflowY !== 'visible') return node;
         }
         return stop;
       };
+      const masked = (style: CSSStyleDeclaration) =>
+        [style.getPropertyValue('mask-image'), style.getPropertyValue('-webkit-mask-image')].some(
+          (value) => Boolean(value) && value !== 'none',
+        );
       const range = document.createRange();
       let budget = MAX_CLIP_TEXT_NODES;
       for (const element of elements) {
@@ -554,9 +599,11 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         const cutsY = hides(style.overflowY);
         if (!cutsX && !cutsY) continue;
         const clamp = style.getPropertyValue('-webkit-line-clamp');
-        if (style.textOverflow === 'ellipsis' || (clamp && clamp !== 'none')) continue;
+        if (style.textOverflow === 'ellipsis' || (clamp && clamp !== 'none') || masked(style)) continue;
+        if (element.matches(SKIPPED_TEXT) || element.closest('[aria-hidden="true"]')) continue;
         // Most boxes that hide their overflow have nothing to hide.
-        if (element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1) continue;
+        if (element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1)
+          continue;
         const rect = element.getBoundingClientRect();
         if (!visible(rect, style)) continue;
         const box = {
@@ -612,13 +659,17 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         if (!style) styles.set(element, (style = getComputedStyle(element)));
         return style;
       };
-      const opaque = (color: Rgb | null) => Boolean(color && color.a > 0);
+      /** A background colour that draws something — or that can't be read, which makes it unknown. */
+      const paints = (background: string) => {
+        const color = parseCssColor(background);
+        return color === null || color.a > 0;
+      };
       /** A background drawn by ::before or ::after (a pill, an underlay) that the text may sit on. */
       const decorated = (element: Element) =>
         (['::before', '::after'] as const).some((pseudo) => {
           const style = getComputedStyle(element, pseudo);
           if (style.content === 'none' || style.content === 'normal') return false;
-          return style.backgroundImage !== 'none' || opaque(parseColor(style.backgroundColor));
+          return style.backgroundImage !== 'none' || paints(style.backgroundColor);
         });
       /** Its own painting makes the colours behind the text unknown. */
       const unclear = new Map<Element, boolean>();
@@ -651,7 +702,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           const draws =
             /^(img|video|picture|canvas|svg|iframe|object|embed)$/.test(child.localName) ||
             style.backgroundImage !== 'none' ||
-            opaque(parseColor(style.backgroundColor)) ||
+            paints(style.backgroundColor) ||
             style.position === 'absolute' ||
             style.position === 'fixed' ||
             Boolean(child.querySelector('img, video, picture, canvas, svg, iframe'));
@@ -671,12 +722,14 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         for (let node: Element | null = element; node; node = node.parentElement) {
           if (isUnclear(node)) return null;
           const style = styleOf(node);
-          const color = parseColor(style.backgroundColor);
-          if (color && color.a >= 1) {
+          const color = parseCssColor(style.backgroundColor);
+          // A colour this check can't read: what is behind the text is unknown.
+          if (!color) return null;
+          if (color.a >= 1) {
             base = color;
             break;
           }
-          if (color && color.a > 0) layers.push(color);
+          if (color.a > 0) layers.push(color);
           // Taken out of the flow without a background of its own: it may sit over anything.
           if (style.position === 'absolute' || style.position === 'fixed') return null;
           // Something else in the same box drawn where the text is (a hero image, a grid overlap).
@@ -709,8 +762,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         checked++;
         // Inactive controls are exempt in WCAG; a shadow usually helps text over images.
         if (element.closest(':disabled, [aria-disabled="true"]') || style.textShadow !== 'none') continue;
-        const fill = parseColor(style.getPropertyValue('-webkit-text-fill-color'));
-        const color = fill ?? parseColor(style.color);
+        const fill = parseCssColor(style.getPropertyValue('-webkit-text-fill-color'));
+        const color = fill && fill.a > 0 ? fill : parseCssColor(style.color);
         if (!color || color.a < 0.05) continue;
         range.selectNodeContents(text);
         const line = range.getClientRects()[0];
@@ -740,7 +793,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     const upscaled: Element[] = [];
     const imageSamples: CheckSample[] = [];
     for (const image of wants('upscaled-images') ? Array.from(document.images).slice(0, MAX_SCAN) : []) {
-      if (!image.complete || !image.naturalWidth || !image.naturalHeight) continue;
+      // A file of a pixel or two is a placeholder (lazy loading) or a spacer, not a blurry picture.
+      if (!image.complete || image.naturalWidth <= 2 || image.naturalHeight <= 2) continue;
       if (isVectorImage(image.currentSrc)) continue;
       const style = getComputedStyle(image);
       const rect = image.getBoundingClientRect();
@@ -822,11 +876,12 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     // 9. The layout moved while the page loaded or was used (CLS above 0.1), with
     //    the elements that moved in the worst burst of shifts.
     if (wants('layout-shift') && !scan) {
-      const worst = cumulativeLayoutShift(shifts);
+      const seen = visibleShifts();
+      const worst = cumulativeLayoutShift(seen);
       if (worst.value > MAX_LAYOUT_SHIFT) {
         const moved = new Map<Element, number>();
         for (const index of worst.window)
-          for (const move of shifts[index]?.moves ?? [])
+          for (const move of seen[index]?.moves ?? [])
             if (move.element.isConnected)
               moved.set(move.element, Math.max(moved.get(move.element) ?? 0, move.distance));
         const list = [...moved.keys()];
@@ -1295,7 +1350,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           let offset = start;
           rows.slice(0, 48).forEach((size, index) => {
             // A line in the middle of each gap between two rows.
-            if (index > 0) box('row', content.left, content.top + offset - (gap + extra) / 2, content.right - content.left, 0);
+            if (index > 0)
+              box('row', content.left, content.top + offset - (gap + extra) / 2, content.right - content.left, 0);
             offset += size + gap + extra;
           });
         }
@@ -1398,7 +1454,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       elements: document.getElementsByTagName('*').length,
       height: document.documentElement.scrollHeight,
       lcp: largestPaint,
-      cls: Math.round(cumulativeLayoutShift(shifts).value * 1000) / 1000,
+      cls: Math.round(cumulativeLayoutShift(visibleShifts()).value * 1000) / 1000,
       fonts,
     };
   };
@@ -1526,7 +1582,14 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       box.style.height = `${height}px`;
       box.style.borderWidth = `${t}px ${r}px ${bottom}px ${l}px`;
     };
-    draw(margin, rect.left - m.left, rect.top - m.top, rect.width + m.left + m.right, rect.height + m.top + m.bottom, m);
+    draw(
+      margin,
+      rect.left - m.left,
+      rect.top - m.top,
+      rect.width + m.left + m.right,
+      rect.height + m.top + m.bottom,
+      m,
+    );
     draw(
       padding,
       rect.left + b.left,

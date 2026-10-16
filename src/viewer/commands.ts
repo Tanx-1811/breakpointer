@@ -26,11 +26,15 @@ import type { CaptureKind } from './TopBar';
 
 export type CommandActions = {
   reloadAll: () => void;
+  /** Reload every this many seconds (0: off). */
+  autoReload?: (seconds: number) => void;
   openInTab: () => void;
   scrollTop: () => void;
   /* v0.4 utilities: their commands are listed when the action is given. */
   scrollBottom?: () => void;
   copyAddress?: () => void;
+  /** Copies a link that opens this page with these viewports. */
+  copyLink?: () => void;
   cycleFocus?: (delta: 1 | -1) => void;
   measure?: () => void;
   contrast?: () => void;
@@ -38,6 +42,8 @@ export type CommandActions = {
   stopCompare?: () => void;
   swapCompare?: () => void;
   setVision?: (mode: VisionMode) => void;
+  /** Every visible preview with the page's light or dark styles, or like the browser. */
+  pageColors?: (scheme: 'light' | 'dark' | null) => void;
   toggleSimulate?: (toggle: SimulateToggle) => void;
   applySnippet?: (css: string) => void;
   openWindows?: () => void;
@@ -49,6 +55,10 @@ export type CommandActions = {
   audit?: (tab?: AuditTab) => void;
   /** Opens the width scanner. */
   scan?: () => void;
+  /** The visual check: its dialog, a new baseline, a comparison. */
+  visual?: () => void;
+  visualSave?: () => void;
+  visualCompare?: () => void;
   navigate: (url: string) => void;
   addPreset: (preset: ViewportPreset, name: string) => void;
   openAdd: () => void;
@@ -100,6 +110,8 @@ export type CommandContext = {
   simulate?: SimulateState;
   /** Viewports are open as real windows. */
   windowsOpen?: boolean;
+  /** Seconds between automatic reloads (0: off). */
+  autoReload?: number;
   actions: CommandActions;
 };
 
@@ -139,6 +151,23 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     disabled: !ctx.hasUrl,
     run: actions.reloadAll,
   });
+  const { autoReload } = actions;
+  if (autoReload)
+    for (const seconds of [0, 5, 10, 30, 60])
+      add({
+        id: `auto-reload-${seconds}`,
+        section: section.page,
+        icon: 'reload',
+        title: t('palette.autoReload', {
+          interval: seconds === 0 ? t('reload.off') : t('reload.every', { seconds }),
+        }),
+        keywords: `${en('palette.autoReload', {
+          interval: seconds === 0 ? en('reload.off') : en('reload.every', { seconds }),
+        })} refresh live watch interval`,
+        checked: (ctx.autoReload ?? 0) === seconds || undefined,
+        disabled: !ctx.hasUrl,
+        run: () => autoReload(seconds),
+      });
   named('address.openInTab', {
     id: 'open-tab',
     section: section.page,
@@ -168,6 +197,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       icon: 'link',
       disabled: !ctx.hasUrl,
       run: actions.copyAddress,
+    });
+  if (actions.copyLink)
+    named('link.copy', {
+      id: 'copy-link',
+      section: section.page,
+      icon: 'link',
+      keywords: 'share team url workspace sizes viewports',
+      run: actions.copyLink,
     });
   if (ctx.windowsOpen && actions.closeWindows && actions.captureWindows) {
     named('windows.capture', {
@@ -333,7 +370,35 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     checked: ctx.inspecting,
     run: actions.inspect,
   });
-  const { audit, scan } = actions;
+  const { audit, scan, visual, visualSave, visualCompare } = actions;
+  if (visual)
+    named('tools.visual', {
+      id: 'visual',
+      section: section.capture,
+      icon: 'gallery',
+      shortcut: 'V',
+      keywords: 'visual regression baseline diff screenshot compare pixel snapshot',
+      disabled: !ctx.hasUrl,
+      run: visual,
+    });
+  if (visualSave)
+    named('palette.visualSave', {
+      id: 'visual-save',
+      section: section.capture,
+      icon: 'camera',
+      keywords: 'visual regression baseline snapshot',
+      disabled: !ctx.hasUrl,
+      run: visualSave,
+    });
+  if (visualCompare)
+    named('palette.visualCompare', {
+      id: 'visual-compare',
+      section: section.capture,
+      icon: 'split',
+      keywords: 'visual regression diff changed pixels',
+      disabled: !ctx.hasUrl,
+      run: visualCompare,
+    });
   if (scan)
     named('scan.title', {
       id: 'scan',
@@ -463,6 +528,23 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
           run: () => setVision(mode),
         },
         { mode: t(VISION_KEYS[mode]) },
+      );
+  const { pageColors } = actions;
+  if (pageColors)
+    for (const scheme of [null, 'light', 'dark'] as const)
+      named(
+        'palette.pageColors',
+        {
+          id: `colors-${scheme ?? 'auto'}`,
+          section: section.simulate,
+          icon: scheme === 'dark' ? 'moon' : scheme === 'light' ? 'sun' : 'system',
+          keywords: 'prefers-color-scheme dark mode light mode theme all previews',
+          disabled: !settings.viewports.some((vp) => !vp.hidden),
+          run: () => pageColors(scheme),
+        },
+        {
+          scheme: t(scheme === null ? 'card.schemeAuto' : scheme === 'light' ? 'card.schemeLight' : 'card.schemeDark'),
+        },
       );
   const simulate = (id: SimulateToggle, key: MessageKey, icon: PaletteCommand['icon'], keywords: string) => {
     if (!state || !toggleSimulate) return;

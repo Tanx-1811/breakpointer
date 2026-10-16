@@ -1,5 +1,6 @@
 import { disableEmbeddingForTab, tabsWithEmbedding } from '../services/embed-rules';
 import { agentRegistered, ensureAgentRegistered, unregisterAgent } from '../services/frame-agents';
+import { revokeSessionGrants } from '../services/session-access';
 import { openSidePanel } from '../shared/side-panel';
 import { openViewer, viewerUrl } from '../shared/viewer-url';
 import { parsePreviewUrl, toSafeHref } from '../utils/url';
@@ -46,6 +47,8 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
 chrome.runtime.onStartup.addListener(() => {
   void unregisterAgentIfNoWorkspace();
+  // Site access given "until Chrome closes" ends now.
+  void revokeSessionGrants();
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {

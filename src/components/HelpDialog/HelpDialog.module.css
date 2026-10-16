@@ -67,3 +67,16 @@
 .tips li + li {
   margin-top: 6px;
 }
+
+.news {
+  margin-bottom: 18px;
+  padding: 12px 14px 4px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-md);
+  background: var(--accent-soft);
+}
+
+.news .heading {
+  margin-top: 0;
+  color: var(--accent-strong);
+}

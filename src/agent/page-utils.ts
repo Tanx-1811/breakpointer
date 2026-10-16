@@ -4,6 +4,8 @@
  * sends or stores page content.
  */
 
+import { parseColor, type Rgb } from '../state/contrast';
+
 /** Pixels per em/rem in media queries (they use the initial font size, not the page's). */
 const MEDIA_EM_PX = 16;
 
@@ -295,6 +297,142 @@ export function describeElement(element: Element): string {
   return parts.join(' > ') || element.localName;
 }
 
+/* ---------- CSS colours as getComputedStyle writes them ---------- */
+
+type Channels = Rgb;
+
+const clamp01 = (value: number) => Math.min(1, Math.max(0, value));
+/** Linear light to sRGB (0–1). */
+const encode = (value: number) =>
+  value <= 0.0031308 ? 12.92 * value : 1.055 * Math.pow(Math.abs(value), 1 / 2.4) * Math.sign(value) - 0.055;
+const decode = (value: number) =>
+  Math.abs(value) <= 0.04045 ? value / 12.92 : Math.sign(value) * Math.pow((Math.abs(value) + 0.055) / 1.055, 2.4);
+const multiply = (m: number[][], v: [number, number, number]): [number, number, number] =>
+  m.map((row) => row[0]! * v[0] + row[1]! * v[1] + row[2]! * v[2]) as [number, number, number];
+
+/** CIE XYZ (D65) to linear sRGB, and the matrices that lead there (CSS Color 4). */
+const XYZ_TO_SRGB = [
+  [3.2409699419045226, -1.537383177570094, -0.4986107602930034],
+  [-0.9692436362808796, 1.8759675015077202, 0.04155505740717559],
+  [0.05563007969699366, -0.20397695888897652, 1.0569715142428786],
+];
+const P3_TO_XYZ = [
+  [0.4865709486482162, 0.26566769316909306, 0.1982172852343625],
+  [0.2289745640697488, 0.6917385218365064, 0.079286914093745],
+  [0, 0.04511338185890264, 1.043944368900976],
+];
+const D50_TO_D65 = [
+  [0.955473421488075, -0.02309845494876471, 0.06325924320057072],
+  [-0.0283697093338637, 1.0099953980813041, 0.021041441191917323],
+  [0.012314014864481998, -0.020507649298898964, 1.330365926242124],
+];
+
+const fromLinear = ([r, g, b]: [number, number, number], a: number): Channels => ({
+  r: Math.round(clamp01(encode(r)) * 255),
+  g: Math.round(clamp01(encode(g)) * 255),
+  b: Math.round(clamp01(encode(b)) * 255),
+  a: Math.round(clamp01(a) * 1000) / 1000,
+});
+
+function oklabToLinear(l: number, a: number, b: number): [number, number, number] {
+  const l_ = l + 0.3963377774 * a + 0.2158037573 * b;
+  const m_ = l - 0.1055613458 * a - 0.0638541728 * b;
+  const s_ = l - 0.0894841775 * a - 1.291485548 * b;
+  const [L, M, S] = [l_ ** 3, m_ ** 3, s_ ** 3];
+  return [
+    4.0767416621 * L - 3.3077115913 * M + 0.2309699292 * S,
+    -1.2684380046 * L + 2.6097574011 * M - 0.3413193965 * S,
+    -0.0041960863 * L - 0.7034186147 * M + 1.707614701 * S,
+  ];
+}
+
+function labToLinear(l: number, a: number, b: number): [number, number, number] {
+  const kappa = 24389 / 27;
+  const epsilon = 216 / 24389;
+  const fy = (l + 16) / 116;
+  const fx = fy + a / 500;
+  const fz = fy - b / 200;
+  const x = fx ** 3 > epsilon ? fx ** 3 : (116 * fx - 16) / kappa;
+  const y = l > kappa * epsilon ? fy ** 3 : l / kappa;
+  const z = fz ** 3 > epsilon ? fz ** 3 : (116 * fz - 16) / kappa;
+  // D50 white point, then to D65.
+  const xyz = multiply(D50_TO_D65, [x * 0.9642956764295677, y, z * 0.8251046025104602]);
+  return multiply(XYZ_TO_SRGB, xyz);
+}
+
+/** "264.6", "0.25turn", "1.2rad" → degrees. */
+function hue(text: string): number {
+  const value = Number.parseFloat(text);
+  if (/turn$/i.test(text)) return value * 360;
+  if (/grad$/i.test(text)) return value * 0.9;
+  if (/rad$/i.test(text)) return (value * 180) / Math.PI;
+  return value;
+}
+
+/** A component that may be a percentage of `full` (or `none`, read as 0). */
+const amount = (text: string, full: number) =>
+  text === 'none' ? 0 : text.endsWith('%') ? (Number.parseFloat(text) / 100) * full : Number.parseFloat(text);
+
+/**
+ * Reads a colour as Chrome's getComputedStyle writes it — `rgb()`/`rgba()`,
+ * `transparent`, and the newer spaces sites now use (`oklch()` in Tailwind 4,
+ * `oklab()`, `lab()`, `lch()`, `color(srgb …)`, `color(display-p3 …)`) —
+ * as sRGB (gamut-clipped). Null for anything else: the colour is unknown.
+ */
+export function parseCssColor(text: string): Channels | null {
+  const value = text.trim().toLowerCase();
+  if (value === 'transparent') return { r: 0, g: 0, b: 0, a: 0 };
+  const rgb = parseColor(value);
+  if (rgb) return rgb;
+  const match = /^(oklch|oklab|lab|lch|color)\(\s*([^)]*)\)$/.exec(value);
+  if (!match) return null;
+  const [body, alphaText] = match[2]!.split('/').map((part) => part.trim());
+  const parts = body!.split(/\s+/).filter(Boolean);
+  const alpha = alphaText === undefined ? 1 : amount(alphaText, 1);
+  const numbers = (from: number, full: number[]) =>
+    parts.slice(from, from + 3).map((part, index) => amount(part, full[index]!));
+  if (!Number.isFinite(alpha)) return null;
+  let linear: [number, number, number] | null = null;
+  switch (match[1]) {
+    case 'oklab': {
+      const [l, a, b] = numbers(0, [1, 0.4, 0.4]);
+      if (parts.length === 3) linear = oklabToLinear(l!, a!, b!);
+      break;
+    }
+    case 'oklch': {
+      const [l, c] = numbers(0, [1, 0.4]);
+      const h = parts[2] === 'none' ? 0 : hue(parts[2] ?? '0');
+      if (parts.length === 3)
+        linear = oklabToLinear(l!, c! * Math.cos((h * Math.PI) / 180), c! * Math.sin((h * Math.PI) / 180));
+      break;
+    }
+    case 'lab': {
+      const [l, a, b] = numbers(0, [100, 125, 125]);
+      if (parts.length === 3) linear = labToLinear(l!, a!, b!);
+      break;
+    }
+    case 'lch': {
+      const [l, c] = numbers(0, [100, 150]);
+      const h = parts[2] === 'none' ? 0 : hue(parts[2] ?? '0');
+      if (parts.length === 3)
+        linear = labToLinear(l!, c! * Math.cos((h * Math.PI) / 180), c! * Math.sin((h * Math.PI) / 180));
+      break;
+    }
+    case 'color': {
+      const [space, ...channels] = parts;
+      if (channels.length !== 3) break;
+      const [r, g, b] = channels.map((part) => amount(part, 1)) as [number, number, number];
+      if (space === 'srgb') linear = [decode(r), decode(g), decode(b)];
+      else if (space === 'srgb-linear') linear = [r, g, b];
+      else if (space === 'display-p3')
+        linear = multiply(XYZ_TO_SRGB, multiply(P3_TO_XYZ, [decode(r), decode(g), decode(b)]));
+      break;
+    }
+  }
+  if (!linear || linear.some((channel) => !Number.isFinite(channel))) return null;
+  return fromLinear(linear, alpha);
+}
+
 /** A layout shift as reported by the Layout Instability API (only what the score needs). */
 export type ShiftEntry = { startTime: number; value: number };
 
@@ -337,7 +475,11 @@ export function isLargeText(fontSizePx: number, fontWeight: number): boolean {
  */
 export function gridTracks(template: string): number[] | null {
   const tracks: number[] = [];
-  const tokens = template.replace(/\[[^\]]*\]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  const tokens = template
+    .replace(/\[[^\]]*\]/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   for (const token of tokens) {
     const match = /^(-?\d*\.?\d+(?:e[+-]?\d+)?)px$/i.exec(token);
     if (!match) return null;

@@ -36,8 +36,16 @@ const t = createTranslator('en');
 const vi = createTranslator('vi');
 
 const key = (code: string, extra: Partial<KeyboardEvent> = {}) =>
-  ({ key: '', code, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, isComposing: false, ...extra }) as
-    Pick<KeyboardEvent, 'key' | 'code' | 'shiftKey' | 'ctrlKey' | 'metaKey' | 'altKey' | 'isComposing'>;
+  ({
+    key: '',
+    code,
+    shiftKey: false,
+    ctrlKey: false,
+    metaKey: false,
+    altKey: false,
+    isComposing: false,
+    ...extra,
+  }) as Pick<KeyboardEvent, 'key' | 'code' | 'shiftKey' | 'ctrlKey' | 'metaKey' | 'altKey' | 'isComposing'>;
 
 describe('layout shift score', () => {
   it('is the largest session window, as in Core Web Vitals', () => {
@@ -149,9 +157,7 @@ describe('check texts', () => {
   it('has short values for lists that name the check', () => {
     expect(issueValue({ kind: 'overflow', count: 1, detail: '184px', samples: [] }, t)).toBe('184px too wide');
     expect(issueValue({ kind: 'viewport-meta', count: 1, detail: '', samples: [] }, t)).toBe('Missing');
-    expect(issueValue({ kind: 'viewport-meta', count: 1, detail: 'width=1024', samples: [] }, t)).toBe(
-      '“width=1024”',
-    );
+    expect(issueValue({ kind: 'viewport-meta', count: 1, detail: 'width=1024', samples: [] }, t)).toBe('“width=1024”');
     expect(issueValue({ kind: 'layout-shift', count: 4, detail: '0.24', samples: [] }, t)).toBe('CLS 0.24');
     expect(issueValue({ kind: 'low-contrast', count: 2, detail: '3.1', samples: [] }, t)).toBe('2 elements · 3.1:1');
     expect(issueValue({ kind: 'fixed-cover', count: 1, detail: '45%', samples: [] }, vi)).toBe('45% màn hình');

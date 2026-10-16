@@ -337,6 +337,18 @@
   cursor: pointer;
 }
 
+.snapshotIcon {
+  flex: none;
+  color: var(--accent);
+}
+
+.snapshotMeta {
+  flex: none;
+  color: var(--text-subtle);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 @media (max-width: 720px) {
   .nav {
     display: none;

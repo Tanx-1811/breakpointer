@@ -38,6 +38,8 @@ type Props = {
   onCopySelector: (selector: string) => void;
   /** Copies the comparison as a Markdown table (the button shows when given). */
   onCopyTable?: () => void;
+  /** The element cut out of every preview, in one image (the button shows when given). */
+  onCaptureAll?: () => void;
   onAllowSite: () => void;
 };
 
@@ -118,6 +120,17 @@ export function InspectorPanel(props: Props) {
                 {props.onCopyTable && (
                   <Button size="sm" variant="ghost" icon="clipboard" onClick={props.onCopyTable}>
                     {t('inspector.copyTable')}
+                  </Button>
+                )}
+                {props.onCaptureAll && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon="gallery"
+                    onClick={props.onCaptureAll}
+                    data-testid="inspector-capture"
+                  >
+                    {t('inspector.captureAll')}
                   </Button>
                 )}
                 <Button size="sm" variant="ghost" icon="close" onClick={props.onClear}>

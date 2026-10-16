@@ -370,7 +370,12 @@ function ScanBody(props: Props) {
         >
           {t('scan.add', { width: probeWidth })}
         </Button>
-        <Button icon="clipboard" variant="ghost" disabled={running || !shown} onClick={() => shown && props.onCopy(shown)}>
+        <Button
+          icon="clipboard"
+          variant="ghost"
+          disabled={running || !shown}
+          onClick={() => shown && props.onCopy(shown)}
+        >
           {t('audit.copy')}
         </Button>
       </div>
@@ -520,14 +525,7 @@ function ScanChart({
         >
           {/* Hairline grid at the axis ticks. */}
           {ticks(from, to, plot).map((value) => (
-            <line
-              key={`grid-${value}`}
-              x1={x(value)}
-              x2={x(value)}
-              y1={TOP}
-              y2={axisTop}
-              className={styles.grid}
-            />
+            <line key={`grid-${value}`} x1={x(value)} x2={x(value)} y1={TOP} y2={axisTop} className={styles.grid} />
           ))}
 
           {/* The page's height at each width checked (one series: a line and a light wash). */}
@@ -536,28 +534,28 @@ function ScanChart({
 
           {/* One row per kind of issue: the widths where it was found. */}
           {findings.map(({ kind, ranges }, index) => {
-              const rowY = issuesTop + index * ROW;
-              return (
-                <g key={kind} data-kind={kind}>
-                  <line x1={LABEL_WIDTH} x2={LABEL_WIDTH + plot} y1={rowY + 13} y2={rowY + 13} className={styles.lane} />
-                  {ranges.map((item) => (
-                    <rect
-                      key={`${item.from}-${item.to}`}
-                      x={x(item.from) - 1.5}
-                      y={rowY + 6}
-                      width={Math.max(3, x(item.to) - x(item.from) + 3)}
-                      height={14}
-                      rx={4}
-                      className={styles.range}
-                      data-tooltip={`${rangeText(item, t)} · ${t('scan.worst', {
-                        width: item.peak.width,
-                        value: issueValue(item.peak.issue, t),
-                      })}`}
-                    />
-                  ))}
-                </g>
-              );
-            })}
+            const rowY = issuesTop + index * ROW;
+            return (
+              <g key={kind} data-kind={kind}>
+                <line x1={LABEL_WIDTH} x2={LABEL_WIDTH + plot} y1={rowY + 13} y2={rowY + 13} className={styles.lane} />
+                {ranges.map((item) => (
+                  <rect
+                    key={`${item.from}-${item.to}`}
+                    x={x(item.from) - 1.5}
+                    y={rowY + 6}
+                    width={Math.max(3, x(item.to) - x(item.from) + 3)}
+                    height={14}
+                    rx={4}
+                    className={styles.range}
+                    data-tooltip={`${rangeText(item, t)} · ${t('scan.worst', {
+                      width: item.peak.width,
+                      value: issueValue(item.peak.issue, t),
+                    })}`}
+                  />
+                ))}
+              </g>
+            );
+          })}
 
           {/* This site's breakpoints, across the rows. */}
           {breakpoints.filter(inRange).map((value) => (

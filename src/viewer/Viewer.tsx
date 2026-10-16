@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { CHECK_KINDS, type CheckKind, type ElementInfo, type MediaReport } from '../agent/protocol';
+import { CHECK_KINDS, type CheckKind, type ElementInfo, type ElementRect, type MediaReport } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { AuditPanel, type AuditRow, type AuditTab } from '../components/AuditPanel/AuditPanel';
 import { Button } from '../components/Button/Button';
@@ -8,6 +8,7 @@ import { Banner } from '../components/Banner/Banner';
 import { CommandPalette, type PaletteCommand } from '../components/CommandPalette/CommandPalette';
 import { CompareDialog } from '../components/CompareDialog/CompareDialog';
 import { ScanDialog, type ScanResult } from '../components/ScanDialog/ScanDialog';
+import { VisualDialog, type VisualRow } from '../components/VisualDialog/VisualDialog';
 import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
 import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
 import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/FloatingPreview/FloatingPreview';
@@ -36,14 +37,14 @@ import { DockStatus, ZoomDock } from '../components/ZoomDock/ZoomDock';
 import { useFrameAgents } from '../hooks/useFrameAgents';
 import { useNavigationHistory } from '../hooks/useNavigationHistory';
 import { usePersistentSettings } from '../hooks/usePersistentSettings';
-import { useShortcuts } from '../hooks/useShortcuts';
+import { overlayOpen, useShortcuts } from '../hooks/useShortcuts';
 import { useSiteAccess } from '../hooks/useSiteAccess';
 import { useStableDomOrder } from '../hooks/useStableDomOrder';
 import { useTheme } from '../hooks/useTheme';
 import { I18nProvider, useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
 import { createTranslator, resolveLanguage, type Language } from '../i18n/translate';
-import { composeSheet, stitchSlices, type SheetEntry } from '../services/composite';
+import { captureScale, composeSheet, cropToRect, stitchSlices, type SheetEntry } from '../services/composite';
 import type { PreviewAdapter } from '../services/preview-adapter';
 import {
   blobToDataUrl,
@@ -57,6 +58,7 @@ import {
 } from '../services/screenshot';
 import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
+import { markSeen } from '../services/whats-new';
 import { enableEmbeddingForExtensionFrames } from '../services/embed-rules';
 import { hasSiteAccess, requestSiteAccess } from '../services/site-access';
 import {
@@ -84,9 +86,12 @@ import {
 import { fitZoomForAll } from '../state/fit';
 import { slicePositions, stitchedHeight } from '../state/full-page';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
-import { withoutKinds } from '../state/checks';
-import { SCAN_CARD_ID, scanMarkdown, type ScanSample } from '../state/scan';
-import { comparisonMarkdown } from '../state/inspector';
+import { CHECK_KIND_KEYS, withoutKinds } from '../state/checks';
+import { SCAN_CARD_ID, rangeText, scanFindings, scanMarkdown, type ScanSample } from '../state/scan';
+import { viewportKey, type SnapshotPage } from '../state/snapshots';
+import { workspaceLink } from '../state/workspace-link';
+import { clearSnapshots, deletePageSnapshots, snapshotPages } from '../services/snapshot-store';
+import { INSPECTED_PROPERTIES, comparisonMarkdown, propertyValue } from '../state/inspector';
 import { isOneTimeUrl, pageOf } from '../state/follow';
 import { buildReportHtml, type ReportCard } from '../state/report';
 import { createGroup, findGroupTemplates, uniqueGroupName } from '../state/groups';
@@ -129,6 +134,7 @@ import {
 } from '../utils/url';
 import { buildCommands } from './commands';
 import { useAuditData } from './useAuditData';
+import { useVisualCheck, type Capture } from './useVisualCheck';
 import { TopBar, type CaptureKind } from './TopBar';
 import { usePan, useWheelZoom } from './workspace-gestures';
 import styles from './Viewer.module.css';
@@ -153,7 +159,8 @@ type DialogName =
   | 'palette'
   | 'contrast'
   | 'compare'
-  | 'scan';
+  | 'scan'
+  | 'visual';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -203,6 +210,10 @@ export type ViewerProps = {
   version: string;
   /** Fit the viewports once: after the first page is shown (first run), or right away (group from the popup). */
   autoFit: 'none' | 'afterFirstPage' | 'now';
+  /** A workspace link replaced these viewports as the workspace opened (it can be undone). */
+  replacedViewports?: ViewportConfig[] | null;
+  /** This version has news the user hasn't seen (Help shows a dot until opened). */
+  whatsNew?: boolean;
 };
 
 export function ViewerApp(props: ViewerProps) {
@@ -245,6 +256,8 @@ function Workspace({
   initialError,
   version,
   autoFit,
+  replacedViewports,
+  whatsNew,
   resolvedTheme,
   language,
 }: WorkspaceProps) {
@@ -280,6 +293,17 @@ function Workspace({
   const [inspector, setInspector] = useState<InspectorState>(CLOSED_INSPECTOR);
   // The last width scan of a page (kept for the session).
   const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  // The visual check: capturing hides its dialog, and only one runs at a time.
+  const [visualBusy, setVisualBusy] = useState(false);
+  const [visualConcealed, setVisualConcealed] = useState(false);
+  // Pages with visual baselines, listed in Settings.
+  const [snapshotList, setSnapshotList] = useState<SnapshotPage[] | null>(null);
+  // Reload every preview every so many seconds (0: off); for this session.
+  const [autoReload, setAutoReload] = useState(0);
+  // Where each preview's page is scrolled (as its agent last said), and where to scroll a
+  // reloaded one back to when its page says hello again.
+  const lastScroll = useRef<Record<string, { href: string; y: number }>>({});
+  const scrollToRestore = useRef<Record<string, number>>({});
   // The audit panel (issues, page stats and type of every preview); it shares the side with the inspector.
   const [audit, setAudit] = useState<{ open: boolean; tab: AuditTab }>({ open: false, tab: 'issues' });
   const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
@@ -670,6 +694,19 @@ function Workspace({
     }
   };
 
+  /** Access to the current site that is removed the next time Chrome starts. */
+  const allowSiteForSession = async () => {
+    if (!currentUrl) return;
+    const granted = await withPrompt(() => siteAccess.allowSiteForSession());
+    if (granted === null) return;
+    if (granted) {
+      toast({ message: t('access.grantedSession', { host: displayHost(currentUrl) }), tone: 'success' });
+      reloadAllPreviews();
+    } else {
+      toast({ message: t('access.denied'), tone: 'error' });
+    }
+  };
+
   const allowAllSites = async () => {
     const granted = await withPrompt(() => siteAccess.allowAllSites());
     if (granted === null) return;
@@ -845,6 +882,38 @@ function Workspace({
     dispatch({ type: 'visitUrl', url: initialUrl.href });
   }, [dispatch, initialUrl]);
 
+  // A workspace link set the viewports: say so, and offer to put back the ones it replaced.
+  const announcedLink = useRef(false);
+  useEffect(() => {
+    if (announcedLink.current || !replacedViewports) return;
+    announcedLink.current = true;
+    withUndo(t('link.opened', { count: viewports.length }), () =>
+      dispatch({ type: 'replaceViewports', viewports: replacedViewports }),
+    );
+  }, [dispatch, replacedViewports, t, viewports.length, withUndo]);
+
+  // News of this version, until Help is opened.
+  const [news, setNews] = useState(Boolean(whatsNew));
+  const openHelp = () => {
+    setDialog('help');
+    if (news) {
+      setNews(false);
+      void markSeen(version);
+    }
+  };
+
+  /** A link that opens this page with these viewports in Breakpointer, for a teammate. */
+  const copyWorkspaceLink = () => {
+    const link = workspaceLink(chrome.runtime.getURL('viewer/viewer.html'), currentUrl?.href ?? null, visible);
+    void copyText(link).then((copied) =>
+      toast(
+        copied
+          ? { message: t('link.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+  };
+
   // Signals that the workspace is interactive (used by end-to-end tests).
   useEffect(() => {
     document.documentElement.dataset.ready = 'true';
@@ -1010,6 +1079,11 @@ function Workspace({
       if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
       if (inspector.selector) agents.send(cardId, { type: 'select', selector: inspector.selector });
       setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
+      const restore = scrollToRestore.current[cardId];
+      if (restore !== undefined) {
+        delete scrollToRestore.current[cardId];
+        agents.send(cardId, { type: 'scrollTo', ratio: 0, y: restore });
+      }
     },
     onNavigate: (cardId, href, { user, newDocument }) => {
       // The width scanner's preview is the scanner's own: the workspace doesn't follow it.
@@ -1028,6 +1102,8 @@ function Workspace({
     },
     onScroll: (cardId, ratio, anchor, y, synced) => {
       if (cardId === SCAN_CARD_ID) return;
+      const href = agents.frameOf(cardId)?.href;
+      if (href) lastScroll.current[cardId] = { href, y };
       // A design overlay moves with its page.
       if (overlays[cardId]) setOverlayScroll((map) => (map[cardId] === y ? map : { ...map, [cardId]: y }));
       // Scrolls the workspace caused itself are reported only for overlays.
@@ -1147,6 +1223,47 @@ function Workspace({
     setStrays({});
     setReloadAll((n) => n + 1);
   };
+  /** Notes where previews are scrolled, to bring them back there once reloaded (on the workspace's page only). */
+  const rememberScroll = (ids: string[]) => {
+    const page = currentUrl?.href ?? null;
+    for (const id of ids) {
+      const frame = agents.frameOf(id);
+      const known = lastScroll.current[id];
+      const expected = pageFor(id, page);
+      if (!frame || !known || !expected || known.y <= 0) continue;
+      if (known.href !== frame.href || pageOf(frame.href) !== pageOf(expected)) continue;
+      scrollToRestore.current[id] = known.y;
+    }
+  };
+
+  /** Reloads every preview; each one comes back to where it was scrolled. */
+  const reloadKeepingPlace = () => {
+    if (!currentUrl) return;
+    scrollToRestore.current = {};
+    rememberScroll(cards.map((card) => card.id));
+    reloadAllPreviews();
+  };
+
+  const reloadCardKeepingPlace = (id: string) => {
+    delete scrollToRestore.current[id];
+    rememberScroll([id]);
+    reloadCard(id);
+  };
+
+  // Automatic reloads: not while the tab is hidden, a dialog or menu is open, or something is captured.
+  const autoReloadRef = useRef({ run: reloadKeepingPlace, blocked: false });
+  useLayoutEffect(() => {
+    autoReloadRef.current = { run: reloadKeepingPlace, blocked: dialog !== null || busy !== null };
+  });
+  useEffect(() => {
+    if (!autoReload || !currentUrl) return;
+    const timer = setInterval(() => {
+      if (document.hidden || autoReloadRef.current.blocked || overlayOpen()) return;
+      autoReloadRef.current.run();
+    }, autoReload * 1000);
+    return () => clearInterval(timer);
+  }, [autoReload, currentUrl]);
+
   const reloadCard = (id: string) => {
     setSrcOverrides(({ [id]: _dropped, ...rest }) => rest);
     setStrays(({ [id]: _stray, ...rest }) => rest);
@@ -1238,6 +1355,24 @@ function Workspace({
         tone: 'info',
         key: 'site-breakpoints',
       });
+  };
+
+  // The page colours every visible preview shows, when they all show the same.
+  const schemes = new Set(visible.map((vp) => vp.colorScheme ?? null));
+  const pageColors = schemes.size === 1 ? [...schemes][0]! : 'mixed';
+
+  /** Every visible preview with the page's light or dark styles (or like the browser), with undo. */
+  const setAllColorSchemes = (scheme: ColorScheme | null) => {
+    if (visible.length === 0 || pageColors === scheme) return;
+    replaceViewports(
+      viewports.map((vp) => {
+        if (vp.hidden) return vp;
+        const { colorScheme: _previous, ...rest } = vp;
+        return scheme ? { ...rest, colorScheme: scheme } : rest;
+      }),
+      t(scheme === 'dark' ? 'colors.dark' : scheme === 'light' ? 'colors.light' : 'colors.auto'),
+    );
+    if (scheme) hintAccess(t('card.colorScheme'));
   };
 
   const setColorScheme = (vp: ViewportConfig, scheme: ColorScheme | null) => {
@@ -1586,6 +1721,123 @@ function Workspace({
       }
     });
 
+  /* ---------- Visual check ---------- */
+
+  const visualCheck = useVisualCheck(currentUrl?.href ?? null, dialog === 'visual');
+  // One row per baseline: viewports of the same size and page colours share one.
+  const visualViewports = visible.filter(
+    (vp, index) => visible.findIndex((other) => viewportKey(other) === viewportKey(vp)) === index,
+  );
+  const visualRows: VisualRow[] = visualViewports.map((vp) => {
+    const key = viewportKey(vp);
+    return {
+      key,
+      name: vp.name,
+      width: vp.width,
+      height: vp.height,
+      baseline: visualCheck.baselines.find((item) => item.key === key),
+      result: visualCheck.results[key],
+    };
+  });
+
+  /** Each viewport on its own (focus mode, fitted to the screen), captured as shown. */
+  const captureViewports = async (list: ViewportConfig[]): Promise<Capture[]> => {
+    const previousFocus = focused;
+    const captures: Capture[] = [];
+    try {
+      for (const [index, vp] of list.entries()) {
+        toast({
+          message: t('visual.capturing', { current: index + 1, total: list.length }),
+          tone: 'info',
+          key: 'visual',
+        });
+        setFocus({ id: vp.id, zoom: focusZoom(vp) });
+        await nextFrame();
+        await nextFrame();
+        const stage = stageOf(vp.id);
+        const shot = stage ? await captureElementImage(stage) : null;
+        if (shot) captures.push({ viewport: vp, image: shot.blob });
+      }
+    } finally {
+      setFocus(previousFocus);
+    }
+    return captures;
+  };
+
+  /** Captures every viewport while the visual check's dialog steps aside, then hands the captures on. */
+  const runVisual = (handle: (captures: Capture[]) => Promise<void>) =>
+    withCapture(async () => {
+      if (visualBusy || visualViewports.length === 0) return;
+      setDialog('visual');
+      setVisualBusy(true);
+      setVisualConcealed(true);
+      try {
+        await nextFrame();
+        const captures = await captureViewports(visualViewports);
+        setVisualConcealed(false);
+        if (captures.length === 0) throw new Error('Nothing captured');
+        await handle(captures);
+      } catch (error) {
+        console.warn('[Breakpointer] The visual check failed.', error);
+        toast({ message: t('capture.failed'), tone: 'error', key: 'visual' });
+      } finally {
+        setVisualConcealed(false);
+        setVisualBusy(false);
+      }
+    });
+
+  const saveBaseline = () =>
+    runVisual(async (captures) => {
+      const count = await visualCheck.save(captures).catch(() => null);
+      toast(
+        count === null
+          ? { message: t('visual.storageFailed'), tone: 'error', key: 'visual' }
+          : {
+              message: count === 1 ? t('visual.savedOne') : t('visual.saved', { count }),
+              tone: 'success',
+              key: 'visual',
+            },
+      );
+    });
+
+  const compareBaseline = () =>
+    runVisual(async (captures) => {
+      const results = Object.values((await visualCheck.compare(captures)) ?? {});
+      const compared = results.filter((result) => result.status === 'compared');
+      const changed = compared.filter((result) => result.status === 'compared' && result.ratio > 0).length;
+      toast({
+        message: changed
+          ? t('visual.summary', { changed, total: compared.length })
+          : compared.length
+            ? t('visual.summaryNone')
+            : t('visual.none'),
+        tone: changed ? 'info' : 'success',
+        key: 'visual',
+      });
+    });
+
+  const openVisual = () => {
+    if (!currentUrl) {
+      toast({ message: t('capture.notReady'), tone: 'info' });
+      return;
+    }
+    setDialog('visual');
+  };
+
+  // Settings lists the pages with baselines when it opens.
+  useEffect(() => {
+    if (dialog !== 'settings') return;
+    let active = true;
+    void snapshotPages()
+      .catch(() => [])
+      .then((pages) => {
+        if (active) setSnapshotList(pages);
+      });
+    return () => {
+      active = false;
+    };
+  }, [dialog]);
+
   /* ---------- Full-page screenshots ---------- */
 
   /**
@@ -1732,6 +1984,12 @@ function Workspace({
         });
         const stage = stageOf(card.id);
         const shot = stage ? await captureElementImage(stage, 'image/jpeg') : null;
+        const stats = agents.frameOf(card.id)
+          ? await agents
+              .ask(card.id, { type: 'getStats' }, 'stats', 2000)
+              .then((reply) => reply.stats)
+              .catch(() => null)
+          : null;
         reportCards.push({
           name: cardTitle(card),
           width: vp.width,
@@ -1740,11 +1998,62 @@ function Workspace({
           breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
           image: shot ? await blobToDataUrl(shot.blob) : null,
           checks: checksOf(card.id),
+          stats,
         });
       }
+      // The last width scan of this page, and the element being inspected, if any.
+      const scan =
+        scanResult && scanResult.page === currentUrl.href
+          ? {
+              from: scanResult.options.from,
+              to: scanResult.options.to,
+              findings: scanFindings(scanResult.samples).map(({ kind, ranges }) => ({
+                name: t(CHECK_KIND_KEYS[kind]),
+                widths: ranges.map((range) => rangeText(range, t)).join(', '),
+              })),
+            }
+          : null;
+      const propertyNames = {
+        size: t('inspector.prop.size'),
+        display: t('inspector.prop.display'),
+        font: t('inspector.prop.font'),
+        margin: t('inspector.prop.margin'),
+        padding: t('inspector.prop.padding'),
+        layout: t('inspector.prop.layout'),
+        position: t('inspector.prop.position'),
+      };
+      const inspected = inspector.selector
+        ? {
+            selector: inspector.selector,
+            header: [t('inspector.tableViewport'), ...INSPECTED_PROPERTIES.map((property) => propertyNames[property])],
+            rows: inspectorRows.map((row) => [
+              `${row.name} (${row.width}px)`,
+              ...INSPECTED_PROPERTIES.map((property, index) =>
+                row.info?.visible
+                  ? propertyValue(row.info, property) || '—'
+                  : index === 0
+                    ? row.info === null
+                      ? t('inspector.missing')
+                      : row.info
+                        ? t('inspector.hidden')
+                        : t('inspector.waiting')
+                    : '',
+              ),
+            ]),
+          }
+        : null;
       const title = visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
       const html = buildReportHtml(
-        { url: currentUrl.href, title, created: new Date(), version, language, cards: reportCards },
+        {
+          url: currentUrl.href,
+          title,
+          created: new Date(),
+          version,
+          language,
+          cards: reportCards,
+          scan,
+          inspector: inspected,
+        },
         t,
       );
       const fileName = `breakpointer-report_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.html`;
@@ -1771,7 +2080,7 @@ function Workspace({
 
   useShortcuts({
     focusAddress: () => addressRef.current?.focus(),
-    reload: () => currentUrl && reloadAllPreviews(),
+    reload: reloadKeepingPlace,
     add: () => setDialog('add'),
     groups: () => document.querySelector<HTMLButtonElement>('[data-groups-trigger]')?.click(),
     fit,
@@ -1781,11 +2090,12 @@ function Workspace({
     rulers: () => dispatch({ type: 'setShowRulers', showRulers: !settings.showRulers }),
     capture: () => void capture(workspaceRef.current, ['workspace']),
     theme: toggleTheme,
-    help: () => setDialog('help'),
+    help: openHelp,
     palette: () => (dialog === 'palette' ? setDialog(null) : openPalette()),
     inspect: toggleInspector,
     audit: () => toggleAudit(),
     scan: openScan,
+    visual: openVisual,
     measure: toggleMeasure,
     contrast: () => setDialog('contrast'),
     outlines: () => toggleTool('outlines'),
@@ -1794,6 +2104,11 @@ function Workspace({
     actualSize: () => visible.length > 0 && zoomTo(1),
     floating: () => void openFloating(),
     escape: onEscape,
+    // 1–8 show that viewport on its own (again: all of them).
+    viewportAt: (index) => {
+      const vp = visible[index];
+      if (vp) toggleFocus(vp.id);
+    },
   });
 
   useWheelZoom(stageRef, (direction) => zoomStep(direction));
@@ -1822,8 +2137,10 @@ function Workspace({
         comparing: compare !== null,
         simulate: simulateState,
         windowsOpen: realWindows.length > 0,
+        autoReload,
         actions: {
-          reloadAll: reloadAllPreviews,
+          reloadAll: reloadKeepingPlace,
+          autoReload: setAutoReload,
           openInTab: () => currentUrl && void adapter.openInTab(currentUrl.href),
           scrollTop: scrollAllToTop,
           navigate,
@@ -1848,16 +2165,20 @@ function Workspace({
           inspect: toggleInspector,
           audit: toggleAudit,
           scan: openScan,
+          visual: openVisual,
+          visualSave: () => void saveBaseline(),
+          visualCompare: () => void compareBaseline(),
           capture: onCapture,
           report: exportReport,
           setTheme: (theme) => dispatch({ type: 'setTheme', theme }),
           setLanguage: (lang) => dispatch({ type: 'setLanguage', language: lang }),
           openSettings: () => setDialog('settings'),
           siteAccess: () => setDialog('access'),
-          help: () => setDialog('help'),
+          help: openHelp,
           exportSettings,
           scrollBottom: scrollAllToBottom,
           copyAddress,
+          copyLink: copyWorkspaceLink,
           cycleFocus,
           measure: toggleMeasure,
           contrast: () => setDialog('contrast'),
@@ -1866,6 +2187,7 @@ function Workspace({
           swapCompare: swapSides,
           setVision,
           toggleSimulate,
+          pageColors: setAllColorSchemes,
           applySnippet: applyLiveCss,
           openWindows: () => void openRealWindows(),
           closeWindows: closeRealWindows,
@@ -2004,6 +2326,76 @@ function Workspace({
     );
   };
 
+  /**
+   * The inspected element cut out of every preview (each one shown on its own and
+   * scrolled to the element), side by side in one labelled image.
+   */
+  const captureElementEverywhere = () =>
+    withCapture(async () => {
+      const selector = inspector.selector;
+      if (!selector || !currentUrl || busy) return;
+      const list = cards.filter((card) => agents.frameOf(card.id));
+      const previousFocus = focused;
+      const label = inspectorRows.find((row) => row.info)?.info?.label ?? selector;
+      setBusy('sheet');
+      // The element as the page shows it, without the inspector's outline.
+      broadcast({ type: 'select', selector: null });
+      try {
+        const shots: { card: CardEntry; image: Blob; rect: ElementRect; scale: number }[] = [];
+        for (const [index, card] of list.entries()) {
+          toast({
+            message: t('inspector.captureProgress', { current: index + 1, total: list.length }),
+            tone: 'info',
+            key: 'sheet',
+          });
+          const vp = card.viewport;
+          setFocus({ id: vp.id, zoom: focusZoom(vp) });
+          await nextFrame();
+          await nextFrame();
+          const reply = await agents
+            .ask(card.id, { type: 'getElementRect', selector, reveal: true }, 'elementRect')
+            .catch(() => null);
+          if (!reply?.rect) continue;
+          const stage = stageOf(card.id);
+          const shot = stage ? await captureElementImage(stage) : null;
+          if (shot)
+            shots.push({ card, image: shot.blob, rect: reply.rect, scale: await captureScale(shot.blob, vp.width) });
+        }
+        // Every crop at the same scale (the smallest captured), so sizes compare at a glance.
+        const scale = Math.min(...shots.map((shot) => shot.scale));
+        const entries: SheetEntry[] = [];
+        for (const { card, image, rect } of shots) {
+          const crop = await cropToRect(image, rect, card.viewport.width, { scale });
+          if (crop)
+            entries.push({
+              image: crop,
+              title: cardTitle(card),
+              subtitle: `${card.viewport.width} × ${card.viewport.height} · ${Math.round(rect.width)} × ${Math.round(rect.height)}`,
+            });
+        }
+        if (entries.length === 0) {
+          toast({ message: t('inspector.captureNone'), tone: 'info', key: 'sheet' });
+          return;
+        }
+        const sheet = await composeSheet(entries, {
+          heading: label,
+          url: currentUrl.href,
+          footer: `Breakpointer · ${new Date().toLocaleString(language)}`,
+        });
+        if (!sheet) throw new Error('Nothing captured');
+        const fileName = `breakpointer-element_${fileNamePart(displayHost(currentUrl))}_${fileNamePart(label)}_${timestamp()}.png`;
+        downloadBlob(sheet, fileName);
+        toast({ message: t('capture.saved', { file: fileName }), tone: 'success', key: 'sheet' });
+      } catch (error) {
+        console.warn('[Breakpointer] Capturing the element failed.', error);
+        toast({ message: t('capture.failed'), tone: 'error', key: 'sheet' });
+      } finally {
+        setFocus(previousFocus);
+        setBusy(null);
+        broadcast({ type: 'select', selector });
+      }
+    });
+
   const revealCard = (id: string) => {
     if (focused && focused.id !== viewportIdOf(id)) setFocus(null);
     requestAnimationFrame(() =>
@@ -2066,7 +2458,7 @@ function Workspace({
             onZoom={(value) => dispatch({ type: 'updateViewport', id: vp.id, patch: { zoom: value } })}
             onRotate={() => dispatch({ type: 'rotateViewport', id: vp.id })}
             onMove={(delta) => moveVisible(vp, delta)}
-            onReload={() => reloadCard(card.id)}
+            onReload={() => reloadCardKeepingPlace(card.id)}
             onCapture={(stage) =>
               // The image is taken as shown on screen, so the name says at which zoom.
               void capture(stage, [
@@ -2170,7 +2562,9 @@ function Workspace({
           if (addressError) setAddressError(null);
         }}
         onSubmit={(value) => navigate(value ?? address)}
-        onReloadAll={reloadAllPreviews}
+        onReloadAll={reloadKeepingPlace}
+        autoReload={autoReload}
+        onAutoReload={setAutoReload}
         onOpenInTab={() => currentUrl && void adapter.openInTab(currentUrl.href)}
         onOpenWindows={() => void openRealWindows()}
         onFloating={() => void openFloating()}
@@ -2181,7 +2575,8 @@ function Workspace({
         onToggleTheme={toggleTheme}
         resolvedTheme={resolvedTheme}
         onSettings={() => setDialog('settings')}
-        onHelp={() => setDialog('help')}
+        onHelp={openHelp}
+        helpNews={news}
         savedPages={settings.savedPages}
         saved={Boolean(currentUrl && settings.savedPages.includes(currentUrl.href))}
         onToggleSaved={toggleSaved}
@@ -2200,6 +2595,7 @@ function Workspace({
         issueKinds={issueKinds}
         onAudit={() => toggleAudit()}
         onScan={openScan}
+        onVisual={openVisual}
         measuring={measuring}
         comparing={compare !== null}
         simulate={simulateState}
@@ -2209,6 +2605,8 @@ function Workspace({
         onStopCompare={stopCompare}
         onVision={setVision}
         onSimulate={toggleSimulate}
+        pageColors={pageColors}
+        onPageColors={setAllColorSchemes}
         windowsOpen={realWindows.length > 0}
         onOpenWindows={() => void openRealWindows()}
         onCloseWindows={closeRealWindows}
@@ -2246,6 +2644,7 @@ function Workspace({
         onRotateAll={rotateAll}
         onSortByWidth={sortViewports}
         onReport={exportReport}
+        onCopyLink={copyWorkspaceLink}
         onAllowSite={() => void allowSite()}
       />
       {compare && currentUrl && (
@@ -2331,6 +2730,7 @@ function Workspace({
           host={host}
           busy={requesting}
           onAllow={() => void allowSite()}
+          onAllowSession={() => void allowSiteForSession()}
           onOpenInTab={() => void adapter.openInTab(currentUrl.href)}
           onOpenWindows={() => void openRealWindows()}
           onDismiss={() => {
@@ -2396,6 +2796,15 @@ function Workspace({
                   >
                     {t('vision.status')} <strong>{t(VISION_KEYS[vision])}</strong>
                   </DockStatus>
+                ) : autoReload && currentUrl ? (
+                  <DockStatus
+                    icon="reload"
+                    testId="auto-reload-status"
+                    action={t('reload.stop')}
+                    onAction={() => setAutoReload(0)}
+                  >
+                    {t('reload.status', { seconds: autoReload })}
+                  </DockStatus>
                 ) : null
               }
             />
@@ -2423,6 +2832,7 @@ function Workspace({
               )
             }
             onCopyTable={copyComparison}
+            onCaptureAll={() => void captureElementEverywhere()}
             onAllowSite={() => void allowSite()}
           />
         )}
@@ -2523,8 +2933,13 @@ function Workspace({
         siteAllowed={siteAccess.site}
         allSites={siteAccess.allSites}
         granted={siteAccess.granted}
+        session={siteAccess.session}
         busy={requesting}
         onAllowSite={() => void allowSite()}
+        onAllowSession={() => void allowSiteForSession()}
+        onKeep={(pattern) =>
+          void siteAccess.keep(pattern).then(() => toast({ message: t('access.kept'), tone: 'success' }))
+        }
         onAllowAll={() => void allowAllSites()}
         onRevoke={(patterns) =>
           void siteAccess.revoke(patterns).then((removed) => {
@@ -2571,6 +2986,21 @@ function Workspace({
         onImport={(file) => void importSettings(file)}
         onReset={resetWorkspace}
         onManageAccess={() => setDialog('access')}
+        snapshots={snapshotList}
+        onDeleteSnapshots={(page) =>
+          void deletePageSnapshots(page)
+            .then(snapshotPages)
+            .then(setSnapshotList)
+            .catch(() => toast({ message: t('visual.storageFailed'), tone: 'error' }))
+        }
+        onClearSnapshots={() =>
+          void clearSnapshots()
+            .then(() => {
+              setSnapshotList([]);
+              toast({ message: t('settings.snapshotsCleared'), tone: 'success' });
+            })
+            .catch(() => toast({ message: t('visual.storageFailed'), tone: 'error' }))
+        }
         onOpenShortcuts={() => void chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })}
         onClose={() => setDialog(null)}
       />
@@ -2606,6 +3036,30 @@ function Workspace({
         onChange={setContrastColors}
         onClose={() => setDialog(null)}
       />
+      <VisualDialog
+        open={dialog === 'visual'}
+        concealed={visualConcealed}
+        hasPage={Boolean(currentUrl)}
+        rows={visualRows}
+        busy={visualBusy}
+        onSave={() => void saveBaseline()}
+        onCompare={() => void compareBaseline()}
+        onAccept={(key) =>
+          void visualCheck
+            .accept(key)
+            .then((name) => name && toast({ message: t('visual.accepted', { name }), tone: 'success', key: 'visual' }))
+            .catch(() => toast({ message: t('visual.storageFailed'), tone: 'error', key: 'visual' }))
+        }
+        onDelete={() =>
+          void visualCheck
+            .removePage()
+            .then(() => toast({ message: t('visual.deleted'), tone: 'success', key: 'visual' }))
+            .catch(() => toast({ message: t('visual.storageFailed'), tone: 'error', key: 'visual' }))
+        }
+        onClose={() => {
+          if (!visualBusy) setDialog(null);
+        }}
+      />
       <ScanDialog
         open={dialog === 'scan'}
         src={src}
@@ -2636,6 +3090,7 @@ function Workspace({
       />
       <HelpDialog
         open={dialog === 'help'}
+        version={version}
         onClose={() => setDialog(null)}
         commandShortcuts={commandShortcuts}
         paletteShortcut={paletteShortcut}

@@ -50,7 +50,10 @@ export function issueValue(issue: CheckIssue, t: Translate): string {
 }
 
 /** A report without the checks switched off (an agent may report before it heard of the change). */
-export function withoutKinds(report: CheckReport | null | undefined, disabled: readonly CheckKind[]): CheckReport | null {
+export function withoutKinds(
+  report: CheckReport | null | undefined,
+  disabled: readonly CheckKind[],
+): CheckReport | null {
   if (!report) return null;
   if (!disabled.length || !report.issues.some((issue) => disabled.includes(issue.kind))) return report;
   return { ...report, issues: report.issues.filter((issue) => !disabled.includes(issue.kind)) };

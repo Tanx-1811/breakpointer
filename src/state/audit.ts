@@ -85,10 +85,7 @@ export function issuesMarkdown(
       return issue ? `⚠ ${issueCell(issue)}` : '✓';
     }),
   ]);
-  return `${t('audit.markdownIssues', { page })}\n\n${table(
-    [t('audit.check'), ...columns.map(columnTitle)],
-    rows,
-  )}\n`;
+  return `${t('audit.markdownIssues', { page })}\n\n${table([t('audit.check'), ...columns.map(columnTitle)], rows)}\n`;
 }
 
 /* ---------- Page stats ---------- */
@@ -193,10 +190,7 @@ export function statsMarkdown(
     t(STAT_KEYS[metric].label),
     ...columns.map((column) => (column.stats ? formatStat(metric, column.stats, locale) : '—')),
   ]);
-  return `${t('audit.markdownStats', { page })}\n\n${table(
-    [t('audit.metric'), ...columns.map(columnTitle)],
-    rows,
-  )}\n`;
+  return `${t('audit.markdownStats', { page })}\n\n${table([t('audit.metric'), ...columns.map(columnTitle)], rows)}\n`;
 }
 
 /* ---------- Type scale ---------- */

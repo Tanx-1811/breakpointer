@@ -325,15 +325,18 @@
   font-size: 12px;
 }
 
+/* The selector takes the line; a long detail (a contrast pair) moves under it rather than squeezing it. */
 .samples li {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
-  gap: 8px;
+  gap: 0 8px;
   min-width: 0;
 }
 
 .samples code {
+  flex: 1 1 150px;
   min-width: 0;
   color: var(--text-muted);
   font-family: var(--font-mono);
@@ -342,6 +345,7 @@
 
 .samples span {
   flex: none;
+  margin-left: auto;
   color: var(--text-subtle);
   font-family: var(--font-mono);
 }

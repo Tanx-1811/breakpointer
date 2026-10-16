@@ -5,7 +5,7 @@ import type { MessageKey } from '../../i18n/en';
 import { builtInGroupName } from '../../state/groups';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { VISION_MODES, type VisionMode } from '../../state/vision';
-import type { BreakpointSetId, ViewportConfig, ViewportGroup } from '../../types';
+import type { BreakpointSetId, ColorScheme, ViewportConfig, ViewportGroup } from '../../types';
 import { MAX_VIEWPORTS } from '../../utils/constants';
 import { Icon, type IconName } from '../Icon/Icon';
 import { Menu, type MenuEntry } from '../Menu/Menu';
@@ -57,6 +57,11 @@ type Props = {
   onAudit?: () => void;
   /** Opens the width scanner. */
   onScan?: () => void;
+  /** Opens the visual check. */
+  onVisual?: () => void;
+  /** The page colours every visible preview shows ('mixed' when they differ); the options show with the handler. */
+  pageColors?: ColorScheme | null | 'mixed';
+  onPageColors?: (scheme: ColorScheme | null) => void;
   measuring?: boolean;
   /** Comparing two addresses. */
   comparing?: boolean;
@@ -96,6 +101,8 @@ type Props = {
   onRotateAll: () => void;
   onSortByWidth: () => void;
   onReport: () => void;
+  /** Copies a link that opens this page with these viewports (the item shows when given). */
+  onCopyLink?: () => void;
   onAllowSite: () => void;
 };
 
@@ -274,6 +281,16 @@ export function WorkspaceBar(props: Props) {
       disabled: !props.hasUrl,
       onSelect: props.onScan,
     });
+  if (props.onVisual)
+    utilityEntries.push({
+      id: 'visual',
+      label: t('tools.visual'),
+      description: t('tools.visualHint'),
+      icon: 'gallery',
+      shortcut: 'V',
+      disabled: !props.hasUrl,
+      onSelect: props.onVisual,
+    });
   if (props.onContrast)
     utilityEntries.push({
       id: 'contrast',
@@ -369,6 +386,17 @@ export function WorkspaceBar(props: Props) {
     { id: 'sortWidth', label: t('tools.sortByWidth'), icon: 'sort', onSelect: props.onSortByWidth },
     { kind: 'separator', id: 'tools-sep2' },
     { id: 'report', label: t('tools.report'), icon: 'report', disabled: !props.hasUrl, onSelect: props.onReport },
+    ...(props.onCopyLink
+      ? [
+          {
+            id: 'copy-link',
+            label: t('link.copy'),
+            description: t('link.copyHint'),
+            icon: 'link',
+            onSelect: props.onCopyLink,
+          } satisfies MenuEntry,
+        ]
+      : []),
   ];
 
   const simulate = props.simulate;
@@ -401,6 +429,19 @@ export function WorkspaceBar(props: Props) {
       onSelect: () => props.onVision?.(mode),
     })),
     { kind: 'note', id: 'vision-note', label: t('simulate.visionNote') },
+    ...(props.onPageColors
+      ? ([
+          { kind: 'separator', id: 'simulate-sep-colors' },
+          { kind: 'heading', id: 'page-colors', label: t('simulate.pageColors') },
+          ...([null, 'light', 'dark'] as const).map<MenuEntry>((scheme) => ({
+            id: `colors-${scheme ?? 'auto'}`,
+            label: t(scheme === null ? 'card.schemeAuto' : scheme === 'light' ? 'card.schemeLight' : 'card.schemeDark'),
+            radio: true,
+            checked: props.pageColors === scheme,
+            onSelect: () => props.onPageColors?.(scheme),
+          })),
+        ] satisfies MenuEntry[])
+      : []),
     { kind: 'separator', id: 'simulate-sep1' },
     { kind: 'heading', id: 'preferences', label: t('simulate.preferences') },
     simulateToggle('reduceMotion', 'motion.reduce', 'motion.reduceHint'),

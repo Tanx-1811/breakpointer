@@ -26,6 +26,52 @@ function fit(context: CanvasRenderingContext2D, text: string, width: number): st
   return `${text.slice(0, end)}…`;
 }
 
+/** Image pixels per CSS pixel of a preview's screenshot (its zoom × the screen's density). */
+export async function captureScale(image: Blob, viewportWidth: number): Promise<number> {
+  const bitmap = await createImageBitmap(image);
+  try {
+    return bitmap.width / Math.max(1, viewportWidth);
+  } finally {
+    bitmap.close();
+  }
+}
+
+/**
+ * The part of a preview's screenshot where an element is: `rect` is in the
+ * page's CSS pixels (as its agent reports it), `viewportWidth` the preview's
+ * width, so the capture's own resolution is accounted for. `scale` (image
+ * pixels per CSS pixel) resizes the result, so crops from previews shown at
+ * different zooms compare at the same size. Null when nothing of it is shown.
+ */
+export async function cropToRect(
+  image: Blob,
+  rect: { x: number; y: number; width: number; height: number },
+  viewportWidth: number,
+  options: { padding?: number; scale?: number } = {},
+): Promise<Blob | null> {
+  const { padding = 2 } = options;
+  const bitmap = await createImageBitmap(image);
+  try {
+    const source = bitmap.width / Math.max(1, viewportWidth);
+    const left = Math.max(0, Math.floor((rect.x - padding) * source));
+    const top = Math.max(0, Math.floor((rect.y - padding) * source));
+    const right = Math.min(bitmap.width, Math.ceil((rect.x + rect.width + padding) * source));
+    const bottom = Math.min(bitmap.height, Math.ceil((rect.y + rect.height + padding) * source));
+    if (right - left < 2 || bottom - top < 2) return null;
+    const resize = (options.scale ?? source) / source;
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round((right - left) * resize));
+    canvas.height = Math.max(1, Math.round((bottom - top) * resize));
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+    context.imageSmoothingQuality = 'high';
+    context.drawImage(bitmap, left, top, right - left, bottom - top, 0, 0, canvas.width, canvas.height);
+    return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'));
+  } finally {
+    bitmap.close();
+  }
+}
+
 /** Canvases taller than this fail in Chrome; longer pages are scaled down to fit. */
 const MAX_CANVAS_SIDE = 32_000;
 

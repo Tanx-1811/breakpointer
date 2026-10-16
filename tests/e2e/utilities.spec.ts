@@ -236,7 +236,7 @@ test.describe('utilities', () => {
     await page.keyboard.press('Escape');
     await expect.poll(labels).toBeNull();
 
-    // An image shown at 180px from a 1px file.
+    // An image shown at 180px from a 4px file.
     await page.getByTestId('address-input').fill(server.url('/cover'));
     await page.keyboard.press('Enter');
     await agentsReady(page, '/cover');
@@ -285,7 +285,7 @@ test.describe('utilities', () => {
     const panel = page.getByRole('dialog', { name: 'Responsive checks · 375px' });
     await expect(panel).toContainText('Images shown larger than their real size');
     await expect(panel).toContainText('img#photo');
-    await expect(panel).toContainText('1px → 180px');
+    await expect(panel).toContainText('4px → 180px');
     await expect(panel).toContainText('Fixed elements cover much of the screen');
     await expect(panel).toContainText(/Fixed or sticky elements cover \d+% of the screen\./);
     await expect(panel).toContainText('div#cookies');

@@ -11,7 +11,13 @@ type Props = {
   siteAllowed: boolean | null;
   allSites: boolean;
   granted: string[];
+  /** Patterns granted until Chrome closes. */
+  session?: string[];
   onAllowSite: () => void;
+  /** Allows the current site until Chrome closes (the button shows when given). */
+  onAllowSession?: () => void;
+  /** Keeps a pattern granted until Chrome closes for good. */
+  onKeep?: (pattern: string) => void;
   onAllowAll: () => void;
   /** A permission prompt is open. */
   busy?: boolean;
@@ -60,9 +66,22 @@ export function SiteAccessDialog(props: Props) {
               </span>
             </div>
             {!siteAllowed && (
-              <Button variant="primary" size="sm" onClick={onAllowSite} disabled={props.busy}>
-                {t('access.allowSite', { host })}
-              </Button>
+              <div className={styles.actions}>
+                <Button variant="primary" size="sm" onClick={onAllowSite} disabled={props.busy}>
+                  {t('access.allowSite', { host })}
+                </Button>
+                {props.onAllowSession && (
+                  <Button
+                    size="sm"
+                    icon="clock"
+                    onClick={props.onAllowSession}
+                    disabled={props.busy}
+                    tooltip={t('access.allowSessionHint')}
+                  >
+                    {t('access.allowSession')}
+                  </Button>
+                )}
+              </div>
             )}
           </div>
         ) : (
@@ -102,6 +121,24 @@ export function SiteAccessDialog(props: Props) {
                 <span className={styles.pattern} title={pattern}>
                   {describePattern(pattern)}
                 </span>
+                {props.session?.includes(pattern) && (
+                  <>
+                    <span className={styles.sessionTag} data-testid="session-tag">
+                      <Icon name="clock" size={12} />
+                      {t('access.sessionTag')}
+                    </span>
+                    {props.onKeep && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => props.onKeep?.(pattern)}
+                        aria-label={t('access.keepLabel', { pattern: describePattern(pattern) })}
+                      >
+                        {t('access.keep')}
+                      </Button>
+                    )}
+                  </>
+                )}
                 <IconButton
                   icon="close"
                   size="sm"

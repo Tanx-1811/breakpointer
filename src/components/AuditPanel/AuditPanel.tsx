@@ -130,13 +130,7 @@ export function AuditPanel(props: Props) {
         ))}
       </div>
 
-      <div
-        className={styles.body}
-        role="tabpanel"
-        id={`${id}-panel`}
-        aria-labelledby={`${id}-tab-${tab}`}
-        tabIndex={0}
-      >
+      <div className={styles.body} role="tabpanel" id={`${id}-panel`} aria-labelledby={`${id}-tab-${tab}`} tabIndex={0}>
         {props.needsAccess && props.host && (
           <div className={styles.access}>
             <Icon name="shield" size={15} />
@@ -272,7 +266,9 @@ function PerformanceTab(props: Props) {
   if (measured.length === 0)
     return (
       <p className={styles.waiting} role="status">
-        {props.measuring || props.rows.some((row) => row.stats === undefined) ? t('audit.measuring') : t('audit.waiting')}
+        {props.measuring || props.rows.some((row) => row.stats === undefined)
+          ? t('audit.measuring')
+          : t('audit.waiting')}
       </p>
     );
   return (
@@ -348,7 +344,9 @@ function TypeTab(props: Props) {
   if (list.length === 0)
     return (
       <p className={styles.waiting} role="status">
-        {props.measuring || props.rows.some((row) => row.type === undefined) ? t('audit.measuring') : t('audit.typeEmpty')}
+        {props.measuring || props.rows.some((row) => row.type === undefined)
+          ? t('audit.measuring')
+          : t('audit.typeEmpty')}
       </p>
     );
   return (

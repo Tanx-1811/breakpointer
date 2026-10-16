@@ -4,10 +4,13 @@ import '../styles/global.css';
 import type { MessageKey } from '../i18n/en';
 import { createTranslator, resolveLanguage } from '../i18n/translate';
 import { ensureAgentRegistered } from '../services/frame-agents';
+import { hasNews, markSeen, readSeenVersion } from '../services/whats-new';
 import { createIframePreviewAdapter } from '../services/preview-adapter';
 import { parseSettings, readStoredSettings, saveSettings } from '../services/storage';
 import { findGroupTemplates } from '../state/groups';
 import { fromTemplates } from '../state/viewports';
+import { SIZES_PARAM, parseSizes } from '../state/workspace-link';
+import type { ViewportConfig } from '../types';
 import { parsePreviewUrl, toSafeHref, type UrlParseError } from '../utils/url';
 import { ViewerApp } from './Viewer';
 
@@ -48,8 +51,24 @@ async function bootstrap() {
     history.replaceState(null, '', params.size ? `?${params}` : location.pathname);
   }
 
+  // ?sizes= (a workspace link) sets the viewports once, then is dropped from the URL; the
+  // workspace offers to undo it.
+  let replacedViewports: ViewportConfig[] | null = null;
+  const shared = parseSizes(params.get(SIZES_PARAM));
+  if (params.has(SIZES_PARAM)) {
+    if (shared.length) {
+      replacedViewports = settings.viewports;
+      settings = { ...settings, viewports: fromTemplates(shared) };
+      fitGroup = true;
+      await saveSettings(settings).catch(() => {});
+    }
+    params.delete(SIZES_PARAM);
+    history.replaceState(null, '', params.size ? `?${params}` : location.pathname);
+  }
+
   // First run: keep the defaults (in the user's language), so every tab starts from the same workspace.
-  if (stored === undefined && !readFailed && !groupId) await saveSettings(settings).catch(() => {});
+  if (stored === undefined && !readFailed && !groupId && !replacedViewports)
+    await saveSettings(settings).catch(() => {});
 
   let initialUrl: URL | null = null;
   let initialInput = '';
@@ -69,6 +88,12 @@ async function bootstrap() {
     initialUrl = new URL(settings.activeUrl);
   }
 
+  // After an update, Help shows what's new (a fresh install has nothing to catch up on).
+  const version = chrome.runtime.getManifest().version;
+  const firstRun = stored === undefined && !readFailed;
+  if (firstRun) void markSeen(version);
+  const whatsNew = !firstRun && hasNews(await readSeenVersion(), version);
+
   await ready;
   // Known before the first render, so no message from a preview frame is missed.
   const tab = await chrome.tabs.getCurrent().catch(() => undefined);
@@ -86,8 +111,10 @@ async function bootstrap() {
         initialError={initialError}
         adapter={adapter}
         tabId={tab?.id ?? null}
-        version={chrome.runtime.getManifest().version}
+        version={version}
+        whatsNew={whatsNew}
         autoFit={fitGroup ? 'now' : stored === undefined ? 'afterFirstPage' : 'none'}
+        replacedViewports={replacedViewports}
       />
     </StrictMode>,
   );

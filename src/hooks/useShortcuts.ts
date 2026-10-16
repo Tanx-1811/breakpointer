@@ -17,6 +17,7 @@ export type ShortcutAction =
   | 'inspect'
   | 'audit'
   | 'scan'
+  | 'visual'
   | 'measure'
   | 'contrast'
   | 'outlines'
@@ -26,7 +27,17 @@ export type ShortcutAction =
   | 'floating'
   | 'escape';
 
-export type ShortcutHandlers = Partial<Record<ShortcutAction, () => void>>;
+export type ShortcutHandlers = Partial<Record<ShortcutAction, () => void>> & {
+  /** 1–8: the viewport at that position (0 for the first). */
+  viewportAt?: (index: number) => void;
+};
+
+/** The viewport a digit key picks (1–8, on the main keys or the keypad), from 0; null for other keys. */
+export function viewportIndexFor(event: KeyInfo): number | null {
+  if (event.isComposing || event.ctrlKey || event.metaKey || event.altKey || event.shiftKey) return null;
+  const match = /^(?:Digit|Numpad)([1-8])$/.exec(event.code);
+  return match ? Number(match[1]) - 1 : null;
+}
 
 /**
  * Shortcuts are matched on the physical key (`event.code`), so they keep
@@ -46,6 +57,7 @@ const LETTER_KEYS: Record<string, ShortcutAction> = {
   KeyI: 'inspect',
   KeyE: 'audit',
   KeyW: 'scan',
+  KeyV: 'visual',
   KeyX: 'measure',
   KeyC: 'contrast',
   KeyO: 'outlines',
@@ -102,6 +114,12 @@ export function useShortcuts(handlers: ShortcutHandlers) {
     const onKeyDown = (event: KeyboardEvent) => {
       // keyCode 229 = the key is being processed by an input method.
       if (event.defaultPrevented || event.repeat || event.keyCode === 229) return;
+      const index = viewportIndexFor(event);
+      if (index !== null && ref.current.viewportAt && !isTyping(event.target) && !overlayOpen()) {
+        event.preventDefault();
+        ref.current.viewportAt(index);
+        return;
+      }
       const action = shortcutFor(event);
       if (!action) return;
       // The palette chord works everywhere except over another dialog.

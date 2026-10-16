@@ -2,7 +2,9 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { CHECK_KINDS, type CheckKind } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
+import { formatBytes } from '../../state/audit';
 import { CHECK_KIND_KEYS } from '../../state/checks';
+import type { SnapshotPage } from '../../state/snapshots';
 import type {
   Breakpoint,
   BreakpointSetId,
@@ -55,6 +57,10 @@ type Props = {
   onReset: () => void;
   onManageAccess: () => void;
   onOpenShortcuts: () => void;
+  /** Pages with visual baselines (null: not read yet); the section shows when the handlers are given. */
+  snapshots?: SnapshotPage[] | null;
+  onDeleteSnapshots?: (page: string) => void;
+  onClearSnapshots?: () => void;
   onClose: () => void;
 };
 
@@ -109,7 +115,7 @@ export function SettingsDialog(props: Props) {
 
 function SettingsBody(props: Props) {
   const { settings, version } = props;
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const customId = useId();
@@ -420,6 +426,49 @@ function SettingsBody(props: Props) {
               data-testid="import-input"
             />
           </div>
+          {props.onDeleteSnapshots && props.onClearSnapshots && (
+            <div className={styles.subsection} data-testid="snapshot-list">
+              <div className={styles.subsectionHead}>
+                <div className={styles.rowText}>
+                  <span className={styles.rowLabel}>{t('settings.snapshots')}</span>
+                  <span className={styles.rowHelp}>{t('settings.snapshotsHelp')}</span>
+                </div>
+                {props.snapshots && props.snapshots.length > 0 && (
+                  <Button size="sm" variant="ghost" icon="trash" onClick={props.onClearSnapshots}>
+                    {t('settings.snapshotsClear')}
+                  </Button>
+                )}
+              </div>
+              {props.snapshots && props.snapshots.length === 0 && (
+                <p className={styles.empty}>{t('settings.snapshotsEmpty')}</p>
+              )}
+              {props.snapshots && props.snapshots.length > 0 && (
+                <ul className={styles.savedList}>
+                  {props.snapshots.map((entry) => (
+                    <li key={entry.page} className={styles.savedRow}>
+                      <Icon name="gallery" size={14} className={styles.snapshotIcon} />
+                      <span className={styles.savedUrl} title={entry.page}>
+                        {entry.page}
+                      </span>
+                      <span className={styles.snapshotMeta}>
+                        {t('settings.snapshotsPage', {
+                          count: entry.count,
+                          size: formatBytes(entry.bytes, language),
+                        })}
+                      </span>
+                      <IconButton
+                        icon="trash"
+                        size="sm"
+                        tone="danger"
+                        label={t('settings.snapshotsDelete', { page: entry.page })}
+                        onClick={() => props.onDeleteSnapshots?.(entry.page)}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
           <Row label={t('settings.reset')} help={t('settings.resetHelp')}>
             <Button size="sm" variant="danger" icon="reset" onClick={props.onReset}>
               {t('settings.resetButton')}

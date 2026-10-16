@@ -120,11 +120,57 @@
   opacity: 0.7;
 }
 
+/* The small menu button next to Reload (automatic reloads). */
+.menuChevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 28px;
+  margin-left: -2px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-subtle);
+}
+
+.menuChevron:hover:not(:disabled),
+.menuChevron[aria-expanded='true'] {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.menuChevron[data-active] {
+  color: var(--accent);
+}
+
+.menuChevron:disabled {
+  opacity: 0.45;
+}
+
 .separator {
   width: 1px;
   height: 22px;
   margin: 0 6px;
   background: var(--border);
+}
+
+/* News of this version on the Help button. */
+.news {
+  position: relative;
+}
+
+.news::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--breakpoint);
+  box-shadow: 0 0 0 2px var(--bg);
 }
 
 .accessOn {

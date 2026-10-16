@@ -1,5 +1,6 @@
-import type { CheckReport } from '../agent/protocol';
+import type { CheckReport, PageStats } from '../agent/protocol';
 import type { Language, Translate } from '../i18n/translate';
+import { STAT_KEYS, STAT_METRICS, formatStat } from './audit';
 import { CHECK_KIND_KEYS, issueDetail } from './checks';
 
 export type ReportCard = {
@@ -12,7 +13,15 @@ export type ReportCard = {
   image: string | null;
   /** Responsive check results; null when the site couldn't be checked. */
   checks: CheckReport | null;
+  /** Numbers about how the page loaded at this size; null or absent when unknown. */
+  stats?: PageStats | null;
 };
+
+/** What a width scan found: each kind of issue and its widths, already written out. */
+export type ReportScan = { from: number; to: number; findings: { name: string; widths: string }[] };
+
+/** The inspector's comparison of one element: a header and one row per viewport, as text. */
+export type ReportInspector = { selector: string; header: string[]; rows: string[][] };
 
 export type ReportInput = {
   url: string;
@@ -21,6 +30,8 @@ export type ReportInput = {
   version: string;
   language: Language;
   cards: ReportCard[];
+  scan?: ReportScan | null;
+  inspector?: ReportInspector | null;
 };
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -109,6 +120,63 @@ export function buildReportHtml(input: ReportInput, t: Translate): string {
       .join('')}</ul>`;
   };
 
+  const measured = cards.filter((card) => card.stats);
+  const statsSection = measured.length
+    ? `<section>
+<h2>${escapeHtml(t('report.stats'))}</h2>
+<table>
+<thead><tr><th>${escapeHtml(t('audit.metric'))}</th>${measured
+        .map((card) => `<th>${escapeHtml(card.name)} <span class="num">${card.width}</span></th>`)
+        .join('')}</tr></thead>
+<tbody>
+${STAT_METRICS.map(
+  (metric) =>
+    `<tr><td>${escapeHtml(t(STAT_KEYS[metric].label))}</td>${measured
+      .map((card) => `<td class="num">${escapeHtml(formatStat(metric, card.stats!, input.language))}</td>`)
+      .join('')}</tr>`,
+).join('\n')}
+</tbody>
+</table>
+<p class="muted">${escapeHtml(t('audit.statsNote'))}</p>
+</section>`
+    : '';
+
+  const scanSection = input.scan
+    ? `<section>
+<h2>${escapeHtml(t('report.scan', { from: input.scan.from, to: input.scan.to }))}</h2>
+${
+  input.scan.findings.length
+    ? `<table>
+<thead><tr><th>${escapeHtml(t('audit.check'))}</th><th>${escapeHtml(t('scan.widths'))}</th></tr></thead>
+<tbody>
+${input.scan.findings
+  .map((finding) => `<tr><td>${escapeHtml(finding.name)}</td><td class="num">${escapeHtml(finding.widths)}</td></tr>`)
+  .join('\n')}
+</tbody>
+</table>`
+    : `<p class="ok">✓ ${escapeHtml(t('scan.none', { from: input.scan.from, to: input.scan.to }))}</p>`
+}
+</section>`
+    : '';
+
+  const inspectorSection = input.inspector
+    ? `<section>
+<h2>${escapeHtml(t('report.inspector'))}</h2>
+<p><code>${escapeHtml(input.inspector.selector)}</code></p>
+<table>
+<thead><tr>${input.inspector.header.map((cell) => `<th>${escapeHtml(cell)}</th>`).join('')}</tr></thead>
+<tbody>
+${input.inspector.rows
+  .map(
+    (row) =>
+      `<tr>${row.map((cell, index) => `<td${index ? ' class="num"' : ''}>${escapeHtml(cell)}</td>`).join('')}</tr>`,
+  )
+  .join('\n')}
+</tbody>
+</table>
+</section>`
+    : '';
+
   const sections = cards
     .map((card, index) => {
       const size = `${card.width} × ${card.height}`;
@@ -158,6 +226,9 @@ ${rows}
 </tbody>
 </table>
 </section>
+${statsSection}
+${scanSection}
+${inspectorSection}
 ${sections}
 <footer>${escapeHtml(t('report.footer', { version: input.version }))}</footer>
 </main>
