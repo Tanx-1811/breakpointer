@@ -1,6 +1,6 @@
 # Breakpointer — Product & Delivery Plan
 
-> **Version:** 0.3.0 · **Status:** V1, the v0.2 inspection toolkit and the v0.3 redesign and pro toolkit, built and tested; ready for store preparation
+> **Version:** 0.4.0 · **Status:** V1, the v0.2 inspection toolkit, the v0.3 redesign and pro toolkit and the v0.4 find, audit and verify release, built and tested; ready for store preparation
 > **Source:** refines the original planning brief (`plan.md`) into a delivery plan with decisions, status and acceptance criteria.
 
 **Product goal:** help people check how a website looks at several viewport sizes, side by side, directly in Chrome — reliably, with minimal permissions, and honest about limits.
@@ -18,6 +18,7 @@
 | M3 — Quality & packaging       | Tests, accessibility, permission review, store assets, packaged build                                                                                        | ✅ Done (store submission pending) | `tests/`, `brand/`, `docs/STORE_LISTING.md`, `npm run package`                           |
 | v0.2 — Inspection toolkit      | Sync, responsive checks, outlines, live CSS, grid, custom breakpoints, saved pages, report                                                                   | ✅ Done                            | [§3](#v02--inspection-toolkit--delivered), `tests/e2e/tools.spec.ts`                     |
 | v0.3 — Redesign & pro toolkit  | New design system, command palette, inspector, drag to resize, site breakpoints, page colours; A/B compare, simulations, measuring, contrast, design overlay | ✅ Done                            | [§3](#v03--redesign-and-pro-toolkit--delivered), `features.spec.ts`, `utilities.spec.ts` |
+| v0.4 — Find, audit and verify  | Width scanner, audit panel (issues, performance, type), visual baselines, three new checks, access until Chrome closes, reloads that keep your place         | ✅ Done                            | [§3](#v04--find-audit-and-verify--delivered), `scan`/`audit`/`visual.spec.ts`            |
 | M4 — Feedback-driven iteration | Small user group, privacy-respecting feedback, prioritise next features                                                                                      | ⏳ Next                            | [§8](#8-milestone-4--feedback-and-iteration)                                             |
 
 ---
@@ -63,6 +64,14 @@
 | D35 | Side panel via the `sidePanel` permission (no install warning); it follows the active tab only where Breakpointer may read its address (allowed sites, or after a click on Breakpointer)                                                           | Preview while browsing, without asking for the "tabs" permission (which would read every address)                                                                                                                                 | —                                                                                    |
 | D36 | Full-page screenshots scroll the preview screen by screen (agent), capture each screen and stitch them; fixed and stuck elements are hidden after the first screen; at most 30 screens                                                             | `captureVisibleTab` only sees the screen; no `debugger` permission                                                                                                                                                                | Demand for higher resolution                                                         |
 | D37 | Print styles and prefers-contrast use the same media-list rewrite as page colours and reduced motion (D19, D28); text spacing is an injected style; image-size and tab-order labels are drawn in a closed shadow root that never takes the pointer | No new permission; nothing about the page leaves the frame                                                                                                                                                                        | —                                                                                    |
+| D38 | The width scanner resizes its own preview (card id `~scan`, in its dialog) and asks its agent for the checks at each width: a first pass every 8/16/32 px, then halving each gap where the issues change, to 1 px; at most 600 widths             | Exact first/last widths of every issue in seconds, without moving the user's previews (moving frames can drop clicks, D31); the same checks as the cards                                                                          | Demand for scanning heights, or several pages                                        |
+| D39 | The audit panel asks every preview's agent for numbers (page stats, type scale) on request; it shares the side with the inspector                                                                                                                | Numbers only, never content (D13); measuring on request keeps idle previews quiet                                                                                                                                                 | —                                                                                    |
+| D40 | Visual baselines are screenshots of each viewport (captured in focus mode, as shown), stored in the extension's IndexedDB per page × viewport size and page colours (at most 400); diffs are computed in the browser (YIQ distance, threshold 0.05) | No new permission and no upload (D4, D15); chrome.storage is too small for images; 0.05 catches a light tint but not resampling noise. Never exported (screenshots of private pages)                                        | Demand for full-page baselines or sharing them                                       |
+| D41 | New checks are conservative: low contrast only where the colour behind the text is known (solid backgrounds in any CSS colour space; images, gradients, overlaps, blending, translucency skipped); text cut off only when a line is partly visible (not ellipses, clamps, masks, moving or code text); layout shifts after the first contentful paint, outside the workspace's own changes | A check that guesses loses trust; in frames Chrome reports shifts before the first paint that a tab never shows (verified on Wikipedia, MDN, Stripe)                                                    | Feedback on misses                                                                   |
+| D42 | Each check can be switched off (`disabledChecks`, validated by `parseSettings`); agents skip them                                                                                                                                                | Teams differ on what counts (e.g. contrast on a brand palette); skipping saves work in every preview                                                                                                                           | —                                                                                    |
+| D43 | "Until Chrome closes" grants the same optional host permission and records its pattern in local storage; the service worker removes those permissions when Chrome starts                                                                         | Chrome's permissions don't expire; storage survives a crash, so the access never outlives the session by accident. No new permission                                                                                         | Chrome adds expiring permissions                                                     |
+| D44 | Reloads put every preview back where it was scrolled: agents report where synced scrolls settle, the workspace keeps each preview's position and sends it on the next hello; automatic reloads pause while a dialog is open or the tab is hidden | Reloading to check a change shouldn't lose the place; positions are known without asking, so a reload stays immediate                                                                                                      | —                                                                                    |
+| D45 | Workspace links carry the page and the viewports in the workspace's address (`?url=…&sizes=375x667~Phone,…`), applied once at start with undo                                                                                                   | Sharing a setup needs no server (D4); the link works for anyone with the same extension id (store installs)                                                                                                                   | Demand for sharing groups or snapshots                                               |
 
 ---
 
@@ -130,6 +139,16 @@
 - [x] **Real windows** of each viewport, a **floating** always-on-top preview, a **side panel**, **full-page screenshots**; text spacing, prefers-contrast and print styles; image-size and tab-order labels; a baseline grid.
 - [x] Checks for **upscaled (blurry) images** and **fixed elements covering the screen**; **saved live CSS snippets**; inspector **Copy table** (Markdown); `[` `]` `0` `O` shortcuts; scroll all to bottom; copy the page address.
 
+### v0.4 — Find, audit and verify — delivered
+
+- [x] **Scan every width** (`W`): exact ranges of every issue (coarse pass + bisection to 1 px), page height, site breakpoints and viewports on one chart; slider and pointer read-out; jump to the worst width; add a viewport there; copy as Markdown; included in reports.
+- [x] **Audit panel** (`E`): issues of every preview grouped by check with per-preview highlights; page weight, requests, image pixels vs. screen needs, LCP, CLS, page height, elements and fonts as bars; type scale of headings, text, links, buttons and fields; Markdown for each tab; a count of issue kinds on the toolbar.
+- [x] **Visual check** (`V`): baselines per page × viewport in IndexedDB, comparisons with changed share and regions, side-by-side / slider / differences views, accept, delete per page or all from Settings.
+- [x] **New checks**: text cut off by its box, low-contrast text (modern colour spaces), layout shifts; each check can be switched off.
+- [x] **Inspector**: margin and padding on hover; capture the element at every size at a common scale; the comparison in reports.
+- [x] **Grid & flex layouts** overlay; **page colours of every preview** at once; `1`–`8` focus a viewport; six presets (28 in all).
+- [x] **Reloads keep the scroll position**; **automatic reloads**; **workspace links**; **access until Chrome closes**; what's new after an update; page stats in reports.
+
 ### Non-goals (unchanged)
 
 No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise that every site embeds, no claim of real-device emulation.
@@ -148,7 +167,7 @@ No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise t
 | `scripting`                           | Install                  | None                         | Register the frame agent while a workspace is open; it only runs where host access was granted, and only acts in preview frames |
 | Host access (`<all_urls>` subset)     | **Optional**, at runtime | Chrome prompt when requested | Per site: show blocked sites. All sites: also enables screenshots                                                               |
 
-No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justifications: [STORE_LISTING.md](STORE_LISTING.md).
+No data leaves the browser. v0.4 adds no permission: visual baselines use the extension's IndexedDB, and "until Chrome closes" uses the same optional host permission, removed by the service worker at the next start. Details: [PRIVACY.md](PRIVACY.md). Store justifications: [STORE_LISTING.md](STORE_LISTING.md).
 
 ---
 
@@ -167,9 +186,9 @@ No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justificati
 
 ## 6. Release plan (M3 → store)
 
-1. `npm run package` → `release/breakpointer-0.3.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
+1. `npm run package` → `release/breakpointer-0.4.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
 2. Create the Chrome Web Store item; upload the zip.
-3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/` (the five listed in STORE_LISTING.md), promo tiles `brand/store/promo-*.png`.
+3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/` (the five listed in STORE_LISTING.md: workspace, scan, audit, inspector, visual check), promo tiles `brand/store/promo-*.png`.
 4. Privacy tab: single purpose, permission justifications, "does not collect user data", link to a hosted copy of [PRIVACY.md](PRIVACY.md).
 5. Provide a support contact (email or GitHub issues).
 6. Submit for review; publish as **unlisted** first for the M4 test group, then public.
@@ -185,7 +204,7 @@ No data leaves the browser. Details: [PRIVACY.md](PRIVACY.md). Store justificati
 | Risk                               | Mitigation in V1                                                                                      | Next step                                                                     |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Many sites block framing           | Opt-in site access, clear notice, new-tab and exact-size-window fallbacks                             | Track "blocked" rate in feedback (M4)                                         |
-| Users distrust "all sites" access  | Never requested at install; per-site option first; explained before Chrome's prompt; revocable in-app | Consider an "allow for this session only" mode                                |
+| Users distrust "all sites" access  | Never requested at install; per-site option first; explained before Chrome's prompt; revocable in-app; "until Chrome closes" (v0.4) | Track how often people choose it (M4)                                         |
 | Preview differs from a real device | Copy says "viewport", not "device"; help dialog lists what isn't emulated                             | V2 could add optional UA header per workspace                                 |
 | Performance with many previews     | Max 8 viewports; hidden previews don't load at all                                                    | Measure memory on low-end machines; consider lazy-loading off-screen previews |
 | Looks like existing tools          | Fast workflow, saved groups, breakpoint labels, honest errors, bilingual UI                           | Validate differentiators with testers                                         |
@@ -210,23 +229,22 @@ Success signals (only from opt-in feedback): successful preview starts, how ofte
 
 ## 9. Roadmap (ideas, ordered by expected value)
 
-**Delivered in v0.2:** synchronized scrolling and navigation, custom breakpoints, overflow and other responsive checks, a simple report. **Delivered in v0.3:** the responsive inspector (an element compared at every size), the page's own breakpoints, drag to resize, page colours, the command palette and the redesign; comparing two addresses, remembered live CSS snippets, a measuring tool, simulations and stress tests (see §3).
+**Delivered in v0.2:** synchronized scrolling and navigation, custom breakpoints, overflow and other responsive checks, a simple report. **Delivered in v0.3:** the responsive inspector (an element compared at every size), the page's own breakpoints, drag to resize, page colours, the command palette and the redesign; comparing two addresses, remembered live CSS snippets, a measuring tool, simulations and stress tests. **Delivered in v0.4:** the width scanner, the audit panel, visual baselines with diffs (the first step of V3), three new checks, access until Chrome closes, the inspector's comparison in reports, reloads that keep the place (see §3).
 
-**v0.4 — polish from feedback**
+**v0.5 — polish from feedback**
 
-- "Allow for this session" site access.
 - Per-group breakpoint sets.
-- Save the design overlay and the comparison with a group.
+- Save the design overlay, the comparison and the scan range with a group.
 - More languages if requested.
 
 **V2 — Deeper inspection**
 
-- Container-query and height breakpoints; measure the distance between two elements picked in the inspector (the measuring tool covers areas drawn by hand).
-- Inspector: follow the element while navigating; export its comparison to the report.
+- Container-query and height breakpoints (the scanner could sweep heights too); measure the distance between two elements picked in the inspector (the measuring tool covers areas drawn by hand).
+- Inspector: follow the element while navigating.
 
 **V3 — Visual regression**
 
-- Baseline screenshots per URL × viewport; diff and highlight changes; repeatable runs.
+- Full-page baselines; repeatable runs over saved pages × groups; a report of what changed (v0.4 delivered baselines of what is on screen, with diffs and regions).
 
 **V4 — Broader toolkit**
 
