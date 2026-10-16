@@ -1,3 +1,4 @@
+import type { CheckKind } from '../agent/protocol';
 import { addRecentUrl } from '../services/storage';
 import { MAX_CSS_SNIPPETS, MAX_SAVED_PAGES } from '../utils/constants';
 import type {
@@ -37,6 +38,8 @@ export type SettingsAction =
   | { type: 'setShowRulers'; showRulers: boolean }
   | { type: 'setSync'; sync: Partial<SyncSettings> }
   | { type: 'setChecks'; checks: boolean }
+  /** Switches one kind of check on or off. */
+  | { type: 'setCheckKind'; kind: CheckKind; enabled: boolean }
   | { type: 'setGrid'; grid: Partial<GridSettings> }
   | { type: 'setCustomBreakpoints'; breakpoints: Breakpoint[] }
   | { type: 'toggleSavedPage'; url: string }
@@ -84,6 +87,10 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, sync: { ...state.sync, ...action.sync } };
     case 'setChecks':
       return { ...state, checks: action.checks };
+    case 'setCheckKind': {
+      const disabled = state.disabledChecks.filter((kind) => kind !== action.kind);
+      return { ...state, disabledChecks: action.enabled ? disabled : [...disabled, action.kind] };
+    }
     case 'setGrid':
       return { ...state, grid: { ...state.grid, ...action.grid } };
     case 'setCustomBreakpoints':

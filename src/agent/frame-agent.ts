@@ -10,11 +10,20 @@
  * tab only. Stress tests (pseudo-translated text, right-to-left) change the
  * page only inside the preview and are undone when switched off.
  */
+import { blend, contrastRatio, formatRatio, parseColor, toHex, type Rgb } from '../state/contrast';
 import {
   compressBox,
   cssPath,
+  cumulativeLayoutShift,
+  cutOff,
   describeElement,
+  distributeTracks,
+  firstFontFamily,
+  formatShift,
+  gridTracks,
   imageDensity,
+  isLargeText,
+  isVectorImage,
   mediaQueryEdges,
   mentionsColorScheme,
   mentionsMediaType,
@@ -28,24 +37,44 @@ import {
   swapReducedMotion,
   tabOrder,
   TEXT_SPACING_CSS,
+  type ShiftEntry,
 } from './page-utils';
 import {
   AGENT_SOURCE,
   type AgentCommand,
   type AgentEvent,
   type CheckIssue,
+  type CheckKind,
   type CheckReport,
   type CheckSample,
   type ColorSchemeOverride,
   type ElementInfo,
+  type ElementRect,
   type MediaReport,
+  type PageStats,
   type ScrollAnchor,
+  type TypeSample,
 } from './protocol';
 
 const MAX_SAMPLES = 8;
 const MAX_SCAN = 4000;
 const MIN_TEXT_PX = 12;
 const MIN_TARGET_PX = 24;
+/** WCAG 2.2 AA (1.4.3): 4.5:1 for text, 3:1 for large text. */
+const MIN_CONTRAST = 4.5;
+const MIN_CONTRAST_LARGE = 3;
+/** Text elements whose contrast is checked per pass, and text nodes looked at for clipped text. */
+const MAX_CONTRAST_CHECKS = 1500;
+const MAX_CLIP_TEXT_NODES = 3000;
+/** Core Web Vitals: a cumulative layout shift above 0.1 needs improvement. */
+const MAX_LAYOUT_SHIFT = 0.1;
+/** Layout shifts this soon after the workspace changed the page (a resize, live CSS…) aren't the page's. */
+const QUIET_MS = 600;
+/** Grid and flex containers labelled at once. */
+const MAX_LAYOUT_CONTAINERS = 60;
+/** Kinds of elements in the type scale, in display order. */
+const TYPE_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'li', 'a', 'button', 'label', 'input', 'small'];
+const WHITE: Rgb = { r: 255, g: 255, b: 255, a: 1 };
 /** Checks run at most this often on pages that keep changing. */
 const CHECK_INTERVAL_MS = 2000;
 const CHECK_DELAY_MS = 500;
@@ -225,6 +254,25 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       synced,
     });
 
+  // Where the page was before it reloaded: scrolled back to as soon as the page is
+  // tall enough (it may still be loading), unless the user scrolls first.
+  let lastWheel = -Infinity;
+  window.addEventListener('wheel', () => (lastWheel = performance.now()), { capture: true, passive: true });
+  window.addEventListener('touchmove', () => (lastWheel = performance.now()), { capture: true, passive: true });
+  let restoring = 0;
+  const restoreScroll = (y: number) => {
+    window.clearTimeout(restoring);
+    const started = performance.now();
+    const attempt = () => {
+      if (lastWheel > started || lastInput > started) return;
+      ignoreScrollUntil = performance.now() + 150;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'instant' });
+      if (Math.abs(window.scrollY - y) <= 2 || performance.now() - started > 4000) return;
+      restoring = window.setTimeout(attempt, 200);
+    };
+    attempt();
+  };
+
   window.addEventListener(
     'scroll',
     () => {
@@ -240,11 +288,25 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     { passive: true },
   );
 
+  /* ---------- Changes the workspace makes ---------- */
+
+  // Layout shifts right after the workspace resized the preview or changed the
+  // page (live CSS, a stress test…) aren't the page's own, so they don't count.
+  const quietWindows: [number, number][] = [];
+  const quiet = () => {
+    const now = performance.now();
+    quietWindows.push([now - 100, now + QUIET_MS]);
+    if (quietWindows.length > 40) quietWindows.shift();
+  };
+  const isQuiet = (time: number) => quietWindows.some(([from, to]) => time >= from && time <= to);
+  window.addEventListener('resize', quiet);
+
   /* ---------- Styles injected on request ---------- */
 
   const setStyle = (id: string, css: string) => {
     let style = document.getElementById(id) as HTMLStyleElement | null;
     if (!css) {
+      if (style) quiet();
       style?.remove();
       return;
     }
@@ -254,7 +316,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       (document.head ?? document.documentElement).append(style);
     }
     // Rewriting the same text would look like a page change and trigger new checks.
-    if (style.textContent !== css) style.textContent = css;
+    if (style.textContent !== css) {
+      quiet();
+      style.textContent = css;
+    }
   };
 
   /* ---------- Highlighting ---------- */
@@ -311,19 +376,56 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     return value === 'hidden' || value === 'clip';
   };
 
+  const hides = (overflow: string) => overflow === 'hidden' || overflow === 'clip';
+
   const pageElements = () =>
     Array.from(document.body?.querySelectorAll(`*:not([${OVERLAY_ATTRIBUTE}])`) ?? []).slice(0, MAX_SCAN);
 
-  const runChecks = (): CheckReport => {
+  /** The element's first own line of text (not a child element's), if it has one. */
+  const ownText = (element: Element): Text | null => {
+    for (const child of element.childNodes)
+      if (child.nodeType === Node.TEXT_NODE && (child.textContent ?? '').trim().length > 1) return child as Text;
+    return null;
+  };
+
+  // Checks the user switched off (Settings → Responsive checks).
+  let skipChecks = new Set<CheckKind>();
+
+  /* Layout shifts (cumulative layout shift, as in Core Web Vitals). */
+  type Shift = ShiftEntry & { moves: { element: Element; distance: number }[] };
+  type LayoutShiftEntry = PerformanceEntry & {
+    value: number;
+    hadRecentInput: boolean;
+    sources?: { node: Node | null; previousRect: DOMRectReadOnly; currentRect: DOMRectReadOnly }[];
+  };
+  const shifts: Shift[] = [];
+
+  /** The colour of the page's canvas where nothing else is painted: white, or dark for dark pages. */
+  const canvasColor = (): Rgb => {
+    const probe = document.createElement('div');
+    probe.setAttribute(OVERLAY_ATTRIBUTE, '');
+    probe.style.cssText = 'position:absolute;width:0;height:0;background-color:Canvas';
+    document.documentElement.append(probe);
+    const color = parseColor(getComputedStyle(probe).backgroundColor);
+    probe.remove();
+    return color && color.a > 0 ? { ...color, a: 1 } : WHITE;
+  };
+
+  /**
+   * Runs the checks. `scan`: for the width scanner, which resizes the preview
+   * again and again (the layout shifts that causes aren't the page's).
+   */
+  const runChecks = (scan = false): CheckReport => {
     const width = document.documentElement.clientWidth || window.innerWidth;
     const issues: CheckIssue[] = [];
     const nextFlagged = new Map<string, Element[]>();
     const elements = pageElements();
+    const wants = (kind: CheckKind) => !skipChecks.has(kind);
 
     // 1. Content wider than the viewport (the page scrolls sideways). Pages
     //    that hide horizontal overflow on html/body can't scroll sideways.
     const overflow = document.documentElement.scrollWidth - width;
-    if (overflow > 1 && !clipsX(document.documentElement) && !clipsX(document.body)) {
+    if (wants('overflow') && overflow > 1 && !clipsX(document.documentElement) && !clipsX(document.body)) {
       const culprits: Element[] = [];
       const samples: CheckSample[] = [];
       const right = (element: Element) => element.getBoundingClientRect().right + window.scrollX;
@@ -351,7 +453,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     // 2. A mobile page needs <meta name="viewport" content="width=device-width">
     //    (only meaningful on phone and tablet sizes).
     const meta = document.querySelector<HTMLMetaElement>('meta[name="viewport" i]');
-    if (width <= 1024 && (!meta || !/width\s*=\s*device-width/i.test(meta.content))) {
+    if (wants('viewport-meta') && width <= 1024 && (!meta || !/width\s*=\s*device-width/i.test(meta.content))) {
       issues.push({ kind: 'viewport-meta', count: 1, detail: meta?.content ?? '', samples: [] });
     }
 
@@ -359,11 +461,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     //    legible-text audit). 0px text is a hiding technique, not small text.
     const smallText: Element[] = [];
     const textSamples: CheckSample[] = [];
-    for (const element of width <= 1024 ? elements : []) {
-      const hasText = [...element.childNodes].some(
-        (child) => child.nodeType === Node.TEXT_NODE && (child.textContent ?? '').trim().length > 1,
-      );
-      if (!hasText) continue;
+    for (const element of wants('small-text') && width <= 1024 ? elements : []) {
+      if (!ownText(element)) continue;
       const style = getComputedStyle(element);
       const size = Number.parseFloat(style.fontSize);
       if (!(size < MIN_TEXT_PX) || size < 1) continue;
@@ -381,7 +480,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     //    viewports. As in WCAG, links in running text are exempt, and so is an
     //    undersized target with enough space around it: a 24px circle centred on
     //    it touches no other target (nor another undersized target's circle).
-    if (width <= 1024) {
+    if (wants('tap-targets') && width <= 1024) {
       const small: Element[] = [];
       const targetSamples: CheckSample[] = [];
       const targets: { element: Element; rect: DOMRect; small: boolean }[] = [];
@@ -426,13 +525,223 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 5. Images shown larger than their real size look blurry (at every width).
+    // 5. Text cut off by its own box: a line of text partly outside an element
+    //    that hides its overflow. An ellipsis or a line clamp cut on purpose, and
+    //    lines fully outside (the other slides of a carousel) are hidden on purpose.
+    if (wants('clipped-text')) {
+      const cut: Element[] = [];
+      const cutSamples: CheckSample[] = [];
+      const styles = new Map<Element, CSSStyleDeclaration>();
+      const styleOf = (element: Element) => {
+        let style = styles.get(element);
+        if (!style) styles.set(element, (style = getComputedStyle(element)));
+        return style;
+      };
+      // Text in a nested box that hides (or scrolls) its overflow belongs to that box.
+      const ownerBox = (node: Element | null, stop: Element) => {
+        for (; node && node !== stop; node = node.parentElement) {
+          const style = styleOf(node);
+          if (style.overflowX !== 'visible' || style.overflowY !== 'visible') return node;
+        }
+        return stop;
+      };
+      const range = document.createRange();
+      let budget = MAX_CLIP_TEXT_NODES;
+      for (const element of elements) {
+        if (budget <= 0) break;
+        const style = styleOf(element);
+        const cutsX = hides(style.overflowX);
+        const cutsY = hides(style.overflowY);
+        if (!cutsX && !cutsY) continue;
+        const clamp = style.getPropertyValue('-webkit-line-clamp');
+        if (style.textOverflow === 'ellipsis' || (clamp && clamp !== 'none')) continue;
+        // Most boxes that hide their overflow have nothing to hide.
+        if (element.scrollWidth <= element.clientWidth + 1 && element.scrollHeight <= element.clientHeight + 1) continue;
+        const rect = element.getBoundingClientRect();
+        if (!visible(rect, style)) continue;
+        const box = {
+          left: rect.left + Number.parseFloat(style.borderLeftWidth),
+          top: rect.top + Number.parseFloat(style.borderTopWidth),
+          right: rect.right - Number.parseFloat(style.borderRightWidth),
+          bottom: rect.bottom - Number.parseFloat(style.borderBottomWidth),
+        };
+        let worst = { x: 0, y: 0 };
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+        for (let node = walker.nextNode(); node && budget > 0; node = walker.nextNode()) {
+          budget--;
+          const text = node as Text;
+          if (text.data.trim().length < 2 || ownerBox(text.parentElement, element) !== element) continue;
+          range.selectNodeContents(text);
+          for (const line of range.getClientRects()) {
+            const hidden = cutOff(line, box);
+            if (!hidden) continue;
+            // Sideways, any cut letter shows; vertically, a tight line height trims a
+            // few pixels of most fonts, so only more than a quarter of the line counts.
+            const x = cutsX && hidden.x > 1 ? hidden.x : 0;
+            const y = cutsY && hidden.y > line.height * 0.25 ? hidden.y : 0;
+            if (x > worst.x || y > worst.y) worst = { x: Math.max(worst.x, x), y: Math.max(worst.y, y) };
+          }
+        }
+        if (!worst.x && !worst.y) continue;
+        cut.push(element);
+        if (cutSamples.length < MAX_SAMPLES)
+          cutSamples.push({
+            selector: describeElement(element),
+            detail: worst.x >= worst.y ? `↔ ${Math.round(worst.x)}px` : `↕ ${Math.round(worst.y)}px`,
+          });
+      }
+      range.detach();
+      if (cut.length) {
+        nextFlagged.set('clipped-text', cut);
+        issues.push({ kind: 'clipped-text', count: cut.length, samples: cutSamples });
+      }
+    }
+
+    // 6. Low-contrast text (WCAG 2.2, 1.4.3), where the colour behind the text is
+    //    known: solid backgrounds of the element and its ancestors. Text over
+    //    something else — an image, a gradient, a decoration, content laid over
+    //    it — and translucent or blended elements are skipped rather than guessed.
+    if (wants('low-contrast')) {
+      const low: Element[] = [];
+      const lowSamples: CheckSample[] = [];
+      let lowest = Infinity;
+      const canvas = canvasColor();
+      const styles = new Map<Element, CSSStyleDeclaration>();
+      const styleOf = (element: Element) => {
+        let style = styles.get(element);
+        if (!style) styles.set(element, (style = getComputedStyle(element)));
+        return style;
+      };
+      const opaque = (color: Rgb | null) => Boolean(color && color.a > 0);
+      /** A background drawn by ::before or ::after (a pill, an underlay) that the text may sit on. */
+      const decorated = (element: Element) =>
+        (['::before', '::after'] as const).some((pseudo) => {
+          const style = getComputedStyle(element, pseudo);
+          if (style.content === 'none' || style.content === 'normal') return false;
+          return style.backgroundImage !== 'none' || opaque(parseColor(style.backgroundColor));
+        });
+      /** Its own painting makes the colours behind the text unknown. */
+      const unclear = new Map<Element, boolean>();
+      const isUnclear = (element: Element) => {
+        let known = unclear.get(element);
+        if (known === undefined) {
+          const style = styleOf(element);
+          const backdropFilter = style.getPropertyValue('backdrop-filter');
+          known =
+            style.backgroundImage !== 'none' ||
+            style.filter !== 'none' ||
+            style.mixBlendMode !== 'normal' ||
+            (Boolean(backdropFilter) && backdropFilter !== 'none') ||
+            Number(style.opacity) < 0.99 ||
+            decorated(element);
+          unclear.set(element, known);
+        }
+        return known;
+      };
+      /** Children that draw something (media, a background) or float over the others (positioned). */
+      const painters = new Map<Element, { element: Element; rect: DOMRect }[]>();
+      const paintersIn = (parent: Element) => {
+        let list = painters.get(parent);
+        if (list) return list;
+        list = [];
+        for (const child of Array.from(parent.children)) {
+          if (child.hasAttribute(OVERLAY_ATTRIBUTE)) continue;
+          const style = styleOf(child);
+          if (style.display === 'none' || style.visibility === 'hidden') continue;
+          const draws =
+            /^(img|video|picture|canvas|svg|iframe|object|embed)$/.test(child.localName) ||
+            style.backgroundImage !== 'none' ||
+            opaque(parseColor(style.backgroundColor)) ||
+            style.position === 'absolute' ||
+            style.position === 'fixed' ||
+            Boolean(child.querySelector('img, video, picture, canvas, svg, iframe'));
+          if (!draws) continue;
+          const rect = child.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0) list.push({ element: child, rect });
+        }
+        painters.set(parent, list);
+        return list;
+      };
+      const overlaps = (a: DOMRect, b: DOMRect) =>
+        a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      /** The solid colour behind a line of the element's text, or null when it can't be known. */
+      const backgroundBehind = (element: Element, line: DOMRect): Rgb | null => {
+        const layers: Rgb[] = [];
+        let base: Rgb | null = null;
+        for (let node: Element | null = element; node; node = node.parentElement) {
+          if (isUnclear(node)) return null;
+          const style = styleOf(node);
+          const color = parseColor(style.backgroundColor);
+          if (color && color.a >= 1) {
+            base = color;
+            break;
+          }
+          if (color && color.a > 0) layers.push(color);
+          // Taken out of the flow without a background of its own: it may sit over anything.
+          if (style.position === 'absolute' || style.position === 'fixed') return null;
+          // Something else in the same box drawn where the text is (a hero image, a grid overlap).
+          const parent = node.parentElement;
+          if (parent && paintersIn(parent).some((item) => item.element !== node && overlaps(item.rect, line)))
+            return null;
+        }
+        return layers.reduceRight((below, layer) => blend(layer, below), base ?? canvas);
+      };
+      /** On screen, the browser says what is drawn under the text: only the element and its ancestors. */
+      const hitsOnlyAncestors = (element: Element, line: DOMRect) => {
+        if (line.bottom < 0 || line.top > window.innerHeight || line.right < 0 || line.left > width) return true;
+        const x = Math.min(Math.max(line.left + Math.min(8, line.width / 2), 0), width - 1);
+        const y = Math.min(Math.max(line.top + line.height / 2, 0), window.innerHeight - 1);
+        const stack = document.elementsFromPoint(x, y);
+        const at = stack.findIndex((item) => item === element || element.contains(item));
+        // Covered by something else (a dialog, a banner), or not hit at all (pointer-events: none).
+        if (at !== 0) return false;
+        return stack.slice(1).every((item) => item.contains(element));
+      };
+      const range = document.createRange();
+      let checked = 0;
+      for (const element of elements) {
+        if (checked >= MAX_CONTRAST_CHECKS) break;
+        const text = ownText(element);
+        if (!text || element instanceof SVGElement) continue;
+        const style = styleOf(element);
+        const rect = element.getBoundingClientRect();
+        if (!visible(rect, style)) continue;
+        checked++;
+        // Inactive controls are exempt in WCAG; a shadow usually helps text over images.
+        if (element.closest(':disabled, [aria-disabled="true"]') || style.textShadow !== 'none') continue;
+        const fill = parseColor(style.getPropertyValue('-webkit-text-fill-color'));
+        const color = fill ?? parseColor(style.color);
+        if (!color || color.a < 0.05) continue;
+        range.selectNodeContents(text);
+        const line = range.getClientRects()[0];
+        if (!line || line.width < 1 || line.height < 1) continue;
+        const background = backgroundBehind(element, line);
+        if (!background || !hitsOnlyAncestors(element, line)) continue;
+        const ratio = contrastRatio(color, background);
+        const large = isLargeText(Number.parseFloat(style.fontSize), Number.parseInt(style.fontWeight, 10) || 400);
+        if (Number(formatRatio(ratio)) >= (large ? MIN_CONTRAST_LARGE : MIN_CONTRAST)) continue;
+        low.push(element);
+        lowest = Math.min(lowest, ratio);
+        if (lowSamples.length < MAX_SAMPLES)
+          lowSamples.push({
+            selector: describeElement(element),
+            detail: `${formatRatio(ratio)}:1 · ${toHex(color.a < 1 ? blend(color, background) : color)} / ${toHex(background)}`,
+          });
+      }
+      range.detach();
+      if (low.length) {
+        nextFlagged.set('low-contrast', low);
+        issues.push({ kind: 'low-contrast', count: low.length, detail: formatRatio(lowest), samples: lowSamples });
+      }
+    }
+
+    // 7. Images shown larger than their real size look blurry (at every width).
     //    `naturalWidth` already accounts for the density of the srcset candidate.
     const upscaled: Element[] = [];
     const imageSamples: CheckSample[] = [];
-    for (const image of Array.from(document.images).slice(0, MAX_SCAN)) {
+    for (const image of wants('upscaled-images') ? Array.from(document.images).slice(0, MAX_SCAN) : []) {
       if (!image.complete || !image.naturalWidth || !image.naturalHeight) continue;
-      if (/\.svg(?:[?#]|$)/i.test(image.currentSrc)) continue;
+      if (isVectorImage(image.currentSrc)) continue;
       const style = getComputedStyle(image);
       const rect = image.getBoundingClientRect();
       if (!visible(rect, style) || style.objectFit === 'none') continue;
@@ -461,9 +770,9 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       issues.push({ kind: 'upscaled-images', count: upscaled.length, samples: imageSamples });
     }
 
-    // 6. Fixed (or stuck) elements covering much of a phone or tablet screen, such
+    // 8. Fixed (or stuck) elements covering much of a phone or tablet screen, such
     //    as cookie walls or tall headers: sampled on a grid of points.
-    if (width <= 1024) {
+    if (wants('fixed-cover') && width <= 1024) {
       const height = window.innerHeight;
       const coverOwner = (element: Element): Element | null => {
         let owner: Element | null = null;
@@ -510,7 +819,32 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    flagged = nextFlagged;
+    // 9. The layout moved while the page loaded or was used (CLS above 0.1), with
+    //    the elements that moved in the worst burst of shifts.
+    if (wants('layout-shift') && !scan) {
+      const worst = cumulativeLayoutShift(shifts);
+      if (worst.value > MAX_LAYOUT_SHIFT) {
+        const moved = new Map<Element, number>();
+        for (const index of worst.window)
+          for (const move of shifts[index]?.moves ?? [])
+            if (move.element.isConnected)
+              moved.set(move.element, Math.max(moved.get(move.element) ?? 0, move.distance));
+        const list = [...moved.keys()];
+        nextFlagged.set('layout-shift', list);
+        issues.push({
+          kind: 'layout-shift',
+          count: Math.max(1, list.length),
+          detail: formatShift(worst.value),
+          samples: list.slice(0, MAX_SAMPLES).map((element) => ({
+            selector: describeElement(element),
+            detail: `${Math.round(moved.get(element) ?? 0)}px`,
+          })),
+        });
+      }
+    }
+
+    // A scan doesn't change what Highlight marks in the page.
+    if (!scan) flagged = nextFlagged;
     return { width, issues };
   };
 
@@ -529,6 +863,32 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       if (highlighted) applyHighlight(highlighted, false);
     }, wait);
   };
+
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as LayoutShiftEntry[]) {
+        if (entry.hadRecentInput || isQuiet(entry.startTime)) continue;
+        const moves: Shift['moves'] = [];
+        for (const source of entry.sources ?? []) {
+          const node = source.node;
+          const element = node instanceof Element ? node : node?.parentElement;
+          if (!element || element.closest(`[${OVERLAY_ATTRIBUTE}]`)) continue;
+          const distance = Math.max(
+            Math.abs(source.currentRect.y - source.previousRect.y),
+            Math.abs(source.currentRect.x - source.previousRect.x),
+          );
+          moves.push({ element, distance });
+        }
+        shifts.push({ startTime: entry.startTime, value: entry.value, moves });
+        // A page that keeps shifting: its worst burst is what counts, and that is
+        // all but certain to be in its last few hundred shifts.
+        if (shifts.length > 500) shifts.shift();
+      }
+      scheduleChecks();
+    }).observe({ type: 'layout-shift', buffered: true });
+  } catch {
+    // Layout Instability isn't available.
+  }
 
   /* ---------- Stylesheets: breakpoints and color scheme ---------- */
 
@@ -751,16 +1111,24 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   let annotateImages = false;
   let annotateTabs = false;
+  let annotateLayout = false;
+  const annotating = () => annotateImages || annotateTabs || annotateLayout;
   let annotations: { host: HTMLElement; layer: HTMLElement } | null = null;
   const MAX_ANNOTATIONS = 400;
   const FOCUSABLE =
     'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary, iframe, [contenteditable=""], [contenteditable="true"], [tabindex]';
+  // Grid containers in violet (columns as bands, rows as lines), flex containers in pink, as in DevTools.
   const ANNOTATION_CSS = `
 :host{all:initial}
 .label{position:fixed;left:0;top:0;padding:1px 5px;border-radius:4px;font:600 11px/15px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.3)}
 .ok{background:#047857;color:#fff}.low{background:#dc2626;color:#fff}.high{background:#b45309;color:#fff}
 .tab{min-width:20px;text-align:center;border-radius:999px;background:#4f46e5;color:#fff}.tab.positive{background:#b45309}
-.ring{position:fixed;left:0;top:0;box-sizing:border-box;border:1.5px solid rgba(79,70,229,.85);border-radius:3px;pointer-events:none}`;
+.ring{position:fixed;left:0;top:0;box-sizing:border-box;border:1.5px solid rgba(79,70,229,.85);border-radius:3px;pointer-events:none}
+.area{position:fixed;left:0;top:0;box-sizing:border-box;pointer-events:none}
+.grid{border:1.5px dashed rgba(124,58,237,.9)}.flex{border:1.5px dashed rgba(219,39,119,.85)}
+.column{background:rgba(124,58,237,.1);border-left:1px solid rgba(124,58,237,.55);border-right:1px solid rgba(124,58,237,.55)}
+.row{border-top:1px dashed rgba(124,58,237,.6)}
+.gridl{background:#6d28d9;color:#fff}.flexl{background:#be185d;color:#fff}`;
 
   const ensureAnnotations = () => {
     if (annotations?.host.isConnected) return annotations;
@@ -792,7 +1160,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   /** Redraws the labels of what is in view (after scrolling, resizing or page changes). */
   function drawAnnotations() {
     if (annotationsQueued) return;
-    if (!annotateImages && !annotateTabs) {
+    if (!annotating()) {
       annotations?.host.remove();
       annotations = null;
       return;
@@ -800,7 +1168,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     annotationsQueued = true;
     requestAnimationFrame(() => {
       annotationsQueued = false;
-      if (!annotateImages && !annotateTabs) return;
+      if (!annotating()) return;
       const { layer } = ensureAnnotations();
       const parts: HTMLElement[] = [];
       const inView = (rect: DOMRect) =>
@@ -818,10 +1186,17 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           if (parts.length >= MAX_ANNOTATIONS) break;
           const rect = image.getBoundingClientRect();
           if (!image.naturalWidth || !inView(rect)) continue;
-          const { density, tone } = imageDensity(image.naturalWidth, rect.width);
+          const shown = `${Math.round(rect.width)}×${Math.round(rect.height)}`;
           const label = document.createElement('div');
-          label.className = `label ${tone}`;
-          label.textContent = `${Math.round(rect.width)}×${Math.round(rect.height)} · ${image.naturalWidth}×${image.naturalHeight} · ${density.toFixed(1)}x`;
+          // A vector image is sharp at any size: no density to judge.
+          if (isVectorImage(image.currentSrc)) {
+            label.className = 'label ok';
+            label.textContent = `${shown} · SVG`;
+          } else {
+            const { density, tone } = imageDensity(image.naturalWidth, rect.width);
+            label.className = `label ${tone}`;
+            label.textContent = `${shown} · ${image.naturalWidth}×${image.naturalHeight} · ${density.toFixed(1)}x`;
+          }
           place(label, rect);
           parts.push(label);
         }
@@ -846,14 +1221,103 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           parts.push(ring, label);
         });
       }
+      if (annotateLayout) drawLayout(parts, inView, place);
       layer.replaceChildren(...parts);
       // How many labels are drawn (the layer itself is closed to the page; tests read this).
       annotations!.host.dataset.labels = String(parts.filter((part) => part.classList.contains('label')).length);
     });
   }
+  // Grid and flex containers, found again after the page changes (not on every scroll).
+  let layoutContainers: Element[] | null = null;
+  const forgetLayout = () => {
+    layoutContainers = null;
+  };
+
+  /** Outlines grid and flex containers in view, with a grid's columns and rows and a flex container's direction. */
+  function drawLayout(
+    parts: HTMLElement[],
+    inView: (rect: DOMRect) => boolean,
+    place: (element: HTMLElement, rect: DOMRect) => void,
+  ) {
+    layoutContainers ??= pageElements().filter((element) => {
+      const display = getComputedStyle(element).display;
+      return display === 'grid' || display === 'inline-grid' || display === 'flex' || display === 'inline-flex';
+    });
+    const box = (className: string, left: number, top: number, width: number, height: number) => {
+      const element = document.createElement('div');
+      element.className = `area ${className}`;
+      element.style.transform = `translate(${left}px, ${top}px)`;
+      element.style.width = `${Math.max(0, width)}px`;
+      element.style.height = `${Math.max(0, height)}px`;
+      parts.push(element);
+    };
+    const px = (value: string) => Number.parseFloat(value) || 0;
+    const sum = (values: number[]) => values.reduce((total, value) => total + value, 0);
+    let shown = 0;
+    for (const element of layoutContainers) {
+      if (shown >= MAX_LAYOUT_CONTAINERS || parts.length >= MAX_ANNOTATIONS * 3) break;
+      if (!element.isConnected) continue;
+      const rect = element.getBoundingClientRect();
+      if (!inView(rect)) continue;
+      const style = getComputedStyle(element);
+      const grid = style.display.includes('grid');
+      if (!grid && !style.display.includes('flex')) continue;
+      shown++;
+      box(grid ? 'grid' : 'flex', rect.left, rect.top, rect.width, rect.height);
+      const label = document.createElement('div');
+      label.className = `label ${grid ? 'gridl' : 'flexl'}`;
+      const rtl = style.direction === 'rtl';
+      if (grid) {
+        const columns = gridTracks(style.gridTemplateColumns);
+        const rows = gridTracks(style.gridTemplateRows);
+        label.textContent = `grid ${columns?.length ?? 1}×${rows?.length ?? 1}`;
+        const content = {
+          left: rect.left + px(style.borderLeftWidth) + px(style.paddingLeft),
+          top: rect.top + px(style.borderTopWidth) + px(style.paddingTop),
+          right: rect.right - px(style.borderRightWidth) - px(style.paddingRight),
+          bottom: rect.bottom - px(style.borderBottomWidth) - px(style.paddingBottom),
+        };
+        if (columns) {
+          const gap = px(style.columnGap);
+          const free = content.right - content.left - sum(columns) - gap * (columns.length - 1);
+          const [start, extra] = distributeTracks(style.justifyContent, free, columns.length, rtl);
+          let offset = start;
+          for (const size of columns.slice(0, 48)) {
+            const left = rtl ? content.right - offset - size : content.left + offset;
+            box('column', left, content.top, size, content.bottom - content.top);
+            offset += size + gap + extra;
+          }
+        }
+        if (rows && rows.length > 1) {
+          const gap = px(style.rowGap);
+          const free = content.bottom - content.top - sum(rows) - gap * (rows.length - 1);
+          const [start, extra] = distributeTracks(style.alignContent, free, rows.length);
+          let offset = start;
+          rows.slice(0, 48).forEach((size, index) => {
+            // A line in the middle of each gap between two rows.
+            if (index > 0) box('row', content.left, content.top + offset - (gap + extra) / 2, content.right - content.left, 0);
+            offset += size + gap + extra;
+          });
+        }
+      } else {
+        const direction = style.flexDirection;
+        const forward = rtl ? '←' : '→';
+        const backward = rtl ? '→' : '←';
+        const arrow =
+          direction === 'row' ? forward : direction === 'row-reverse' ? backward : direction === 'column' ? '↓' : '↑';
+        label.textContent = `flex ${arrow}${style.flexWrap === 'nowrap' ? '' : ' ⤶'}`;
+      }
+      place(label, rect);
+      parts.push(label);
+    }
+  }
+
   const annotationUpdate = scheduler(drawAnnotations);
   window.addEventListener('scroll', () => drawAnnotations(), { passive: true });
-  window.addEventListener('resize', () => drawAnnotations());
+  window.addEventListener('resize', () => {
+    forgetLayout();
+    drawAnnotations();
+  });
   // Images that finish loading get their real size.
   document.addEventListener(
     'load',
@@ -877,19 +1341,122 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     }
   };
 
+  /* ---------- Page stats and type scale (the audit panel) ---------- */
+
+  // Observed from the start: the browser keeps the entries of the page's load (`buffered`).
+  let largestPaint: number | null = null;
+  const resources = new Map<string, PerformanceResourceTiming>();
+  try {
+    new PerformanceObserver((list) => {
+      const last = list.getEntries().at(-1);
+      if (last) largestPaint = Math.round(last.startTime);
+    }).observe({ type: 'largest-contentful-paint', buffered: true });
+  } catch {
+    // Not available.
+  }
+  try {
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as PerformanceResourceTiming[])
+        if (resources.size < 5000) resources.set(`${entry.name}#${entry.startTime}`, entry);
+    }).observe({ type: 'resource', buffered: true });
+  } catch {
+    // Not available.
+  }
+
+  /** Numbers about how the page loaded and what it shows at this size — never its content. */
+  const pageStats = (): PageStats => {
+    const navigation = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming | undefined;
+    let transferred = navigation?.transferSize ?? 0;
+    let unknownSize = 0;
+    for (const entry of resources.values()) {
+      if (entry.transferSize > 0) transferred += entry.transferSize;
+      else unknownSize++;
+    }
+    let images = 0;
+    let imagePixels = 0;
+    let shownPixels = 0;
+    for (const image of Array.from(document.images).slice(0, MAX_SCAN)) {
+      if (!image.complete || !image.naturalWidth || !image.naturalHeight || isVectorImage(image.currentSrc)) continue;
+      const rect = image.getBoundingClientRect();
+      if (!visible(rect, getComputedStyle(image))) continue;
+      images++;
+      imagePixels += image.naturalWidth * image.naturalHeight;
+      shownPixels += rect.width * rect.height;
+    }
+    let fonts = 0;
+    document.fonts?.forEach((face) => {
+      if (face.status === 'loaded') fonts++;
+    });
+    return {
+      requests: resources.size,
+      transferred,
+      unknownSize,
+      images,
+      imagePixels: Math.round(imagePixels),
+      shownPixels: Math.round(shownPixels),
+      dpr: window.devicePixelRatio || 1,
+      elements: document.getElementsByTagName('*').length,
+      height: document.documentElement.scrollHeight,
+      lcp: largestPaint,
+      cls: Math.round(cumulativeLayoutShift(shifts).value * 1000) / 1000,
+      fonts,
+    };
+  };
+
+  const TEXT_INPUTS = new Set(['text', 'search', 'email', 'url', 'tel', 'password', 'number']);
+
+  /** The font size, line height and weight of the first shown element of each kind. */
+  const typeScale = (): TypeSample[] => {
+    const samples: TypeSample[] = [];
+    for (const tag of TYPE_TAGS) {
+      let first: Element | null = null;
+      let count = 0;
+      for (const element of Array.from(document.getElementsByTagName(tag)).slice(0, 400)) {
+        if (element.closest(`[${OVERLAY_ATTRIBUTE}]`)) continue;
+        if (element instanceof HTMLInputElement && !TEXT_INPUTS.has(element.type)) continue;
+        if (!visible(element.getBoundingClientRect(), getComputedStyle(element))) continue;
+        count++;
+        first ??= element;
+      }
+      if (!first) continue;
+      const style = getComputedStyle(first);
+      const lineHeight = Number.parseFloat(style.lineHeight);
+      samples.push({
+        tag,
+        count,
+        fontSize: Math.round(Number.parseFloat(style.fontSize) * 100) / 100,
+        lineHeight: Number.isFinite(lineHeight) ? Math.round(lineHeight * 100) / 100 : null,
+        fontWeight: style.fontWeight,
+        fontFamily: firstFontFamily(style.fontFamily),
+      });
+    }
+    return samples;
+  };
+
   /* ---------- Inspector ---------- */
 
   let inspecting = false;
   let hovered: Element | null = null;
   let selectedSelector: string | null = null;
   let selected: Element | null = null;
-  let overlay: { host: HTMLElement; hover: HTMLElement; hoverLabel: HTMLElement; select: HTMLElement } | null = null;
+  let overlay: {
+    host: HTMLElement;
+    hover: HTMLElement;
+    hoverLabel: HTMLElement;
+    select: HTMLElement;
+    margin: HTMLElement;
+    padding: HTMLElement;
+  } | null = null;
 
+  // The hovered element's margin (orange) and padding (green), drawn as borders as in DevTools.
   const OVERLAY_CSS = `
 :host{all:initial}
 .box{position:fixed;left:0;top:0;box-sizing:border-box;pointer-events:none;display:none;border-radius:2px}
 .hover{border:1.5px solid #6366f1;background:rgba(99,102,241,.14)}
 .select{border:2px solid #f59e0b;background:rgba(245,158,11,.12);box-shadow:0 0 0 1px rgba(255,255,255,.6)}
+.space{position:fixed;left:0;top:0;box-sizing:border-box;pointer-events:none;display:none;border-style:solid;border-width:0}
+.margin{border-color:rgba(246,178,107,.5)}
+.padding{border-color:rgba(147,196,125,.55)}
 .label{position:absolute;left:-1.5px;top:-24px;padding:2px 6px;border-radius:4px;background:#312e81;color:#fff;font:600 11px/16px ui-monospace,SFMono-Regular,Menlo,monospace;white-space:nowrap;max-width:min(360px,90vw);overflow:hidden;text-overflow:ellipsis}
 .label.below{top:auto;bottom:-24px}`;
 
@@ -919,10 +1486,55 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     hover.append(hoverLabel);
     const select = document.createElement('div');
     select.className = 'box select';
-    root.append(style, select, hover);
+    const margin = document.createElement('div');
+    margin.className = 'space margin';
+    const padding = document.createElement('div');
+    padding.className = 'space padding';
+    root.append(style, select, margin, padding, hover);
     document.documentElement.append(host);
-    overlay = { host, hover, hoverLabel, select };
+    overlay = { host, hover, hoverLabel, select, margin, padding };
     return overlay;
+  };
+
+  /** Draws the hovered element's margin and padding areas (hidden when there is no hovered element). */
+  const placeSpacing = (element: Element | null, rect: DOMRect | null) => {
+    if (!overlay) return;
+    const { margin, padding } = overlay;
+    if (!element || !rect) {
+      margin.style.display = 'none';
+      padding.style.display = 'none';
+      return;
+    }
+    const style = getComputedStyle(element);
+    type Sides = { top: number; right: number; bottom: number; left: number };
+    const sides = (name: (side: keyof Sides) => string): Sides => {
+      const px = (side: keyof Sides) => Math.max(0, Number.parseFloat(style.getPropertyValue(name(side))) || 0);
+      return { top: px('top'), right: px('right'), bottom: px('bottom'), left: px('left') };
+    };
+    const m = sides((side) => `margin-${side}`);
+    const b = sides((side) => `border-${side}-width`);
+    const p = sides((side) => `padding-${side}`);
+    const draw = (box: HTMLElement, left: number, top: number, width: number, height: number, widths: Sides) => {
+      const { top: t, right: r, bottom: bottom, left: l } = widths;
+      if ((t === 0 && r === 0 && bottom === 0 && l === 0) || width <= 0 || height <= 0) {
+        box.style.display = 'none';
+        return;
+      }
+      box.style.display = 'block';
+      box.style.transform = `translate(${left}px, ${top}px)`;
+      box.style.width = `${width}px`;
+      box.style.height = `${height}px`;
+      box.style.borderWidth = `${t}px ${r}px ${bottom}px ${l}px`;
+    };
+    draw(margin, rect.left - m.left, rect.top - m.top, rect.width + m.left + m.right, rect.height + m.top + m.bottom, m);
+    draw(
+      padding,
+      rect.left + b.left,
+      rect.top + b.top,
+      rect.width - b.left - b.right,
+      rect.height - b.top - b.bottom,
+      p,
+    );
   };
 
   const place = (box: HTMLElement, element: Element | null) => {
@@ -950,6 +1562,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         overlay.hoverLabel.textContent = `${describeElement(hovered)}  ${Math.round(rect.width)} × ${Math.round(rect.height)}`;
         overlay.hoverLabel.classList.toggle('below', rect.top < 26);
       }
+      placeSpacing(inspecting ? hovered : null, rect);
       place(overlay.select, selected);
     });
   }
@@ -1115,7 +1728,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     scheduleChecks();
     scheduleElementReport();
-    if (annotateImages || annotateTabs) annotationUpdate(300);
+    if (annotating()) {
+      forgetLayout();
+      annotationUpdate(300);
+    }
     const styles = records.some((record) =>
       [...record.addedNodes, ...record.removedNodes].some(
         (node) =>
@@ -1142,6 +1758,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         break;
       case 'scrollTo': {
         ignoreScrollUntil = performance.now() + 150;
+        if (command.y !== undefined) {
+          restoreScroll(command.y);
+          break;
+        }
         if (command.anchor && scrollToAnchor(command.anchor)) break;
         window.scrollTo({ top: Math.max(0, command.ratio * maxScroll()), behavior: 'instant' });
         break;
@@ -1166,6 +1786,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         break;
       case 'checks':
         checksEnabled = command.enabled;
+        skipChecks = new Set(command.skip ?? []);
         if (checksEnabled) {
           // Asked again (e.g. after a hello): report soon, even if nothing changed.
           lastCheck = -Infinity;
@@ -1179,6 +1800,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'colorScheme':
         if (command.scheme === colorScheme) break;
         colorScheme = command.scheme;
+        quiet();
         applyMediaOverrides();
         break;
       case 'preferences':
@@ -1191,11 +1813,14 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         reduceMotion = command.reducedMotion;
         moreContrast = command.moreContrast;
         printing = command.print;
+        quiet();
         applyMediaOverrides();
         break;
       case 'annotate':
         annotateImages = command.images;
         annotateTabs = command.tabOrder;
+        annotateLayout = command.layout === true;
+        forgetLayout();
         drawAnnotations();
         break;
       case 'animations':
@@ -1207,6 +1832,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         );
         break;
       case 'stress':
+        if (command.pseudo !== pseudo || command.rtl !== (originalDir !== null)) quiet();
         if (command.pseudo !== pseudo) {
           pseudo = command.pseudo;
           if (pseudo && document.body) translateTree(document.body);
@@ -1268,6 +1894,55 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         drawOverlay();
         removeOverlayIfIdle();
         break;
+      case 'scanProbe': {
+        // The workspace resizes the frame; answer once the window has that width
+        // and the page's own resize handlers (and its layout) have run.
+        const { width } = command;
+        const started = performance.now();
+        const answer = () =>
+          send({
+            type: 'scanned',
+            width: window.innerWidth,
+            report: runChecks(true),
+            height: document.documentElement.scrollHeight,
+          });
+        const wait = () => {
+          if (window.innerWidth === width || performance.now() - started > 2000)
+            requestAnimationFrame(() => requestAnimationFrame(answer));
+          else requestAnimationFrame(wait);
+        };
+        wait();
+        break;
+      }
+      case 'getStats':
+        send({ type: 'stats', stats: pageStats() });
+        break;
+      case 'getTypeScale':
+        send({ type: 'typeScale', samples: typeScale() });
+        break;
+      case 'getElementRect': {
+        let element: Element | null;
+        try {
+          element = document.querySelector(command.selector);
+        } catch {
+          element = null;
+        }
+        if (element && command.reveal) {
+          const rect = element.getBoundingClientRect();
+          if (rect.width > 0 && rect.height > 0 && (rect.top < 0 || rect.bottom > window.innerHeight)) reveal(element);
+        }
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            const rect = element?.isConnected ? element.getBoundingClientRect() : null;
+            const shown: ElementRect | null =
+              rect && rect.width > 0 && rect.height > 0
+                ? { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
+                : null;
+            send({ type: 'elementRect', rect: shown });
+          }),
+        );
+        break;
+      }
     }
   });
 }

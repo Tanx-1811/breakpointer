@@ -124,6 +124,8 @@ export type PageStats = {
   imagePixels: number;
   /** …and of the area they are shown at, in CSS pixels. */
   shownPixels: number;
+  /** Device pixels per CSS pixel of this screen: images need this density to look sharp. */
+  dpr: number;
   /** Elements in the document. */
   elements: number;
   /** The page's height in CSS pixels. */

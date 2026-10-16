@@ -385,6 +385,7 @@ describe('WorkspaceBar utilities', () => {
         grid: false,
         imageSizes: false,
         tabOrder: false,
+        gridFlex: false,
         liveCss: false,
       },
       hasUrl: true,

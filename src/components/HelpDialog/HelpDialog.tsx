@@ -18,6 +18,8 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['L'], label: 'help.layout' },
   { keys: ['M'], label: 'help.rulers' },
   { keys: ['I'], label: 'help.inspect' },
+  { keys: ['E'], label: 'help.audit' },
+  { keys: ['W'], label: 'help.scan' },
   { keys: ['X'], label: 'help.measure' },
   { keys: ['C'], label: 'help.contrast' },
   { keys: ['O'], label: 'help.outlines' },

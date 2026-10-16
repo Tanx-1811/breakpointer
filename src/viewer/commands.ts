@@ -1,3 +1,4 @@
+import type { AuditTab } from '../components/AuditPanel/AuditPanel';
 import type { PaletteCommand } from '../components/CommandPalette/CommandPalette';
 import {
   VISION_KEYS,
@@ -44,6 +45,10 @@ export type CommandActions = {
   captureWindows?: () => void;
   floating?: () => void;
   fullPage?: (cardId: string) => void;
+  /** Opens (or closes) the audit panel, on a given tab. */
+  audit?: (tab?: AuditTab) => void;
+  /** Opens the width scanner. */
+  scan?: () => void;
   navigate: (url: string) => void;
   addPreset: (preset: ViewportPreset, name: string) => void;
   openAdd: () => void;
@@ -85,9 +90,11 @@ export type CommandContext = {
   outlines: boolean;
   hideScrollbars: boolean;
   /** Image size and tab order labels in the previews. */
-  annotate?: { images: boolean; tabOrder: boolean };
+  annotate?: { images: boolean; tabOrder: boolean; layout?: boolean };
   liveCss: boolean;
   inspecting: boolean;
+  /** The audit panel is open. */
+  auditing?: boolean;
   measuring?: boolean;
   comparing?: boolean;
   simulate?: SimulateState;
@@ -326,6 +333,42 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     checked: ctx.inspecting,
     run: actions.inspect,
   });
+  const { audit, scan } = actions;
+  if (scan)
+    named('scan.title', {
+      id: 'scan',
+      section: section.tools,
+      icon: 'scan',
+      shortcut: 'W',
+      keywords: 'sweep every width breakpoints find where layout breaks overflow range',
+      disabled: !ctx.hasUrl,
+      run: scan,
+    });
+  if (audit) {
+    named('audit.open', {
+      id: 'audit',
+      section: section.tools,
+      icon: 'report',
+      shortcut: 'E',
+      checked: Boolean(ctx.auditing),
+      keywords: 'issues problems checks summary dashboard',
+      run: () => audit(),
+    });
+    named('palette.auditPerformance', {
+      id: 'audit-performance',
+      section: section.tools,
+      icon: 'clock',
+      keywords: 'page weight bytes requests lcp cls web vitals speed images',
+      run: () => audit('performance'),
+    });
+    named('palette.auditType', {
+      id: 'audit-type',
+      section: section.tools,
+      icon: 'text',
+      keywords: 'typography font size line height headings scale',
+      run: () => audit('type'),
+    });
+  }
   const toggle = (id: ToolToggle, key: MessageKey, checked: boolean) =>
     named(key, {
       id: `tool-${id}`,
@@ -343,6 +386,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
   if (ctx.annotate) {
     toggle('imageSizes', 'tools.imageSizes', ctx.annotate.images);
     toggle('tabOrder', 'tools.tabOrder', ctx.annotate.tabOrder);
+    toggle('gridFlex', 'tools.gridFlex', Boolean(ctx.annotate.layout));
   }
   named('workspace.rulers', {
     id: 'rulers',
@@ -589,4 +633,5 @@ const TOOL_ICONS: Record<ToolToggle, PaletteCommand['icon']> = {
   grid: 'columns',
   imageSizes: 'image',
   tabOrder: 'keyboard',
+  gridFlex: 'columns',
 };

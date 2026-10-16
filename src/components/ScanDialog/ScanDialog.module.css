@@ -1,0 +1,385 @@
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.access {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius);
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  font-size: 12.5px;
+}
+
+.access span {
+  flex: 1 1 220px;
+}
+
+/* ---------- Controls ---------- */
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.number {
+  width: 92px;
+  height: 32px;
+  font-family: var(--font-mono);
+}
+
+.number[aria-invalid] {
+  border-color: var(--danger);
+}
+
+.spacer {
+  flex: 1;
+}
+
+.error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+/* ---------- The preview being scanned ---------- */
+
+.preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--canvas);
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1.2px);
+  background-size: 18px 18px;
+}
+
+.frame {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #fff;
+  box-shadow: var(--shadow-card);
+  transition: width 90ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frame {
+    transition: none;
+  }
+}
+
+.widthBadge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: rgb(18 22 32 / 78%);
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.muted {
+  margin: 0;
+  color: var(--text-subtle);
+}
+
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 20px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.progressTrack {
+  position: relative;
+  flex: none;
+  width: 160px;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface-3);
+}
+
+.progressFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width var(--duration) ease;
+}
+
+/* ---------- Chart ---------- */
+
+.chart {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.labels {
+  position: absolute;
+  inset: 0 auto 0 0;
+  pointer-events: none;
+}
+
+.label,
+.labelMuted,
+.labelValue {
+  position: absolute;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  font-size: 12px;
+  line-height: 16px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.label {
+  color: var(--text);
+  font-weight: 600;
+  pointer-events: auto;
+}
+
+.labelMuted {
+  color: var(--text-subtle);
+}
+
+.labelValue {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.svg {
+  display: block;
+  overflow: visible;
+  font-family: var(--font-sans);
+}
+
+.svg[data-interactive] {
+  cursor: crosshair;
+}
+
+.grid {
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+}
+
+.axis {
+  stroke: var(--border-strong);
+  stroke-width: 1;
+}
+
+.tick {
+  fill: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.heightArea {
+  fill: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.heightLine {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.lane {
+  stroke: var(--border-subtle);
+  stroke-width: 1;
+}
+
+.range {
+  fill: var(--danger);
+  stroke: var(--bg);
+  stroke-width: 2;
+  paint-order: stroke;
+}
+
+.range:hover {
+  fill: var(--danger-hover);
+}
+
+.breakpoint {
+  stroke: var(--breakpoint);
+  stroke-width: 1;
+  opacity: 0.85;
+}
+
+.breakpointLabel {
+  fill: var(--breakpoint-text);
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+
+.markerHit {
+  fill: transparent;
+}
+
+.marker {
+  fill: var(--text-muted);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.cursor line {
+  stroke: var(--text);
+  stroke-width: 1;
+  opacity: 0.7;
+}
+
+.cursorPill {
+  fill: var(--text);
+}
+
+.cursorLabel {
+  fill: var(--bg);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- Width slider and readout ---------- */
+
+.slider {
+  display: grid;
+  grid-template-columns: 164px minmax(0, 1fr);
+  align-items: center;
+  gap: 4px 12px;
+}
+
+.sliderLabel {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.slider input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.readout {
+  grid-column: 2;
+  min-height: 18px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+/* ---------- Findings (the chart as text) ---------- */
+
+.findings {
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+}
+
+.ok {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--success);
+  font-weight: 600;
+}
+
+.findingList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.finding {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 4px 12px;
+}
+
+.findingName {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.warn {
+  flex: none;
+  color: var(--warning-text);
+}
+
+.findingRanges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.rangeButton {
+  padding: 1px 8px;
+  border: 1px solid var(--danger-border);
+  border-radius: 999px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.rangeButton:hover {
+  border-color: var(--danger);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 720px) {
+  .finding {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

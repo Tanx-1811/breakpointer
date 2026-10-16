@@ -1,3 +1,5 @@
+import type { CheckKind } from '../agent/protocol';
+
 export type Orientation = 'portrait' | 'landscape';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
@@ -84,8 +86,10 @@ export type BreakpointerSettings = {
   showRulers: boolean;
   grid: GridSettings;
   sync: SyncSettings;
-  /** Run responsive checks (overflow, viewport meta, small text, small targets) where possible. */
+  /** Run responsive checks (overflow, viewport meta, small text, small targets…) where possible. */
   checks: boolean;
+  /** Checks the user switched off one by one. */
+  disabledChecks: CheckKind[];
   /** Show the tip with fixes when the current site may block previews. */
   embedHints: boolean;
   viewports: ViewportConfig[];

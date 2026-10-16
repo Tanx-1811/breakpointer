@@ -131,6 +131,70 @@ const COVER_PAGE = page(
   });</script>`,
 );
 
+/** A wide picture (an SVG, so it is never "upscaled") for the hero of the audit page. */
+const WIDE_PICTURE = `data:image/svg+xml,${encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" width="2000" height="1000"><rect width="2000" height="1000" fill="#0b3d2e"/></svg>',
+)}`;
+
+/**
+ * The new checks: light grey text (low contrast), a label cut off by its box, a
+ * banner inserted after load that pushes the page down (a layout shift) — and
+ * what must not be flagged: white text over a picture, an ellipsis, a carousel
+ * slide outside its box. Plus headings and a grid and a flex row for the audit.
+ */
+const AUDIT_PAGE = page(
+  'Audit page',
+  `<style>
+  body { background: #fff; color: #111; }
+  h2 { font-size: 22px; } @media (min-width: 768px) { h2 { font-size: 30px; } }
+  .faint { color: #b8b8b8; }
+  .label-box { width: 120px; overflow: hidden; white-space: nowrap; border: 1px solid #ccc; }
+  .ellipsis { width: 120px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .hero { position: relative; height: 140px; }
+  .hero img { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .hero h3 { position: relative; margin: 0; padding: 16px; color: #fff; }
+  .carousel { width: 200px; overflow: hidden; white-space: nowrap; }
+  .slide { display: inline-block; width: 200px; }
+  #cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  #row { display: flex; gap: 8px; }
+  </style>
+  <script>addEventListener('DOMContentLoaded', () => {
+    const add = (tag, props) => document.body.append(Object.assign(document.createElement(tag), props));
+    add('h2', { id: 'subtitle', textContent: 'A responsive heading' });
+    add('p', { id: 'faint', className: 'faint', textContent: 'Light grey text that is hard to read' });
+    add('div', { id: 'label', className: 'label-box', textContent: 'A label that is much too long for its box' });
+    add('div', { id: 'ellipsis', className: 'ellipsis', textContent: 'An ellipsis that shortens on purpose' });
+    const hero = Object.assign(document.createElement('div'), { className: 'hero' });
+    hero.append(Object.assign(document.createElement('img'), { alt: '', src: ${JSON.stringify(WIDE_PICTURE)} }));
+    hero.append(Object.assign(document.createElement('h3'), { textContent: 'White text over a picture' }));
+    document.body.append(hero);
+    const carousel = Object.assign(document.createElement('div'), { className: 'carousel' });
+    carousel.append(Object.assign(document.createElement('div'), { className: 'slide', textContent: 'First slide' }));
+    carousel.append(Object.assign(document.createElement('div'), { className: 'slide', textContent: 'Second slide' }));
+    document.body.append(carousel);
+    const cards = Object.assign(document.createElement('div'), { id: 'cards' });
+    for (const name of ['One', 'Two', 'Three']) cards.append(Object.assign(document.createElement('p'), { textContent: name }));
+    document.body.append(cards);
+    const row = Object.assign(document.createElement('div'), { id: 'row' });
+    for (const name of ['A', 'B']) row.append(Object.assign(document.createElement('span'), { textContent: name }));
+    document.body.append(row);
+  });
+  addEventListener('load', () => setTimeout(() => {
+    document.body.prepend(Object.assign(document.createElement('div'), {
+      id: 'late', textContent: 'Late banner', style: 'height: 300px; background: #e0e7ff',
+    }));
+  }, 400));</script>`,
+);
+
+/** For the width scanner: wider than the screen below 400px, tiny text below 768px. */
+const SCAN_PAGE = `<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Scan page</title>
+<style>body { margin: 0; font: 16px system-ui, sans-serif; } .wide { width: 400px; height: 40px; background: #c7d2fe; }
+p { margin: 8px; } @media (max-width: 767px) { .note { font-size: 10px; } } section { height: 600px; }</style></head>
+<body><div class="wide">400px wide</div><p class="note">A note in small print on narrow screens</p><section>Content</section></body>
+</html>`;
+
 type Route = { status?: number; headers?: Record<string, string | string[]>; body: string };
 
 /** Answers like Facebook: a request that says it is for a frame (`Sec-Fetch-Dest: iframe`) gets an error page. */
@@ -179,6 +243,8 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/inspect': { body: INSPECT_PAGE },
   '/utilities': { body: UTILITIES_PAGE },
   '/cover': { body: COVER_PAGE },
+  '/audit': { body: AUDIT_PAGE },
+  '/scan': { body: SCAN_PAGE },
   // A site that sends narrow screens to another page, which sends wide screens back.
   '/bounce': {
     body: page(

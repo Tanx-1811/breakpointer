@@ -1,3 +1,4 @@
+import { CHECK_KINDS, type CheckKind } from '../agent/protocol';
 import { DEFAULT_PRESET_IDS, findPreset } from '../data/presets';
 import { en, type MessageKey } from '../i18n/en';
 import { normalizeGroupName } from '../state/groups';
@@ -86,6 +87,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     grid: { ...DEFAULT_GRID },
     sync: { scroll: true, navigation: true },
     checks: true,
+    disabledChecks: [],
     embedHints: true,
     viewports: defaultViewports(name),
     groups: [],
@@ -233,6 +235,12 @@ function parseSnippets(raw: unknown): CssSnippet[] {
   return snippets;
 }
 
+/** Known check ids only, each once, in the order the checks are shown. */
+function parseDisabledChecks(raw: unknown): CheckKind[] {
+  if (!Array.isArray(raw)) return [];
+  return CHECK_KINDS.filter((kind) => raw.includes(kind));
+}
+
 function parseGrid(raw: unknown): GridSettings {
   if (!isRecord(raw)) return { ...DEFAULT_GRID };
   const columns = GRID_COLUMN_OPTIONS.includes(raw.columns as GridColumns)
@@ -281,6 +289,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
       navigation: isRecord(raw.sync) ? raw.sync.navigation !== false : true,
     },
     checks: raw.checks !== false,
+    disabledChecks: parseDisabledChecks(raw.disabledChecks),
     embedHints: raw.embedHints !== false,
     viewports,
     groups: parseGroups(raw.groups),

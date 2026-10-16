@@ -1,4 +1,4 @@
-import type { CheckIssue, CheckKind } from '../agent/protocol';
+import type { CheckIssue, CheckKind, CheckReport } from '../agent/protocol';
 import type { MessageKey } from '../i18n/en';
 import type { Translate } from '../i18n/translate';
 
@@ -13,6 +13,48 @@ export const CHECK_KIND_KEYS: Record<CheckKind, MessageKey> = {
   'low-contrast': 'checks.kind.lowContrast',
   'layout-shift': 'checks.kind.layoutShift',
 };
+
+/** What each check looks for, in a sentence (shown once above the previews that have the issue). */
+export const CHECK_HINT_KEYS: Record<CheckKind, MessageKey> = {
+  overflow: 'checks.hint.overflow',
+  'viewport-meta': 'checks.hint.viewportMeta',
+  'small-text': 'checks.hint.smallText',
+  'tap-targets': 'checks.hint.tapTargets',
+  'upscaled-images': 'checks.hint.upscaledImages',
+  'fixed-cover': 'checks.hint.fixedCover',
+  'clipped-text': 'checks.hint.clippedText',
+  'low-contrast': 'checks.hint.lowContrast',
+  'layout-shift': 'checks.hint.layoutShift',
+};
+
+/**
+ * The issue in a few words, where the check is named already: "184px too
+ * wide", "3 elements · 2.85:1", "CLS 0.24"…
+ */
+export function issueValue(issue: CheckIssue, t: Translate): string {
+  const count = issue.count === 1 ? t('checks.detail.countOne') : t('checks.detail.count', { count: issue.count });
+  switch (issue.kind) {
+    case 'overflow':
+      return issue.detail ? t('checks.value.overflow', { amount: issue.detail }) : count;
+    case 'viewport-meta':
+      return issue.detail ? `“${issue.detail}”` : t('checks.value.metaMissing');
+    case 'fixed-cover':
+      return issue.detail ? t('checks.value.cover', { amount: issue.detail }) : count;
+    case 'layout-shift':
+      return `CLS ${issue.detail ?? ''}`.trim();
+    case 'low-contrast':
+      return issue.detail ? `${count} · ${issue.detail}:1` : count;
+    default:
+      return count;
+  }
+}
+
+/** A report without the checks switched off (an agent may report before it heard of the change). */
+export function withoutKinds(report: CheckReport | null | undefined, disabled: readonly CheckKind[]): CheckReport | null {
+  if (!report) return null;
+  if (!disabled.length || !report.issues.some((issue) => disabled.includes(issue.kind))) return report;
+  return { ...report, issues: report.issues.filter((issue) => !disabled.includes(issue.kind)) };
+}
 
 /** Page-level issues have nothing to point at in the page. */
 export const canHighlight = (kind: CheckKind) => kind !== 'viewport-meta';

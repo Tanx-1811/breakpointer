@@ -160,6 +160,11 @@ export function mentionsMediaType(text: string): boolean {
 export const TEXT_SPACING_CSS =
   '*{line-height:1.5 !important;letter-spacing:.12em !important;word-spacing:.16em !important}p{margin-bottom:2em !important}';
 
+/** A vector image (an SVG file or data URL): it is sharp at any size, so its pixel size means nothing. */
+export function isVectorImage(src: string): boolean {
+  return /\.svgz?(?:[?#]|$)/i.test(src) || /^data:image\/svg\+xml[;,]/i.test(src);
+}
+
 /**
  * How an image's file size compares to the size it is shown at: below 1 the
  * picture is stretched (blurry), above 3 it is much larger than needed.
@@ -288,6 +293,101 @@ export function describeElement(element: Element): string {
     node = node.parentElement;
   }
   return parts.join(' > ') || element.localName;
+}
+
+/** A layout shift as reported by the Layout Instability API (only what the score needs). */
+export type ShiftEntry = { startTime: number; value: number };
+
+/**
+ * Cumulative layout shift as Core Web Vitals define it: shifts are grouped in
+ * session windows (each shift less than 1 s after the previous one, a window at
+ * most 5 s long) and the score is the largest window's total. Returns that
+ * total and the indexes of the shifts in that window. Entries are in time order.
+ */
+export function cumulativeLayoutShift(entries: ShiftEntry[]): { value: number; window: number[] } {
+  let best = { value: 0, window: [] as number[] };
+  let current = { value: 0, window: [] as number[] };
+  entries.forEach((entry, index) => {
+    const first = entries[current.window[0] ?? -1];
+    const last = entries[current.window[current.window.length - 1] ?? -1];
+    if (first && last && entry.startTime - last.startTime < 1000 && entry.startTime - first.startTime < 5000) {
+      current = { value: current.value + entry.value, window: [...current.window, index] };
+    } else {
+      current = { value: entry.value, window: [index] };
+    }
+    if (current.value > best.value) best = current;
+  });
+  return best;
+}
+
+/** "0.24", "0.105": a layout shift score with up to three decimals. */
+export function formatShift(value: number): string {
+  return String(Math.round(value * 1000) / 1000);
+}
+
+/** WCAG's large text: at least 24px (18pt), or 18.66px (14pt) when bold. */
+export function isLargeText(fontSizePx: number, fontWeight: number): boolean {
+  return fontSizePx >= 24 || (fontSizePx >= 18.66 && fontWeight >= 700);
+}
+
+/**
+ * The track sizes of a grid container's computed `grid-template-columns` or
+ * `-rows` ("200px [main] 186.5px 200px" → [200, 186.5, 200]); line names are
+ * skipped. Null for anything else (`none`, `subgrid`, unresolved values).
+ */
+export function gridTracks(template: string): number[] | null {
+  const tracks: number[] = [];
+  const tokens = template.replace(/\[[^\]]*\]/g, ' ').trim().split(/\s+/).filter(Boolean);
+  for (const token of tokens) {
+    const match = /^(-?\d*\.?\d+(?:e[+-]?\d+)?)px$/i.exec(token);
+    if (!match) return null;
+    tracks.push(Number(match[1]));
+  }
+  return tracks.length ? tracks : null;
+}
+
+/**
+ * Where a grid's tracks start and how much extra space goes between them, for
+ * `justify-content` (columns) or `align-content` (rows) with `free` pixels left
+ * over: [offset of the first track from the start edge, extra gap]. `rtl` turns
+ * the physical `left` and `right` into end and start.
+ */
+export function distributeTracks(alignment: string, free: number, count: number, rtl = false): [number, number] {
+  if (free <= 0 || count === 0) return [0, 0];
+  const value = alignment.replace(/\b(safe|unsafe)\s+/g, '').trim();
+  if (value === 'center') return [free / 2, 0];
+  if (value === 'end' || value === 'flex-end' || (value === 'right' && !rtl) || (value === 'left' && rtl))
+    return [free, 0];
+  if (value === 'space-between') return count > 1 ? [0, free / (count - 1)] : [0, 0];
+  if (value === 'space-around') return [free / count / 2, free / count];
+  if (value === 'space-evenly') return [free / (count + 1), free / (count + 1)];
+  // normal, start, stretch (tracks then fill the space already), left in left-to-right…
+  return [0, 0];
+}
+
+/** The first family of a font stack: `"Inter Var", system-ui` → `Inter Var`. */
+export function firstFontFamily(stack: string): string {
+  const first = stack.split(',')[0]?.trim() ?? '';
+  return first.replace(/^(['"])(.*)\1$/, '$2');
+}
+
+type Edges = { left: number; top: number; right: number; bottom: number };
+
+/**
+ * How many pixels of a line of text a box cuts off, sideways (`x`) and
+ * vertically (`y`) — only when the line is partly visible. Null when it is
+ * fully inside the box, or fully outside it (hidden on purpose, such as the
+ * other slides of a carousel).
+ */
+export function cutOff(line: Edges, box: Edges): { x: number; y: number } | null {
+  const width = line.right - line.left;
+  const height = line.bottom - line.top;
+  if (width <= 0 || height <= 0) return null;
+  const x = Math.max(0, line.right - box.right) + Math.max(0, box.left - line.left);
+  const y = Math.max(0, line.bottom - box.bottom) + Math.max(0, box.top - line.top);
+  if (x <= 0 && y <= 0) return null;
+  if (x >= width || y >= height) return null;
+  return { x, y };
 }
 
 /**

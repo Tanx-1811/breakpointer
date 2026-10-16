@@ -15,6 +15,8 @@ export type ShortcutAction =
   | 'help'
   | 'palette'
   | 'inspect'
+  | 'audit'
+  | 'scan'
   | 'measure'
   | 'contrast'
   | 'outlines'
@@ -42,6 +44,8 @@ const LETTER_KEYS: Record<string, ShortcutAction> = {
   KeyT: 'theme',
   KeyK: 'palette',
   KeyI: 'inspect',
+  KeyE: 'audit',
+  KeyW: 'scan',
   KeyX: 'measure',
   KeyC: 'contrast',
   KeyO: 'outlines',

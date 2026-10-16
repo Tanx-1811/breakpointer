@@ -1,6 +1,8 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { CHECK_KINDS, type CheckKind } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
+import { CHECK_KIND_KEYS } from '../../state/checks';
 import type {
   Breakpoint,
   BreakpointSetId,
@@ -39,6 +41,8 @@ type Props = {
   onCustomBreakpoints: (breakpoints: Breakpoint[]) => void;
   onSync: (sync: Partial<SyncSettings>) => void;
   onChecks: (on: boolean) => void;
+  /** Switches one kind of check on or off (the list shows when given). */
+  onCheckKind?: (kind: CheckKind, enabled: boolean) => void;
   onGrid: (grid: Partial<GridSettings>) => void;
   onOpenSaved: (url: string) => void;
   onRemoveSaved: (url: string) => void;
@@ -293,6 +297,21 @@ function SettingsBody(props: Props) {
             label={t('tools.checks')}
             description={t('settings.checksHelp')}
           />
+          {settings.checks && props.onCheckKind && (
+            <fieldset className={styles.checkKinds} data-testid="check-kinds">
+              <legend className={styles.checkKindsLegend}>{t('settings.checkKinds')}</legend>
+              {CHECK_KINDS.map((kind) => (
+                <label key={kind} className={styles.checkKind}>
+                  <input
+                    type="checkbox"
+                    checked={!settings.disabledChecks.includes(kind)}
+                    onChange={(event) => props.onCheckKind?.(kind, event.target.checked)}
+                  />
+                  <span>{t(CHECK_KIND_KEYS[kind])}</span>
+                </label>
+              ))}
+            </fieldset>
+          )}
           <Switch
             checked={settings.grid.show}
             onChange={(show) => props.onGrid({ show })}

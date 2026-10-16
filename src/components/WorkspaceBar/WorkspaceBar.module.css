@@ -249,6 +249,21 @@
   background: var(--accent-soft);
 }
 
+/* Kinds of issue found, on the Audit toggle. */
+.toggleCount {
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  box-shadow: inset 0 0 0 1px var(--warning-border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+}
+
 .menuButton {
   display: inline-flex;
   flex: none;
@@ -285,7 +300,8 @@
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
-@media (max-width: 1320px) {
+/* Room for the viewport chips: the toggles keep their icon (and count), the label goes to the tooltip. */
+@media (max-width: 1500px) {
   .toggleLabel {
     display: none;
   }

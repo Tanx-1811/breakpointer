@@ -13,7 +13,15 @@ import { Select } from '../Select/Select';
 import styles from './WorkspaceBar.module.css';
 
 export type ToolToggle =
-  'syncScroll' | 'syncNavigation' | 'checks' | 'outlines' | 'scrollbars' | 'grid' | 'imageSizes' | 'tabOrder';
+  | 'syncScroll'
+  | 'syncNavigation'
+  | 'checks'
+  | 'outlines'
+  | 'scrollbars'
+  | 'grid'
+  | 'imageSizes'
+  | 'tabOrder'
+  | 'gridFlex';
 export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 /** Simulations that run inside the previews (sites the user allowed). */
@@ -43,6 +51,12 @@ type Props = {
   showGrid: boolean;
   /** The inspector is open. */
   inspecting: boolean;
+  /** The audit panel is open, and how many kinds of issue the previews have. */
+  auditing?: boolean;
+  issueKinds?: number;
+  onAudit?: () => void;
+  /** Opens the width scanner. */
+  onScan?: () => void;
   measuring?: boolean;
   /** Comparing two addresses. */
   comparing?: boolean;
@@ -93,6 +107,7 @@ function Toggle({
   shortcut,
   onClick,
   testId,
+  count,
 }: {
   pressed: boolean;
   label: string;
@@ -101,6 +116,8 @@ function Toggle({
   shortcut?: string;
   onClick: () => void;
   testId?: string;
+  /** A small count after the label (e.g. kinds of issue found). */
+  count?: number;
 }) {
   return (
     <button
@@ -115,6 +132,11 @@ function Toggle({
     >
       <Icon name={icon} size={15} />
       <span className={styles.toggleLabel}>{label}</span>
+      {count ? (
+        <span className={styles.toggleCount} data-testid={testId ? `${testId}-count` : undefined}>
+          {count}
+        </span>
+      ) : null}
     </button>
   );
 }
@@ -242,6 +264,16 @@ export function WorkspaceBar(props: Props) {
   });
   // Measuring is a toggle in the bar (X), so it isn't repeated here.
   const utilityEntries: MenuEntry[] = [];
+  if (props.onScan)
+    utilityEntries.push({
+      id: 'scan',
+      label: t('tools.scan'),
+      description: t('tools.scanHint'),
+      icon: 'scan',
+      shortcut: 'W',
+      disabled: !props.hasUrl,
+      onSelect: props.onScan,
+    });
   if (props.onContrast)
     utilityEntries.push({
       id: 'contrast',
@@ -320,6 +352,7 @@ export function WorkspaceBar(props: Props) {
     toolToggle('grid', 'tools.grid'),
     toolToggle('imageSizes', 'tools.imageSizes', 'tools.imageSizesHint'),
     toolToggle('tabOrder', 'tools.tabOrder', 'tools.tabOrderHint'),
+    toolToggle('gridFlex', 'tools.gridFlex', 'tools.gridFlexHint'),
     {
       id: 'liveCss',
       label: t('tools.liveCss'),
@@ -537,6 +570,18 @@ export function WorkspaceBar(props: Props) {
             onClick={props.onInspect}
             testId="inspect-toggle"
           />
+          {props.onAudit && (
+            <Toggle
+              pressed={Boolean(props.auditing)}
+              label={t('workspace.audit')}
+              icon="report"
+              tooltip={t('workspace.auditHint')}
+              shortcut="E"
+              onClick={props.onAudit}
+              testId="audit-toggle"
+              count={props.issueKinds}
+            />
+          )}
           {props.onMeasure && (
             <Toggle
               pressed={Boolean(props.measuring)}

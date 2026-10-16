@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { CheckKind, ElementInfo, MediaReport } from '../agent/protocol';
+import { CHECK_KINDS, type CheckKind, type ElementInfo, type MediaReport } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
+import { AuditPanel, type AuditRow, type AuditTab } from '../components/AuditPanel/AuditPanel';
 import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
 import { Banner } from '../components/Banner/Banner';
 import { CommandPalette, type PaletteCommand } from '../components/CommandPalette/CommandPalette';
 import { CompareDialog } from '../components/CompareDialog/CompareDialog';
+import { ScanDialog, type ScanResult } from '../components/ScanDialog/ScanDialog';
 import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
 import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
 import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/FloatingPreview/FloatingPreview';
@@ -81,6 +83,9 @@ import {
 } from '../state/compare';
 import { fitZoomForAll } from '../state/fit';
 import { slicePositions, stitchedHeight } from '../state/full-page';
+import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
+import { withoutKinds } from '../state/checks';
+import { SCAN_CARD_ID, scanMarkdown, type ScanSample } from '../state/scan';
 import { comparisonMarkdown } from '../state/inspector';
 import { isOneTimeUrl, pageOf } from '../state/follow';
 import { buildReportHtml, type ReportCard } from '../state/report';
@@ -123,6 +128,7 @@ import {
   type UrlParseError,
 } from '../utils/url';
 import { buildCommands } from './commands';
+import { useAuditData } from './useAuditData';
 import { TopBar, type CaptureKind } from './TopBar';
 import { usePan, useWheelZoom } from './workspace-gestures';
 import styles from './Viewer.module.css';
@@ -146,7 +152,8 @@ type DialogName =
   | 'css'
   | 'palette'
   | 'contrast'
-  | 'compare';
+  | 'compare'
+  | 'scan';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -271,6 +278,10 @@ function Workspace({
   // Focus mode: one viewport on its own, at its own zoom (nothing is saved).
   const [focus, setFocus] = useState<{ id: string; zoom: number } | null>(null);
   const [inspector, setInspector] = useState<InspectorState>(CLOSED_INSPECTOR);
+  // The last width scan of a page (kept for the session).
+  const [scanResult, setScanResult] = useState<ScanResult | null>(null);
+  // The audit panel (issues, page stats and type of every preview); it shares the side with the inspector.
+  const [audit, setAudit] = useState<{ open: boolean; tab: AuditTab }>({ open: false, tab: 'issues' });
   const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
   // Utilities for this session (not saved).
   const [measuring, setMeasuring] = useState(false);
@@ -280,7 +291,7 @@ function Workspace({
   const [preferences, setPreferences] = useState({ reducedMotion: false, moreContrast: false, print: false });
   const [pauseAnimations, setPauseAnimations] = useState(false);
   // Labels drawn over the previews.
-  const [annotate, setAnnotate] = useState({ images: false, tabOrder: false });
+  const [annotate, setAnnotate] = useState({ images: false, tabOrder: false, layout: false });
   const [contrastColors, setContrastColors] = useState<ContrastColors>({ text: '#1f2430', background: '#ffffff' });
   // Comparing two addresses: every visible viewport also shows a B preview.
   const [compare, setCompare] = useState<CompareTarget | null>(null);
@@ -872,8 +883,10 @@ function Workspace({
       const page = srcOverrides[card.id] ?? pageFor(card.id, src);
       if (page) map[card.id] = shortHash(`${page}#${reloadAll}.${cardReloads[card.id] ?? 0}`);
     }
+    // The width scanner's own preview, while its dialog is open.
+    if (dialog === 'scan' && src) map[SCAN_CARD_ID] = shortHash(`${src}#scan#${reloadAll}`);
     return map;
-  }, [cards, pageFor, srcOverrides, src, reloadAll, cardReloads]);
+  }, [cards, pageFor, srcOverrides, src, reloadAll, cardReloads, dialog]);
 
   // The page the previews follow, updated at once: several previews can report
   // the same navigation (e.g. a redirect) before the next render.
@@ -931,6 +944,8 @@ function Workspace({
   const startPicking = () => {
     // Measuring and picking both take clicks in the previews: one at a time.
     setMeasuring(false);
+    // The inspector and the audit share the side of the workspace.
+    setAudit((state) => (state.open ? { ...state, open: false } : state));
     setInspector((state) => ({ ...state, open: true, picking: true }));
     agents.broadcast({ type: 'inspect', on: true });
     hintAccess(t('tools.inspect'));
@@ -940,6 +955,27 @@ function Workspace({
   const toggleInspector = () => {
     if (inspector.open) closeInspector();
     else startPicking();
+  };
+
+  /* ---------- Audit panel ---------- */
+
+  const closeAudit = () => {
+    // Keyboard focus inside the panel would be lost with it: give it to the toolbar's Audit button.
+    const inPanel = document.activeElement?.closest('[data-testid="audit"]');
+    setAudit((state) => ({ ...state, open: false }));
+    if (inPanel)
+      requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-testid="audit-toggle"]')?.focus());
+  };
+
+  /** The toolbar toggle and E: the audit panel, on the tab asked for (or the one shown last). */
+  const toggleAudit = (tab?: AuditTab) => {
+    if (audit.open && (!tab || tab === audit.tab)) {
+      closeAudit();
+      return;
+    }
+    if (inspector.open) closeInspector();
+    setAudit((state) => ({ open: true, tab: tab ?? state.tab }));
+    hintAccess(t('audit.title'));
   };
 
   const clearSelection = () => {
@@ -953,11 +989,12 @@ function Workspace({
     else if (focused) exitFocus();
     else if (inspector.open) closeInspector();
     else if (vision !== 'none') setVision('none');
+    else if (audit.open) closeAudit();
   };
 
   const agents = useFrameAgents(tabId, generations, {
     onHello: (cardId) => {
-      agents.send(cardId, { type: 'checks', enabled: settings.checks });
+      agents.send(cardId, { type: 'checks', enabled: settings.checks, skip: settings.disabledChecks });
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
       if (hideScrollbars) agents.send(cardId, { type: 'scrollbars', hidden: true });
       if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
@@ -966,7 +1003,8 @@ function Workspace({
       if (stress.pseudo || stress.rtl || stress.spacing) agents.send(cardId, { type: 'stress', ...stress });
       if (preferences.reducedMotion || preferences.moreContrast || preferences.print)
         agents.send(cardId, { type: 'preferences', ...preferences });
-      if (annotate.images || annotate.tabOrder) agents.send(cardId, { type: 'annotate', ...annotate });
+      if (annotate.images || annotate.tabOrder || annotate.layout)
+        agents.send(cardId, { type: 'annotate', ...annotate });
       if (pauseAnimations) agents.send(cardId, { type: 'animations', paused: true });
       if (overlays[cardId]) agents.send(cardId, { type: 'trackScroll', on: true });
       if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
@@ -974,6 +1012,8 @@ function Workspace({
       setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
     },
     onNavigate: (cardId, href, { user, newDocument }) => {
+      // The width scanner's preview is the scanner's own: the workspace doesn't follow it.
+      if (cardId === SCAN_CARD_ID) return;
       // The page tidying its own address (e.g. dropping tracking parameters) isn't a navigation.
       if (!user && !newDocument) return;
       const current = followedUrl.current;
@@ -987,6 +1027,7 @@ function Workspace({
       setStrays((map) => (Boolean(map[cardId]) === stray ? map : { ...map, [cardId]: stray }));
     },
     onScroll: (cardId, ratio, anchor, y, synced) => {
+      if (cardId === SCAN_CARD_ID) return;
       // A design overlay moves with its page.
       if (overlays[cardId]) setOverlayScroll((map) => (map[cardId] === y ? map : { ...map, [cardId]: y }));
       // Scrolls the workspace caused itself are reported only for overlays.
@@ -1029,8 +1070,31 @@ function Workspace({
   });
   const { broadcast, send } = agents;
 
+  // The page stats and type scale shown in the audit panel, measured in every preview.
+  const connectedKey = cards
+    .map((card) => (agents.frameOf(card.id) ? `${card.id}:${generations[card.id]}` : ''))
+    .join(' ');
+  const auditData = useAuditData({
+    open: audit.open,
+    tab: audit.tab,
+    cardIds: cards.map((card) => card.id),
+    generations,
+    connectedKey,
+    ask: agents.ask,
+  });
+
   // Keep every connected frame in step with the tools (new frames get them on hello).
-  useEffect(() => broadcast({ type: 'checks', enabled: settings.checks }), [broadcast, settings.checks]);
+  // The checks switched off in Settings, as a stable key (the list is a new array after every change).
+  const skippedChecks = settings.disabledChecks.join(' ');
+  useEffect(
+    () =>
+      broadcast({
+        type: 'checks',
+        enabled: settings.checks,
+        skip: skippedChecks ? (skippedChecks.split(' ') as CheckKind[]) : [],
+      }),
+    [broadcast, settings.checks, skippedChecks],
+  );
   useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
   useEffect(() => broadcast({ type: 'scrollbars', hidden: hideScrollbars }), [broadcast, hideScrollbars]);
   useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
@@ -1073,6 +1137,10 @@ function Workspace({
     breakpointSet(settings.breakpoints, settings.customBreakpoints, siteBreakpoints ?? [])?.breakpoints.map(
       (breakpoint) => breakpoint.min,
     ) ?? [];
+
+  /** A card's check results, without the checks switched off; null when checks are off or unknown. */
+  const checksOf = (cardId: string) =>
+    settings.checks ? withoutKinds(agents.frameOf(cardId)?.report, settings.disabledChecks) : null;
 
   const reloadAllPreviews = () => {
     setSrcOverrides({});
@@ -1135,11 +1203,15 @@ function Workspace({
         dispatch({ type: 'setGrid', grid: { show: !settings.grid.show } });
         break;
       case 'imageSizes':
-      case 'tabOrder': {
-        const key = tool === 'imageSizes' ? 'images' : 'tabOrder';
+      case 'tabOrder':
+      case 'gridFlex': {
+        const key = tool === 'imageSizes' ? 'images' : tool === 'tabOrder' ? 'tabOrder' : 'layout';
         const on = !annotate[key];
         setAnnotate({ ...annotate, [key]: on });
-        if (on) hintAccess(t(tool === 'imageSizes' ? 'tools.imageSizes' : 'tools.tabOrder'));
+        if (on)
+          hintAccess(
+            t(tool === 'imageSizes' ? 'tools.imageSizes' : tool === 'tabOrder' ? 'tools.tabOrder' : 'tools.gridFlex'),
+          );
         break;
       }
     }
@@ -1240,6 +1312,36 @@ function Workspace({
       ),
     );
   };
+
+  /* ---------- Width scanner ---------- */
+
+  const openScan = () => {
+    if (!currentUrl) {
+      toast({ message: t('capture.notReady'), tone: 'info' });
+      return;
+    }
+    setDialog('scan');
+    hintAccess(t('scan.title'));
+  };
+
+  /** Checks the page in the scanner's preview, once it is `width` wide (the checks switched off left out). */
+  const probeScan = async (width: number): Promise<ScanSample> => {
+    const reply = await agents.ask(SCAN_CARD_ID, { type: 'scanProbe', width }, 'scanned', 6000);
+    return {
+      width: reply.width,
+      height: reply.height,
+      issues: withoutKinds(reply.report, settings.disabledChecks)?.issues ?? [],
+    };
+  };
+
+  const copyScan = (result: ScanResult) =>
+    void copyText(scanMarkdown(result.page, result.options, result.samples, t)).then((copied) =>
+      toast(
+        copied
+          ? { message: t('audit.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
 
   /** Measuring and picking both take clicks in the previews: one at a time. */
   const toggleMeasure = () => {
@@ -1637,7 +1739,7 @@ function Workspace({
           zoom: vp.zoom,
           breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
           image: shot ? await blobToDataUrl(shot.blob) : null,
-          checks: settings.checks ? (agents.frameOf(card.id)?.report ?? null) : null,
+          checks: checksOf(card.id),
         });
       }
       const title = visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
@@ -1682,6 +1784,8 @@ function Workspace({
     help: () => setDialog('help'),
     palette: () => (dialog === 'palette' ? setDialog(null) : openPalette()),
     inspect: toggleInspector,
+    audit: () => toggleAudit(),
+    scan: openScan,
     measure: toggleMeasure,
     contrast: () => setDialog('contrast'),
     outlines: () => toggleTool('outlines'),
@@ -1713,6 +1817,7 @@ function Workspace({
         annotate,
         liveCss: Boolean(liveCss),
         inspecting: inspector.open,
+        auditing: audit.open,
         measuring,
         comparing: compare !== null,
         simulate: simulateState,
@@ -1741,6 +1846,8 @@ function Workspace({
           setBreakpoints,
           liveCss: () => setDialog('css'),
           inspect: toggleInspector,
+          audit: toggleAudit,
+          scan: openScan,
           capture: onCapture,
           report: exportReport,
           setTheme: (theme) => dispatch({ type: 'setTheme', theme }),
@@ -1852,6 +1959,51 @@ function Workspace({
     );
   };
 
+  // Every preview's checks, page stats and type, for the audit panel.
+  const auditRows: AuditRow[] = cards.map((card) => ({
+    id: card.id,
+    name: cardTitle(card),
+    width: card.viewport.width,
+    height: card.viewport.height,
+    report: checksOf(card.id),
+    stats: auditData.statsOf(card.id),
+    type: auditData.typeOf(card.id),
+  }));
+  // Kinds of issue found in any preview (shown on the toolbar's Audit button).
+  const issueKinds = groupIssues(auditRows).length;
+
+  /** What the audit's tab shows, as a Markdown table for a ticket or a pull request. */
+  const copyAudit = () => {
+    const page = currentUrl?.href ?? '';
+    const markdown =
+      audit.tab === 'issues'
+        ? issuesMarkdown(
+            page,
+            auditRows,
+            CHECK_KINDS.filter((kind) => !settings.disabledChecks.includes(kind)),
+            t,
+          )
+        : audit.tab === 'performance'
+          ? statsMarkdown(
+              page,
+              auditRows.map((row) => ({ ...row, stats: row.stats ?? null })),
+              t,
+              language,
+            )
+          : typeMarkdown(
+              page,
+              auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
+              t,
+            );
+    void copyText(markdown).then((copied) =>
+      toast(
+        copied
+          ? { message: t('audit.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+  };
+
   const revealCard = (id: string) => {
     if (focused && focused.id !== viewportIdOf(id)) setFocus(null);
     requestAnimationFrame(() =>
@@ -1887,7 +2039,7 @@ function Workspace({
             siteBreakpoints={siteBreakpoints ?? undefined}
             snapWidths={snapWidths}
             grid={settings.grid}
-            checks={settings.checks ? (agents.frameOf(card.id)?.report ?? null) : null}
+            checks={checksOf(card.id)}
             httpStatus={agents.frameOf(card.id)?.status}
             onFullPage={() => void captureFullPage(card.id)}
             highlighted={highlights[card.id] ?? null}
@@ -2044,6 +2196,10 @@ function Workspace({
         sync={settings.sync.scroll || settings.sync.navigation}
         showGrid={settings.grid.show}
         inspecting={inspector.open}
+        auditing={audit.open}
+        issueKinds={issueKinds}
+        onAudit={() => toggleAudit()}
+        onScan={openScan}
         measuring={measuring}
         comparing={compare !== null}
         simulate={simulateState}
@@ -2066,6 +2222,7 @@ function Workspace({
           grid: settings.grid.show,
           imageSizes: annotate.images,
           tabOrder: annotate.tabOrder,
+          gridFlex: annotate.layout,
           liveCss: Boolean(liveCss),
         }}
         hasUrl={Boolean(currentUrl)}
@@ -2269,6 +2426,30 @@ function Workspace({
             onAllowSite={() => void allowSite()}
           />
         )}
+        {audit.open && (
+          <AuditPanel
+            tab={audit.tab}
+            onTab={(tab) => setAudit((state) => ({ ...state, tab }))}
+            rows={auditRows}
+            checksOn={settings.checks}
+            highlights={highlights}
+            needsAccess={Boolean(currentUrl && siteAccess.site === false)}
+            host={host}
+            busy={requesting}
+            measuring={auditData.measuring}
+            locale={language}
+            onHighlight={(cardId, kind) => {
+              highlight(cardId, kind);
+              if (kind) revealCard(cardId);
+            }}
+            onReveal={revealCard}
+            onRefresh={auditData.refresh}
+            onCopy={copyAudit}
+            onTurnOnChecks={() => setChecks(true)}
+            onAllowSite={() => void allowSite()}
+            onClose={closeAudit}
+          />
+        )}
       </div>
       {panLayer && (
         <div
@@ -2372,6 +2553,7 @@ function Workspace({
         onCustomBreakpoints={(breakpoints) => dispatch({ type: 'setCustomBreakpoints', breakpoints })}
         onSync={(sync) => dispatch({ type: 'setSync', sync })}
         onChecks={setChecks}
+        onCheckKind={(kind, enabled) => dispatch({ type: 'setCheckKind', kind, enabled })}
         onGrid={(grid) => dispatch({ type: 'setGrid', grid })}
         onOpenSaved={(url) => {
           setDialog(null);
@@ -2422,6 +2604,26 @@ function Workspace({
         open={dialog === 'contrast'}
         colors={contrastColors}
         onChange={setContrastColors}
+        onClose={() => setDialog(null)}
+      />
+      <ScanDialog
+        open={dialog === 'scan'}
+        src={src}
+        frameName={
+          generations[SCAN_CARD_ID] === undefined ? undefined : frameName(SCAN_CARD_ID, generations[SCAN_CARD_ID]!)
+        }
+        connected={Boolean(agents.frameOf(SCAN_CARD_ID))}
+        siteBreakpoints={agents.frameOf(SCAN_CARD_ID)?.media?.breakpoints ?? siteBreakpoints ?? []}
+        viewports={visible.map(({ id, name, width, height }) => ({ id, name, width, height }))}
+        result={scanResult}
+        onResult={setScanResult}
+        probe={probeScan}
+        needsAccess={Boolean(currentUrl && siteAccess.site === false)}
+        host={host}
+        busy={requesting}
+        onAllowSite={() => void allowSite()}
+        onAddViewport={(width, height) => addViewport({ name: `${width}px`, width, height })}
+        onCopy={copyScan}
         onClose={() => setDialog(null)}
       />
       <CompareDialog
