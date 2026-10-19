@@ -141,7 +141,7 @@ test.describe('showcase image', () => {
 });
 
 test.describe('feedback', () => {
-  test('Help links to feedback, a GitHub star when not installed from a store, and copies a link to share', async ({
+  test('Help links to feedback, the store listing and GitHub, and copies the listing to share', async ({
     openViewer,
   }) => {
     const page = await openViewer();
@@ -159,16 +159,20 @@ test.describe('feedback', () => {
       'href',
       'https://github.com/Tanx-1811/breakpointer/issues/new/choose',
     );
+    // An unpacked copy rates and shares the published listing.
+    const listing = 'https://chromewebstore.google.com/detail/breakpointer/naoadcallefanlcneemohjepkficejjh';
+    await expect(support.getByRole('link', { name: 'Rate on the Chrome Web Store' })).toHaveAttribute(
+      'href',
+      `${listing}/reviews`,
+    );
     await expect(support.getByRole('link', { name: 'Star on GitHub' })).toHaveAttribute(
       'href',
       'https://github.com/Tanx-1811/breakpointer',
     );
     await support.getByRole('button', { name: 'Share Breakpointer' }).click();
     await expect(page.getByText('Link to Breakpointer copied. Thanks for sharing!')).toBeVisible();
-    expect(await page.evaluate(() => (window as unknown as { __copies: string[] }).__copies.at(-1))).toBe(
-      'https://github.com/Tanx-1811/breakpointer',
-    );
-    // Development installs never get the rating question.
+    expect(await page.evaluate(() => (window as unknown as { __copies: string[] }).__copies.at(-1))).toBe(listing);
+    // Copies that weren't installed from a store never get the rating question.
     await expect(page.getByTestId('rate-nudge')).toHaveCount(0);
   });
 });

@@ -1,6 +1,8 @@
 <p align="center"><img src="brand/social/readme-banner-1600x500.png" alt="Breakpointer — Find where your layout breaks." width="100%"></p>
 
 <p align="center">
+  <a href="https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=github&amp;utm_medium=readme&amp;utm_campaign=badge"><img src="https://img.shields.io/chrome-web-store/v/naoadcallefanlcneemohjepkficejjh?label=Chrome%20Web%20Store&amp;color=4f46e5" alt="Chrome Web Store version"></a>
+  <a href="https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=github&amp;utm_medium=readme&amp;utm_campaign=badge"><img src="https://img.shields.io/chrome-web-store/users/naoadcallefanlcneemohjepkficejjh?color=4f46e5" alt="Chrome Web Store users"></a>
   <a href="https://github.com/Tanx-1811/breakpointer/actions/workflows/ci.yml"><img src="https://github.com/Tanx-1811/breakpointer/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
 </p>
 
@@ -60,6 +62,8 @@ Breakpointer is a Chrome extension (Manifest V3) for frontend developers, design
 
 ## Install
 
+**[Add Breakpointer to Chrome](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=github&utm_medium=readme&utm_campaign=install)** from the Chrome Web Store — free. (Search for the full name, “Breakpointer — Responsive Viewport Tester”: another extension on the store is also called Breakpointer.)
+
 **From source (developer mode)**
 
 ```sh
@@ -72,8 +76,6 @@ npm run build
 Then open `chrome://extensions`, enable **Developer mode**, click **Load unpacked** and choose the **`dist` folder inside the project** (for example `~/Documents/GitHub/breakpointer/dist`), not the project folder itself — `manifest.json` only exists in `dist` after a build. On macOS, press ⌘⇧G in the folder picker to paste the path. Requires Chrome 116 or later.
 
 After pulling changes, run `npm run build` again and click the reload icon on the Breakpointer card in `chrome://extensions`.
-
-**Chrome Web Store:** coming soon (see the [release plan](docs/PLAN.md#6-release-plan-m3--store)).
 
 ## Usage
 
@@ -190,6 +192,8 @@ No license has been chosen yet; all rights reserved by the author.
 **Breakpointer** là tiện ích Chrome giúp xem trước website ở nhiều kích thước viewport cùng lúc. Mỗi bản xem trước có **viewport dàn trang thật**, nên media query và bố cục responsive hoạt động đúng như trong một cửa sổ cùng kích thước.
 
 **Tính năng chính:** **kiểm tra nhiều trang** (`B`): cả danh sách trang — trang đã lưu, liên kết trong trang hoặc sitemap — ở mọi viewport trong một lần chạy, kèm bảng trang × kích thước và báo cáo HTML · **ảnh trình diễn**: trang ở nhiều kích thước trong khung thiết bị trên nền đẹp, cho portfolio hoặc bài đăng · xem song song tối đa 8 viewport · **quét mọi chiều rộng** (`W`) tìm chính xác đến từng pixel nơi mỗi vấn đề bắt đầu và kết thúc · **bảng rà soát** (`E`): mọi vấn đề, dung lượng, tốc độ, xê dịch bố cục và thang kiểu chữ ở mọi kích thước · **kiểm tra hình ảnh** (`V`): lưu ảnh mốc, so sánh sau, thấy phần nào xê dịch · kiểm tra mới: chữ bị cắt, chữ tương phản thấp, bố cục xê dịch · 28 kích thước có sẵn (tìm kiếm được) và kích thước tùy chỉnh · **kéo cạnh để đổi kích thước**, tự bắt dính vào breakpoint · **bảng lệnh** `Ctrl/⌘ + K` · **soi phần tử** ở mọi kích thước · **breakpoint của chính trang** · **xem sáng/tối cạnh nhau** · cuộn và điều hướng đồng bộ (giữ đúng nội dung đang xem) · **kiểm tra responsive** kèm đánh dấu trên trang (cả ảnh bị phóng mờ và phần tử cố định che màn hình) · **so sánh hai địa chỉ** (A/B, ví dụ staging cạnh bản chính thức) · **mô phỏng** thị lực (mù màu, nhìn mờ), giảm chuyển động, dừng hiệu ứng động, **thử độ bền bố cục** (chữ dài hơn ~40%, phải sang trái) · **cửa sổ thật** đúng kích thước cho trang cần đăng nhập, **xem trước nổi** luôn trên cùng (`P`), **thanh bên** xem nhanh trang đang mở · **chụp toàn trang** · giãn chữ (WCAG), tương phản cao, kiểu in · nhãn **kích thước ảnh** và **thứ tự Tab** · lưới baseline · **đo khoảng cách** (`X`), **kiểm tra độ tương phản màu** với ống hút màu (`C`), **phủ ảnh thiết kế** để so từng pixel · viền bố cục, lớp phủ grid & flex, CSS trực tiếp (lưu được đoạn CSS), lưới cột, thước đo, ẩn thanh cuộn · soi phần tử hiện margin/padding và chụp phần tử ở mọi kích thước · tải lại giữ nguyên chỗ đang xem (cả tự động) · liên kết workspace để chia sẻ · phím 1–8 tập trung một viewport · cho phép trang **đến khi đóng Chrome** · chế độ tập trung, quay lại/tới trang trước/sau, xoay tất cả, sắp theo chiều rộng · chụp ảnh, **ghép mọi viewport thành một ảnh**, chép vào bộ nhớ tạm, **xuất báo cáo HTML** · nhóm viewport, trang đã lưu (★) · menu chuột phải, phím tắt, gõ `bpt` + dấu cách trên thanh địa chỉ · giao diện sáng/tối mới · **tiếng Việt và tiếng Anh** · không thu thập dữ liệu.
+
+**Cài đặt:** [thêm Breakpointer vào Chrome](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=github&utm_medium=readme&utm_campaign=install) từ Chrome Web Store — miễn phí (tìm đúng tên đầy đủ “Breakpointer — Responsive Viewport Tester”, vì trên store có một tiện ích khác cũng tên Breakpointer).
 
 **Cài đặt từ mã nguồn:** chạy `npm ci && npm run build`, mở `chrome://extensions`, bật **Chế độ dành cho nhà phát triển**, chọn **Tải tiện ích đã giải nén** và trỏ tới **thư mục `dist` bên trong dự án** (ví dụ `~/Documents/GitHub/breakpointer/dist`), không phải thư mục dự án — `manifest.json` chỉ có trong `dist` sau khi build. Trên macOS, nhấn ⌘⇧G trong hộp chọn thư mục để dán đường dẫn. Khi cập nhật code, chạy lại `npm run build` rồi bấm nút tải lại trên thẻ Breakpointer trong `chrome://extensions`.
 

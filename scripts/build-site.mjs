@@ -5,11 +5,10 @@
  *   BREAKPOINTER_STORE_URL=https://chromewebstore.google.com/detail/… node scripts/build-site.mjs
  *
  * THE INSTALL BUTTON IS SWITCHED HERE, AND ONLY HERE: `STORE_URL` below.
- * - Empty (the default, while Breakpointer is not on the Chrome Web Store): every install button links to
- *   the install instructions on GitHub, says "Get Breakpointer (free)", and a note under it says the store
- *   listing is coming soon.
- * - Set (to an https:// URL): every install button links to the store, says "Add to Chrome — it's free",
- *   and the note is removed.
+ * - Set (the default: the Chrome Web Store listing, tagged so the store's dashboard counts visits from this
+ *   site): every install button links to the store, says "Add to Chrome — it's free", and has no note.
+ * - Empty (BREAKPOINTER_STORE_URL= ): every install button links to the install instructions on GitHub, says
+ *   "Get Breakpointer (free)", and a note under it says the store listing is coming soon.
  * Set it with the BREAKPOINTER_STORE_URL environment variable, or change the default after `??`.
  *
  * Tokens replaced in the .html, .xml and .txt files of site/ (English, or Vietnamese for files in site/vi/):
@@ -31,7 +30,9 @@ import { existsSync } from 'node:fs';
 import { dirname, extname, join, posix, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const STORE_URL = process.env.BREAKPOINTER_STORE_URL ?? '';
+const STORE_URL =
+  process.env.BREAKPOINTER_STORE_URL ??
+  'https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=breakpointer-site&utm_medium=website&utm_campaign=landing';
 
 const SITE_URL = 'https://tanx-1811.github.io/breakpointer/';
 const GITHUB_INSTALL_URL = 'https://github.com/Tanx-1811/breakpointer#install';

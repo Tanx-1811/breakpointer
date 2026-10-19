@@ -66,7 +66,7 @@ An image you lay over a preview (design overlay) is read from your computer into
 
 ## Feedback, rating and sharing
 
-Help links to Breakpointer's issue forms on GitHub and, when Breakpointer was installed from the Chrome Web Store or Edge Add-ons, to its page there; they open in a new tab only when you click them, and what you then write there is governed by GitHub's or the store's own policies. To know where it was installed from, Breakpointer asks Chrome about itself (`chrome.management.getSelf`, which needs no permission); nothing is sent. "Share Breakpointer" puts a link on your clipboard. The rating question (copies installed from a store, after five days of use) opens the store's reviews only if you choose "Rate it".
+Help links to Breakpointer's issue forms and project on GitHub and to its page on the Chrome Web Store (or on Edge Add-ons, when it was installed from there); they open in a new tab only when you click them, and what you then write there is governed by GitHub's or the store's own policies. To know where it was installed from, Breakpointer asks Chrome about itself (`chrome.management.getSelf`, which needs no permission); nothing is sent. "Share Breakpointer" puts a link on your clipboard. The rating question (copies installed from a store, after five days of use) opens the store's reviews only if you choose "Rate it".
 
 ## History
 

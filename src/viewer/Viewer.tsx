@@ -153,7 +153,7 @@ import { modShortcut, whenVisible } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
 import { createId } from '../utils/id';
-import { FEEDBACK_URL, HOMEPAGE_URL, REPO_URL } from '../utils/links';
+import { CHROME_WEB_STORE_ID, FEEDBACK_URL, HOMEPAGE_URL, REPO_URL } from '../utils/links';
 import {
   displayHost,
   isLocalHost,
@@ -977,7 +977,7 @@ function Workspace({
 
   /* ---------- Feedback, rating and sharing ---------- */
 
-  // Installed from a store: rating and sharing go to its page; otherwise to the project on GitHub.
+  // Rating and sharing go to the store this copy came from; other copies (unpacked, sideloaded) to the Chrome Web Store listing.
   useEffect(() => {
     let active = true;
     void installStore().then((found) => {
@@ -987,9 +987,10 @@ function Workspace({
       active = false;
     };
   }, []);
-  const storeName = store ? t(store === 'chrome' ? 'store.chrome' : 'store.edge') : null;
-  const rateUrl = store ? reviewUrl(store, chrome.runtime.id) : REPO_URL;
-  const shareUrl = store ? listingUrl(store, chrome.runtime.id) : HOMEPAGE_URL;
+  const listing = store ? { store, id: chrome.runtime.id } : { store: 'chrome' as const, id: CHROME_WEB_STORE_ID };
+  const storeName = t(listing.store === 'chrome' ? 'store.chrome' : 'store.edge');
+  const rateUrl = reviewUrl(listing.store, listing.id);
+  const shareUrl = listingUrl(listing.store, listing.id);
 
   const shareBreakpointer = () =>
     void copyText(shareUrl).then((copied) =>
@@ -1019,7 +1020,7 @@ function Workspace({
 
   // Only for copies installed from a store, never in the middle of something.
   const showNudge = Boolean(
-    storeName && usage && shouldNudge(usage) && !nudgeAnswered && dialog === null && !capturing && currentUrl,
+    store && usage && shouldNudge(usage) && !nudgeAnswered && dialog === null && !capturing && currentUrl,
   );
 
   // Signals that the workspace is interactive (used by end-to-end tests).
@@ -3453,7 +3454,8 @@ function Workspace({
         support={{
           feedbackUrl: FEEDBACK_URL,
           rateUrl,
-          rateLabel: storeName ? t('help.rateStore', { store: storeName }) : t('help.rateGithub'),
+          rateLabel: t('help.rateStore', { store: storeName }),
+          starUrl: REPO_URL,
           onShare: shareBreakpointer,
         }}
       />
@@ -3515,7 +3517,7 @@ function Workspace({
           if (!showcaseBusy) setDialog(null);
         }}
       />
-      {showNudge && storeName && (
+      {showNudge && (
         <Nudge
           store={storeName}
           onRate={() => answerNudge('rate')}

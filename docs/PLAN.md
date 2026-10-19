@@ -1,6 +1,6 @@
 # Breakpointer — Product & Delivery Plan
 
-> **Version:** 0.5.0 · **Status:** V1, the v0.2 inspection toolkit, the v0.3 redesign and pro toolkit, the v0.4 find, audit and verify release and the v0.5 whole-site and sharing release, built and tested; ready for store submission
+> **Version:** 0.5.0 · **Status:** V1, the v0.2 inspection toolkit, the v0.3 redesign and pro toolkit, the v0.4 find, audit and verify release and the v0.5 whole-site and sharing release, built and tested; **live on the Chrome Web Store** since 0.4.0 (17 Oct 2026); 0.5.0 ready to upload as an update
 > **Source:** refines the original planning brief (`plan.md`) into a delivery plan with decisions, status and acceptance criteria.
 
 **Product goal:** help people check how a website looks at several viewport sizes, side by side, directly in Chrome — reliably, with minimal permissions, and honest about limits.
@@ -11,16 +11,16 @@
 
 ## 1. Status at a glance
 
-| Milestone                      | Goal                                                                                                                                                         | Status                             | Evidence                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------- | ---------------------------------------------------------------------------------------- |
-| M1 — Technical spike           | Prove pages render at a real viewport; know what fails and the fallback                                                                                      | ✅ Done                            | [ARCHITECTURE.md — ADR-001](ARCHITECTURE.md), `tests/e2e/spike.spec.ts`                  |
-| M2 — Working MVP               | Toolbar, workspace, presets, custom sizes, add/remove/reload/rotate, zoom, persistence, errors                                                               | ✅ Done                            | `src/`, `tests/e2e/viewer.spec.ts`                                                       |
-| M3 — Quality & packaging       | Tests, accessibility, permission review, store assets, packaged build                                                                                        | ✅ Done (store submission pending) | `tests/`, `brand/`, `docs/STORE_LISTING.md`, `npm run package`                           |
-| v0.2 — Inspection toolkit      | Sync, responsive checks, outlines, live CSS, grid, custom breakpoints, saved pages, report                                                                   | ✅ Done                            | [§3](#v02--inspection-toolkit--delivered), `tests/e2e/tools.spec.ts`                     |
-| v0.3 — Redesign & pro toolkit  | New design system, command palette, inspector, drag to resize, site breakpoints, page colours; A/B compare, simulations, measuring, contrast, design overlay | ✅ Done                            | [§3](#v03--redesign-and-pro-toolkit--delivered), `features.spec.ts`, `utilities.spec.ts` |
-| v0.4 — Find, audit and verify  | Width scanner, audit panel (issues, performance, type), visual baselines, three new checks, access until Chrome closes, reloads that keep your place         | ✅ Done                            | [§3](#v04--find-audit-and-verify--delivered), `scan`/`audit`/`visual.spec.ts`            |
-| v0.5 — Whole site and sharing  | Check pages (a list of pages at every viewport), showcase images, feedback, rating and sharing in the product, launch kit                                    | ✅ Done                            | [§3](#v05--whole-site-and-sharing--delivered), `batch-showcase.spec.ts`                  |
-| M4 — Feedback-driven iteration | Small user group, privacy-respecting feedback, prioritise next features                                                                                      | ⏳ Next (in-app feedback done)     | [§8](#8-milestone-4--feedback-and-iteration)                                             |
+| Milestone                      | Goal                                                                                                                                                         | Status                          | Evidence                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------- | ---------------------------------------------------------------------------------------- |
+| M1 — Technical spike           | Prove pages render at a real viewport; know what fails and the fallback                                                                                      | ✅ Done                         | [ARCHITECTURE.md — ADR-001](ARCHITECTURE.md), `tests/e2e/spike.spec.ts`                  |
+| M2 — Working MVP               | Toolbar, workspace, presets, custom sizes, add/remove/reload/rotate, zoom, persistence, errors                                                               | ✅ Done                         | `src/`, `tests/e2e/viewer.spec.ts`                                                       |
+| M3 — Quality & packaging       | Tests, accessibility, permission review, store assets, packaged build                                                                                        | ✅ Live on the Chrome Web Store | `tests/`, `brand/`, `docs/STORE_LISTING.md`, `npm run package`                           |
+| v0.2 — Inspection toolkit      | Sync, responsive checks, outlines, live CSS, grid, custom breakpoints, saved pages, report                                                                   | ✅ Done                         | [§3](#v02--inspection-toolkit--delivered), `tests/e2e/tools.spec.ts`                     |
+| v0.3 — Redesign & pro toolkit  | New design system, command palette, inspector, drag to resize, site breakpoints, page colours; A/B compare, simulations, measuring, contrast, design overlay | ✅ Done                         | [§3](#v03--redesign-and-pro-toolkit--delivered), `features.spec.ts`, `utilities.spec.ts` |
+| v0.4 — Find, audit and verify  | Width scanner, audit panel (issues, performance, type), visual baselines, three new checks, access until Chrome closes, reloads that keep your place         | ✅ Done                         | [§3](#v04--find-audit-and-verify--delivered), `scan`/`audit`/`visual.spec.ts`            |
+| v0.5 — Whole site and sharing  | Check pages (a list of pages at every viewport), showcase images, feedback, rating and sharing in the product, launch kit                                    | ✅ Done                         | [§3](#v05--whole-site-and-sharing--delivered), `batch-showcase.spec.ts`                  |
+| M4 — Feedback-driven iteration | Small user group, privacy-respecting feedback, prioritise next features                                                                                      | ⏳ Next (in-app feedback done)  | [§8](#8-milestone-4--feedback-and-iteration)                                             |
 
 ---
 
@@ -199,16 +199,19 @@ No data leaves the browser. v0.4 adds no permission: visual baselines use the ex
 
 ## 6. Release plan (M3 → store)
 
-1. `npm run package` → `release/breakpointer-0.5.0.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
-2. Create the Chrome Web Store item; upload the zip.
-3. Listing: copy from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI), icon `brand/store/store-icon-128.png`, screenshots `brand/store/screenshots/{en,vi}/` (the five listed in STORE_LISTING.md: workspace, scan, audit, inspector, visual check), promo tiles `brand/store/promo-*.png`.
-4. Privacy tab: single purpose, permission justifications, "does not collect user data", link to a hosted copy of [PRIVACY.md](PRIVACY.md).
-5. Provide a support contact (email or GitHub issues).
-6. Submit for review; publish as **unlisted** first for the M4 test group, then public.
+Breakpointer is public on the Chrome Web Store as **Breakpointer — Responsive Viewport Tester** (id `naoadcallefanlcneemohjepkficejjh`, publisher Tanix): https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh. Version 0.4.0 went live on 17 Oct 2026. Each release is an update of that item:
 
-**Owner decisions still needed:** license (the repository is public but has no license yet, so all rights are reserved), support email, publisher account, unlisted-first vs. public launch.
+1. `npm run package` → `release/breakpointer-<version>.zip`; load it unpacked in a **clean Chrome profile** and run the manual checklist in [TESTING.md](TESTING.md).
+2. Developer Dashboard → the item → Package → upload the zip.
+3. Listing: refresh from [STORE_LISTING.md](STORE_LISTING.md) (EN + VI) when it changed — for 0.5.0 the new summary and the five screenshots in its order (workspace, Check pages, scan, showcase, audit), promo tiles `brand/store/promo-*.png`, and the demo video once it is on YouTube.
+4. Privacy tab: update the permission justifications if they changed (0.5.0: Check pages in the `scripting` and host-access texts).
+5. Submit for review; updates of an item usually pass faster than a first review.
 
-**Links for the store:** privacy policy https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md · support https://github.com/Tanx-1811/breakpointer/issues · homepage https://github.com/Tanx-1811/breakpointer
+**Name:** another, older extension on the store is also called “Breakpointer” (a Bootstrap breakpoint box by 8sidewaysmonkeys.com) and can appear first when people search for the bare name. Always link to the listing directly (with UTM parameters, which the store keeps through its redirect) and use the full name in posts.
+
+**Owner decisions still needed:** a license (the repository is public but has no license yet, so all rights are reserved).
+
+**Links for the store:** listing https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh · privacy policy https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md · support https://github.com/Tanx-1811/breakpointer/issues · homepage https://github.com/Tanx-1811/breakpointer
 
 ---
 

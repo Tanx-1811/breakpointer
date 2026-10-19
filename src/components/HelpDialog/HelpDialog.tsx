@@ -54,8 +54,10 @@ type Props = {
   support?: {
     feedbackUrl: string;
     rateUrl: string;
-    /** "Rate on the Chrome Web Store", or "Star on GitHub" when not installed from a store. */
+    /** "Rate on the Chrome Web Store" (or the store it was installed from). */
     rateLabel: string;
+    /** The project on GitHub. */
+    starUrl: string;
     onShare: () => void;
   };
 };
@@ -113,8 +115,12 @@ export function HelpDialog({ open, version, onClose, commandShortcuts, paletteSh
                   {t('help.feedback')}
                 </a>
                 <a className={styles.supportLink} href={support.rateUrl} target="_blank" rel="noopener noreferrer">
-                  <Icon name="star" size={15} />
+                  <Icon name="heart" size={15} />
                   {support.rateLabel}
+                </a>
+                <a className={styles.supportLink} href={support.starUrl} target="_blank" rel="noopener noreferrer">
+                  <Icon name="star" size={15} />
+                  {t('help.rateGithub')}
                 </a>
                 <button type="button" className={styles.supportLink} onClick={support.onShare}>
                   <Icon name="link" size={15} />

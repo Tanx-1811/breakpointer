@@ -2,6 +2,10 @@
 
 Copy-ready text and the answers the store asks for. Assets live in `brand/` (see `brand/README.md`).
 
+**Live listing:** [https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh) — “Breakpointer — Responsive Viewport Tester”, id `naoadcallefanlcneemohjepkficejjh`, publisher Tanix; public since 0.4.0 (17 Oct 2026). Link to it directly, adding `?utm_source=…&utm_medium=…&utm_campaign=…` so the dashboard counts each channel: another extension on the store is also named “Breakpointer”.
+
+**Updating to 0.5.0:** upload `release/breakpointer-0.5.0.zip`, replace the summary below in both languages, upload the five screenshots in the order below (EN and VI), add the demo video (`brand/social/demo.mp4`, on YouTube) and refresh the `scripting` and host-access justifications (Check pages).
+
 ## Basics
 
 | Field                      | Value                                                                                                                                                                                                                                                                                                     |
