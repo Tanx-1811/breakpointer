@@ -57,6 +57,8 @@ type Props = {
   onAudit?: () => void;
   /** Opens the width scanner. */
   onScan?: () => void;
+  /** Opens Check pages. */
+  onBatch?: () => void;
   /** Opens the visual check. */
   onVisual?: () => void;
   /** The page colours every visible preview shows ('mixed' when they differ); the options show with the handler. */
@@ -283,6 +285,15 @@ export function WorkspaceBar(props: Props) {
       shortcut: 'W',
       disabled: !props.hasUrl,
       onSelect: props.onScan,
+    });
+  if (props.onBatch)
+    utilityEntries.push({
+      id: 'batch',
+      label: t('tools.batch'),
+      description: t('tools.batchHint'),
+      icon: 'pages',
+      shortcut: 'B',
+      onSelect: props.onBatch,
     });
   if (props.onVisual)
     utilityEntries.push({
@@ -534,8 +545,7 @@ export function WorkspaceBar(props: Props) {
                     size={14}
                     className={styles.chipIcon}
                   />
-                  <span className={styles.chipName}>{vp.name}</span>
-                  <span className={styles.chipSize}>{vp.width}</span>
+                  <span className={styles.chipName}>{vp.name}</span> <span className={styles.chipSize}>{vp.width}</span>
                   {vp.colorScheme && (
                     <Icon name={vp.colorScheme === 'dark' ? 'moon' : 'sun'} size={12} className={styles.chipScheme} />
                   )}

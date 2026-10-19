@@ -1,0 +1,981 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Breakpointer — Công cụ kiểm tra responsive cho Chrome</title>
+    <meta
+      name="description"
+      content="Tiện ích Chrome miễn phí để kiểm tra bố cục responsive: xem trước trang ở tối đa 8 kích thước viewport, kiểm tra breakpoint và tìm đúng chiều rộng bị vỡ."
+    />
+    <meta name="robots" content="max-image-preview:large" />
+    <link rel="canonical" href="{{siteUrl}}vi/" />
+    <link rel="alternate" hreflang="en" href="{{siteUrl}}" />
+    <link rel="alternate" hreflang="vi" href="{{siteUrl}}vi/" />
+    <link rel="alternate" hreflang="x-default" href="{{siteUrl}}" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1114" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="../assets/mark.svg" type="image/svg+xml" />
+    <link rel="icon" href="../assets/mark-512.png" type="image/png" sizes="512x512" />
+    <link rel="apple-touch-icon" href="../assets/mark-512.png" />
+    <link rel="stylesheet" href="../styles.css" />
+    <script src="../main.js" defer></script>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Breakpointer" />
+    <meta property="og:locale" content="vi_VN" />
+    <meta property="og:locale:alternate" content="en_US" />
+    <meta property="og:url" content="{{siteUrl}}vi/" />
+    <meta property="og:title" content="Breakpointer — Tìm chỗ bố cục bị vỡ." />
+    <meta
+      property="og:description"
+      content="Tiện ích Chrome miễn phí: xem bất kỳ trang nào ở tối đa 8 kích thước viewport thật đặt cạnh nhau, quét mọi chiều rộng và tìm đúng pixel nơi bố cục bị vỡ."
+    />
+    <meta property="og:image" content="{{siteUrl}}assets/og-1280x640.png" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta
+      property="og:image:alt"
+      content="Breakpointer: “Find where your layout breaks.” Một trang hiển thị ở kích thước viewport laptop, máy tính bảng và điện thoại."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Breakpointer — Tìm chỗ bố cục bị vỡ." />
+    <meta
+      name="twitter:description"
+      content="Xem bất kỳ trang nào ở tối đa 8 kích thước viewport thật đặt cạnh nhau ngay trong Chrome, và tìm đúng chiều rộng nơi bố cục bị vỡ. Miễn phí, riêng tư, không cần tài khoản."
+    />
+    <meta name="twitter:image" content="{{siteUrl}}assets/og-1280x640.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Breakpointer: “Find where your layout breaks.” Một trang hiển thị ở kích thước viewport laptop, máy tính bảng và điện thoại."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Breakpointer",
+        "alternateName": "Breakpointer — Responsive Viewport Tester",
+        "description": "Tiện ích Chrome miễn phí để kiểm tra bố cục responsive: xem trước bất kỳ trang nào ở tối đa 8 kích thước viewport thật đặt cạnh nhau, kiểm tra lỗi bố cục ở mọi kích thước và tìm đúng chiều rộng nơi mỗi lỗi bắt đầu.",
+        "url": "{{siteUrl}}vi/",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Chrome",
+        "browserRequirements": "Cần Google Chrome 116 trở lên.",
+        "inLanguage": "vi",
+        "image": "{{siteUrl}}assets/og-1280x640.png",
+        "screenshot": "{{siteUrl}}assets/screenshots/vi/1-workspace.png",
+        "installUrl": "{{installUrl}}",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Tối đa 8 kích thước viewport đặt cạnh nhau",
+          "Quét mọi chiều rộng để tìm nơi mỗi vấn đề bắt đầu và kết thúc",
+          "Rà soát vấn đề, dung lượng trang, LCP, độ xê dịch bố cục và thang kiểu chữ theo từng kích thước",
+          "Kiểm tra hình ảnh so với ảnh mốc đã lưu",
+          "Kiểm tra cả danh sách trang ở mọi viewport",
+          "Soi một phần tử ở mọi kích thước",
+          "Kiểm tra responsive: tràn ngang, chữ quá nhỏ, vùng chạm quá nhỏ, chữ tương phản thấp"
+        ],
+        "sameAs": ["https://github.com/Tanx-1811/breakpointer"]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Bỏ qua, đến nội dung chính</a>
+
+    <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path
+          d="M5 12h14M13 6l6 6-6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-github" viewBox="0 0 16 16">
+        <path
+          fill="currentColor"
+          d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"
+        />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path
+          d="M5 12.5l4.5 4.5L19 7.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24">
+        <path d="M7 12h10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3c2.4 2.6 3.6 5.6 3.6 9s-1.2 6.4-3.6 9c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z" />
+        </g>
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24">
+        <path
+          d="M6 9l6 6 6-6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-device" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="12" rx="2" />
+          <path d="M8 20h8M12 16v4" />
+        </g>
+      </symbol>
+      <symbol id="i-key" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="15" r="4" />
+          <path d="M10.9 12.1 19 4M15.5 7.5 18 10M17.5 5.5 20 8" />
+        </g>
+      </symbol>
+      <symbol id="i-frame" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 9h18M10 12.5 8 14.5l2 2M14 12.5l2 2-2 2" />
+        </g>
+      </symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+          <circle cx="12" cy="13" r="3.5" />
+        </g>
+      </symbol>
+    </svg>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./">
+          <img class="brand-mark" src="../assets/mark.svg" width="32" height="32" alt="Breakpointer" />
+          <picture class="brand-lockup">
+            <source srcset="../assets/lockup-horizontal-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="../assets/lockup-horizontal-light.svg" width="140" height="28" alt="Breakpointer" />
+          </picture>
+        </a>
+        <nav class="site-nav" aria-label="Chính">
+          <ul>
+            <li><a href="#how">Cách dùng</a></li>
+            <li><a href="#features">Tính năng</a></li>
+            <li><a href="#privacy">Quyền riêng tư</a></li>
+            <li><a href="#faq">Hỏi đáp</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <a class="lang-link" href="../" hreflang="en" lang="en">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-globe" /></svg>English
+          </a>
+          <a class="icon-link" href="https://github.com/Tanx-1811/breakpointer" aria-label="Breakpointer trên GitHub">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github" /></svg>
+          </a>
+          <a class="button button-primary button-small" href="{{installUrl}}">{{installLabelShort}}</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="ruler" aria-hidden="true">
+      <span style="left: 100px">100</span><span style="left: 200px">200</span><span style="left: 300px">300</span
+      ><span style="left: 400px">400</span><span style="left: 500px">500</span><span style="left: 700px">700</span
+      ><span style="left: 800px">800</span><span style="left: 1000px">1000</span><span style="left: 1100px">1100</span
+      ><span style="left: 1200px">1200</span><span style="left: 1300px">1300</span><span style="left: 1400px">1400</span
+      ><span style="left: 1500px">1500</span><span style="left: 1600px">1600</span><span style="left: 1700px">1700</span
+      ><span style="left: 1800px">1800</span><span style="left: 1900px">1900</span><span style="left: 2000px">2000</span
+      ><span style="left: 2100px">2100</span><span style="left: 2200px">2200</span><span style="left: 2300px">2300</span
+      ><span style="left: 2400px">2400</span><span style="left: 2500px">2500</span><span style="left: 2600px">2600</span
+      ><span style="left: 2700px">2700</span><span style="left: 2800px">2800</span><span style="left: 2900px">2900</span
+      ><span style="left: 3000px">3000</span><span style="left: 3100px">3100</span><span style="left: 3200px">3200</span
+      ><span style="left: 3300px">3300</span><span style="left: 3400px">3400</span><span style="left: 3500px">3500</span
+      ><span style="left: 3600px">3600</span><span style="left: 3700px">3700</span
+      ><span style="left: 3800px">3800</span>
+      <span class="bp" style="left: 440px"><b>440</b></span>
+      <span class="bp" style="left: 600px"><b>600</b></span>
+      <span class="bp" style="left: 900px"><b>900</b></span>
+      <span class="readout" hidden><b data-viewport-size></b></span>
+    </div>
+
+    <main id="main">
+      <section class="hero canvas" aria-labelledby="hero-title">
+        <div class="container">
+          <div class="hero-copy">
+            <p class="eyebrow-pill">
+              <img src="../assets/mark.svg" width="22" height="22" alt="" />Kiểm tra responsive miễn phí cho Chrome
+            </p>
+            <h1 id="hero-title">Tìm chỗ bố&nbsp;cục <span class="headline-accent">bị&nbsp;vỡ.</span></h1>
+            <p class="lead">
+              Xem bất kỳ trang nào ở tối đa 8 kích thước viewport thật, đặt cạnh nhau ngay trong Chrome — và tìm chính
+              xác đến từng pixel chiều rộng nơi mỗi lỗi bắt đầu.
+            </p>
+            <div class="cta-row">
+              <a class="button button-primary" href="{{installUrl}}"
+                >{{installLabel}}<svg class="icon icon-arrow" aria-hidden="true" focusable="false">
+                  <use href="#i-arrow" /></svg
+              ></a>
+              <a class="button button-secondary" href="https://github.com/Tanx-1811/breakpointer"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github" /></svg>Xem trên GitHub</a
+              >
+            </div>
+            <p class="install-note">{{installNote}}</p>
+            <ul class="facts">
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Miễn phí
+              </li>
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Không cần tài khoản
+              </li>
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Không gì rời khỏi
+                trình duyệt
+              </li>
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Chrome 116+
+              </li>
+            </ul>
+          </div>
+          <div class="hero-shot">
+            <picture>
+              <source
+                srcset="../assets/screenshots/vi/4-dark-rulers.png"
+                media="(prefers-color-scheme: dark)"
+                width="1280"
+                height="800"
+              />
+              <img
+                src="../assets/screenshots/vi/1-workspace.png"
+                width="1280"
+                height="800"
+                fetchpriority="high"
+                alt="Vùng làm việc Breakpointer: một trang được xem trước ở ba kích thước viewport đặt cạnh nhau, mỗi bản ghi kích thước, breakpoint và số vấn đề."
+              />
+            </picture>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="Tóm tắt">
+        <div class="container">
+          <ul>
+            <li><strong>8</strong> viewport đặt cạnh nhau, mỗi bản có chiều rộng dàn trang thật</li>
+            <li>
+              <strong>1<span class="unit">px</span></strong> độ chính xác khi tìm nơi mỗi vấn đề bắt đầu và kết thúc
+            </li>
+            <li><strong>9</strong> bước kiểm tra responsive trên mọi bản xem trước, ngay khi bạn duyệt</li>
+            <li><strong>28</strong> kích thước có sẵn, cùng mọi kích thước từ 200 đến 3840&nbsp;px</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="how" aria-labelledby="how-title">
+        <div class="container">
+          <div class="section-head center">
+            <p class="eyebrow">Cách dùng</p>
+            <h2 id="how-title">Từ một trang đến mọi kích&nbsp;thước, chỉ trong vài&nbsp;giây</h2>
+          </div>
+          <ol class="steps">
+            <li class="step">
+              <div class="step-art canvas" aria-hidden="true">
+                <span class="chip"
+                  ><img src="../assets/mark.svg" width="18" height="18" alt="" />Xem trước trang này</span
+                >
+              </div>
+              <div class="step-body">
+                <h3>Mở trang bất kỳ</h3>
+                <p>
+                  Bấm nút Breakpointer và chọn <strong>Xem trước trang này</strong> — hoặc nhấn <kbd>Alt+Shift+P</kbd>,
+                  chuột phải vào một liên kết, hay gõ <code>bpt</code> trên thanh địa chỉ. Dùng được cả với server dev
+                  trên máy bạn.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <div class="step-art canvas" aria-hidden="true">
+                <span class="dim">390 × 844</span><span class="dim">768 × 1024</span><span class="dim">1440 × 900</span>
+              </div>
+              <div class="step-body">
+                <h3>Xem mọi kích&nbsp;thước cùng&nbsp;lúc</h3>
+                <p>
+                  Tối đa 8 bản xem trước đặt cạnh nhau, từ 28 kích thước có sẵn hoặc kích thước của riêng bạn. Mỗi bản
+                  có chiều rộng và chiều cao dàn trang thật, nên media query, container query và
+                  <code>innerWidth</code> phản hồi đúng như trong một cửa sổ cùng kích thước.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <div class="step-art canvas" aria-hidden="true">
+                <span class="keys"><kbd>W</kbd><kbd>E</kbd><kbd>V</kbd><kbd>B</kbd></span>
+              </div>
+              <div class="step-body">
+                <h3>Để nó tìm chỗ bị&nbsp;vỡ</h3>
+                <p>
+                  Cho phép trang đó một lần, và mọi bản xem trước sẽ được kiểm tra ngay khi bạn duyệt. Nhấn
+                  <kbd>W</kbd> để quét mọi chiều rộng, <kbd>E</kbd> để rà soát, <kbd>V</kbd> để so với ảnh mốc và
+                  <kbd>B</kbd> để kiểm tra cả danh sách trang.
+                </p>
+              </div>
+            </li>
+          </ol>
+          <figure class="demo">
+            <div class="demo-frame">
+              <video
+                src="../assets/demo.mp4"
+                width="1280"
+                height="800"
+                poster="../assets/screenshots/en/9-scan.png"
+                controls
+                muted
+                loop
+                playsinline
+                preload="none"
+                data-autoplay
+                aria-label="Video demo Breakpointer"
+                aria-describedby="demo-caption"
+              ></video>
+            </div>
+            <figcaption id="demo-caption">
+              Video demo chưa đầy 30 giây, không có tiếng (giao diện tiếng Anh): quét chiều rộng tìm nơi nội dung rộng
+              hơn màn hình, Kiểm tra nhiều trang chạy sáu trang ở ba kích thước, và ảnh trình diễn đặt trang vào khung
+              thiết bị.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section section-flush" id="features" aria-labelledby="features-title">
+        <div class="container">
+          <div class="section-head center">
+            <p class="eyebrow">Tính năng</p>
+            <h2 id="features-title">Không chỉ xem&nbsp;trước. Tìm ra chỗ bị&nbsp;vỡ.</h2>
+            <p class="section-lead">
+              Breakpointer tự kiểm tra mọi bản xem trước và chỉ ra từng lỗi ở đúng chiều rộng nơi nó xảy ra — để bạn sửa
+              trước khi người khác nhìn thấy.
+            </p>
+          </div>
+
+          <div class="spotlights">
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Quét mọi chiều&nbsp;rộng <kbd>W</kbd></h3>
+                <p>
+                  Trang được kiểm tra ở mọi chiều rộng trong một khoảng — ví dụ từ 320 đến 1440&nbsp;px — và chiều rộng
+                  nơi mỗi vấn đề bắt đầu, kết thúc được tìm chính xác đến từng pixel. Một biểu đồ đặt các vấn đề cạnh
+                  chiều cao trang, breakpoint của trang và các viewport của bạn.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Lượt đầu cách 8,
+                    16 hoặc 32&nbsp;px, rồi thu hẹp đến từng pixel
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Kéo thanh trượt
+                    để xem trang ở bất kỳ chiều rộng nào
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Nhảy tới chiều
+                    rộng tệ nhất và thêm viewport ở đó chỉ với một cú bấm
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="../assets/screenshots/vi/9-scan.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Quét mọi chiều rộng: biểu đồ từ 320 đến 1440 px cho thấy nơi nội dung rộng hơn màn hình và nơi chữ có độ tương phản thấp, kèm chiều cao trang và breakpoint của trang ở 768 và 1024 px."
+                />
+              </div>
+            </div>
+
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Rà&nbsp;soát mọi kích&nbsp;thước <kbd>E</kbd></h3>
+                <p>
+                  Mọi vấn đề của mọi bản xem trước, nhóm theo từng bước kiểm tra, kèm đánh dấu ngay trên trang. Dung
+                  lượng trang, số yêu cầu, điểm ảnh của ảnh, LCP và độ xê dịch bố cục thành cột theo từng kích thước —
+                  cùng thang kiểu chữ của tiêu đề, nội dung và nút ở mọi chiều rộng.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Selector của
+                    từng phần tử gây lỗi
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>So sánh hiệu
+                    năng và kiểu chữ theo từng viewport
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Chép bảng thành
+                    Markdown để dán vào ticket hay pull request
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="../assets/screenshots/vi/10-audit.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Bảng rà soát cạnh ba bản xem trước, liệt kê nội dung rộng hơn màn hình và chữ tương phản thấp, kèm selector của các phần tử gây lỗi."
+                />
+              </div>
+            </div>
+
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Kiểm&nbsp;tra hình&nbsp;ảnh <kbd>V</kbd></h3>
+                <p>
+                  Lưu ảnh mốc của mọi viewport, rồi so sánh sau khi deploy, sửa CSS hoặc với bản staging. Thấy phần nào
+                  thay đổi đến từng pixel — đặt cạnh nhau, bằng thanh trượt, hoặc khoanh vùng khác biệt.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Bao nhiêu phần
+                    ảnh thay đổi, và ở đâu
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Chấp nhận ảnh
+                    mới làm ảnh mốc
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Ảnh mốc chỉ nằm
+                    trong trình duyệt của bạn, không bao giờ được tải lên
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="../assets/screenshots/vi/11-visual.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Kiểm tra hình ảnh bản xem trước máy tính bảng so với ảnh mốc: 2,9% ảnh thay đổi, tiêu đề thay đổi được khoanh lại."
+                />
+              </div>
+            </div>
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Kiểm&nbsp;tra nhiều trang <kbd>B</kbd> <span class="badge">Mới</span></h3>
+                <p>
+                  Kiểm tra cả danh sách trang ở mọi viewport trong một lần chạy — trang đã lưu, các liên kết trong một
+                  trang, hoặc sitemap của trang web. Bảng kết quả cho biết trang nào bị vỡ, ở kích thước nào.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Lấy danh sách từ
+                    liên kết trong trang, sitemap hoặc trang đã lưu
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Mở bất kỳ trang
+                    nào ngay từ bảng kết quả
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Chép bảng thành
+                    Markdown hoặc tải báo cáo HTML
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="../assets/screenshots/vi/12-check-pages.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Kiểm tra nhiều trang: sáu trang của một site được kiểm tra ở kích thước điện thoại, máy tính bảng và laptop. /pricing và /blog có vấn đề ở chiều rộng điện thoại hoặc máy tính bảng, còn /careers trả về HTTP 404."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="cards">
+            <div class="card">
+              <div class="card-visual canvas">
+                <div class="card-art crop crop-inspector">
+                  <img
+                    src="../assets/screenshots/vi/6-inspector.png"
+                    width="1280"
+                    height="800"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Soi phần tử: một tiêu đề được đánh dấu trong bản xem trước máy tính bảng, và bảng so sánh kích thước, font của nó ở chiều rộng điện thoại và máy tính bảng."
+                  />
+                </div>
+              </div>
+              <div class="card-body">
+                <h3>Soi phần&nbsp;tử <kbd>I</kbd></h3>
+                <p>
+                  Bấm một phần tử ở một bản xem trước để so sánh nó ở mọi kích thước: kích thước hộp, display, font,
+                  khoảng cách và bố cục flex hay grid. Chỗ thay đổi giữa các kích thước được đánh dấu.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-visual canvas">
+                <div class="card-art crop crop-showcase">
+                  <img
+                    src="../assets/screenshots/vi/13-showcase.png"
+                    width="1280"
+                    height="800"
+                    loading="lazy"
+                    decoding="async"
+                    alt="Một ảnh trình diễn: trang trong khung máy tính bảng, laptop và điện thoại trên nền màu chàm, dưới tiêu đề “Brightside — Plan your week together”."
+                  />
+                </div>
+              </div>
+              <div class="card-body">
+                <h3>Ảnh trình&nbsp;diễn <span class="badge">Mới</span></h3>
+                <p>
+                  Trang của bạn ở nhiều kích thước trong khung thiết bị hoặc cửa sổ trình duyệt đơn giản trên một nền —
+                  sẵn sàng cho portfolio, khách hàng hay bài đăng. Tải ảnh PNG sắc nét hoặc chép ngay. Khung chỉ để
+                  trang trí.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolkit-head">
+            <h3>Và cả bộ công&nbsp;cụ còn&nbsp;lại</h3>
+            <p>Mọi thứ bạn cần khi làm cho bố cục chạy tốt ở mọi kích thước.</p>
+          </div>
+
+          <div class="gallery">
+            <figure>
+              <img
+                src="../assets/screenshots/vi/8-resize.png"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="Kéo cạnh bản xem trước máy tính bảng: tự bắt dính vào breakpoint 768 px, có đường gióng và số đo 768 × 760."
+              />
+              <figcaption>Kéo cạnh để đổi kích thước — tự bắt dính vào breakpoint.</figcaption>
+            </figure>
+            <figure>
+              <img
+                src="../assets/screenshots/vi/4-dark-rulers.png"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="Giao diện tối với thước đo pixel và nhãn breakpoint Bootstrap trên ba bản xem trước."
+              />
+              <figcaption>Thước đo pixel và nhãn breakpoint, ở giao diện sáng hoặc tối.</figcaption>
+            </figure>
+            <figure>
+              <img
+                src="../assets/screenshots/vi/7-palette.png"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="Bảng lệnh đang tìm “tablet”, liệt kê các kích thước máy tính bảng có thể thêm."
+              />
+              <figcaption>Mọi thao tác, kích thước và trang trong một ô tìm kiếm: <kbd>Ctrl/⌘ K</kbd>.</figcaption>
+            </figure>
+          </div>
+
+          <ul class="toolkit">
+            <li>
+              <strong>Kiểm tra responsive</strong> Cuộn ngang và phần tử gây ra, thiếu thẻ viewport, chữ quá nhỏ, vùng
+              chạm quá nhỏ, chữ bị cắt, chữ tương phản thấp, ảnh bị mờ, phần tử cố định che màn hình và bố cục xê dịch.
+            </li>
+            <li>
+              <strong>Breakpoint của chính trang</strong> Đọc từ CSS của trang — hoặc dùng Tailwind, Bootstrap hay của
+              riêng bạn — để gắn nhãn bản xem trước và thử hai bên mỗi breakpoint.
+            </li>
+            <li>
+              <strong>Kéo để đổi kích thước</strong> Kéo cạnh và xem trang dàn lại ngay. Cạnh tự bắt dính vào
+              breakpoint, có đường gióng và số đo kích thước.
+            </li>
+            <li>
+              <strong>Sáng và tối cạnh nhau</strong> Hiển thị bản xem trước với kiểu sáng hoặc tối của trang, bất kể hệ
+              thống của bạn đang dùng chế độ nào.
+            </li>
+            <li>
+              <strong>Cuộn và điều hướng đồng bộ</strong> Cuộn hay bấm liên kết ở một bản xem trước, các bản khác giữ
+              đúng nội dung đó.
+            </li>
+            <li>
+              <strong>So sánh hai địa chỉ</strong> Bản staging cạnh bản chính thức ở mọi viewport; B đi theo A qua từng
+              trang.
+            </li>
+            <li>
+              <strong>Mô phỏng</strong> Mù màu, nhìn mờ, giảm chuyển động, chữ dịch giả dài hơn khoảng 40% và hướng phải
+              sang trái.
+            </li>
+            <li>
+              <strong>Đo và đối chiếu</strong> Đo theo pixel CSS, kiểm tra độ tương phản bằng ống hút màu và phủ ảnh
+              thiết kế lên bản xem trước.
+            </li>
+            <li>
+              <strong>Cửa sổ thật</strong> Cửa sổ Chrome đúng kích thước, bản xem trước nổi luôn trên cùng và bản xem
+              trước ở thanh bên.
+            </li>
+            <li>
+              <strong>Ảnh chụp và báo cáo</strong> Một bản xem trước, mọi viewport trong một ảnh có nhãn, chụp toàn
+              trang và báo cáo HTML cho mọi kích thước.
+            </li>
+            <li>
+              <strong>Nhóm, trang đã lưu và liên kết</strong> Lưu nhóm viewport, đánh dấu sao trang hay kiểm tra và chia
+              sẻ liên kết workspace.
+            </li>
+            <li>
+              <strong>Dùng bàn phím thoải mái</strong> Phím tắt cho mọi thứ, bảng lệnh và phần trợ giúp liệt kê tất cả —
+              bằng tiếng Việt hoặc tiếng Anh.
+            </li>
+          </ul>
+          <p class="toolkit-more">
+            Ngoài ra còn có liên kết góp ý, đánh giá và chia sẻ trong phần Trợ giúp, và xuất cấu hình để chia sẻ với
+            nhóm của bạn.
+          </p>
+        </div>
+      </section>
+
+      <section class="section section-soft" id="devtools" aria-labelledby="devtools-title">
+        <div class="container">
+          <div class="section-head center">
+            <p class="eyebrow">Breakpointer và DevTools</p>
+            <h2 id="devtools-title">Khác gì chế&nbsp;độ thiết&nbsp;bị của DevTools?</h2>
+            <p class="section-lead">
+              Chế độ thiết bị hiển thị từng viewport một và để bạn tự tìm lỗi. Breakpointer hiển thị mọi kích thước cùng
+              lúc — và tự tìm giúp bạn.
+            </p>
+          </div>
+          <div class="compare-wrap">
+            <table class="compare" role="table">
+              <caption class="visually-hidden">
+                So sánh chế độ thiết bị của Chrome DevTools với Breakpointer
+              </caption>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader"><span class="visually-hidden">Bạn cần</span></th>
+                  <th scope="col" role="columnheader">Chế độ thiết bị của DevTools</th>
+                  <th scope="col" role="columnheader" class="us">Breakpointer</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                <tr role="row">
+                  <th scope="row" role="rowheader">Số kích thước trên màn hình cùng lúc</th>
+                  <td role="cell" data-label="DevTools">Một</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Tối đa 8, đặt
+                      cạnh nhau</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Tự tìm lỗi bố cục giúp bạn</th>
+                  <td role="cell" data-label="DevTools">Bạn tự tìm</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Trên mọi bản
+                      xem trước, đánh dấu ngay trên trang</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Chiều rộng chính xác nơi lỗi bắt đầu và kết thúc</th>
+                  <td role="cell" data-label="DevTools">Kéo cạnh và quan sát</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Chính xác đến
+                      từng pixel</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">So sánh với ảnh mốc đã lưu</th>
+                  <td role="cell" data-label="DevTools">
+                    <span class="cell no"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-minus" /></svg>Không</span
+                    >
+                  </td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Đến từng
+                      pixel</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Sáng và tối cùng lúc</th>
+                  <td role="cell" data-label="DevTools">Từng chế độ một</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Đặt cạnh
+                      nhau</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Kiểm tra cả danh sách trang trong một lần chạy</th>
+                  <td role="cell" data-label="DevTools">Từng trang một</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Trang đã lưu,
+                      liên kết hoặc sitemap</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Giả lập user agent, mật độ điểm ảnh và cảm ứng của thiết bị</th>
+                  <td role="cell" data-label="DevTools">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Có</span
+                    >
+                  </td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell no"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-minus" /></svg>Không — chỉ
+                      đổi kích thước viewport</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="compare-note">
+            Cần user agent, mật độ điểm ảnh hay sự kiện cảm ứng của một thiết bị? Đó là việc của DevTools. Breakpointer
+            chỉ thay đổi viewport — hai công cụ bổ sung cho nhau.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="privacy" aria-labelledby="privacy-title">
+        <div class="container split">
+          <div class="section-head">
+            <p class="eyebrow">Quyền riêng tư</p>
+            <h2 id="privacy-title">Tôn&nbsp;trọng quyền riêng&nbsp;tư</h2>
+            <p class="section-lead">
+              Không tài khoản, không theo dõi, không máy chủ. Những gì bạn xem trước, đo đạc hay chụp lại đều không rời
+              khỏi trình duyệt.
+            </p>
+            <p class="more">
+              <a href="https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md"
+                >Đọc chính sách quyền riêng tư<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-arrow" /></svg
+              ></a>
+            </p>
+          </div>
+          <ul class="points">
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-device" /></svg
+              ></span>
+              <h3>Mọi thứ ở trên máy&nbsp;bạn</h3>
+              <p>
+                Cài đặt nằm trong bộ nhớ cục bộ của Chrome. Ảnh mốc, ảnh chụp và báo cáo được tạo ngay trong trình duyệt
+                và không bao giờ được tải lên.
+              </p>
+            </li>
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-key" /></svg
+              ></span>
+              <h3>Không truy&nbsp;cập trang nào khi cài&nbsp;đặt</h3>
+              <p>
+                Breakpointer chỉ xin quyền khi bạn cần — cho một trang, mọi trang, hoặc chỉ đến khi đóng Chrome. Gỡ
+                quyền bất cứ lúc nào.
+              </p>
+            </li>
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-frame" /></svg
+              ></span>
+              <h3>Vì sao cần quyền</h3>
+              <p>
+                Một số trang chặn hiển thị trong khung, và các công cụ chạy trong trang — kiểm tra, quét, rà soát, soi
+                phần tử — dùng một đoạn script nhỏ đóng gói sẵn, chỉ chạy trong bản xem trước của trang bạn đã cho phép.
+              </p>
+            </li>
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-camera" /></svg
+              ></span>
+              <h3>Chụp ảnh</h3>
+              <p>
+                Chrome chỉ cho tiện ích chụp tab khi có quyền trên mọi trang, nên lần chụp đầu tiên sẽ hỏi quyền này.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section section-soft" id="faq" aria-labelledby="faq-title">
+        <div class="container split">
+          <div class="section-head">
+            <p class="eyebrow">Hỏi đáp</p>
+            <h2 id="faq-title">Câu&nbsp;hỏi thường&nbsp;gặp</h2>
+            <p class="section-lead">
+              Còn thắc mắc khác?
+              <a href="https://github.com/Tanx-1811/breakpointer/issues/new/choose">Hỏi trên GitHub</a>.
+            </p>
+          </div>
+          <div class="faq">
+            <details>
+              <summary>
+                Breakpointer có miễn phí không?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Có. Miễn phí, không cần tài khoản hay đăng ký. Mã nguồn công khai trên
+                  <a href="https://github.com/Tanx-1811/breakpointer">GitHub</a>, nơi bạn có thể báo lỗi hoặc đề xuất
+                  tính năng.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Breakpointer có giả lập thiết bị không?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Không. Mỗi bản xem trước có viewport dàn trang thật — media query, container query và
+                  <code>window.innerWidth</code> phản hồi đúng như trong một cửa sổ cùng kích thước — nhưng user agent,
+                  mật độ điểm ảnh, cảm ứng và nhân trình duyệt vẫn là của Chrome bạn đang dùng. Hãy dùng chế độ thiết bị
+                  của DevTools hoặc điện thoại thật cho những thứ đó.
+                </p>
+                <p>Trạng thái đăng nhập và cookie bên thứ ba cũng có thể hoạt động khác trong bản xem trước.</p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Vì sao một trang không hiện, và làm sao để cho phép?<svg
+                  class="icon"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Nhiều trang yêu cầu trình duyệt không hiển thị chúng bên trong trang khác (bằng
+                  <code>X-Frame-Options</code> hoặc quy tắc CSP <code>frame-ancestors</code>), nên bản xem trước trống
+                  hoặc báo “refused to connect”.
+                </p>
+                <p>
+                  Bấm nút <strong>Cho phép</strong> hiện cùng bản xem trước — cho trang đó, mọi trang, hoặc chỉ đến khi
+                  đóng Chrome — là trang sẽ tải. Cho phép một trang cũng bật các công cụ chạy trong trang cho trang đó.
+                  Bạn cũng có thể mở trang trong tab mới hoặc trong cửa sổ đúng kích thước.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Dùng được trên trình duyệt nào?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Chrome 116 trở lên trên máy tính. Các trình duyệt nhân Chromium khác cài được tiện ích từ Chrome Web
+                  Store, như Edge hay Brave, có thể chạy được nhưng chưa được kiểm thử chính thức.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Có dữ liệu nào rời khỏi trình duyệt không?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Không. Không có tài khoản, công cụ phân tích hay máy chủ: cài đặt, ảnh mốc và ảnh chụp nằm trên máy
+                  bạn. Các trang bạn xem trước được tải như mọi trang khác trong Chrome, trực tiếp từ chính site đó.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Dùng được với localhost không?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Được. Gõ <code>localhost:5173</code> — hoặc cổng bất kỳ, tên <code>*.localhost</code> hay địa chỉ IP —
+                  để xem trước server dev của bạn. Cho phép một lần để dùng các bước kiểm tra và công cụ trên đó.
+                </p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band" aria-labelledby="cta-title">
+        <div class="container">
+          <img src="../assets/lockup-horizontal-on-indigo.svg" width="200" height="40" alt="" />
+          <h2 id="cta-title">Xem mọi kích&nbsp;thước màn&nbsp;hình cùng&nbsp;lúc.</h2>
+          <p>Miễn phí, riêng tư, ngay trong Chrome.</p>
+          <div class="cta-row">
+            <a class="button button-primary" href="{{installUrl}}"
+              >{{installLabel}}<svg class="icon icon-arrow" aria-hidden="true" focusable="false">
+                <use href="#i-arrow" /></svg
+            ></a>
+            <a class="button button-secondary" href="https://github.com/Tanx-1811/breakpointer"
+              ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github" /></svg>Xem trên GitHub</a
+            >
+          </div>
+          <p class="install-note">{{installNote}}</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <picture>
+              <source srcset="../assets/lockup-horizontal-dark.svg" media="(prefers-color-scheme: dark)" />
+              <img src="../assets/lockup-horizontal-light.svg" width="140" height="28" alt="Breakpointer" />
+            </picture>
+            <p>Tìm chỗ bố cục bị vỡ. Tiện ích Chrome miễn phí cho thiết kế responsive.</p>
+          </div>
+          <nav aria-labelledby="footer-project">
+            <h2 class="footer-title" id="footer-project">Dự án</h2>
+            <ul class="footer-links">
+              <li><a href="https://github.com/Tanx-1811/breakpointer">GitHub</a></li>
+              <li><a href="https://github.com/Tanx-1811/breakpointer/blob/main/CHANGELOG.md">Nhật ký thay đổi</a></li>
+              <li>
+                <a href="https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md"
+                  >Chính sách quyền riêng tư</a
+                >
+              </li>
+              <li><a href="https://github.com/Tanx-1811/breakpointer/issues">Hỗ trợ</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="footer-language">
+            <h2 class="footer-title" id="footer-language">Ngôn ngữ</h2>
+            <ul class="footer-links">
+              <li><a href="../" hreflang="en" lang="en">English</a></li>
+              <li><a href="./" hreflang="vi" aria-current="page">Tiếng Việt</a></li>
+            </ul>
+          </nav>
+        </div>
+        <p class="footer-legal">Breakpointer không liên kết với Google. Chrome là nhãn hiệu của Google LLC.</p>
+      </div>
+    </footer>
+  </body>
+</html>

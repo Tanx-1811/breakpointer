@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Privacy policy
+    url: https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md
+    about: What Breakpointer stores (only in your browser) and which permissions it asks for.

@@ -193,10 +193,15 @@ export type AgentEvent =
   /** Answer to `getTypeScale`. */
   | { type: 'typeScale'; id?: number; samples: TypeSample[] }
   /** Answer to `getElementRect` (null when the element isn't shown). */
-  | { type: 'elementRect'; id?: number; rect: ElementRect | null };
+  | { type: 'elementRect'; id?: number; rect: ElementRect | null }
+  /**
+   * Answer to `getLinks`: the addresses of the page's links to other pages of
+   * the same site, in document order, without fragments — never their text.
+   */
+  | { type: 'links'; id?: number; hrefs: string[] };
 
 /** Events that answer a request from the workspace; they carry the `id` of the request. */
-export type AgentReplyType = 'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'elementRect';
+export type AgentReplyType = 'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'elementRect' | 'links';
 export type AgentReply = Extract<AgentEvent, { type: AgentReplyType }>;
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
@@ -258,7 +263,9 @@ type Command =
   /** Answer `typeScale`. */
   | { type: 'getTypeScale' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
-  | { type: 'getElementRect'; selector: string; reveal: boolean };
+  | { type: 'getElementRect'; selector: string; reveal: boolean }
+  /** Answer `links` (Check pages: the pages this one links to). */
+  | { type: 'getLinks' };
 
 /** A command as sent: a request that is answered carries an `id`, sent back with its answer. */
 export type AgentCommand = Command & { id?: number };

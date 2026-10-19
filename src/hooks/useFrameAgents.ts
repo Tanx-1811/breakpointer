@@ -212,7 +212,8 @@ export function useFrameAgents(
         case 'scanned':
         case 'stats':
         case 'typeScale':
-        case 'elementRect': {
+        case 'elementRect':
+        case 'links': {
           const waiting = pending.current.get(`${cardId}:${message.type}`);
           if (sameFrame && waiting && (message.id === undefined || message.id === waiting.id)) waiting.resolve(message);
           break;

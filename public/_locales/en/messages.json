@@ -4,7 +4,7 @@
     "description": "Extension name shown in Chrome and the Chrome Web Store."
   },
   "extDescription": {
-    "message": "Preview websites at multiple viewport sizes and check responsive layouts directly in Chrome.",
+    "message": "Responsive design tester: preview any site at many screen sizes side by side and find the exact width where your layout breaks.",
     "description": "Short description (max 132 characters)."
   },
   "actionTitle": {

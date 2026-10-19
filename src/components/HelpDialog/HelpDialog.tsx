@@ -2,6 +2,7 @@ import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
 import { OMNIBOX_KEYWORD } from '../../utils/constants';
 import { Dialog } from '../Dialog/Dialog';
+import { Icon } from '../Icon/Icon';
 import styles from './HelpDialog.module.css';
 
 /** Workspace shortcuts handled in hooks/useShortcuts.ts. `palette` is shown with the platform's modifier. */
@@ -20,6 +21,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['I'], label: 'help.inspect' },
   { keys: ['E'], label: 'help.audit' },
   { keys: ['W'], label: 'help.scan' },
+  { keys: ['B'], label: 'help.batch' },
   { keys: ['V'], label: 'help.visual' },
   { keys: ['X'], label: 'help.measure' },
   { keys: ['C'], label: 'help.contrast' },
@@ -37,7 +39,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 ];
 
 /** What this version brings, shown at the top of Help. */
-const NEWS: MessageKey[] = ['news.scan', 'news.audit', 'news.visual', 'news.checks', 'news.inspector', 'news.more'];
+const NEWS: MessageKey[] = ['news.batch', 'news.showcase', 'news.feedback'];
 
 type Props = {
   open: boolean;
@@ -48,9 +50,17 @@ type Props = {
   commandShortcuts: { open: string; preview: string };
   /** "⌘K" or "Ctrl K". */
   paletteShortcut?: string;
+  /** Feedback, rating and sharing (the section shows when given). */
+  support?: {
+    feedbackUrl: string;
+    rateUrl: string;
+    /** "Rate on the Chrome Web Store", or "Star on GitHub" when not installed from a store. */
+    rateLabel: string;
+    onShare: () => void;
+  };
 };
 
-export function HelpDialog({ open, version, onClose, commandShortcuts, paletteShortcut = 'Ctrl K' }: Props) {
+export function HelpDialog({ open, version, onClose, commandShortcuts, paletteShortcut = 'Ctrl K', support }: Props) {
   const { t } = useI18n();
 
   return (
@@ -91,6 +101,26 @@ export function HelpDialog({ open, version, onClose, commandShortcuts, paletteSh
                   <li key={key}>{t(key)}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {support && (
+            <div className={styles.support} data-testid="help-support">
+              <h3 className={styles.heading}>{t('help.support')}</h3>
+              <p className={styles.supportText}>{t('help.supportText')}</p>
+              <div className={styles.supportLinks}>
+                <a className={styles.supportLink} href={support.feedbackUrl} target="_blank" rel="noopener noreferrer">
+                  <Icon name="message" size={15} />
+                  {t('help.feedback')}
+                </a>
+                <a className={styles.supportLink} href={support.rateUrl} target="_blank" rel="noopener noreferrer">
+                  <Icon name="star" size={15} />
+                  {support.rateLabel}
+                </a>
+                <button type="button" className={styles.supportLink} onClick={support.onShare}>
+                  <Icon name="link" size={15} />
+                  {t('help.share')}
+                </button>
+              </div>
             </div>
           )}
           <h3 id="help-global" className={styles.heading}>

@@ -13,3 +13,13 @@ body:
     id: idea
     attributes:
       label: What would help?
+  - type: dropdown
+    id: role
+    attributes:
+      label: You are mostly a… (optional)
+      options:
+        - Frontend developer
+        - Designer
+        - QA / tester
+        - Agency / freelancer
+        - Other

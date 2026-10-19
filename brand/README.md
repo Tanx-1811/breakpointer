@@ -20,8 +20,9 @@ Everything in this folder is generated from source files in `brand/templates/` b
 | `store/promo-marquee-1400x560.png` (+ `-vi`)       | 1400 × 560         | Chrome Web Store **marquee promo tile** (English / Vietnamese listing) |
 | `social/github-social-1280x640.png`                | 1280 × 640         | GitHub repository social preview (Settings → General → Social preview) |
 | `social/readme-banner-1600x500.png`                | 1600 × 500         | Header image for the project README (rounded, transparent corners)     |
+| `social/demo.mp4`, `social/demo.gif`               | 1280 × 800, 800 w  | A 26-second product demo (scan, Check pages, showcase): posts, README  |
 
-The promo tiles and the GitHub social preview are 24-bit PNGs (no alpha), as the Chrome Web Store requires for promo images. The store icon keeps its transparent padding, and the README banner keeps transparent rounded corners so it suits GitHub's light and dark themes. Store screenshots (1280 × 800) should be captured from the real extension UI, not drawn.
+The promo tiles and the GitHub social preview are 24-bit PNGs (no alpha), as the Chrome Web Store requires for promo images. The store icon keeps its transparent padding, and the README banner keeps transparent rounded corners so it suits GitHub's light and dark themes. Store screenshots (1280 × 800) should be captured from the real extension UI, not drawn. The demo video is recorded the same way: `npm run demo-video` (needs ffmpeg).
 
 Embed the banner at the top of the README with:
 
@@ -124,15 +125,15 @@ Clear, honest, practical. Say what the product does and where it stops.
 
 ### Taglines and descriptions
 
-|                   | English                                                                                      | Tiếng Việt                                                                                     |
-| ----------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| Name              | Breakpointer                                                                                 | Breakpointer (not translated)                                                                  |
-| Store descriptor  | Breakpointer — Responsive Viewport Tester                                                    | Breakpointer — Responsive Viewport Tester                                                      |
-| Tagline           | Find where your layout breaks.                                                               | Tìm chỗ bố cục bị vỡ, ở mọi kích thước. (short form: Tìm chỗ bố cục bị vỡ.)                    |
-| Secondary line    | See every screen size at once.                                                               | Xem mọi kích thước màn hình cùng lúc.                                                          |
-| Short description | Preview websites at multiple viewport sizes and check responsive layouts directly in Chrome. | Xem trước website ở nhiều kích thước viewport và kiểm tra bố cục responsive ngay trong Chrome. |
-| Pitch             | See every screen size at once — side by side, right in Chrome.                               | Xem mọi kích thước màn hình cùng lúc — đặt cạnh nhau, ngay trong Chrome.                       |
-| Feature chips     | Side-by-side previews · Custom sizes · Saved groups                                          | Xem song song · Kích thước tùy chỉnh · Lưu nhóm viewport                                       |
+|                   | English                                                                                                                         | Tiếng Việt                                                                                                        |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Name              | Breakpointer                                                                                                                    | Breakpointer (not translated)                                                                                     |
+| Store descriptor  | Breakpointer — Responsive Viewport Tester                                                                                       | Breakpointer — Responsive Viewport Tester                                                                         |
+| Tagline           | Find where your layout breaks.                                                                                                  | Tìm chỗ bố cục bị vỡ, ở mọi kích thước. (short form: Tìm chỗ bố cục bị vỡ.)                                       |
+| Secondary line    | See every screen size at once.                                                                                                  | Xem mọi kích thước màn hình cùng lúc.                                                                             |
+| Short description | Responsive design tester: preview any site at many screen sizes side by side and find the exact width where your layout breaks. | Kiểm tra responsive: xem trang ở nhiều kích thước màn hình cùng lúc và tìm chính xác chiều rộng nơi bố cục bị vỡ. |
+| Pitch             | See every screen size at once — side by side, right in Chrome.                                                                  | Xem mọi kích thước màn hình cùng lúc — đặt cạnh nhau, ngay trong Chrome.                                          |
+| Feature chips     | Side-by-side previews · Custom sizes · Saved groups                                                                             | Xem song song · Kích thước tùy chỉnh · Lưu nhóm viewport                                                          |
 
 The name is a portmanteau of _breakpoint_ (the width at which a responsive layout changes) and _pointer_ (it points you to it). Lead with the tagline; use the secondary line to say how.
 

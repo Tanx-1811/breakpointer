@@ -267,7 +267,7 @@ test.describe('capture and arrange', () => {
 
   test('sort viewports by width, with undo', async ({ openViewer }) => {
     const page = await openViewer();
-    await page.getByRole('button', { name: /^Phone, 375 × 667$/ }).focus();
+    await page.getByRole('button', { name: /^Phone 375 × 667$/ }).focus();
     await page.keyboard.press('Alt+ArrowRight');
     await expect.poll(() => visualCardNames(page)).toEqual(['Tablet', 'Phone', 'Laptop']);
     await (await openTools(page)).getByRole('menuitem', { name: 'Sort by width' }).click();

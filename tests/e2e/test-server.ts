@@ -215,6 +215,32 @@ p { margin: 8px; } @media (max-width: 767px) { .note { font-size: 10px; } } sect
 <body><div class="wide">400px wide</div><p class="note">A note in small print on narrow screens</p><section>Content</section></body>
 </html>`;
 
+/** A small site for Check pages: its home links to pages worth checking and to some that must not be loaded. */
+const SITE_HOME = page(
+  'Site home',
+  `<script>addEventListener('DOMContentLoaded', () => {
+    const links = [['/site/about', 'About'], ['/site/wide', 'Wide'], ['/site/about#team', 'Team'], ['/site/logout', 'Sign out'],
+      ['/site/guide.pdf', 'Guide'], ['/site/callback?code=abc', 'Callback'], ['https://example.com/', 'Elsewhere']];
+    for (const [href, text] of links) document.body.append(Object.assign(document.createElement('a'), { href, textContent: text }), ' ');
+  });</script>`,
+);
+
+/** Wider than a phone: content overflows below about 570px. */
+const SITE_WIDE = page(
+  'Wide page',
+  `<style>.wide { width: 520px; height: 24px; background: #c7d2fe; }</style>
+  <script>addEventListener('DOMContentLoaded', () => document.body.append(Object.assign(document.createElement('div'), { className: 'wide' })));</script>`,
+);
+
+const sitemapRoute = (req: IncomingMessage): Route => {
+  const origin = `http://${req.headers.host}`;
+  const pages = ['/site/', '/site/about', '/site/wide'].map((path) => `<url><loc>${origin}${path}</loc></url>`);
+  return {
+    headers: { 'Content-Type': 'application/xml; charset=utf-8' },
+    body: `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${pages.join('')}</urlset>`,
+  };
+};
+
 type Route = { status?: number; headers?: Record<string, string | string[]>; body: string };
 
 /** Answers like Facebook: a request that says it is for a frame (`Sec-Fetch-Dest: iframe`) gets an error page. */
@@ -265,6 +291,15 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/cover': { body: COVER_PAGE },
   '/audit': { body: AUDIT_PAGE },
   '/scan': { body: SCAN_PAGE },
+  '/site/': { body: SITE_HOME },
+  '/site/about': { body: page('About page') },
+  '/site/wide': { body: SITE_WIDE },
+  '/site/logout': { body: page('Signed out') },
+  '/robots.txt': (req) => ({
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+    body: `User-agent: *\nDisallow:\nSitemap: http://${req.headers.host}/sitemap.xml\n`,
+  }),
+  '/sitemap.xml': sitemapRoute,
   '/robust': { body: ROBUST_PAGE },
   // A site that sends narrow screens to another page, which sends wide screens back.
   '/bounce': {

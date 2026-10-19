@@ -1,4 +1,5 @@
 import pkg from '../package.json' with { type: 'json' };
+import { HOMEPAGE_URL } from './utils/links';
 
 /**
  * Builds manifest.json at build time so the version always matches package.json.
@@ -20,6 +21,8 @@ export function createManifest(mode: string): chrome.runtime.ManifestV3 {
     short_name: 'Breakpointer',
     version: pkg.version,
     description: '__MSG_extDescription__',
+    // "Visit website" in chrome://extensions.
+    homepage_url: HOMEPAGE_URL,
     default_locale: 'en',
     minimum_chrome_version: '116',
     icons: {

@@ -40,6 +40,8 @@ export type ReportInput = {
   cards: ReportCard[];
   scan?: ReportScan | null;
   inspector?: ReportInspector | null;
+  /** Where "Breakpointer" in the footer links to. */
+  homepage?: string;
 };
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -238,7 +240,12 @@ ${statsSection}
 ${scanSection}
 ${inspectorSection}
 ${sections}
-<footer>${escapeHtml(t('report.footer', { version: input.version }))}</footer>
+<footer>${escapeHtml(t('report.footer', { version: input.version })).replace(
+    'Breakpointer',
+    input.homepage && SAFE_LINK.test(input.homepage)
+      ? `<a href="${escapeHtml(input.homepage)}">Breakpointer</a>`
+      : 'Breakpointer',
+  )}</footer>
 </main>
 </body>
 </html>

@@ -1,0 +1,200 @@
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-areas:
+    'stage options'
+    'actions actions';
+  gap: 14px 18px;
+  min-width: 0;
+}
+
+/* ---------- The image ---------- */
+
+.stage {
+  grid-area: stage;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background-color: var(--canvas);
+}
+
+/* A transparent backdrop shows as a checkerboard. */
+.stage[data-backdrop='transparent'] {
+  background-color: #ffffff;
+  background-image:
+    linear-gradient(45deg, #e6e8ee 25%, transparent 25%), linear-gradient(-45deg, #e6e8ee 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e6e8ee 75%), linear-gradient(-45deg, transparent 75%, #e6e8ee 75%);
+  background-position:
+    0 0,
+    0 8px,
+    8px -8px,
+    -8px 0;
+  background-size: 16px 16px;
+}
+
+.stage[aria-busy] .image {
+  opacity: 0.6;
+}
+
+.image {
+  display: block;
+  max-width: 100%;
+  max-height: 460px;
+  height: auto;
+  border-radius: 6px;
+  box-shadow: var(--shadow-md);
+  transition: opacity var(--duration) ease;
+}
+
+.placeholder {
+  max-width: 280px;
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+  text-align: center;
+}
+
+/* ---------- Options ---------- */
+
+.options {
+  grid-area: options;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.legend,
+.label {
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.legend {
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.viewports {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.viewport {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.viewport:hover {
+  background: var(--surface-hover);
+}
+
+.viewport[data-disabled] {
+  color: var(--text-subtle);
+  cursor: default;
+}
+
+.viewport input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.viewportName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mono {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+}
+
+.phone {
+  color: var(--class-phone);
+}
+
+.tablet {
+  color: var(--class-tablet);
+}
+
+.laptop {
+  color: var(--class-laptop);
+}
+
+.desktop {
+  color: var(--class-desktop);
+}
+
+.row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.titleField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.titleField input {
+  width: 100%;
+  height: 32px;
+}
+
+.note {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.actions {
+  grid-area: actions;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+@media (max-width: 860px) {
+  .body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'stage'
+      'options'
+      'actions';
+  }
+}

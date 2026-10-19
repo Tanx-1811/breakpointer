@@ -1,0 +1,56 @@
+# Builds the landing page (site/ → dist-site/, see scripts/build-site.mjs) and deploys it to GitHub Pages:
+# https://tanx-1811.github.io/breakpointer/
+#
+# One-time setup: GitHub Pages must be enabled for this repository, with
+# Settings → Pages → Build and deployment → Source: "GitHub Actions". Until then the deploy job fails.
+#
+# The install buttons link to GitHub's install instructions until the Chrome Web Store listing exists;
+# switch them in scripts/build-site.mjs (STORE_URL), or set BREAKPOINTER_STORE_URL on the build step below.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'brand/**'
+      - 'scripts/build-site.mjs'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a newer push waits instead of cancelling one that is already deploying.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build the site
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # Node built-ins only: no npm install needed.
+      - run: node scripts/build-site.mjs
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

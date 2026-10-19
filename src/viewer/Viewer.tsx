@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { CHECK_KINDS, type CheckKind, type ElementInfo, type ElementRect, type MediaReport } from '../agent/protocol';
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { AuditPanel, type AuditRow, type AuditTab } from '../components/AuditPanel/AuditPanel';
+import { BatchDialog } from '../components/BatchDialog/BatchDialog';
 import { Button } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
 import { Banner } from '../components/Banner/Banner';
@@ -18,8 +19,10 @@ import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/
 import { HelpDialog } from '../components/HelpDialog/HelpDialog';
 import { InspectorPanel, type InspectorRow } from '../components/Inspector/InspectorPanel';
 import { LiveCssDialog } from '../components/LiveCssDialog/LiveCssDialog';
+import { Nudge } from '../components/Nudge/Nudge';
 import { RULER_SIZE } from '../components/Ruler/Ruler';
 import { SettingsDialog } from '../components/SettingsDialog/SettingsDialog';
+import { ShowcaseDialog } from '../components/ShowcaseDialog/ShowcaseDialog';
 import { SiteAccessDialog } from '../components/SiteAccessDialog/SiteAccessDialog';
 import { ToastProvider, useToast } from '../components/Toast/Toast';
 import { TooltipLayer } from '../components/Tooltip/TooltipLayer';
@@ -61,7 +64,11 @@ import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/
 import { markSeen } from '../services/whats-new';
 import { enableEmbeddingForExtensionFrames } from '../services/embed-rules';
 import { forgetSessionGrants } from '../services/session-access';
-import { hasSiteAccess, requestSiteAccess } from '../services/site-access';
+import { installStore } from '../services/install-source';
+import type { ShowcaseShot } from '../services/showcase';
+import { sitemapPages } from '../services/sitemap';
+import { hasSiteAccess, requestSiteAccess, requestSitesAccess, sitesWithoutAccess } from '../services/site-access';
+import { countToday, writeUsage } from '../services/usage';
 import {
   closeWindows,
   focusOwnWindow,
@@ -87,6 +94,18 @@ import {
 } from '../state/compare';
 import { fitZoomForAll } from '../state/fit';
 import { slicePositions, stitchedHeight } from '../state/full-page';
+import {
+  BATCH_CARD_ID,
+  MAX_BATCH_PAGES,
+  batchMarkdown,
+  batchReportHtml,
+  batchSizes,
+  checkableLinks,
+  parsePageList,
+} from '../state/batch';
+import { finish, shouldNudge, snooze, type Usage } from '../state/nudge';
+import { DEFAULT_SHOWCASE, pickShowcaseViewports, type ShowcaseOptions } from '../state/showcase';
+import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
 import { CHECK_KIND_KEYS, withoutKinds } from '../state/checks';
 import {
@@ -134,6 +153,7 @@ import { modShortcut, whenVisible } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
 import { createId } from '../utils/id';
+import { FEEDBACK_URL, HOMEPAGE_URL, REPO_URL } from '../utils/links';
 import {
   displayHost,
   isLocalHost,
@@ -145,6 +165,7 @@ import {
 } from '../utils/url';
 import { buildCommands } from './commands';
 import { useAuditData } from './useAuditData';
+import { batchGeneration, useBatchCheck, type AgentApi } from './useBatchCheck';
 import { useVisualCheck, type Capture } from './useVisualCheck';
 import { TopBar, type CaptureKind } from './TopBar';
 import { usePan, useWheelZoom } from './workspace-gestures';
@@ -171,7 +192,9 @@ type DialogName =
   | 'contrast'
   | 'compare'
   | 'scan'
-  | 'visual';
+  | 'visual'
+  | 'batch'
+  | 'showcase';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -307,6 +330,25 @@ function Workspace({
   // The visual check: capturing hides its dialog, and only one runs at a time.
   const [visualBusy, setVisualBusy] = useState(false);
   const [visualConcealed, setVisualConcealed] = useState(false);
+  // The showcase image: the previews in it, its options and the captures it is made of (for one page).
+  const [showcase, setShowcase] = useState<{
+    selected: string[];
+    options: ShowcaseOptions;
+    shots: ShowcaseShot[];
+    /** The page the title was set for. */
+    page: string | null;
+    /** What the captures show (the page, the visible viewports and their frames): captured again when it changes. */
+    capturedFor: string | null;
+  }>({ selected: [], options: { ...DEFAULT_SHOWCASE, title: '' }, shots: [], page: null, capturedFor: null });
+  const [showcaseBusy, setShowcaseBusy] = useState(false);
+  const [showcaseConcealed, setShowcaseConcealed] = useState(false);
+  // Check pages: the list as typed, and the sites in it Breakpointer isn't allowed on (for the session).
+  const [batchText, setBatchText] = useState('');
+  const [batchAccess, setBatchAccess] = useState<{ urls: string[]; hosts: string[] }>({ urls: [], hosts: [] });
+  // Where Breakpointer was installed from (rating and sharing go there), and the one-time rating question.
+  const [store, setStore] = useState<Store | null>(null);
+  const [usage, setUsage] = useState<Usage | null>(null);
+  const [nudgeAnswered, setNudgeAnswered] = useState(false);
   // Pages with visual baselines, listed in Settings.
   const [snapshotList, setSnapshotList] = useState<SnapshotPage[] | null>(null);
   // Reload every preview every so many seconds (0: off); for this session.
@@ -319,7 +361,7 @@ function Workspace({
   const [audit, setAudit] = useState<{ open: boolean; tab: AuditTab }>({ open: false, tab: 'issues' });
   const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
   // One capture at a time: each one shows the previews one by one and captures the screen.
-  const capturing = busy !== null || visualBusy;
+  const capturing = busy !== null || visualBusy || showcaseBusy;
   // Utilities for this session (not saved).
   const [measuring, setMeasuring] = useState(false);
   const [vision, setVision] = useState<VisionMode>('none');
@@ -835,7 +877,8 @@ function Workspace({
     });
 
   const onCapture = (kind: CaptureKind) => {
-    if (kind === 'all') void captureAll();
+    if (kind === 'showcase') openShowcase();
+    else if (kind === 'all') void captureAll();
     else if (kind === 'copy') void copyCapture(workspaceRef.current);
     else void capture(workspaceRef.current, ['workspace']);
   };
@@ -932,6 +975,53 @@ function Workspace({
     );
   };
 
+  /* ---------- Feedback, rating and sharing ---------- */
+
+  // Installed from a store: rating and sharing go to its page; otherwise to the project on GitHub.
+  useEffect(() => {
+    let active = true;
+    void installStore().then((found) => {
+      if (active) setStore(found);
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const storeName = store ? t(store === 'chrome' ? 'store.chrome' : 'store.edge') : null;
+  const rateUrl = store ? reviewUrl(store, chrome.runtime.id) : REPO_URL;
+  const shareUrl = store ? listingUrl(store, chrome.runtime.id) : HOMEPAGE_URL;
+
+  const shareBreakpointer = () =>
+    void copyText(shareUrl).then((copied) =>
+      toast(
+        copied
+          ? { message: t('help.shared'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+
+  // A day of use counts once a page is previewed (the rating question comes after a few).
+  const countedDay = useRef(false);
+  useEffect(() => {
+    if (!currentUrl || countedDay.current) return;
+    countedDay.current = true;
+    void countToday().then(setUsage);
+  }, [currentUrl]);
+
+  const answerNudge = (answer: 'rate' | 'later' | 'never') => {
+    if (!usage) return;
+    const next = answer === 'later' ? snooze(usage) : finish(usage);
+    setUsage(next);
+    setNudgeAnswered(true);
+    void writeUsage(next);
+    if (answer === 'rate') void chrome.tabs.create({ url: rateUrl });
+  };
+
+  // Only for copies installed from a store, never in the middle of something.
+  const showNudge = Boolean(
+    storeName && usage && shouldNudge(usage) && !nudgeAnswered && dialog === null && !capturing && currentUrl,
+  );
+
   // Signals that the workspace is interactive (used by end-to-end tests).
   useEffect(() => {
     document.documentElement.dataset.ready = 'true';
@@ -961,6 +1051,10 @@ function Workspace({
 
   /* ---------- Frame agents (sync, checks, inspection) ---------- */
 
+  // Check pages runs before the agents connect: it reaches them through a ref.
+  const batchAgents = useRef<AgentApi | null>(null);
+  const batch = useBatchCheck(batchAgents, settings.disabledChecks);
+
   const cardSrc = (id: string) => (fitPending ? null : (srcOverrides[id] ?? pageFor(id, src)));
   const cardReloadKey = (id: string) => `${reloadAll}.${cardReloads[id] ?? 0}`;
   // A frame's generation changes whenever it is replaced (new address or reload).
@@ -972,8 +1066,10 @@ function Workspace({
     }
     // The width scanner's own preview, while its dialog is open.
     if (dialog === 'scan' && src) map[SCAN_CARD_ID] = shortHash(`${src}#scan#${reloadAll}`);
+    // The preview Check pages loads each page in, while its dialog is open.
+    if (dialog === 'batch' && batch.frame) map[BATCH_CARD_ID] = batchGeneration(batch.frame);
     return map;
-  }, [cards, pageFor, srcOverrides, src, reloadAll, cardReloads, dialog]);
+  }, [cards, pageFor, srcOverrides, src, reloadAll, cardReloads, dialog, batch.frame]);
 
   // The page the previews follow, updated at once: several previews can report
   // the same navigation (e.g. a redirect) before the next render.
@@ -1106,8 +1202,8 @@ function Workspace({
       }
     },
     onNavigate: (cardId, href, { user, newDocument }) => {
-      // The width scanner's preview is the scanner's own: the workspace doesn't follow it.
-      if (cardId === SCAN_CARD_ID) return;
+      // The width scanner's and Check pages' previews are their own: the workspace doesn't follow them.
+      if (cardId === SCAN_CARD_ID || cardId === BATCH_CARD_ID) return;
       // The page tidying its own address (e.g. dropping tracking parameters) isn't a navigation.
       if (!user && !newDocument) return;
       const current = followedUrl.current;
@@ -1121,7 +1217,7 @@ function Workspace({
       setStrays((map) => (Boolean(map[cardId]) === stray ? map : { ...map, [cardId]: stray }));
     },
     onScroll: (cardId, ratio, anchor, y, synced) => {
-      if (cardId === SCAN_CARD_ID) return;
+      if (cardId === SCAN_CARD_ID || cardId === BATCH_CARD_ID) return;
       const href = agents.frameOf(cardId)?.href;
       if (href) lastScroll.current[cardId] = { href, y };
       // A design overlay moves with its page.
@@ -1165,6 +1261,9 @@ function Workspace({
     },
   });
   const { broadcast, send } = agents;
+  useLayoutEffect(() => {
+    batchAgents.current = agents;
+  });
 
   // The page stats and type scale shown in the audit panel, measured in every preview.
   const connectedKey = cards
@@ -1521,6 +1620,147 @@ function Workspace({
       ),
     );
 
+  /* ---------- Check pages ---------- */
+
+  // Every page is checked at the size (and page colours) of each visible viewport.
+  const batchSizeList = useMemo(() => batchSizes(visible), [visible]);
+
+  const openBatch = () => {
+    // The workspace's page starts the list.
+    if (!batchText.trim() && currentUrl) setBatchText(currentUrl.href);
+    setDialog('batch');
+  };
+
+  // The sites in the list Breakpointer isn't allowed on, while the dialog is open (again when access changes).
+  const grantedKey = siteAccess.granted.join(' ');
+  useEffect(() => {
+    if (dialog !== 'batch') return;
+    let active = true;
+    const timer = setTimeout(() => {
+      const urls = parsePageList(batchText)
+        .pages.slice(0, MAX_BATCH_PAGES)
+        .map((page) => new URL(page));
+      void sitesWithoutAccess(urls).then((missing) => {
+        if (active) setBatchAccess({ urls: missing.map((url) => url.href), hosts: missing.map(displayHost) });
+      });
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [dialog, batchText, grantedKey, siteAccess.allSites]);
+
+  /** One Chrome prompt for every site in the list that isn't allowed yet. */
+  const allowBatchSites = async () => {
+    const urls = batchAccess.urls.map((href) => new URL(href));
+    if (urls.length === 0) return;
+    const granted = await withPrompt(() => requestSitesAccess(urls));
+    if (granted === null) return;
+    if (!granted) {
+      toast({ message: t('access.denied'), tone: 'error' });
+      return;
+    }
+    // Allowed for good now, even where it was allowed until Chrome closes before.
+    await forgetSessionGrants(urls.map(siteAccessPattern));
+    toast({ message: t('access.granted', { host: batchAccess.hosts.join(', ') }), tone: 'success', key: 'batch' });
+  };
+
+  /** Tools that read the site itself (links, sitemap) need its permission: offer it. */
+  const batchNeedsAccess = (url: URL) =>
+    toast({
+      message: t('batch.needsAccess', { host: displayHost(url) }),
+      tone: 'info',
+      key: 'batch',
+      action: { label: t('tools.allow'), onAction: () => void allowSite() },
+    });
+
+  /** The pages of this site that this page links to (from a preview of it). */
+  const findBatchLinks = async (): Promise<string[] | null> => {
+    if (!currentUrl) return null;
+    if (siteAccess.site === false) {
+      batchNeedsAccess(currentUrl);
+      return null;
+    }
+    const card = cards.find((item) => {
+      const frame = agents.frameOf(item.id);
+      return !item.compare && frame && pageOf(frame.href) === pageOf(currentUrl.href);
+    });
+    const reply = card ? await agents.ask(card.id, { type: 'getLinks' }, 'links', 3000).catch(() => null) : null;
+    if (!reply) {
+      toast({ message: t('scan.loading'), tone: 'info', key: 'batch' });
+      return null;
+    }
+    const links = checkableLinks(currentUrl.href, reply.hrefs);
+    if (links.length === 0) {
+      toast({ message: t('batch.linksNone'), tone: 'info', key: 'batch' });
+      return null;
+    }
+    return links;
+  };
+
+  /** The pages in this site's sitemap. */
+  const findBatchSitemap = async (): Promise<string[] | null> => {
+    if (!currentUrl) return null;
+    if (siteAccess.site === false) {
+      batchNeedsAccess(currentUrl);
+      return null;
+    }
+    const pages = await sitemapPages(currentUrl.origin).catch(() => []);
+    if (pages.length === 0) {
+      toast({ message: t('batch.sitemapNone', { host: displayHost(currentUrl) }), tone: 'info', key: 'batch' });
+      return null;
+    }
+    return pages;
+  };
+
+  const batchAdded = (count: number, source: 'links' | 'sitemap' | 'saved') => {
+    const keys = {
+      links: ['batch.linksAddedOne', 'batch.linksAdded'],
+      sitemap: ['batch.sitemapAddedOne', 'batch.sitemapAdded'],
+      saved: ['batch.savedAddedOne', 'batch.savedAdded'],
+    } as const;
+    toast(
+      count === 0
+        ? { message: t('batch.nothingAdded', { max: MAX_BATCH_PAGES }), tone: 'info', key: 'batch' }
+        : {
+            message: count === 1 ? t(keys[source][0]) : t(keys[source][1], { count }),
+            tone: 'success',
+            key: 'batch',
+          },
+    );
+  };
+
+  /** Checks the pages; those on sites Breakpointer isn't allowed on are marked at once. */
+  const startBatch = async (pages: string[]) => {
+    if (batch.running || pages.length === 0) return;
+    const missing = new Set(
+      (await sitesWithoutAccess(pages.map((page) => new URL(page)))).map((url) => siteAccessPattern(url)),
+    );
+    const unavailable = new Set(pages.filter((page) => missing.has(siteAccessPattern(new URL(page)))));
+    await batch.start(pages, batchSizeList, unavailable);
+  };
+
+  const copyBatch = () => {
+    if (!batch.run) return;
+    void copyText(batchMarkdown(batch.run, t)).then((copied) =>
+      toast(
+        copied
+          ? { message: t('audit.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+  };
+
+  const downloadBatch = () => {
+    if (!batch.run) return;
+    const html = batchReportHtml(batch.run, { created: new Date(), version, language, homepage: HOMEPAGE_URL }, t);
+    const first = batch.run.pages[0]?.url;
+    const site = first ? displayHost(new URL(first)) : 'pages';
+    const fileName = `breakpointer-pages_${fileNamePart(site)}_${timestamp()}.html`;
+    downloadBlob(new Blob([html], { type: 'text/html' }), fileName);
+    toast({ message: t('report.saved', { file: fileName }), tone: 'success', key: 'report' });
+  };
+
   /** Measuring and picking both take clicks in the previews: one at a time. */
   const toggleMeasure = () => {
     if (!measuring && inspector.picking) stopPicking();
@@ -1871,6 +2111,66 @@ function Workspace({
     setDialog('visual');
   };
 
+  /* ---------- Showcase image ---------- */
+
+  // What captures of the visible previews show: when it changes, they are taken again.
+  const showcaseFor = currentUrl
+    ? [currentUrl.href, ...visible.map((vp) => `${vp.id}:${viewportKey(vp)}:${generations[vp.id] ?? ''}`)].join(' ')
+    : null;
+
+  /** Captures every visible preview (each on its own, as shown) while the dialog steps aside. */
+  const captureShowcase = () =>
+    withCapture(async () => {
+      if (!currentUrl || capturing || visible.length === 0) return;
+      const capturedFor = showcaseFor;
+      setDialog('showcase');
+      setShowcaseBusy(true);
+      setShowcaseConcealed(true);
+      try {
+        await nextFrame();
+        const captures = await captureViewports(visible);
+        if (captures.length === 0) throw new Error('Nothing captured');
+        const shots = captures.map(({ viewport, image }) => ({
+          id: viewport.id,
+          image,
+          width: viewport.width,
+          height: viewport.height,
+        }));
+        setShowcase((state) => ({ ...state, shots, capturedFor }));
+      } catch (error) {
+        console.warn('[Breakpointer] Capturing the showcase failed.', error);
+        toast({ message: t('capture.failed'), tone: 'error', key: 'visual' });
+      } finally {
+        setShowcaseConcealed(false);
+        setShowcaseBusy(false);
+      }
+    });
+
+  const openShowcase = () => {
+    if (!currentUrl) {
+      toast({ message: t('capture.notReady'), tone: 'info' });
+      return;
+    }
+    if (visible.length === 0) {
+      toast({ message: t('report.nothing'), tone: 'info' });
+      return;
+    }
+    const page = currentUrl.href;
+    const title = visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? displayHost(currentUrl);
+    setShowcase((state) => {
+      const kept = state.selected.filter((id) => visible.some((vp) => vp.id === id));
+      return {
+        ...state,
+        selected: kept.length ? kept : pickShowcaseViewports(visible),
+        // A new page gets its own title.
+        options: state.page === page ? state.options : { ...state.options, title },
+        page,
+      };
+    });
+    if (showcase.capturedFor === showcaseFor && showcase.shots.length) setDialog('showcase');
+    else void captureShowcase();
+  };
+
   // Settings lists the pages with baselines when it opens.
   useEffect(() => {
     if (dialog !== 'settings') return;
@@ -2103,6 +2403,7 @@ function Workspace({
           cards: reportCards,
           scan,
           inspector: inspected,
+          homepage: HOMEPAGE_URL,
         },
         t,
       );
@@ -2145,6 +2446,7 @@ function Workspace({
     inspect: toggleInspector,
     audit: () => toggleAudit(),
     scan: openScan,
+    batch: openBatch,
     visual: openVisual,
     measure: toggleMeasure,
     contrast: () => setDialog('contrast'),
@@ -2215,6 +2517,8 @@ function Workspace({
           inspect: toggleInspector,
           audit: toggleAudit,
           scan: openScan,
+          batch: openBatch,
+          showcase: openShowcase,
           visual: openVisual,
           visualSave: () => void saveBaseline(),
           visualCompare: () => void compareBaseline(),
@@ -2646,6 +2950,7 @@ function Workspace({
         issueKinds={issueKinds}
         onAudit={() => toggleAudit()}
         onScan={openScan}
+        onBatch={openBatch}
         onVisual={openVisual}
         measuring={measuring}
         comparing={compare !== null}
@@ -3145,7 +3450,79 @@ function Workspace({
         onClose={() => setDialog(null)}
         commandShortcuts={commandShortcuts}
         paletteShortcut={paletteShortcut}
+        support={{
+          feedbackUrl: FEEDBACK_URL,
+          rateUrl,
+          rateLabel: storeName ? t('help.rateStore', { store: storeName }) : t('help.rateGithub'),
+          onShare: shareBreakpointer,
+        }}
       />
+      <BatchDialog
+        open={dialog === 'batch'}
+        onClose={() => {
+          batch.stop();
+          setDialog(null);
+        }}
+        text={batchText}
+        onText={setBatchText}
+        hasPage={Boolean(currentUrl)}
+        savedPages={settings.savedPages}
+        sizes={batchSizeList}
+        run={batch.run}
+        running={batch.running}
+        progress={batch.progress}
+        frame={batch.frame}
+        frameName={
+          generations[BATCH_CARD_ID] === undefined ? undefined : frameName(BATCH_CARD_ID, generations[BATCH_CARD_ID]!)
+        }
+        onFrameLoad={batch.onFrameLoad}
+        missingAccess={batchAccess.hosts}
+        busy={requesting}
+        onAllow={() => void allowBatchSites()}
+        onFindLinks={findBatchLinks}
+        onFindSitemap={findBatchSitemap}
+        onAdded={batchAdded}
+        onStart={(pages) => void startBatch(pages)}
+        onStop={batch.stop}
+        onOpenPage={(url) => {
+          setDialog(null);
+          navigate(url);
+        }}
+        onCopy={copyBatch}
+        onDownload={downloadBatch}
+      />
+      <ShowcaseDialog
+        open={dialog === 'showcase'}
+        concealed={showcaseConcealed}
+        capturing={showcaseBusy}
+        viewports={visible.map(({ id, name, width, height }) => ({ id, name, width, height }))}
+        selected={showcase.selected}
+        onSelected={(selected) => setShowcase((state) => ({ ...state, selected }))}
+        shots={showcase.shots}
+        options={showcase.options}
+        onOptions={(patch) => setShowcase((state) => ({ ...state, options: { ...state.options, ...patch } }))}
+        host={host ?? ''}
+        onCapture={() => void captureShowcase()}
+        onCopied={(copied) =>
+          toast(
+            copied
+              ? { message: t('capture.copied'), tone: 'success', key: 'copy' }
+              : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+          )
+        }
+        onSaved={(file) => toast({ message: t('capture.saved', { file }), tone: 'success', key: 'sheet' })}
+        onClose={() => {
+          if (!showcaseBusy) setDialog(null);
+        }}
+      />
+      {showNudge && storeName && (
+        <Nudge
+          store={storeName}
+          onRate={() => answerNudge('rate')}
+          onLater={() => answerNudge('later')}
+          onNever={() => answerNudge('never')}
+        />
+      )}
     </div>
   );
 }

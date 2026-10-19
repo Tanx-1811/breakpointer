@@ -22,6 +22,23 @@ async function serveDemo(context: BrowserContext, bug = false) {
   );
 }
 
+/** A small Brightside site for Check pages: a few pages, some with typical bugs, and one that is gone. */
+async function serveSite(context: BrowserContext) {
+  const demo = await readFile(resolve(import.meta.dirname, 'fixtures/demo.html'), 'utf8');
+  const bugs: Record<string, string> = {
+    '/pricing': '.board { min-width: 520px; }',
+    '/blog': '.hero p { font-size: 10px; }',
+  };
+  await context.route('https://brightside.example/**', (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === '/careers')
+      return route.fulfill({ status: 404, contentType: 'text/html; charset=utf-8', body: '<h1>Not found</h1>' });
+    const style = bugs[path];
+    const body = style ? demo.replace('</head>', `<style>${style}</style></head>`) : demo;
+    return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body });
+  });
+}
+
 type Lang = 'en' | 'vi';
 
 const TEXT = {
@@ -36,6 +53,10 @@ const TEXT = {
     saved: /Baseline saved/,
     changed: /viewports changed/,
     view: /^View the comparison of/,
+    batch: 'Check pages',
+    screenshots: 'Screenshots',
+    showcase: /^Showcase image/,
+    showcaseTitle: 'Showcase image',
   },
   vi: {
     groups: /Nhóm/,
@@ -48,6 +69,10 @@ const TEXT = {
     saved: /Đã lưu ảnh mốc/,
     changed: /viewport thay đổi/,
     view: /^Xem so sánh của/,
+    batch: 'Kiểm tra nhiều trang',
+    screenshots: 'Chụp ảnh',
+    showcase: /^Ảnh trình diễn/,
+    showcaseTitle: 'Ảnh trình diễn',
   },
 } as const;
 
@@ -278,6 +303,49 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await dialog.getByRole('button', { name: TEXT[lang].view }).nth(1).click();
       await page.waitForTimeout(4500); // let the toasts time out
       await page.screenshot({ path: resolve(OUT, lang, '11-visual.png') });
+    });
+
+    test('check pages', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      // Layout bugs only: the demo's light grey logos would mark every page for contrast.
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        disabledChecks: ['low-contrast'],
+      });
+      await serveSite(context);
+      await page.goto(viewerUrl({ url: DEMO_URL }));
+      await page.locator('html[data-ready]').waitFor({ state: 'attached' });
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('b');
+      const dialog = page.getByRole('dialog', { name: TEXT[lang].batch });
+      const pages = ['', 'pricing', 'templates', 'blog', 'about', 'careers'].map((path) => `${DEMO_URL}${path}`);
+      await dialog.getByTestId('batch-list').fill(pages.join('\n'));
+      await dialog.getByTestId('batch-start').click();
+      await expect(dialog.getByTestId('batch-row')).toHaveCount(pages.length);
+      await expect(
+        dialog.locator(
+          '[data-testid="batch-row"][data-status="pending"], [data-testid="batch-row"][data-status="checking"]',
+        ),
+      ).toHaveCount(0, { timeout: 60_000 });
+      await page.waitForTimeout(4500); // let the toasts time out
+      await page.screenshot({ path: resolve(OUT, lang, '12-check-pages.png') });
+    });
+
+    test('showcase image', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, { version: 1, language: lang, theme: 'light', breakpoints: 'tailwind' });
+      await show(page, viewerUrl, 3);
+      // The toolbar's screenshot menu (in Vietnamese, the cards' capture buttons share its name).
+      await page.getByRole('banner').getByRole('button', { name: TEXT[lang].screenshots }).click();
+      await page.getByRole('menuitem', { name: TEXT[lang].showcase }).click();
+      const dialog = page.getByRole('dialog', { name: TEXT[lang].showcaseTitle });
+      await expect(dialog.getByTestId('showcase-image')).toBeVisible({ timeout: 20_000 });
+      await expect(dialog.getByTestId('showcase-stage')).not.toHaveAttribute('aria-busy');
+      await page.waitForTimeout(4500); // let the toasts time out
+      await page.screenshot({ path: resolve(OUT, lang, '13-showcase.png') });
     });
 
     test('popup', async ({ context, extensionId }) => {

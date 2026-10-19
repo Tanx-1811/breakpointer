@@ -55,8 +55,8 @@ test.describe('tools inside previews', () => {
     await expect(page.getByRole('button', { name: /Navigated away/ })).toHaveCount(0);
 
     // Hiding and showing the card that led doesn't send everyone back.
-    await page.getByRole('button', { name: /^Tablet,/ }).click();
-    await page.getByRole('button', { name: /^Tablet,/ }).click();
+    await page.getByRole('button', { name: /^Tablet 768 × 1024$/ }).click();
+    await page.getByRole('button', { name: /^Tablet 768 × 1024$/ }).click();
     await expect.poll(() => previewWidths(page, '/linked')).toEqual([375, 768, 1366]);
     await page.waitForTimeout(800);
     await expect(page.getByTestId('address-input')).toHaveValue(server.url('/linked'));

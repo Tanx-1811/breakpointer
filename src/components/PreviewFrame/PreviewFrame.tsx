@@ -74,6 +74,8 @@ type Props = {
   navigatedAway?: boolean;
   /** A CSS filter drawn over the rendered page (vision simulation). */
   filter?: string | null;
+  /** The frame finished loading a page (its `load` event). */
+  onLoad?: () => void;
 };
 
 /**
@@ -85,7 +87,7 @@ type Props = {
  * their `load` event (which waits for every ad and tracker), so the preview
  * stays visible while a thin bar and a small badge show progress.
  */
-export function PreviewFrame({ src, width, height, zoom, title, onBack, name, navigatedAway, filter }: Props) {
+export function PreviewFrame({ src, width, height, zoom, title, onBack, name, navigatedAway, filter, onLoad }: Props) {
   const { t } = useI18n();
   const [status, setStatus] = useState<Status>('loading');
   // A second load event means the page inside navigated (e.g. a clicked link);
@@ -117,6 +119,7 @@ export function PreviewFrame({ src, width, height, zoom, title, onBack, name, na
           loads.current += 1;
           if (loads.current > 1) setNavigated(true);
           setStatus('loaded');
+          onLoad?.();
         }}
         onPointerDown={onStrayPress}
         onWheel={onStrayWheel}

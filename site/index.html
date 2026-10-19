@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Breakpointer — Responsive design tester for Chrome</title>
+    <meta
+      name="description"
+      content="Free Chrome extension to test responsive layouts: preview any page at up to 8 viewport sizes, check breakpoints and find the exact width where it breaks."
+    />
+    <meta name="robots" content="max-image-preview:large" />
+    <link rel="canonical" href="{{siteUrl}}" />
+    <link rel="alternate" hreflang="en" href="{{siteUrl}}" />
+    <link rel="alternate" hreflang="vi" href="{{siteUrl}}vi/" />
+    <link rel="alternate" hreflang="x-default" href="{{siteUrl}}" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0f1114" media="(prefers-color-scheme: dark)" />
+    <link rel="icon" href="assets/mark.svg" type="image/svg+xml" />
+    <link rel="icon" href="assets/mark-512.png" type="image/png" sizes="512x512" />
+    <link rel="apple-touch-icon" href="assets/mark-512.png" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="main.js" defer></script>
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Breakpointer" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="vi_VN" />
+    <meta property="og:url" content="{{siteUrl}}" />
+    <meta property="og:title" content="Breakpointer — Find where your layout breaks." />
+    <meta
+      property="og:description"
+      content="A free Chrome extension that previews any page at up to 8 real viewport sizes side by side, scans every width and finds the exact pixel where your layout breaks."
+    />
+    <meta property="og:image" content="{{siteUrl}}assets/og-1280x640.png" />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta
+      property="og:image:alt"
+      content="Breakpointer: Find where your layout breaks. A page shown at laptop, tablet and phone viewport sizes."
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Breakpointer — Find where your layout breaks." />
+    <meta
+      name="twitter:description"
+      content="Preview any page at up to 8 real viewport sizes side by side in Chrome, and find the exact width where it breaks. Free, private, no account."
+    />
+    <meta name="twitter:image" content="{{siteUrl}}assets/og-1280x640.png" />
+    <meta
+      name="twitter:image:alt"
+      content="Breakpointer: Find where your layout breaks. A page shown at laptop, tablet and phone viewport sizes."
+    />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Breakpointer",
+        "alternateName": "Breakpointer — Responsive Viewport Tester",
+        "description": "A free Chrome extension to test responsive layouts: preview any page at up to 8 real viewport sizes side by side, check every size for layout problems and find the exact width where each one starts.",
+        "url": "{{siteUrl}}",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Chrome",
+        "browserRequirements": "Requires Google Chrome 116 or later.",
+        "inLanguage": "en",
+        "image": "{{siteUrl}}assets/og-1280x640.png",
+        "screenshot": "{{siteUrl}}assets/screenshots/en/1-workspace.png",
+        "installUrl": "{{installUrl}}",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Up to 8 viewport sizes side by side",
+          "Scan every width to find where each issue starts and ends",
+          "Audit of issues, page weight, LCP, layout shift and type scale per size",
+          "Visual check against saved baselines",
+          "Check a list of pages at every viewport",
+          "Inspector comparing one element at every size",
+          "Responsive checks for overflow, tiny text, small touch targets and low contrast"
+        ],
+        "sameAs": ["https://github.com/Tanx-1811/breakpointer"]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <svg class="sprite" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg">
+      <symbol id="i-arrow" viewBox="0 0 24 24">
+        <path
+          d="M5 12h14M13 6l6 6-6 6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-github" viewBox="0 0 16 16">
+        <path
+          fill="currentColor"
+          d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"
+        />
+      </symbol>
+      <symbol id="i-check" viewBox="0 0 24 24">
+        <path
+          d="M5 12.5l4.5 4.5L19 7.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-minus" viewBox="0 0 24 24">
+        <path d="M7 12h10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" />
+      </symbol>
+      <symbol id="i-globe" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M3 12h18M12 3c2.4 2.6 3.6 5.6 3.6 9s-1.2 6.4-3.6 9c-2.4-2.6-3.6-5.6-3.6-9S9.6 5.6 12 3z" />
+        </g>
+      </symbol>
+      <symbol id="i-chevron" viewBox="0 0 24 24">
+        <path
+          d="M6 9l6 6 6-6"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </symbol>
+      <symbol id="i-device" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="12" rx="2" />
+          <path d="M8 20h8M12 16v4" />
+        </g>
+      </symbol>
+      <symbol id="i-key" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="8" cy="15" r="4" />
+          <path d="M10.9 12.1 19 4M15.5 7.5 18 10M17.5 5.5 20 8" />
+        </g>
+      </symbol>
+      <symbol id="i-frame" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="16" rx="2" />
+          <path d="M3 9h18M10 12.5 8 14.5l2 2M14 12.5l2 2-2 2" />
+        </g>
+      </symbol>
+      <symbol id="i-camera" viewBox="0 0 24 24">
+        <g fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 8h3l2-3h6l2 3h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z" />
+          <circle cx="12" cy="13" r="3.5" />
+        </g>
+      </symbol>
+    </svg>
+
+    <header class="site-header">
+      <div class="container header-inner">
+        <a class="brand" href="./">
+          <img class="brand-mark" src="assets/mark.svg" width="32" height="32" alt="Breakpointer" />
+          <picture class="brand-lockup">
+            <source srcset="assets/lockup-horizontal-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="assets/lockup-horizontal-light.svg" width="140" height="28" alt="Breakpointer" />
+          </picture>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <ul>
+            <li><a href="#how">How it works</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#privacy">Privacy</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </nav>
+        <div class="header-actions">
+          <a class="lang-link" href="vi/" hreflang="vi" lang="vi">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-globe" /></svg>Tiếng Việt
+          </a>
+          <a class="icon-link" href="https://github.com/Tanx-1811/breakpointer" aria-label="Breakpointer on GitHub">
+            <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github" /></svg>
+          </a>
+          <a class="button button-primary button-small" href="{{installUrl}}">{{installLabelShort}}</a>
+        </div>
+      </div>
+    </header>
+
+    <div class="ruler" aria-hidden="true">
+      <span style="left: 100px">100</span><span style="left: 200px">200</span><span style="left: 300px">300</span
+      ><span style="left: 400px">400</span><span style="left: 500px">500</span><span style="left: 700px">700</span
+      ><span style="left: 800px">800</span><span style="left: 1000px">1000</span><span style="left: 1100px">1100</span
+      ><span style="left: 1200px">1200</span><span style="left: 1300px">1300</span><span style="left: 1400px">1400</span
+      ><span style="left: 1500px">1500</span><span style="left: 1600px">1600</span><span style="left: 1700px">1700</span
+      ><span style="left: 1800px">1800</span><span style="left: 1900px">1900</span><span style="left: 2000px">2000</span
+      ><span style="left: 2100px">2100</span><span style="left: 2200px">2200</span><span style="left: 2300px">2300</span
+      ><span style="left: 2400px">2400</span><span style="left: 2500px">2500</span><span style="left: 2600px">2600</span
+      ><span style="left: 2700px">2700</span><span style="left: 2800px">2800</span><span style="left: 2900px">2900</span
+      ><span style="left: 3000px">3000</span><span style="left: 3100px">3100</span><span style="left: 3200px">3200</span
+      ><span style="left: 3300px">3300</span><span style="left: 3400px">3400</span><span style="left: 3500px">3500</span
+      ><span style="left: 3600px">3600</span><span style="left: 3700px">3700</span
+      ><span style="left: 3800px">3800</span>
+      <span class="bp" style="left: 440px"><b>440</b></span>
+      <span class="bp" style="left: 600px"><b>600</b></span>
+      <span class="bp" style="left: 900px"><b>900</b></span>
+      <span class="readout" hidden><b data-viewport-size></b></span>
+    </div>
+
+    <main id="main">
+      <section class="hero canvas" aria-labelledby="hero-title">
+        <div class="container">
+          <div class="hero-copy">
+            <p class="eyebrow-pill">
+              <img src="assets/mark.svg" width="22" height="22" alt="" />Free responsive design tester for Chrome
+            </p>
+            <h1 id="hero-title">Find where your layout <span class="headline-accent">breaks.</span></h1>
+            <p class="lead">
+              See any page at up to 8 real viewport sizes side by side, right in Chrome — and find, to the pixel, the
+              width where each problem starts.
+            </p>
+            <div class="cta-row">
+              <a class="button button-primary" href="{{installUrl}}"
+                >{{installLabel}}<svg class="icon icon-arrow" aria-hidden="true" focusable="false">
+                  <use href="#i-arrow" /></svg
+              ></a>
+              <a class="button button-secondary" href="https://github.com/Tanx-1811/breakpointer"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github" /></svg>View on GitHub</a
+              >
+            </div>
+            <p class="install-note">{{installNote}}</p>
+            <ul class="facts">
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Free
+              </li>
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>No account
+              </li>
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Nothing leaves your
+                browser
+              </li>
+              <li>
+                <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Chrome 116+
+              </li>
+            </ul>
+          </div>
+          <div class="hero-shot">
+            <picture>
+              <source
+                srcset="assets/screenshots/en/4-dark-rulers.png"
+                media="(prefers-color-scheme: dark)"
+                width="1280"
+                height="800"
+              />
+              <img
+                src="assets/screenshots/en/1-workspace.png"
+                width="1280"
+                height="800"
+                fetchpriority="high"
+                alt="The Breakpointer workspace: one page previewed at three viewport sizes side by side, each labelled with its size, breakpoint and number of issues."
+              />
+            </picture>
+          </div>
+        </div>
+      </section>
+
+      <section class="stats" aria-label="At a glance">
+        <div class="container">
+          <ul>
+            <li><strong>8</strong> viewports side by side, each with a real layout width</li>
+            <li>
+              <strong>1<span class="unit">px</span></strong> precision on where each issue starts and ends
+            </li>
+            <li><strong>9</strong> responsive checks on every preview, as you browse</li>
+            <li><strong>28</strong> presets, plus any size from 200 to 3840&nbsp;px</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section" id="how" aria-labelledby="how-title">
+        <div class="container">
+          <div class="section-head center">
+            <p class="eyebrow">How it works</p>
+            <h2 id="how-title">From any page to every size in seconds</h2>
+          </div>
+          <ol class="steps">
+            <li class="step">
+              <div class="step-art canvas" aria-hidden="true">
+                <span class="chip"><img src="assets/mark.svg" width="18" height="18" alt="" />Preview this page</span>
+              </div>
+              <div class="step-body">
+                <h3>Open any page</h3>
+                <p>
+                  Click the Breakpointer button and choose <strong>Preview this page</strong> — or press
+                  <kbd>Alt+Shift+P</kbd>, right-click a link, or type <code>bpt</code> in the address bar. Your local
+                  dev server works too.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <div class="step-art canvas" aria-hidden="true">
+                <span class="dim">390 × 844</span><span class="dim">768 × 1024</span><span class="dim">1440 × 900</span>
+              </div>
+              <div class="step-body">
+                <h3>See every size at once</h3>
+                <p>
+                  Up to 8 previews side by side, from 28 presets or your own sizes. Each has a real layout width and
+                  height, so media queries, container queries and <code>innerWidth</code> respond as in a window that
+                  size.
+                </p>
+              </div>
+            </li>
+            <li class="step">
+              <div class="step-art canvas" aria-hidden="true">
+                <span class="keys"><kbd>W</kbd><kbd>E</kbd><kbd>V</kbd><kbd>B</kbd></span>
+              </div>
+              <div class="step-body">
+                <h3>Let it find what breaks</h3>
+                <p>
+                  Allow the site once, and every preview is checked as you browse. Press <kbd>W</kbd> to scan every
+                  width, <kbd>E</kbd> to audit, <kbd>V</kbd> to compare with a baseline and <kbd>B</kbd> to check a
+                  whole list of pages.
+                </p>
+              </div>
+            </li>
+          </ol>
+          <figure class="demo">
+            <div class="demo-frame">
+              <video
+                src="assets/demo.mp4"
+                width="1280"
+                height="800"
+                poster="assets/screenshots/en/9-scan.png"
+                controls
+                muted
+                loop
+                playsinline
+                preload="none"
+                data-autoplay
+                aria-label="Breakpointer demo"
+                aria-describedby="demo-caption"
+              ></video>
+            </div>
+            <figcaption id="demo-caption">
+              The demo, in under 30 seconds and without sound: a width scan finds where content gets wider than the
+              screen, Check pages runs six pages at three sizes, and a showcase image puts the page in device frames.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section section-flush" id="features" aria-labelledby="features-title">
+        <div class="container">
+          <div class="section-head center">
+            <p class="eyebrow">Features</p>
+            <h2 id="features-title">Don’t just look at sizes. Find what breaks.</h2>
+            <p class="section-lead">
+              Breakpointer checks every preview for you and pins each problem to the width where it happens — so you can
+              fix it before anyone else sees it.
+            </p>
+          </div>
+
+          <div class="spotlights">
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Scan every width <kbd>W</kbd></h3>
+                <p>
+                  The page is checked at every width of a range — 320 to 1440&nbsp;px, say — and each issue’s first and
+                  last width is found to the pixel. One chart lines up the issues with the page’s height, this site’s
+                  breakpoints and your viewports.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>A pass every 8,
+                    16 or 32&nbsp;px, then narrowed to the pixel
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>See the page at
+                    any width with the slider
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Jump to the
+                    worst width and add a viewport there in one click
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="assets/screenshots/en/9-scan.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Scan every width: a chart from 320 to 1440 px showing where content is wider than the screen and where text has low contrast, with the page height and the site’s breakpoints at 768 and 1024 px."
+                />
+              </div>
+            </div>
+
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Audit every size <kbd>E</kbd></h3>
+                <p>
+                  Every issue of every preview, grouped by check, with a highlight in the page. Page weight, requests,
+                  image pixels, LCP and layout shift as bars per size — and the type scale of headings, text and buttons
+                  at every width.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>The selector of
+                    each element at fault
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Performance and
+                    type compared per viewport
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Copy any table
+                    as Markdown for a ticket or a pull request
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="assets/screenshots/en/10-audit.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="The audit panel next to three previews, listing content wider than the screen and low-contrast text, with the selectors of the elements at fault."
+                />
+              </div>
+            </div>
+
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Visual check <kbd>V</kbd></h3>
+                <p>
+                  Save a baseline of every viewport, then compare after a deploy, a CSS change or against staging. See
+                  what changed, pixel by pixel — side by side, with a slider, or with the differences boxed.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>How much of the
+                    image changed, and where
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Accept a capture
+                    as the new baseline
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Baselines stay
+                    in your browser, never uploaded
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="assets/screenshots/en/11-visual.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Visual check of the tablet preview against its baseline: 2.9% of the image changed, with the changed heading boxed."
+                />
+              </div>
+            </div>
+            <div class="spotlight">
+              <div class="spotlight-copy">
+                <h3>Check pages <kbd>B</kbd> <span class="badge">New</span></h3>
+                <p>
+                  Check a whole list of pages at every viewport in one run — your saved pages, the links on a page, or
+                  the site’s sitemap. A table shows which pages break, and at which sizes.
+                </p>
+                <ul class="ticks">
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Fill the list
+                    from a page’s links, the sitemap or your saved pages
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Open any page
+                    from the results
+                  </li>
+                  <li>
+                    <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Copy the table
+                    as Markdown or download an HTML report
+                  </li>
+                </ul>
+              </div>
+              <div class="shot canvas">
+                <img
+                  src="assets/screenshots/en/12-check-pages.png"
+                  width="1280"
+                  height="800"
+                  loading="lazy"
+                  decoding="async"
+                  alt="Check pages: six pages of a site checked at phone, tablet and laptop sizes. /pricing and /blog have issues at phone or tablet width, and /careers answered HTTP 404."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div class="cards">
+            <div class="card">
+              <div class="card-visual canvas">
+                <div class="card-art crop crop-inspector">
+                  <img
+                    src="assets/screenshots/en/6-inspector.png"
+                    width="1280"
+                    height="800"
+                    loading="lazy"
+                    decoding="async"
+                    alt="The inspector: a heading highlighted in the tablet preview, and a panel comparing its size and font at phone and tablet widths."
+                  />
+                </div>
+              </div>
+              <div class="card-body">
+                <h3>Inspector <kbd>I</kbd></h3>
+                <p>
+                  Click an element in one preview and compare it at every size: box size, display, font, spacing and
+                  flex or grid layout. What changes between sizes is highlighted.
+                </p>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-visual canvas">
+                <div class="card-art crop crop-showcase">
+                  <img
+                    src="assets/screenshots/en/13-showcase.png"
+                    width="1280"
+                    height="800"
+                    loading="lazy"
+                    decoding="async"
+                    alt="A showcase image: the page in tablet, laptop and phone frames on an indigo backdrop, under the title “Brightside — Plan your week together”."
+                  />
+                </div>
+              </div>
+              <div class="card-body">
+                <h3>Showcase image <span class="badge">New</span></h3>
+                <p>
+                  Your page at several sizes in simple device frames or browser windows on a backdrop — ready for a
+                  portfolio, a client or a post. Download a crisp PNG or copy it. The frames are decorative.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="toolkit-head">
+            <h3>And the rest of the toolkit</h3>
+            <p>Everything else you reach for while making a layout work at every size.</p>
+          </div>
+
+          <div class="gallery">
+            <figure>
+              <img
+                src="assets/screenshots/en/8-resize.png"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="Dragging the tablet preview’s edge: it snaps to the 768 px breakpoint, with a guide line and a 768 × 760 read-out."
+              />
+              <figcaption>Drag an edge to resize — it snaps to your breakpoints.</figcaption>
+            </figure>
+            <figure>
+              <img
+                src="assets/screenshots/en/4-dark-rulers.png"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="The dark theme with pixel rulers and Bootstrap breakpoint labels on three previews."
+              />
+              <figcaption>Pixel rulers and breakpoint labels, in light or dark.</figcaption>
+            </figure>
+            <figure>
+              <img
+                src="assets/screenshots/en/7-palette.png"
+                width="1280"
+                height="800"
+                loading="lazy"
+                decoding="async"
+                alt="The command palette searching for “tablet”, listing tablet sizes and actions."
+              />
+              <figcaption>Every action, size and page in one search: <kbd>Ctrl/⌘ K</kbd>.</figcaption>
+            </figure>
+          </div>
+
+          <ul class="toolkit">
+            <li>
+              <strong>Responsive checks</strong> Sideways overflow and its culprit, a missing viewport tag, tiny text,
+              small touch targets, text cut off, low-contrast text, blurry images, fixed elements covering the screen
+              and layout shifts.
+            </li>
+            <li>
+              <strong>This site’s breakpoints</strong> Read from the page’s own CSS — or use Tailwind, Bootstrap or your
+              own — to label previews and test both sides of each.
+            </li>
+            <li>
+              <strong>Drag to resize</strong> Pull an edge and watch the page reflow live. Edges snap to breakpoints,
+              with guides and a size read-out.
+            </li>
+            <li>
+              <strong>Light and dark side by side</strong> Show any preview with the page’s light or dark styles,
+              whatever your system prefers.
+            </li>
+            <li>
+              <strong>Synced scrolling and navigation</strong> Scroll or follow a link in one preview, and the others
+              keep the same content in view.
+            </li>
+            <li>
+              <strong>Compare two addresses</strong> Staging next to production at every viewport; B follows A from page
+              to page.
+            </li>
+            <li>
+              <strong>Simulate</strong> Colour-vision deficiencies, blurred vision, reduced motion, pseudo-translated
+              text about 40% longer, and right-to-left.
+            </li>
+            <li>
+              <strong>Measure and match</strong> Measure in CSS pixels, check contrast with an eyedropper, and lay a
+              design mockup over a preview.
+            </li>
+            <li>
+              <strong>Real windows</strong> Exact-size Chrome windows, a floating always-on-top preview, and a preview
+              in the side panel.
+            </li>
+            <li>
+              <strong>Screenshots and reports</strong> One preview, all viewports in one labelled image, full-page
+              captures and an HTML report of every size.
+            </li>
+            <li>
+              <strong>Groups, saved pages and links</strong> Save viewport groups, star the pages you test often, and
+              share a workspace link.
+            </li>
+            <li>
+              <strong>Made for the keyboard</strong> Shortcuts for everything, a command palette, and help that lists
+              them all — in English or Vietnamese.
+            </li>
+          </ul>
+          <p class="toolkit-more">
+            Plus feedback, rating and sharing links in Help, and an export of your setup to share with your team.
+          </p>
+        </div>
+      </section>
+
+      <section class="section section-soft" id="devtools" aria-labelledby="devtools-title">
+        <div class="container">
+          <div class="section-head center">
+            <p class="eyebrow">Breakpointer and DevTools</p>
+            <h2 id="devtools-title">How it differs from DevTools device mode</h2>
+            <p class="section-lead">
+              Device mode shows one viewport at a time and leaves the looking to you. Breakpointer shows all your sizes
+              at once — and does the looking.
+            </p>
+          </div>
+          <div class="compare-wrap">
+            <table class="compare" role="table">
+              <caption class="visually-hidden">
+                Chrome DevTools device mode compared with Breakpointer
+              </caption>
+              <thead role="rowgroup">
+                <tr role="row">
+                  <th scope="col" role="columnheader"><span class="visually-hidden">What you need</span></th>
+                  <th scope="col" role="columnheader">DevTools device mode</th>
+                  <th scope="col" role="columnheader" class="us">Breakpointer</th>
+                </tr>
+              </thead>
+              <tbody role="rowgroup">
+                <tr role="row">
+                  <th scope="row" role="rowheader">Sizes on screen at once</th>
+                  <td role="cell" data-label="DevTools">One</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Up to 8, side
+                      by side</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Finds layout problems for you</th>
+                  <td role="cell" data-label="DevTools">You look for them</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>On every
+                      preview, highlighted in the page</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Exact width where a problem starts and ends</th>
+                  <td role="cell" data-label="DevTools">Drag the edge and watch</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Found to the
+                      pixel</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Compare with a saved baseline</th>
+                  <td role="cell" data-label="DevTools">
+                    <span class="cell no"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-minus" /></svg>No</span
+                    >
+                  </td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Pixel by
+                      pixel</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Light and dark at the same time</th>
+                  <td role="cell" data-label="DevTools">One at a time</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Side by
+                      side</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Check a list of pages in one run</th>
+                  <td role="cell" data-label="DevTools">One page at a time</td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Saved pages,
+                      links or a sitemap</span
+                    >
+                  </td>
+                </tr>
+                <tr role="row">
+                  <th scope="row" role="rowheader">Emulates a device’s user agent, pixel ratio and touch</th>
+                  <td role="cell" data-label="DevTools">
+                    <span class="cell yes"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check" /></svg>Yes</span
+                    >
+                  </td>
+                  <td class="us" role="cell" data-label="Breakpointer">
+                    <span class="cell no"
+                      ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-minus" /></svg>No — viewport
+                      size only</span
+                    >
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="compare-note">
+            Need a device’s user agent, pixel density or touch events? That’s a job for DevTools. Breakpointer changes
+            the viewport only — the two work well together.
+          </p>
+        </div>
+      </section>
+
+      <section class="section" id="privacy" aria-labelledby="privacy-title">
+        <div class="container split">
+          <div class="section-head">
+            <p class="eyebrow">Privacy</p>
+            <h2 id="privacy-title">Private by design</h2>
+            <p class="section-lead">
+              No account, no analytics, no server. Nothing you preview, measure or capture leaves your browser.
+            </p>
+            <p class="more">
+              <a href="https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md"
+                >Read the privacy policy<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-arrow" /></svg
+              ></a>
+            </p>
+          </div>
+          <ul class="points">
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-device" /></svg
+              ></span>
+              <h3>It stays on your device</h3>
+              <p>
+                Settings live in Chrome’s local storage. Baselines, screenshots and reports are made in your browser and
+                never uploaded.
+              </p>
+            </li>
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-key" /></svg
+              ></span>
+              <h3>No site access at install</h3>
+              <p>
+                Breakpointer asks only when you need it — for one site, all sites, or just until Chrome closes. Remove
+                access anytime.
+              </p>
+            </li>
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-frame" /></svg
+              ></span>
+              <h3>Why it asks</h3>
+              <p>
+                Some sites refuse to be shown in frames, and the in-page tools — checks, scan, audit, inspector — run a
+                small packaged script inside previews of the sites you allowed.
+              </p>
+            </li>
+            <li class="point">
+              <span class="point-icon"
+                ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-camera" /></svg
+              ></span>
+              <h3>Screenshots</h3>
+              <p>
+                Chrome lets an extension capture a tab only with access to all sites, so your first screenshot asks for
+                it.
+              </p>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section section-soft" id="faq" aria-labelledby="faq-title">
+        <div class="container split">
+          <div class="section-head">
+            <p class="eyebrow">FAQ</p>
+            <h2 id="faq-title">Questions, answered</h2>
+            <p class="section-lead">
+              Something else? <a href="https://github.com/Tanx-1811/breakpointer/issues/new/choose">Ask on GitHub</a>.
+            </p>
+          </div>
+          <div class="faq">
+            <details>
+              <summary>
+                Is Breakpointer free?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Yes. It’s free and needs no account or sign-up. The code is public on
+                  <a href="https://github.com/Tanx-1811/breakpointer">GitHub</a>, where you can report a bug or suggest
+                  a feature.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Does it emulate devices?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  No. Each preview gets a real layout viewport — media queries, container queries and
+                  <code>window.innerWidth</code> respond as they would in a window that size — but the user agent, pixel
+                  density, touch input and browser engine stay those of your Chrome. Use DevTools device mode or a real
+                  phone for those.
+                </p>
+                <p>Sign-in state and third-party cookies can also behave differently inside previews.</p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Why doesn’t a site show up, and how do I allow it?<svg
+                  class="icon"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Many sites tell browsers not to show them inside other pages (with <code>X-Frame-Options</code> or a
+                  CSP <code>frame-ancestors</code> rule), so the preview stays blank or says “refused to connect”.
+                </p>
+                <p>
+                  Click the <strong>Allow</strong> button that appears with the preview — for that site, all sites, or
+                  only until Chrome closes — and it loads. Allowing a site also turns on the in-page tools for it. You
+                  can also open the page in a new tab or in a window of the exact size.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Which browsers does it work in?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Chrome 116 or later on the desktop. Other Chromium-based browsers that install extensions from the
+                  Chrome Web Store, such as Edge or Brave, may work, but they aren’t officially tested.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Does anything leave my browser?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  No. There’s no account, analytics or server: settings, baselines and screenshots stay on your device.
+                  The pages you preview load like any page in Chrome, straight from their own sites.
+                </p>
+              </div>
+            </details>
+            <details>
+              <summary>
+                Does it work with localhost?<svg class="icon" aria-hidden="true" focusable="false">
+                  <use href="#i-chevron" />
+                </svg>
+              </summary>
+              <div class="answer">
+                <p>
+                  Yes. Type <code>localhost:5173</code> — or any port, <code>*.localhost</code> name or IP address — to
+                  preview your dev server. Allow it once to use the checks and tools on it.
+                </p>
+              </div>
+            </details>
+          </div>
+        </div>
+      </section>
+
+      <section class="cta-band" aria-labelledby="cta-title">
+        <div class="container">
+          <img src="assets/lockup-horizontal-on-indigo.svg" width="200" height="40" alt="" />
+          <h2 id="cta-title">See every screen size at once.</h2>
+          <p>Free, private, and right inside Chrome.</p>
+          <div class="cta-row">
+            <a class="button button-primary" href="{{installUrl}}"
+              >{{installLabel}}<svg class="icon icon-arrow" aria-hidden="true" focusable="false">
+                <use href="#i-arrow" /></svg
+            ></a>
+            <a class="button button-secondary" href="https://github.com/Tanx-1811/breakpointer"
+              ><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-github" /></svg>View on GitHub</a
+            >
+          </div>
+          <p class="install-note">{{installNote}}</p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-grid">
+          <div class="footer-brand">
+            <picture>
+              <source srcset="assets/lockup-horizontal-dark.svg" media="(prefers-color-scheme: dark)" />
+              <img src="assets/lockup-horizontal-light.svg" width="140" height="28" alt="Breakpointer" />
+            </picture>
+            <p>Find where your layout breaks. A free Chrome extension for responsive design.</p>
+          </div>
+          <nav aria-labelledby="footer-project">
+            <h2 class="footer-title" id="footer-project">Project</h2>
+            <ul class="footer-links">
+              <li><a href="https://github.com/Tanx-1811/breakpointer">GitHub</a></li>
+              <li><a href="https://github.com/Tanx-1811/breakpointer/blob/main/CHANGELOG.md">Changelog</a></li>
+              <li><a href="https://github.com/Tanx-1811/breakpointer/blob/main/docs/PRIVACY.md">Privacy policy</a></li>
+              <li><a href="https://github.com/Tanx-1811/breakpointer/issues">Support</a></li>
+            </ul>
+          </nav>
+          <nav aria-labelledby="footer-language">
+            <h2 class="footer-title" id="footer-language">Language</h2>
+            <ul class="footer-links">
+              <li><a href="./" hreflang="en" aria-current="page">English</a></li>
+              <li><a href="vi/" hreflang="vi" lang="vi">Tiếng Việt</a></li>
+            </ul>
+          </nav>
+        </div>
+        <p class="footer-legal">Breakpointer is not affiliated with Google. Chrome is a trademark of Google LLC.</p>
+      </div>
+    </footer>
+  </body>
+</html>

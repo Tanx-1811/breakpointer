@@ -4,7 +4,7 @@
     "description": "Tên tiện ích hiển thị trong Chrome và Chrome Web Store."
   },
   "extDescription": {
-    "message": "Xem trước website ở nhiều kích thước viewport và kiểm tra bố cục responsive ngay trong Chrome.",
+    "message": "Kiểm tra responsive: xem trang ở nhiều kích thước màn hình cùng lúc và tìm chính xác chiều rộng nơi bố cục bị vỡ.",
     "description": "Mô tả ngắn (tối đa 132 ký tự)."
   },
   "actionTitle": {

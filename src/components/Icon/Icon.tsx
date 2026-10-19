@@ -85,6 +85,13 @@ const PATHS = {
   palette: 'M12 21a9 9 0 1 1 9-9c0 2-1.5 3-3.5 3H16a2 2 0 0 0-1.5 3.3c.6.7.2 2.7-2.5 2.7z',
   more: 'M6 12h.01M12 12h.01M18 12h.01',
   grip: 'M9 6h.01M15 6h.01M9 12h.01M15 12h.01M9 18h.01M15 18h.01',
+  /** A list of pages (Check pages). */
+  pages: 'M9 6h11M9 12h11M9 18h11M4.5 5.5v1M4.5 11.5v1M4.5 17.5v1',
+  /** A laptop and a phone (Showcase image). */
+  devices: 'M3.5 5h11v8.5h-11zM1.5 17h15M18 8.5h4v11h-4z',
+  /** A message (Send feedback). */
+  message: 'M4 5h16v11H9l-5 4z',
+  heart: 'M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z',
 } as const;
 
 /** Icons made of dots need a wider stroke to read as dots. */

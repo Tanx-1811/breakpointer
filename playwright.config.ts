@@ -17,8 +17,9 @@ export default defineConfig<ExtensionOptions>({
   reporter: process.env.CI ? [['github'], ['list']] : 'list',
   use: { trace: 'retain-on-failure' },
   projects: [
-    { name: 'with-access', testIgnore: /no-access|store-screenshots/, use: { extensionDir: 'dist-e2e' } },
+    { name: 'with-access', testIgnore: /no-access|store-screenshots|demo-video/, use: { extensionDir: 'dist-e2e' } },
     { name: 'no-access', testMatch: /no-access/, use: { extensionDir: 'dist' } },
     { name: 'screenshots', testMatch: /store-screenshots/, use: { extensionDir: 'dist-e2e' } },
+    { name: 'video', testMatch: /demo-video/, use: { extensionDir: 'dist-e2e' } },
   ],
 });

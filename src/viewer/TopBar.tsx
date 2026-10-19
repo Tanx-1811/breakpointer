@@ -6,7 +6,7 @@ import { Icon, Logo } from '../components/Icon/Icon';
 import { Menu, type MenuEntry } from '../components/Menu/Menu';
 import styles from './Viewer.module.css';
 
-export type CaptureKind = 'workspace' | 'all' | 'copy';
+export type CaptureKind = 'workspace' | 'all' | 'copy' | 'showcase';
 
 /** Seconds between automatic reloads offered (0: off). */
 export const AUTO_RELOAD_OPTIONS = [0, 5, 10, 30, 60] as const;
@@ -76,6 +76,14 @@ export function TopBar(props: Props) {
       description: t('capture.copyHint'),
       icon: 'clipboard',
       onSelect: () => props.onCapture('copy'),
+    },
+    { kind: 'separator', id: 'capture-sep' },
+    {
+      id: 'capture-showcase',
+      label: t('capture.showcase'),
+      description: t('capture.showcaseHint'),
+      icon: 'devices',
+      onSelect: () => props.onCapture('showcase'),
     },
   ];
 
@@ -192,14 +200,18 @@ export function TopBar(props: Props) {
           type="button"
           className={styles.searchButton}
           onClick={props.onPalette}
-          aria-label={t('palette.open')}
+          // The name is what the button shows ("Search… ⌘K", WCAG 2.5.3); what it searches is its description.
+          aria-label={`${t('palette.button')} ${props.paletteShortcut}`}
+          aria-description={t('palette.open')}
           data-tooltip={t('palette.open')}
           data-shortcut={props.paletteShortcut}
           data-palette-trigger
         >
           <Icon name="search" size={15} />
           <span className={styles.searchText}>{t('palette.button')}</span>
-          <kbd className={styles.searchKbd}>{props.paletteShortcut}</kbd>
+          <kbd className={styles.searchKbd} aria-hidden="true">
+            {props.paletteShortcut}
+          </kbd>
         </button>
         <Menu
           label={t('capture.menu')}

@@ -93,3 +93,40 @@ test.describe('accessibility of the v0.4 tools (axe, WCAG 2.1 AA)', () => {
     });
   }
 });
+
+test.describe('accessibility of the v0.5 tools (axe, WCAG 2.1 AA)', () => {
+  for (const wanted of ['light', 'dark'] as const) {
+    test(`check pages, showcase image and help in the ${wanted} theme`, async ({ openViewer, server }) => {
+      const page = await openViewer({ url: server.url('/site/') });
+      await agentsReady(page, '/site/');
+      await theme(page, wanted);
+
+      // Check pages, before and after a run, with one cell's issues shown.
+      await page.keyboard.press('b');
+      const batch = page.getByRole('dialog', { name: 'Check pages' });
+      await expect(batch.getByTestId('batch-start')).toBeEnabled();
+      expect(await seriousViolations(page)).toEqual([]);
+      await batch.getByTestId('batch-links').click();
+      await expect(batch.getByTestId('batch-list')).toHaveValue(/site\/wide/);
+      await batch.getByTestId('batch-start').click();
+      await expect(batch.getByTestId('batch-status')).toContainText('pages checked', { timeout: 60_000 });
+      await batch.locator('[data-state="issues"]').first().click();
+      await expect(batch.getByTestId('batch-details')).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+
+      // The showcase image and its options.
+      await page.getByRole('button', { name: 'Screenshots' }).click();
+      await page.getByRole('menuitem', { name: /^Showcase image/ }).click();
+      const showcase = page.getByRole('dialog', { name: 'Showcase image' });
+      await expect(showcase.getByTestId('showcase-image')).toBeVisible({ timeout: 20_000 });
+      expect(await seriousViolations(page)).toEqual([]);
+      await page.keyboard.press('Escape');
+
+      // Help, with feedback and sharing.
+      await page.keyboard.press('?');
+      await expect(page.getByTestId('help-support')).toBeVisible();
+      expect(await seriousViolations(page)).toEqual([]);
+    });
+  }
+});

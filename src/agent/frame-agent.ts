@@ -92,6 +92,8 @@ const UPSCALE_MIN_PX = 24;
 const MAX_FIXED_COVER = 0.35;
 /** Text nodes changed at most by the pseudo-translation, per pass. */
 const MAX_TEXT_NODES = 20_000;
+/** Addresses of links reported at most (Check pages keeps fewer). */
+const MAX_LINKS = 300;
 const OVERLAY_ATTRIBUTE = 'data-breakpointer-overlay';
 
 type AgentWindow = Window & { __breakpointerAgent?: boolean };
@@ -2051,6 +2053,23 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'getTypeScale':
         send({ type: 'typeScale', id: command.id, samples: typeScale() });
         break;
+      case 'getLinks': {
+        // Addresses only, never the links' text: pages of this site, without fragments.
+        const hrefs = new Set<string>();
+        for (const link of document.links) {
+          if (hrefs.size >= MAX_LINKS) break;
+          try {
+            const url = new URL(link.href);
+            if (url.origin !== location.origin || !/^https?:$/.test(url.protocol)) continue;
+            url.hash = '';
+            hrefs.add(url.href);
+          } catch {
+            // Not a valid address.
+          }
+        }
+        send({ type: 'links', id: command.id, hrefs: [...hrefs] });
+        break;
+      }
       case 'getElementRect': {
         let element: Element | null;
         try {

@@ -31,6 +31,24 @@ export function requestSiteAccess(url: URL): Promise<boolean> {
   return chrome.permissions.request({ origins: [siteAccessPattern(url)] });
 }
 
+/** The sites among `urls` (one address each) that Breakpointer may not show or check yet. */
+export async function sitesWithoutAccess(urls: URL[]): Promise<URL[]> {
+  const missing: URL[] = [];
+  const seen = new Set<string>();
+  for (const url of urls) {
+    const pattern = siteAccessPattern(url);
+    if (seen.has(pattern)) continue;
+    seen.add(pattern);
+    if (!(await hasSiteAccess(url))) missing.push(url);
+  }
+  return missing;
+}
+
+/** Access to several sites in one Chrome prompt. Must be called from a user gesture (click). */
+export function requestSitesAccess(urls: URL[]): Promise<boolean> {
+  return chrome.permissions.request({ origins: [...new Set(urls.map(siteAccessPattern))] });
+}
+
 /** Must be called from a user gesture (click) in an extension page. */
 export function requestAllSitesAccess(): Promise<boolean> {
   return chrome.permissions.request({ origins: ALL_SITES_PATTERNS });

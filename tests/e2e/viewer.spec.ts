@@ -195,7 +195,7 @@ test.describe('viewports', () => {
 
   test('show and hide viewports from the chips', async ({ openViewer }) => {
     const page = await openViewer();
-    const chip = page.getByRole('button', { name: /^Tablet, 768 × 1024$/ });
+    const chip = page.getByRole('button', { name: /^Tablet 768 × 1024$/ });
     await chip.click();
     await expect(chip).toHaveAttribute('aria-pressed', 'false');
     await expect(page.getByTestId('viewport-card')).toHaveCount(2);
@@ -205,7 +205,7 @@ test.describe('viewports', () => {
 
   test('reorder with the keyboard on the chips', async ({ openViewer }) => {
     const page = await openViewer();
-    await page.getByRole('button', { name: /^Phone, 375 × 667$/ }).focus();
+    await page.getByRole('button', { name: /^Phone 375 × 667$/ }).focus();
     await page.keyboard.press('Alt+ArrowRight');
     await expect(page.getByTestId('viewport-chip').first()).toContainText('Tablet');
     await expect.poll(() => visualCardNames(page)).toEqual(['Tablet', 'Phone', 'Laptop']);

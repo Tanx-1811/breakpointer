@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.5.0] — 2026-10-19
+
+Check a whole site, not just one page — and share what you find.
+
+### Added
+
+- **Check pages** (`B`, Tools or the palette): a list of pages — typed or pasted, your saved pages, the links on the page you're previewing, or the site's sitemap (from its robots.txt or `/sitemap.xml`) — is loaded page by page in a preview of its own and checked at the size of every visible viewport, with the same checks as the cards. The result is a table of pages × sizes: ✓ where a page is fine, the number of kinds of issue where it isn't (select it to see the issues and the elements), and why a page couldn't be checked (an HTTP error such as 404, a site Breakpointer isn't allowed on, a page that didn't load in time). Open any page in the workspace from its row, copy the table as Markdown or download an HTML report. Links that would act rather than show something (signing out, deleting, one-time sign-in links) and files are left out. Up to 50 pages a run; sites in the list that aren't allowed yet can be allowed in one prompt.
+- **Showcase image** (screenshot menu or the palette): your page at up to four sizes in simple device frames — or browser windows, or none — on an indigo, light, dark or transparent backdrop, in 16:9, 4:3 or square, with an optional title and a small “Made with Breakpointer” credit you can switch off. Download it as a PNG (drawn at twice its size or the screen's density) or copy it. The frames are decoration: previews change the viewport, not the device.
+- **Feedback & support** in Help: send feedback (GitHub's issue forms for a problem, an idea or a site that won't show), rate Breakpointer on the store it was installed from (or star it on GitHub), and copy a link to share it.
+- A one-time question whether you'd rate Breakpointer, after it has been used on five days — only for copies installed from a store, asked again at most once after “Not now”, never after “Don't ask again”. Only counts are kept, on this device.
+- Reports link back to Breakpointer's home page; Chrome shows it as “Visit website” for the extension.
+
+### Changed
+
+- Dependencies updated (React 19.3.1, ESLint 10.13, Vitest 5.0.5, Playwright 1.64.1, axe 4.14, jsdom 30.1.3); Dependabot keeps them current.
+- The store screenshots include Check pages and the showcase image; `npm run demo-video` records a 26-second demo of the real extension (`brand/social/demo.mp4`, `demo.gif`) for the README and posts.
+- A landing page in English and Vietnamese (`site/`, built by `npm run site` and deployed to GitHub Pages by `.github/workflows/pages.yml`); the store summary leads with what people search for.
+
+### Fixed
+
+- The search button and the viewport chips are named by the text they show (WCAG 2.5.3, label in name): “Search… ⌘K”, “Phone 375 × 667”.
+
 ## [0.4.0] — 2026-10-16
 
 Find where it breaks without looking for it: scan every width, audit every size in one place, and check what changed against a baseline.

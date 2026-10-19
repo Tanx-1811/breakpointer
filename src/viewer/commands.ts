@@ -55,6 +55,10 @@ export type CommandActions = {
   audit?: (tab?: AuditTab) => void;
   /** Opens the width scanner. */
   scan?: () => void;
+  /** Opens Check pages. */
+  batch?: () => void;
+  /** Opens the showcase image. */
+  showcase?: () => void;
   /** The visual check: its dialog, a new baseline, a comparison. */
   visual?: () => void;
   visualSave?: () => void;
@@ -409,6 +413,15 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       disabled: !ctx.hasUrl,
       run: scan,
     });
+  if (actions.batch)
+    named('batch.title', {
+      id: 'batch',
+      section: section.tools,
+      icon: 'pages',
+      shortcut: 'B',
+      keywords: 'many pages batch bulk site crawl sitemap links list every page all pages qa',
+      run: actions.batch,
+    });
   if (audit) {
     named('audit.open', {
       id: 'audit',
@@ -642,6 +655,15 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     disabled: !ctx.hasUrl,
     run: () => actions.capture('copy'),
   });
+  if (actions.showcase)
+    named('showcase.title', {
+      id: 'showcase',
+      section: section.capture,
+      icon: 'devices',
+      keywords: 'mockup device frames portfolio share social image am i responsive',
+      disabled: !ctx.hasUrl,
+      run: actions.showcase,
+    });
   named('tools.report', {
     id: 'report',
     section: section.capture,
