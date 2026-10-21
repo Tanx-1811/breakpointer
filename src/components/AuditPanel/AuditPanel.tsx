@@ -1,5 +1,6 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
 import type { CheckKind, CheckReport, PageStats, TypeSample } from '../../agent/protocol';
+import type { ExportFormat } from '../../state/export';
 import { useI18n } from '../../i18n/I18nProvider';
 import {
   STAT_KEYS,
@@ -18,6 +19,8 @@ import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue, localNumber
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
+import { ExportMenu } from '../Plan/ExportMenu';
+import { ProBadge, usePlan } from '../Plan/PlanContext';
 import styles from './AuditPanel.module.css';
 
 export type AuditTab = 'issues' | 'performance' | 'type';
@@ -54,6 +57,8 @@ type Props = {
   onReveal: (cardId: string) => void;
   onRefresh: () => void;
   onCopy: () => void;
+  /** CSV or JSON of every preview's issues, stats and type (Pro; the menu shows when given). */
+  onExport?: (format: ExportFormat) => void;
   onTurnOnChecks: () => void;
   onAllowSite: () => void;
   onClose: () => void;
@@ -104,6 +109,7 @@ export function AuditPanel(props: Props) {
           />
         )}
         <IconButton icon="clipboard" size="sm" label={t('audit.copy')} onClick={props.onCopy} />
+        {props.onExport && <ExportMenu compact onExport={props.onExport} testId="audit-export" />}
         <IconButton icon="close" size="sm" label={t('audit.close')} shortcut="E" onClick={props.onClose} />
       </header>
 
@@ -161,6 +167,7 @@ function ViewportName({ row }: { row: Pick<AuditRow, 'name' | 'width' | 'height'
 
 function IssuesTab(props: Props) {
   const { t } = useI18n();
+  const { pro, upgrade } = usePlan();
   const { rows } = props;
   if (!props.checksOn)
     return (
@@ -259,6 +266,16 @@ function IssuesTab(props: Props) {
           );
         })}
       </ul>
+      {!pro && (
+        <div className={styles.teaser} data-testid="audit-pro-teaser">
+          <Icon name="accessibility" size={15} />
+          <span>{t('pro.teaser')}</span>
+          <ProBadge feature="a11yChecks" />
+          <Button size="sm" variant="ghost" onClick={() => upgrade('a11yChecks')}>
+            {t('pro.see')}
+          </Button>
+        </div>
+      )}
       <p className={styles.note}>{t('checks.privacy')}</p>
     </>
   );

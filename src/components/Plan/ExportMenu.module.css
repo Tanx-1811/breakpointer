@@ -1,0 +1,39 @@
+.button,
+.compact {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 13.5px;
+  font-weight: 550;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.button {
+  height: 32px;
+  padding: 0 10px 0 12px;
+}
+
+.compact {
+  height: 28px;
+  padding: 0 4px 0 6px;
+  gap: 2px;
+}
+
+.button:hover:not(:disabled),
+.compact:hover:not(:disabled) {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.button:disabled,
+.compact:disabled {
+  opacity: 0.45;
+}

@@ -246,6 +246,28 @@ The screenshot menu (or the palette) opens `components/ShowcaseDialog`. Every vi
 - **Frames** (`frameGeometry`) come from the size class (`sizeClassOf`): phones and tablets get even bezels and rounded corners, laptops a camera and an aluminium base, desktops a stand; the windows style a title bar with the page's host; none, rounded corners. Nothing is branded, and the dialog says the frames are decoration.
 - **Drawing**: a canvas at twice the layout size (or the screen's density, up to 3×) — 3200 × 1800 for 16:9 — with a gradient backdrop (or transparent), shadows, the screenshots clipped to the screens, the title and an optional credit with the mark (drawn from the logo's paths). PNG.
 
+## Plans and licences (Breakpointer Pro)
+
+Breakpointer has a free plan (everything up to 0.5) and **Breakpointer Pro** (D51–D58 in [PLAN.md](PLAN.md); selling and issuing keys: [PRO.md](PRO.md)). There is no server: a licence key is a compact JWS (`header.payload.signature`, ES256) signed by the publisher with a private key that never leaves their machine (`npm run license`). `state/license.ts` decodes a key and validates its claims (`sub`, `name`, `plan: "pro"`, `iat`, optional `exp`), and works out the plan from a verified licence and the trial (`entitlementOf`); `services/license.ts` checks the signature with WebCrypto (`ECDSA P-256 / SHA-256`) against `data/license-keys.ts` (`ACCEPTED_LICENSE_KEYS`: the production keys, plus the public test key in the e2e build only) and keeps `breakpointer.license` (`{ key, trialStartedAt }`, validated by `parseLicenseRecord`, never exported) in local storage. A key that fails verification is refused and not stored; a stored key is verified again whenever a workspace opens, so editing storage gives nothing.
+
+`hooks/useEntitlement` gives the workspace its plan (free until the stored key is verified), follows changes made in another tab (`storage.onChanged`), and re-reads when the tab becomes visible and when the trial or a licence ends. `components/Plan/PlanContext` provides `{ entitlement, upgrade }` to every component; Pro features ask `usePlan()` (or `canUse()` in the workspace) and call `upgrade(feature)` on the free plan, which opens the upgrade dialog with that feature first. `state/plan.ts` lists the Pro features and the Pro checks; `skippedChecks()` adds the Pro checks to the checks switched off in Settings on the free plan, and that list is what agents, the scanner, Check pages and the audit use — so a free plan never runs, shows or exports them.
+
+## Accessibility checks
+
+Five checks in `runChecks` of the frame agent (Pro): `missing-alt` (`<img>` without `alt`, `role="img"` without a name), `unnamed-control` (links, buttons, summaries, button-like roles), `unlabeled-field` (inputs, selects, text areas, text-box roles), `hidden-focus` (elements in the tab order inside `aria-hidden`, entirely off the page — left, above, or right where the page can't scroll sideways — or under a box with `opacity: 0`; same-page links are skipped because skip links appear on focus) and `missing-lang` (page-level, nothing to highlight). Names come from `agent/a11y.ts`, a simplified accname (labelledby, aria-label, labels, alt, SVG `<title>`, title, placeholder, content with images' alt and generated text that has letters), unit tested in jsdom. Elements hidden from assistive technology and invisible elements are skipped; samples are element descriptions and sizes, as for the other checks.
+
+## Synced interactions
+
+With **Sync clicks & typing** on (Pro, `settings.sync.interactions`), the workspace sends `mirror` to every agent. An agent then reports the user's trusted clicks (`clickTarget`: the nearest button, link, summary or button-like role) unless the element leaves the page (a link to another page: synced navigation handles it) or submits a form (`mirrorsClick`), the values of text fields, text areas and selects (after a 150 ms pause in typing) and the state of checkboxes and radio buttons, as `interaction` events with a structural selector (`cssPath`, as the inspector). The workspace sends `replay` to the other previews showing the same page (`samePage`, as synced scrolling), never to the scanner's or Check pages' previews. A replaying agent finds the element, skips it if it isn't shown at that size or is now something the rules exclude, and dispatches pointer and mouse events and `click()`, sets a value with the prototype's setter (so frameworks that track values, such as React, see it) and fires `input`, or clicks a checkbox whose state differs. Replayed events aren't trusted, so they are never reported back. Passwords, one-time codes, payment fields (`autocomplete="cc-…"`) and files are never read or set (`isSensitiveField`).
+
+## Cookie banners
+
+**Hide cookie banners** (Pro, session) sends `cookieBanners` to every agent, which injects `bp-consent`: `display: none` for the ids and classes of 25+ named consent tools (`data/consent-banners.ts`; never generic names) and `overflow: visible` for the scroll locks three of them put on `<html>`/`<body>`. Nothing is clicked, so no consent is given or refused; switching it off removes the style.
+
+## Your brand and exports
+
+`settings.branding` (`{ name, url, logo, credit }`, validated by `parseBranding`: names trimmed to 60 characters, http(s) links only, PNG/JPEG/WebP data URLs up to 150 KB) applies only with Pro and once it has a name or a logo (`activeBranding`). `state/branding.ts` writes the brand's header (`reportEyebrow`) and footer (`reportFooter`: “Prepared by …”, with or without “Made with Breakpointer”) for the HTML report and the Check pages report, names image footers (`imageFooterName`), and `services/showcase.ts` draws the name in a corner of showcase images. `state/export.ts` makes the CSV and JSON exports of Check pages (a row per page × size × issue), the width scanner (a row per issue range) and the audit (a row per preview × issue; JSON adds page stats and the type scale): CSV per RFC 4180 with a BOM and CRLF, page text that starts like a formula prefixed with an apostrophe (CSV injection), and the measured value as the agent wrote it (no sign).
+
 ## Feedback, rating and sharing
 
 - Help links to GitHub's issue forms (`.github/ISSUE_TEMPLATE`: a problem, a site that won't show, an idea), to the store's reviews and to the project on GitHub, and copies a link to the store listing to share. Copies installed from a store use that store's page; others (unpacked, sideloaded) the Chrome Web Store listing (`CHROME_WEB_STORE_ID` in `utils/links.ts`). `services/install-source.ts` asks `chrome.management.getSelf()` (no permission needed) and `state/store-links.ts` tells the store from its update URL (`clients2.google.com` → Chrome Web Store, `edge.microsoft.com` → Edge Add-ons) when the install type is `normal`; listing and review links are built from the extension id.
@@ -283,15 +305,17 @@ src/
   popup/                   Toolbar popup: preview current tab, pick a group, saved and recent pages,
                            open the side panel
   sidepanel/               Chrome side panel: the browsed page at a preset size
-  viewer/                  The workspace page (Viewer.tsx composes everything; TopBar,
+  viewer/                  The workspace page (Viewer.tsx composes everything; TopBar (with the Pro button),
                            commands.ts builds the command palette, workspace gestures,
                            useAuditData, useVisualCheck and useBatchCheck for the audit,
                            visual check and Check pages)
   components/              UI building blocks (cards, dock, palette, inspector, dialogs,
-                           menu, select, tooltip layer, toast, …)
-  agent/                   Frame agent (content script), its message protocol and page helpers
+                           menu, select, tooltip layer, toast, …); Plan/: the plan context,
+                           Pro badge, upgrade dialog, licence form, brand settings, export menu
+  agent/                   Frame agent (content script), its message protocol and page helpers;
+                           a11y.ts: accessible names and the rules of synced interactions
   hooks/                   Settings persistence, theme, site access, shortcuts, frame agents,
-                           navigation history
+                           navigation history, the plan (useEntitlement)
   services/
     preview-adapter.ts     Rendering mechanism boundary (iframe adapter)
     embed-rules.ts         DNR session rules: the viewer tab, and Breakpointer's own frames elsewhere
@@ -309,13 +333,16 @@ src/
     image-diff.ts          Decode, scale and compare two captures (canvas)
     session-access.ts      Site access until Chrome closes
     whats-new.ts           The last version whose news the user saw
+    license.ts             Breakpointer Pro: verify licence keys (WebCrypto), store the key and the trial
   state/                   Pure, unit-tested state logic (viewports, groups, fit, reducer,
                            breakpoint validation, check texts, report HTML, command search,
                            drag snapping, image sheet layout, inspector diffs, size classes,
                            A/B comparison, contrast, measuring, vision matrices, window
                            placement, full-page slices, audit grouping and Markdown, width
-                           scan, pixel diffs, snapshot keys, workspace links)
-  data/                    Presets, built-in groups, framework and site breakpoints
+                           scan, pixel diffs, snapshot keys, workspace links; v0.6: licences and
+                           the trial, the plan, branding, CSV/JSON exports)
+  data/                    Presets, built-in groups, framework and site breakpoints, licence
+                           public keys, consent tools' banners
   i18n/                    English (source of truth) and Vietnamese UI strings
   shared/viewer-url.ts     Builds viewer URLs (used by popup and service worker)
   shared/side-panel.ts     Opens the side panel with an address (popup and context menu)
@@ -331,6 +358,7 @@ Data flows one way: `Viewer` owns the settings via `useReducer` (`state/settings
 - Recent addresses are stored only when the user turns on "Remember recent addresses" (off by default) and are cleared when it is turned off. Exports never include recent or last addresses; saved pages (starred by the user) are included.
 - v0.4 added `disabledChecks` (known check ids only, in display order). Outside the settings key: `breakpointer.sessionGrants` and `breakpointer.seenVersion` in local storage, and visual baselines in IndexedDB (see [Visual check](#visual-check)); none of them is exported. v0.5 adds `breakpointer.usage` (days of use and the answer to the rating question, validated by `parseUsage`, not exported); Check pages and the showcase image keep their state for the session only.
 - v0.2 added `customBreakpoints`, `grid`, `sync`, `checks` and `savedPages`; v0.3 added the `site` breakpoint set, an optional `colorScheme` (`light`/`dark`) per viewport and saved-group viewport, `cssSnippets` (name and CSS, at most 20; saving under an existing name replaces it), `grid.baseline` (0, 4, 8, 12, 16 or 24 px) and `sidePanel` (a preset id and its orientation). The side panel changes its own setting by reading, changing and saving the stored settings (`updateStoredSettings`); open workspaces follow the change. Older stored data simply gets their defaults. Importing a file only replaces the settings the file contains, so an older export keeps the newer settings as they are.
+- v0.6 added `sync.interactions` (Pro, off by default) and `branding` (name, website, logo, credit; validated by `parseBranding` and included in exports). Outside the settings key: `breakpointer.license` (the licence key and the trial's start, validated by `parseLicenseRecord`, never exported).
 - On the very first run the defaults are saved at once. The default viewports have fixed ids (`default-<preset>`), so two workspace tabs opened on a fresh install write the same workspace instead of replacing each other's (which would reload every preview).
 - Two open workspace tabs each keep their own state; the last change saved wins.
 

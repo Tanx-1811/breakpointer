@@ -1,4 +1,5 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ExportFormat } from '../../state/export';
 import { useI18n } from '../../i18n/I18nProvider';
 import {
   MAX_BATCH_PAGES,
@@ -19,6 +20,7 @@ import { Button } from '../Button/Button';
 import { Dialog } from '../Dialog/Dialog';
 import { Icon } from '../Icon/Icon';
 import { PreviewFrame } from '../PreviewFrame/PreviewFrame';
+import { ExportMenu } from '../Plan/ExportMenu';
 import styles from './BatchDialog.module.css';
 
 type Props = {
@@ -54,6 +56,8 @@ type Props = {
   onStop: () => void;
   onOpenPage: (url: string) => void;
   onCopy: () => void;
+  /** CSV or JSON of the run (Pro; the menu shows when given). */
+  onExport?: (format: ExportFormat) => void;
   onDownload: () => void;
 };
 
@@ -417,6 +421,7 @@ function BatchBody(props: Props) {
         <Button icon="download" variant="ghost" onClick={props.onDownload} disabled={running || !run}>
           {t('batch.download')}
         </Button>
+        {props.onExport && <ExportMenu onExport={props.onExport} disabled={running || !run} testId="batch-export" />}
         {run && !running && (
           <span className={styles.legend}>
             {run.pages.some((page) => pageIssueKinds(page).length) ? t('batch.legend') : null}

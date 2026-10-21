@@ -49,6 +49,18 @@ Breakpointer is a Chrome extension (Manifest V3) for frontend developers, design
 - **Comfortable:** a refined light/dark design, keyboard shortcuts everywhere, accessible (WCAG 2.1 AA checks), **English and Vietnamese**.
 - **Private:** no account, no analytics, no server; export/import your setup as JSON.
 
+### Breakpointer Pro
+
+Everything above is free and stays free. **Breakpointer Pro** adds tools for people who test websites for a living — try it free for 7 days from the toolbar's **Get Pro** button:
+
+- **Accessibility checks** at every size: images without alt text, buttons and links without a name (often the icon-only menu button that only exists on phones), unlabeled fields, keyboard focus on hidden elements (a closed off-canvas menu the Tab key still reaches) and a missing page language — in the cards, the audit, the width scanner and Check pages.
+- **Sync clicks & typing:** open a menu or fill in a form in one preview and every preview does the same. Forms are never submitted twice; passwords and payment fields are never copied.
+- **Hide cookie banners** of 25+ common consent tools for clean screenshots (nothing is accepted).
+- **Your brand** — name, website and logo — on reports and images you send to clients.
+- **CSV & JSON exports** of Check pages, width scans and audits.
+
+Licence keys are checked offline in your browser: no account, nothing sent. For maintainers: [selling Pro and issuing keys](docs/PRO.md).
+
 |                                                                                                                                                                                                     |                                                                                                                                                            |
 | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | <img src="brand/store/screenshots/en/12-check-pages.png" alt="Check pages: six pages of a site checked at phone, tablet and laptop sizes, two with issues and one answering 404" width="430">       | <img src="brand/store/screenshots/en/13-showcase.png" alt="Showcase image: the page in tablet, laptop and phone frames on an indigo backdrop" width="430"> |
@@ -132,7 +144,7 @@ No permission shows a warning at install. Host access is **optional** and reques
 | `sidePanel`                           | Showing a preview of the page you're browsing in Chrome's side panel                                                                                                                                  |
 | `scripting`                           | Running Breakpointer's own script inside previews of sites **you allowed** (sync, checks, audit, width scan, inspector, breakpoints, colours, live CSS, stress tests), only while a workspace is open |
 
-Breakpointer collects nothing and sends nothing anywhere. Read the full [privacy policy](docs/PRIVACY.md).
+Breakpointer collects nothing and sends nothing anywhere. Breakpointer Pro adds no permission: licence keys are verified in the browser. Read the full [privacy policy](docs/PRIVACY.md).
 
 ## Development
 
@@ -150,6 +162,7 @@ npm run screenshots   # regenerate store screenshots from the real UI
 npm run demo-video    # record brand/social/demo.mp4 and demo.gif from the real UI (needs ffmpeg)
 npm run site          # build the landing page (site/ → dist-site/, deployed by GitHub Pages)
 npm run brand         # regenerate logos, promo tiles and banners (macOS)
+npm run license       # Breakpointer Pro: make the signing key, issue and check licence keys (docs/PRO.md)
 npm run icons         # regenerate extension icons from assets/icon.svg
 ```
 
@@ -167,7 +180,7 @@ src/
 tests/
   unit/         Vitest
   e2e/          Playwright (extension loaded in Chrome for Testing)
-docs/           plan, architecture, privacy, store listing, testing
+docs/           plan, architecture, privacy, store listing, testing, Pro (selling and licences)
 brand/          brand guide, logos, store and social images
 ```
 
@@ -175,7 +188,7 @@ Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing how previews render
 
 ## Roadmap
 
-V1 covers the preview workflow, v0.2 the inspection toolkit, v0.3 the redesign with the command palette, inspector, drag-to-resize, site breakpoints, A/B comparison, simulations, measuring and design overlays, v0.4 the width scanner, the audit panel, visual baselines, three new checks and access until Chrome closes, and v0.5 Check pages, showcase images and feedback in the product. Next, driven by feedback: per-group breakpoints, screenshots and baselines across pages, container-query breakpoints and more languages — see [docs/PLAN.md](docs/PLAN.md#9-roadmap-ideas-ordered-by-expected-value).
+V1 covers the preview workflow, v0.2 the inspection toolkit, v0.3 the redesign with the command palette, inspector, drag-to-resize, site breakpoints, A/B comparison, simulations, measuring and design overlays, v0.4 the width scanner, the audit panel, visual baselines, three new checks and access until Chrome closes, v0.5 Check pages, showcase images and feedback in the product, and v0.6 Breakpointer Pro (accessibility checks, synced clicks and typing, hidden cookie banners, your brand on reports, CSV/JSON exports). Next, driven by feedback: per-group breakpoints, screenshots and baselines across pages, container-query breakpoints and more languages — see [docs/PLAN.md](docs/PLAN.md#9-roadmap-ideas-ordered-by-expected-value).
 
 ## Feedback
 
@@ -192,6 +205,8 @@ No license has been chosen yet; all rights reserved by the author.
 **Breakpointer** là tiện ích Chrome giúp xem trước website ở nhiều kích thước viewport cùng lúc. Mỗi bản xem trước có **viewport dàn trang thật**, nên media query và bố cục responsive hoạt động đúng như trong một cửa sổ cùng kích thước.
 
 **Tính năng chính:** **kiểm tra nhiều trang** (`B`): cả danh sách trang — trang đã lưu, liên kết trong trang hoặc sitemap — ở mọi viewport trong một lần chạy, kèm bảng trang × kích thước và báo cáo HTML · **ảnh trình diễn**: trang ở nhiều kích thước trong khung thiết bị trên nền đẹp, cho portfolio hoặc bài đăng · xem song song tối đa 8 viewport · **quét mọi chiều rộng** (`W`) tìm chính xác đến từng pixel nơi mỗi vấn đề bắt đầu và kết thúc · **bảng rà soát** (`E`): mọi vấn đề, dung lượng, tốc độ, xê dịch bố cục và thang kiểu chữ ở mọi kích thước · **kiểm tra hình ảnh** (`V`): lưu ảnh mốc, so sánh sau, thấy phần nào xê dịch · kiểm tra mới: chữ bị cắt, chữ tương phản thấp, bố cục xê dịch · 28 kích thước có sẵn (tìm kiếm được) và kích thước tùy chỉnh · **kéo cạnh để đổi kích thước**, tự bắt dính vào breakpoint · **bảng lệnh** `Ctrl/⌘ + K` · **soi phần tử** ở mọi kích thước · **breakpoint của chính trang** · **xem sáng/tối cạnh nhau** · cuộn và điều hướng đồng bộ (giữ đúng nội dung đang xem) · **kiểm tra responsive** kèm đánh dấu trên trang (cả ảnh bị phóng mờ và phần tử cố định che màn hình) · **so sánh hai địa chỉ** (A/B, ví dụ staging cạnh bản chính thức) · **mô phỏng** thị lực (mù màu, nhìn mờ), giảm chuyển động, dừng hiệu ứng động, **thử độ bền bố cục** (chữ dài hơn ~40%, phải sang trái) · **cửa sổ thật** đúng kích thước cho trang cần đăng nhập, **xem trước nổi** luôn trên cùng (`P`), **thanh bên** xem nhanh trang đang mở · **chụp toàn trang** · giãn chữ (WCAG), tương phản cao, kiểu in · nhãn **kích thước ảnh** và **thứ tự Tab** · lưới baseline · **đo khoảng cách** (`X`), **kiểm tra độ tương phản màu** với ống hút màu (`C`), **phủ ảnh thiết kế** để so từng pixel · viền bố cục, lớp phủ grid & flex, CSS trực tiếp (lưu được đoạn CSS), lưới cột, thước đo, ẩn thanh cuộn · soi phần tử hiện margin/padding và chụp phần tử ở mọi kích thước · tải lại giữ nguyên chỗ đang xem (cả tự động) · liên kết workspace để chia sẻ · phím 1–8 tập trung một viewport · cho phép trang **đến khi đóng Chrome** · chế độ tập trung, quay lại/tới trang trước/sau, xoay tất cả, sắp theo chiều rộng · chụp ảnh, **ghép mọi viewport thành một ảnh**, chép vào bộ nhớ tạm, **xuất báo cáo HTML** · nhóm viewport, trang đã lưu (★) · menu chuột phải, phím tắt, gõ `bpt` + dấu cách trên thanh địa chỉ · giao diện sáng/tối mới · **tiếng Việt và tiếng Anh** · không thu thập dữ liệu.
+
+**Breakpointer Pro** (dùng thử miễn phí 7 ngày; mọi tính năng ở trên vẫn miễn phí): **kiểm tra trợ năng** ở mọi kích thước (ảnh thiếu alt, nút/liên kết không có tên, trường không có nhãn, tiêu điểm bàn phím rơi vào phần tử bị ẩn, trang thiếu ngôn ngữ) · **đồng bộ nhấp & gõ phím** giữa các bản xem trước (không bao giờ gửi biểu mẫu hai lần, không chép mật khẩu hay thông tin thanh toán) · **ẩn banner cookie** của 25+ công cụ phổ biến · **thương hiệu riêng** (tên, website, logo) trên báo cáo và hình ảnh · **xuất CSV & JSON**. Khóa giấy phép được kiểm tra ngay trong trình duyệt — không tài khoản, không gửi gì đi.
 
 **Cài đặt:** [thêm Breakpointer vào Chrome](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=github&utm_medium=readme&utm_campaign=install) từ Chrome Web Store — miễn phí (tìm đúng tên đầy đủ “Breakpointer — Responsive Viewport Tester”, vì trên store có một tiện ích khác cũng tên Breakpointer).
 

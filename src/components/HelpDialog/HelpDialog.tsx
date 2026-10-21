@@ -39,7 +39,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 ];
 
 /** What this version brings, shown at the top of Help. */
-const NEWS: MessageKey[] = ['news.batch', 'news.showcase', 'news.feedback'];
+const NEWS: MessageKey[] = ['news.pro', 'news.proFree'];
 
 type Props = {
   open: boolean;

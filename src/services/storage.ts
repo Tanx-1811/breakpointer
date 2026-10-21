@@ -1,6 +1,7 @@
 import { CHECK_KINDS, type CheckKind } from '../agent/protocol';
 import { DEFAULT_PRESET_IDS, findPreset } from '../data/presets';
 import { en, type MessageKey } from '../i18n/en';
+import { EMPTY_BRANDING, parseBranding } from '../state/branding';
 import { normalizeGroupName } from '../state/groups';
 import {
   clampDimension,
@@ -85,7 +86,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     customBreakpoints: DEFAULT_CUSTOM_BREAKPOINTS.map((breakpoint) => ({ ...breakpoint })),
     showRulers: false,
     grid: { ...DEFAULT_GRID },
-    sync: { scroll: true, navigation: true },
+    sync: { scroll: true, navigation: true, interactions: false },
     checks: true,
     disabledChecks: [],
     embedHints: true,
@@ -96,6 +97,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     savedPages: [],
     cssSnippets: [],
     sidePanel: { ...DEFAULT_SIDE_PANEL },
+    branding: { ...EMPTY_BRANDING },
   };
 }
 
@@ -287,6 +289,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     sync: {
       scroll: isRecord(raw.sync) ? raw.sync.scroll !== false : true,
       navigation: isRecord(raw.sync) ? raw.sync.navigation !== false : true,
+      interactions: isRecord(raw.sync) && raw.sync.interactions === true,
     },
     checks: raw.checks !== false,
     disabledChecks: parseDisabledChecks(raw.disabledChecks),
@@ -298,6 +301,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     savedPages: parseUrlList(raw.savedPages, MAX_SAVED_PAGES),
     cssSnippets: parseSnippets(raw.cssSnippets),
     sidePanel: parseSidePanel(raw.sidePanel),
+    branding: parseBranding(raw.branding),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;

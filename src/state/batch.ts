@@ -1,8 +1,9 @@
 import { CHECK_KINDS, type CheckIssue, type CheckKind } from '../agent/protocol';
 import type { Language, Translate } from '../i18n/translate';
-import type { ColorScheme } from '../types';
+import type { BrandingSettings, ColorScheme } from '../types';
 import { parsePreviewUrl, toSafeHref } from '../utils/url';
 import { issueCell } from './audit';
+import { BRAND_STYLES, reportEyebrow, reportFooter } from './branding';
 import { CHECK_KIND_KEYS, issueDetail, localNumbers } from './checks';
 import { isOneTimeUrl } from './follow';
 import { escapeHtml } from './report';
@@ -363,6 +364,8 @@ export type BatchReportInput = {
   language: Language;
   /** Where "Breakpointer" in the footer links to. */
   homepage: string;
+  /** Your brand (Pro) instead of Breakpointer in the header and footer. */
+  brand?: BrandingSettings | null;
 };
 
 /**
@@ -431,10 +434,7 @@ export function batchReportHtml(run: BatchRun, input: BatchReportInput, t: Trans
     })
     .join('\n');
 
-  const footer = escapeHtml(t('report.footer', { version: input.version })).replace(
-    'Breakpointer',
-    SAFE_LINK.test(input.homepage) ? `<a href="${escapeHtml(input.homepage)}">Breakpointer</a>` : 'Breakpointer',
-  );
+  const footer = reportFooter(input.brand ?? null, t, input.version, input.homepage);
 
   return `<!doctype html>
 <html lang="${input.language}">
@@ -443,12 +443,12 @@ export function batchReportHtml(run: BatchRun, input: BatchReportInput, t: Trans
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="Breakpointer ${escapeHtml(input.version)}">
 <title>${escapeHtml(t('batch.reportTitle'))}${base ? ` · ${escapeHtml(base)}` : ''}</title>
-<style>${STYLES}</style>
+<style>${STYLES}${input.brand ? BRAND_STYLES : ''}</style>
 </head>
 <body>
 <main>
 <header>
-<p class="eyebrow">Breakpointer · ${escapeHtml(t('batch.title'))}</p>
+${reportEyebrow(input.brand ?? null, t('batch.title'))}
 <h1>${escapeHtml(t('batch.reportTitle'))}</h1>
 <p class="meta">${base ? `${link(base, base)}<br>` : ''}${escapeHtml(t('batch.counts', { pages: run.pages.length, sizes: run.sizes.length }))}<br>${escapeHtml(t('report.created'))}: ${escapeHtml(input.created.toLocaleString(input.language))}</p>
 <p class="meta">${escapeHtml(t('batch.summary', { issues: summary.withIssues, checked: summary.checked }))}${

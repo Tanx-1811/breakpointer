@@ -2,12 +2,16 @@ import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { CHECK_KINDS, type CheckKind } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
+import type { VerifyResult } from '../../services/license';
 import { formatBytes } from '../../state/audit';
 import { CHECK_KIND_KEYS } from '../../state/checks';
+import { TRIAL_DAYS, type Entitlement } from '../../state/license';
+import { PRO_FEATURES, PRO_FEATURE_KEYS, isProCheck, type ProFeature } from '../../state/plan';
 import type { SnapshotPage } from '../../state/snapshots';
 import type {
   Breakpoint,
   BreakpointSetId,
+  BrandingSettings,
   BreakpointerSettings,
   GridColumns,
   GridSettings,
@@ -26,6 +30,10 @@ import { Button, IconButton } from '../Button/Button';
 import { BreakpointEditor } from './BreakpointEditor';
 import { Dialog } from '../Dialog/Dialog';
 import { Icon, type IconName } from '../Icon/Icon';
+import { BrandSettings } from '../Plan/BrandSettings';
+import { LicenseForm } from '../Plan/LicenseForm';
+import { ProBadge, usePlan } from '../Plan/PlanContext';
+import { PRO_FEATURE_ICONS } from '../Plan/UpgradeDialog';
 import { Segmented } from '../Segmented/Segmented';
 import { Select } from '../Select/Select';
 import { Switch } from '../Switch/Switch';
@@ -61,17 +69,34 @@ type Props = {
   snapshots?: SnapshotPage[] | null;
   onDeleteSnapshots?: (page: string) => void;
   onClearSnapshots?: () => void;
+  /** The plan and licence (the section shows when given). */
+  plan?: {
+    entitlement: Entitlement;
+    /** Where Pro is bought; null while sales haven't started. */
+    checkoutUrl: string | null;
+    onStartTrial: () => void;
+    onActivate: (key: string) => Promise<VerifyResult>;
+    onActivated: (result: Extract<VerifyResult, { ok: true }>) => void;
+    onRemove: () => void;
+  };
+  /** Changes the brand on reports and images (the section shows when given). */
+  onBranding?: (branding: Partial<BrandingSettings>) => void;
+  /** The section shown when Settings opens (default: the first). */
+  initialSection?: SettingsSection;
   onClose: () => void;
 };
 
-type SectionId = 'appearance' | 'workspace' | 'tools' | 'pages' | 'data' | 'privacy';
+export type SettingsSection = 'appearance' | 'workspace' | 'tools' | 'brand' | 'pages' | 'data' | 'plan' | 'privacy';
+type SectionId = SettingsSection;
 
 const SECTIONS: { id: SectionId; title: MessageKey; icon: IconName }[] = [
   { id: 'appearance', title: 'settings.appearance', icon: 'sun' },
   { id: 'workspace', title: 'settings.workspace', icon: 'wrap' },
   { id: 'tools', title: 'settings.tools', icon: 'tools' },
+  { id: 'brand', title: 'settings.brand', icon: 'palette' },
   { id: 'pages', title: 'settings.savedPages', icon: 'star' },
   { id: 'data', title: 'settings.data', icon: 'download' },
+  { id: 'plan', title: 'settings.plan', icon: 'sparkle' },
   { id: 'privacy', title: 'settings.privacy', icon: 'shield' },
 ];
 
@@ -116,10 +141,23 @@ export function SettingsDialog(props: Props) {
 function SettingsBody(props: Props) {
   const { settings, version } = props;
   const { t, language } = useI18n();
+  const { pro, upgrade } = usePlan();
   const fileRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const customId = useId();
-  const [active, setActive] = useState<SectionId>('appearance');
+  const sections = SECTIONS.filter(
+    (section) => (section.id !== 'plan' || props.plan) && (section.id !== 'brand' || props.onBranding),
+  );
+  const [active, setActive] = useState<SectionId>(props.initialSection ?? 'appearance');
+
+  // Opened on a section (e.g. "Enter a licence key"): show it.
+  const initialSection = props.initialSection;
+  useEffect(() => {
+    if (!initialSection) return;
+    contentRef.current
+      ?.querySelector<HTMLElement>(`[data-section="${initialSection}"]`)
+      ?.scrollIntoView({ block: 'start' });
+  }, [initialSection]);
   // Bumped when the custom list is replaced from outside the editor, so it starts over.
   const [editorKey, setEditorKey] = useState(0);
 
@@ -154,7 +192,7 @@ function SettingsBody(props: Props) {
     <div className={styles.layout}>
       <nav className={styles.nav} aria-label={t('settings.sections')}>
         <ul className={styles.navList}>
-          {SECTIONS.map((section) => (
+          {sections.map((section) => (
             <li key={section.id}>
               <button
                 type="button"
@@ -298,6 +336,17 @@ function SettingsBody(props: Props) {
             description={t('settings.syncNavigationHelp')}
           />
           <Switch
+            checked={pro && settings.sync.interactions}
+            onChange={(interactions) => (pro ? props.onSync({ interactions }) : upgrade('syncInteractions'))}
+            label={
+              <>
+                {t('tools.syncInteractions')}
+                {!pro && <ProBadge feature="syncInteractions" className={styles.inlineBadge} />}
+              </>
+            }
+            description={t('settings.syncInteractionsHelp')}
+          />
+          <Switch
             checked={settings.checks}
             onChange={props.onChecks}
             label={t('tools.checks')}
@@ -306,16 +355,24 @@ function SettingsBody(props: Props) {
           {settings.checks && props.onCheckKind && (
             <fieldset className={styles.checkKinds} data-testid="check-kinds">
               <legend className={styles.checkKindsLegend}>{t('settings.checkKinds')}</legend>
-              {CHECK_KINDS.map((kind) => (
-                <label key={kind} className={styles.checkKind}>
-                  <input
-                    type="checkbox"
-                    checked={!settings.disabledChecks.includes(kind)}
-                    onChange={(event) => props.onCheckKind?.(kind, event.target.checked)}
-                  />
-                  <span>{t(CHECK_KIND_KEYS[kind])}</span>
-                </label>
-              ))}
+              {CHECK_KINDS.map((kind) => {
+                // The accessibility checks come with Pro: on the free plan they are off, and
+                // switching one on shows what Pro brings.
+                const locked = !pro && isProCheck(kind);
+                return (
+                  <label key={kind} className={styles.checkKind}>
+                    <input
+                      type="checkbox"
+                      checked={!locked && !settings.disabledChecks.includes(kind)}
+                      onChange={(event) =>
+                        locked ? upgrade('a11yChecks') : props.onCheckKind?.(kind, event.target.checked)
+                      }
+                    />
+                    <span>{t(CHECK_KIND_KEYS[kind])}</span>
+                    {locked && <ProBadge feature="a11yChecks" />}
+                  </label>
+                );
+              })}
             </fieldset>
           )}
           <Switch
@@ -370,6 +427,12 @@ function SettingsBody(props: Props) {
             </label>
           </div>
         </Section>
+
+        {props.onBranding && (
+          <Section id="brand" title={t('settings.brand')} icon="palette">
+            <BrandSettings branding={settings.branding} onChange={props.onBranding} />
+          </Section>
+        )}
 
         <Section id="pages" title={t('settings.savedPages')} icon="star">
           <p className={styles.help}>{t('settings.savedPagesHelp')}</p>
@@ -478,6 +541,8 @@ function SettingsBody(props: Props) {
           </Row>
         </Section>
 
+        {props.plan && <PlanSection {...props.plan} />}
+
         <Section id="privacy" title={t('settings.privacy')} icon="shield">
           <p className={styles.help}>{t('settings.privacyBody')}</p>
           <div className={styles.buttons}>
@@ -491,6 +556,98 @@ function SettingsBody(props: Props) {
         </Section>
       </div>
     </div>
+  );
+}
+
+/** The plan: free, the Pro trial or a licence; entering and removing a licence key. */
+function PlanSection({
+  entitlement,
+  checkoutUrl,
+  onStartTrial,
+  onActivate,
+  onActivated,
+  onRemove,
+}: NonNullable<Props['plan']>) {
+  const { t, language } = useI18n();
+  const { upgrade } = usePlan();
+  const date = (time: number) =>
+    new Date(time).toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' });
+  const { license, trial } = entitlement;
+  const licensed = entitlement.source === 'license' && license;
+
+  return (
+    <Section id="plan" title={t('settings.plan')} icon="sparkle">
+      <div className={styles.planStatus} data-testid="plan-status" data-plan={entitlement.plan}>
+        <span className={styles.planIcon} aria-hidden="true">
+          <Icon name={entitlement.plan === 'pro' ? 'sparkle' : 'layers'} size={18} />
+        </span>
+        <div className={styles.rowText}>
+          <span className={styles.rowLabel}>
+            {licensed
+              ? t('pro.name')
+              : trial.status === 'active'
+                ? trial.daysLeft === 1
+                  ? t('pro.trialActiveOne')
+                  : t('pro.trialActive', { days: trial.daysLeft })
+                : t('settings.planFree')}
+          </span>
+          <span className={styles.rowHelp}>
+            {licensed
+              ? [
+                  t('settings.planLicensed', { name: license.name }),
+                  license.expiresAt === null
+                    ? t('settings.planForever')
+                    : t('settings.planUntil', { date: date(license.expiresAt) }),
+                  t('settings.planId', { id: license.id }),
+                ].join(' · ')
+              : license?.expired && license.expiresAt !== null
+                ? t('settings.planExpired', { date: date(license.expiresAt) })
+                : t('settings.planFreeHelp')}
+          </span>
+        </div>
+        {entitlement.source !== 'license' && (
+          <Button size="sm" variant="primary" icon="sparkle" onClick={() => upgrade()}>
+            {t('settings.planFeatures')}
+          </Button>
+        )}
+      </div>
+
+      {licensed ? (
+        <Row label={t('settings.planRemove')} help={t('settings.planRemoveHelp')}>
+          <Button size="sm" variant="ghost" icon="trash" onClick={onRemove}>
+            {t('settings.planRemove')}
+          </Button>
+        </Row>
+      ) : (
+        <>
+          {(trial.status === 'available' || checkoutUrl) && (
+            <div className={styles.buttons}>
+              {trial.status === 'available' && (
+                <Button size="sm" icon="sparkle" onClick={onStartTrial} data-testid="settings-start-trial">
+                  {t('pro.trialStart', { days: TRIAL_DAYS })}
+                </Button>
+              )}
+              {checkoutUrl && (
+                <a className={styles.linkButton} href={checkoutUrl} target="_blank" rel="noopener noreferrer">
+                  <Icon name="external" size={14} />
+                  {t('pro.get')}
+                </a>
+              )}
+            </div>
+          )}
+          <LicenseForm onActivate={onActivate} onActivated={onActivated} />
+        </>
+      )}
+
+      <ul className={styles.planFeatures} aria-label={t('settings.planFeatures')}>
+        {PRO_FEATURES.map((feature: ProFeature) => (
+          <li key={feature}>
+            <Icon name={PRO_FEATURE_ICONS[feature]} size={14} />
+            <span>{t(PRO_FEATURE_KEYS[feature].title)}</span>
+          </li>
+        ))}
+      </ul>
+    </Section>
   );
 }
 

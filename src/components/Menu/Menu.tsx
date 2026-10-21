@@ -24,6 +24,10 @@ export type MenuEntry =
       hint?: string;
       /** Keyboard shortcut shown on the right. */
       shortcut?: string;
+      /** A small mark after the label, e.g. "Pro" for a feature of Breakpointer Pro. */
+      badge?: string;
+      /** Close the menu even for a checkbox item (selecting it opens something else). */
+      closes?: boolean;
       /** A checkbox item (stays open when toggled). */
       checked?: boolean;
       /** With `checked`: one of a set of options (menuitemradio). */
@@ -222,7 +226,7 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
                 data-menu-item={entry.id}
                 onClick={() => {
                   // Checkbox items keep the menu open so several can be switched in a row.
-                  if (!checkable || entry.radio) close(true);
+                  if (!checkable || entry.radio || entry.closes) close(true);
                   entry.onSelect();
                 }}
               >
@@ -240,7 +244,14 @@ export function Menu({ label, entries, align = 'start', minWidth = 200, trigger 
                   )}
                 </span>
                 <span className={styles.itemText}>
-                  <span className={styles.itemLabel}>{entry.label}</span>
+                  <span className={styles.itemLabel}>
+                    {entry.label}
+                    {entry.badge && (
+                      <span className={styles.badge} data-pro-badge>
+                        {entry.badge}
+                      </span>
+                    )}
+                  </span>
                   {entry.description && <span className={styles.itemDescription}>{entry.description}</span>}
                 </span>
                 {entry.hint && <span className={styles.hint}>{entry.hint}</span>}

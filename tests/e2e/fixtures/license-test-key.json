@@ -1,0 +1,8 @@
+{
+  "kid": "bp-test",
+  "kty": "EC",
+  "x": "SUIfhYiFmu7iHjUcSBHj7zb7XPk6mo2eB8DL0MtTfZs",
+  "y": "nchDLDsG6vFI0VHatY9EPHRj3yGXSn_v1SxUKZqvHD8",
+  "crv": "P-256",
+  "d": "UHl-c-xtNMkHgxKXbNLhOv-qZSRjC1yFU93bwSYBF-Y"
+}

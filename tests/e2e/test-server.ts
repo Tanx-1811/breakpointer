@@ -263,6 +263,53 @@ const sessionRoute = (req: IncomingMessage): Route => {
 
 let counter = 0;
 
+/**
+ * Breakpointer Pro: accessibility issues (no page language, an image without alt
+ * text, an icon-only button, a field without a label, a closed off-canvas menu
+ * that the Tab key still reaches), a cookie banner of a common consent tool, and
+ * controls to repeat in other previews (a menu button, a text field, a checkbox
+ * and a form that must never be submitted elsewhere).
+ */
+const PRO_PAGE = `<!doctype html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Pro page</title>
+<style>
+  body { margin: 0; padding: 16px; font: 16px system-ui, sans-serif; }
+  .drawer { position: fixed; top: 0; left: 0; width: 260px; height: 100vh; background: #fff; transform: translateX(-100%); }
+  #onetrust-banner-sdk { position: fixed; left: 0; right: 0; bottom: 0; height: 90px; background: #222; color: #fff; }
+  #hamburger { width: 40px; height: 40px; }
+  #menu { display: none; } #menu.open { display: block; }
+</style></head>
+<body>
+  <h1>Pro page</h1>
+  <img id="photo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==" width="80" height="40">
+  <button id="hamburger" aria-expanded="false"><svg width="16" height="16" aria-hidden="true"><rect width="16" height="2"></rect></svg></button>
+  <ul id="menu"><li>Menu item</li></ul>
+  <form id="form">
+    <input id="name" type="text">
+    <label><input id="agree" type="checkbox"> I agree</label>
+    <button id="send" type="submit">Send</button>
+  </form>
+  <p>Opened: <span id="opened">0</span> · Sent: <span id="sent">0</span></p>
+  <nav class="drawer"><a href="/linked">Drawer link</a></nav>
+  <div id="onetrust-banner-sdk">We use cookies <button>Accept</button></div>
+  <script>
+    const button = document.getElementById('hamburger');
+    const menu = document.getElementById('menu');
+    button.addEventListener('click', () => {
+      const open = !menu.classList.contains('open');
+      menu.classList.toggle('open', open);
+      button.setAttribute('aria-expanded', String(open));
+      document.getElementById('opened').textContent = String(Number(document.getElementById('opened').textContent) + 1);
+    });
+    document.getElementById('form').addEventListener('submit', (event) => {
+      event.preventDefault();
+      document.getElementById('sent').textContent = String(Number(document.getElementById('sent').textContent) + 1);
+    });
+  </script>
+</body>
+</html>`;
+
 const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/fetch-metadata': fetchMetadataRoute,
   // Signs in: session cookies with every SameSite value, as sites set them.
@@ -280,6 +327,7 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   // Served with an error status, as a site that refuses a preview (a bot check, a missing sign-in).
   '/forbidden': { status: 403, body: page('Forbidden page') },
   '/demo': { body: DEMO_PAGE },
+  '/pro': { body: PRO_PAGE },
   '/responsive': { body: page('Responsive page') },
   '/long': { body: LONG_PAGE },
   '/linked': { body: page('Linked page') },

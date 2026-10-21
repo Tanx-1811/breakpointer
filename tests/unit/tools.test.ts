@@ -153,17 +153,17 @@ describe('grid', () => {
 describe('tool settings', () => {
   it('defaults sync and checks on, and keeps them off once turned off', () => {
     const defaults = parseSettings(undefined);
-    expect(defaults.sync).toEqual({ scroll: true, navigation: true });
+    expect(defaults.sync).toEqual({ scroll: true, navigation: true, interactions: false });
     expect(defaults.checks).toBe(true);
     const off = parseSettings({ sync: { scroll: false, navigation: false }, checks: false });
-    expect(off.sync).toEqual({ scroll: false, navigation: false });
+    expect(off.sync).toEqual({ scroll: false, navigation: false, interactions: false });
     expect(off.checks).toBe(false);
   });
 
   it('updates sync, grid and checks partially', () => {
     let state = defaultSettings();
     state = settingsReducer(state, { type: 'setSync', sync: { scroll: false } });
-    expect(state.sync).toEqual({ scroll: false, navigation: true });
+    expect(state.sync).toEqual({ scroll: false, navigation: true, interactions: false });
     state = settingsReducer(state, { type: 'setGrid', grid: { show: true } });
     expect(state.grid).toMatchObject({ show: true, columns: 'auto' });
     state = settingsReducer(state, { type: 'setChecks', checks: false });

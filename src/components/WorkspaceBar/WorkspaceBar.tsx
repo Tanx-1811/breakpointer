@@ -3,19 +3,25 @@ import { BUILT_IN_GROUPS } from '../../data/groups';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
 import { builtInGroupName } from '../../state/groups';
+import type { ProFeature } from '../../state/plan';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { VISION_MODES, type VisionMode } from '../../state/vision';
 import type { BreakpointSetId, ColorScheme, ViewportConfig, ViewportGroup } from '../../types';
 import { MAX_VIEWPORTS } from '../../utils/constants';
 import { Icon, type IconName } from '../Icon/Icon';
 import { Menu, type MenuEntry } from '../Menu/Menu';
+import { usePlan } from '../Plan/PlanContext';
 import { Select } from '../Select/Select';
 import styles from './WorkspaceBar.module.css';
 
 export type ToolToggle =
   | 'syncScroll'
   | 'syncNavigation'
+  /** Pro: clicks and typing repeated in every preview. */
+  | 'syncInteractions'
   | 'checks'
+  /** Pro: consent banners of common tools hidden in previews. */
+  | 'cookieBanners'
   | 'outlines'
   | 'scrollbars'
   | 'grid'
@@ -190,6 +196,7 @@ function MenuButton({
 export function WorkspaceBar(props: Props) {
   const { viewports, breakpoints, showRulers, sync, showGrid } = props;
   const { t } = useI18n();
+  const { pro } = usePlan();
   const [dragId, setDragId] = useState<string | null>(null);
   /** Insertion slot while dragging: 0 = before the first chip, n = after the last. */
   const [dropSlot, setDropSlot] = useState<number | null>(null);
@@ -267,13 +274,19 @@ export function WorkspaceBar(props: Props) {
     },
   ];
 
-  const toolToggle = (id: ToolToggle, label: MessageKey, description?: MessageKey): MenuEntry => ({
-    id,
-    label: t(label),
-    description: description ? t(description) : undefined,
-    checked: props.tools[id],
-    onSelect: () => props.onTool(id),
-  });
+  /** A switch; a Pro feature shows its badge on the free plan, and selecting it shows what Pro brings. */
+  const toolToggle = (id: ToolToggle, label: MessageKey, description?: MessageKey, feature?: ProFeature): MenuEntry => {
+    const locked = Boolean(feature) && !pro;
+    return {
+      id,
+      label: t(label),
+      description: description ? t(description) : undefined,
+      checked: locked ? false : props.tools[id],
+      badge: locked ? t('pro.badge') : undefined,
+      closes: locked || undefined,
+      onSelect: () => props.onTool(id),
+    };
+  };
   // Measuring is a toggle in the bar (X), so it isn't repeated here.
   const utilityEntries: MenuEntry[] = [];
   if (props.onScan)
@@ -377,9 +390,11 @@ export function WorkspaceBar(props: Props) {
     { kind: 'heading', id: 'in-page', label: t('tools.inPage') },
     toolToggle('syncScroll', 'tools.syncScroll'),
     toolToggle('syncNavigation', 'tools.syncNavigation'),
+    toolToggle('syncInteractions', 'tools.syncInteractions', 'tools.syncInteractionsHint', 'syncInteractions'),
     toolToggle('checks', 'tools.checks'),
     toolToggle('outlines', 'tools.outlines'),
     toolToggle('scrollbars', 'tools.scrollbars'),
+    toolToggle('cookieBanners', 'tools.cookieBanners', 'tools.cookieBannersHint', 'hideCookieBanners'),
     toolToggle('grid', 'tools.grid'),
     toolToggle('imageSizes', 'tools.imageSizes', 'tools.imageSizesHint'),
     toolToggle('tabOrder', 'tools.tabOrder', 'tools.tabOrderHint'),

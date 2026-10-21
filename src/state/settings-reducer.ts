@@ -4,6 +4,7 @@ import { MAX_CSS_SNIPPETS, MAX_SAVED_PAGES } from '../utils/constants';
 import type {
   Breakpoint,
   BreakpointSetId,
+  BrandingSettings,
   CssSnippet,
   GridSettings,
   SyncSettings,
@@ -69,12 +70,16 @@ export type SettingsAction =
   | { type: 'saveCssSnippet'; snippet: CssSnippet }
   | { type: 'deleteCssSnippet'; id: string }
   | { type: 'restoreCssSnippet'; snippet: CssSnippet; index: number }
+  /** Changes the brand on reports and images (values already validated, see state/branding.ts). */
+  | { type: 'setBranding'; branding: Partial<BrandingSettings> }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
 
 export function settingsReducer(state: BreakpointerSettings, action: SettingsAction): BreakpointerSettings {
   switch (action.type) {
     case 'setTheme':
       return { ...state, theme: action.theme };
+    case 'setBranding':
+      return { ...state, branding: { ...state.branding, ...action.branding } };
     case 'setLanguage':
       return { ...state, language: action.language };
     case 'setLayout':

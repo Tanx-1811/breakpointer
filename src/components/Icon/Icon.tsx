@@ -92,6 +92,17 @@ const PATHS = {
   /** A message (Send feedback). */
   message: 'M4 5h16v11H9l-5 4z',
   heart: 'M12 20s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7a4.3 4.3 0 0 1 7.5 2.8C19.5 15.4 12 20 12 20z',
+  /** Breakpointer Pro. */
+  sparkle:
+    'M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM18.5 15.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7z',
+  /** A licence key. */
+  key: 'M14.5 4a5.5 5.5 0 1 1-4.9 8L3 18.6V21h3v-2h2v-2h2l1.7-1.7A5.5 5.5 0 0 1 14.5 4zM16 8h.01',
+  /** Cookie banners. */
+  cookie: 'M21 12a9 9 0 1 1-9-9 4 4 0 0 0 4 4 4 4 0 0 0 5 5zM8.5 9.5h.01M15 15h.01M10 16h.01M8 13h.01',
+  /** Synced clicks. */
+  pointer: 'M5 3l14 7-6 2-2 6zM13 13l6 6',
+  /** Accessibility checks. */
+  accessibility: 'M12 4.5h.01M5 8l7 1.2L19 8M12 9.2V14M8.5 21l3.5-7 3.5 7',
 } as const;
 
 /** Icons made of dots need a wider stroke to read as dots. */

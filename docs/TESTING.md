@@ -87,6 +87,12 @@ Run on a clean Chrome profile with the packaged build (`npm run package`, then l
 | 63  | Check pages, other sites      | Add an address on a site you haven't allowed, then Allow these sites…                                   | One Chrome prompt for the missing sites; without access, its pages are marked "Not checked" at once                                                    |
 | 64  | Showcase image                | Screenshots → Showcase image…; change frames, backdrop and shape; Download PNG; Copy image              | The dialog steps aside while capturing; the image updates with each option; the PNG is crisp (3200 px wide); the copy pastes into another app          |
 | 65  | Feedback and rating           | Help → Send feedback, Share Breakpointer; a store install used on five days                             | The issue forms open; a link is copied; the rating card appears once in a corner and never takes focus; "Don't ask again" ends it                      |
+| 66  | Pro on the free plan          | A clean profile: Tools menu, Settings → Checks to run, the audit, Export in Check pages                 | Pro items are marked "Pro"; choosing one opens "Breakpointer Pro" naming that feature; nothing changes in the previews                                 |
+| 67  | Pro trial                     | Get Pro → Try Pro free for 7 days                                                                       | "Pro trial" with 7 in the toolbar; Pro tools work; Settings → Plan says 7 days left                                                                    |
+| 68  | Licence key                   | Settings → Plan: paste a key issued with `npm run license -- issue` (production signing key)            | "Licensed to …", "Never expires" or the date; the toolbar button goes; a key with one character changed is refused; Remove licence → Undo works        |
+| 69  | Accessibility checks          | Pro, an allowed site with an icon-only menu button and an off-canvas menu                               | "Buttons and links without a name" and "Keyboard focus on hidden elements" on the phone card; Highlight outlines them                                  |
+| 70  | Sync clicks & typing          | Pro, Tools → Sync clicks & typing; open the menu and type in a search field in the phone preview        | Every preview opens the menu and shows the text; submitting a form happens in that preview only; password fields stay empty elsewhere                  |
+| 71  | Cookie banners, brand, export | Pro: Tools → Hide cookie banners on a site with OneTrust; Settings → Your brand; Export → CSV           | The banner is gone in previews (back when off); reports say "Prepared by …"; the CSV opens in a spreadsheet with accents intact                        |
 
 ## Release checklist
 
@@ -96,3 +102,4 @@ Run on a clean Chrome profile with the packaged build (`npm run package`, then l
 - [ ] Permissions in the store listing match `src/manifest.ts`; privacy policy is up to date.
 - [ ] No debug logging (only `console.warn` on failures).
 - [ ] Version bumped in `package.json`; CHANGELOG updated; screenshots regenerated if the UI changed.
+- [ ] Breakpointer Pro: `PRO_CHECKOUT_URL` points to the live checkout (or the release is packaged with `--allow-no-checkout` on purpose); a key issued with the production signing key activates in the packaged build; `npm run package` didn't refuse the build ([PRO.md](PRO.md)).

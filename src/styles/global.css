@@ -43,6 +43,10 @@
   --breakpoint: #f59e0b;
   --breakpoint-soft: #fff4dc;
   --breakpoint-text: #8a5300;
+  /* Breakpointer Pro: its badge, button and highlights. */
+  --pro-bg: #fdf1d8;
+  --pro-border: #f1d293;
+  --pro-text: #7a4300;
 
   --warning-bg: #fff8e6;
   --warning-border: #f0d28a;
@@ -122,6 +126,9 @@
   --breakpoint: #fbbf24;
   --breakpoint-soft: #2e2510;
   --breakpoint-text: #f7cf6b;
+  --pro-bg: #33270e;
+  --pro-border: #6b5217;
+  --pro-text: #fbd889;
 
   --warning-bg: #2a2310;
   --warning-border: #5c4914;

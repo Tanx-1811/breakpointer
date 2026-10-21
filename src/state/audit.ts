@@ -42,6 +42,7 @@ export function issueCell(issue: CheckIssue): string {
     case 'overflow':
       return issue.detail ? `+${issue.detail}` : String(issue.count);
     case 'viewport-meta':
+    case 'missing-lang':
       return '!';
     case 'fixed-cover':
       return issue.detail ?? String(issue.count);

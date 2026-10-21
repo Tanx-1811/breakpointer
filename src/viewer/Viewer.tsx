@@ -20,8 +20,10 @@ import { HelpDialog } from '../components/HelpDialog/HelpDialog';
 import { InspectorPanel, type InspectorRow } from '../components/Inspector/InspectorPanel';
 import { LiveCssDialog } from '../components/LiveCssDialog/LiveCssDialog';
 import { Nudge } from '../components/Nudge/Nudge';
+import { PlanProvider } from '../components/Plan/PlanContext';
+import { UpgradeDialog } from '../components/Plan/UpgradeDialog';
 import { RULER_SIZE } from '../components/Ruler/Ruler';
-import { SettingsDialog } from '../components/SettingsDialog/SettingsDialog';
+import { SettingsDialog, type SettingsSection } from '../components/SettingsDialog/SettingsDialog';
 import { ShowcaseDialog } from '../components/ShowcaseDialog/ShowcaseDialog';
 import { SiteAccessDialog } from '../components/SiteAccessDialog/SiteAccessDialog';
 import { ToastProvider, useToast } from '../components/Toast/Toast';
@@ -37,6 +39,7 @@ import {
   type ToolToggle,
 } from '../components/WorkspaceBar/WorkspaceBar';
 import { DockStatus, ZoomDock } from '../components/ZoomDock/ZoomDock';
+import { useEntitlement } from '../hooks/useEntitlement';
 import { useFrameAgents } from '../hooks/useFrameAgents';
 import { useNavigationHistory } from '../hooks/useNavigationHistory';
 import { usePersistentSettings } from '../hooks/usePersistentSettings';
@@ -65,6 +68,7 @@ import { markSeen } from '../services/whats-new';
 import { enableEmbeddingForExtensionFrames } from '../services/embed-rules';
 import { forgetSessionGrants } from '../services/session-access';
 import { installStore } from '../services/install-source';
+import { readLicenseRecord, type VerifyResult } from '../services/license';
 import type { ShowcaseShot } from '../services/showcase';
 import { sitemapPages } from '../services/sitemap';
 import { hasSiteAccess, requestSiteAccess, requestSitesAccess, sitesWithoutAccess } from '../services/site-access';
@@ -107,6 +111,10 @@ import { finish, shouldNudge, snooze, type Usage } from '../state/nudge';
 import { DEFAULT_SHOWCASE, pickShowcaseViewports, type ShowcaseOptions } from '../state/showcase';
 import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
+import { activeBranding, imageFooterName } from '../state/branding';
+import { auditCsv, auditJson, batchCsv, batchJson, scanCsv, scanJson, type ExportFormat } from '../state/export';
+import { TRIAL_DAYS } from '../state/license';
+import { canUse, isPro, skippedChecks as skippedCheckKinds, type ProFeature } from '../state/plan';
 import { CHECK_KIND_KEYS, withoutKinds } from '../state/checks';
 import {
   SCAN_CARD_ID,
@@ -153,7 +161,7 @@ import { modShortcut, whenVisible } from '../utils/platform';
 import { URL_ERROR_KEYS } from '../i18n/url-errors';
 import { shortHash } from '../utils/hash';
 import { createId } from '../utils/id';
-import { CHROME_WEB_STORE_ID, FEEDBACK_URL, HOMEPAGE_URL, REPO_URL } from '../utils/links';
+import { CHROME_WEB_STORE_ID, FEEDBACK_URL, HOMEPAGE_URL, PRO_CHECKOUT_URL, REPO_URL } from '../utils/links';
 import {
   displayHost,
   isLocalHost,
@@ -194,7 +202,8 @@ type DialogName =
   | 'scan'
   | 'visual'
   | 'batch'
-  | 'showcase';
+  | 'showcase'
+  | 'upgrade';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -383,6 +392,34 @@ function Workspace({
   const [realWindows, setRealWindows] = useState<ManagedWindow[]>([]);
   // The always-on-top floating preview, and which viewport it shows.
   const [floating, setFloating] = useState<{ pip: Window; viewportId: string } | null>(null);
+  // Cookie and consent banners hidden in the previews (Pro; for this session).
+  const [hideBannersOn, setHideBanners] = useState(false);
+
+  // Breakpointer Pro: the plan of this browser, and the feature that led to "what Pro brings".
+  const plan = useEntitlement();
+  const { entitlement } = plan;
+  const pro = isPro(entitlement);
+  const [upgradeFeature, setUpgradeFeature] = useState<ProFeature | null>(null);
+  const [settingsSection, setSettingsSection] = useState<SettingsSection | undefined>(undefined);
+  const upgrade = useCallback((feature?: ProFeature) => {
+    setUpgradeFeature(feature ?? null);
+    setDialog('upgrade');
+  }, []);
+  /** True when the feature can be used now; otherwise shows what Pro brings. */
+  const allowPro = (feature: ProFeature) => {
+    if (canUse(entitlement, feature)) return true;
+    upgrade(feature);
+    return false;
+  };
+  const planValue = useMemo(() => ({ entitlement, upgrade }), [entitlement, upgrade]);
+  // Checks the previews skip: switched off in Settings, and the Pro checks on the free plan.
+  const skippedKey = skippedCheckKinds(settings.disabledChecks, entitlement, CHECK_KINDS).join(' ');
+  const skipped = useMemo(() => (skippedKey ? (skippedKey.split(' ') as CheckKind[]) : []), [skippedKey]);
+  // Clicks and typing repeated in every preview, and cookie banners hidden (Pro: they stop if the trial ends).
+  const mirroring = pro && settings.sync.interactions;
+  const hideBanners = pro && hideBannersOn;
+  // Your brand on reports and images (Pro), once it has a name or a logo.
+  const brand = activeBranding(settings.branding, pro);
 
   const addressRef = useRef<HTMLInputElement>(null);
   const workspaceRef = useRef<HTMLElement>(null);
@@ -862,7 +899,7 @@ function Workspace({
         const sheet = await composeSheet(entries, {
           heading: title,
           url: currentUrl.href,
-          footer: `Breakpointer · ${new Date().toLocaleString(language)}`,
+          footer: `${imageFooterName(brand)} · ${new Date().toLocaleString(language)}`,
         });
         if (!sheet) throw new Error('Nothing captured');
         const fileName = `breakpointer-all_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.png`;
@@ -1054,7 +1091,7 @@ function Workspace({
 
   // Check pages runs before the agents connect: it reaches them through a ref.
   const batchAgents = useRef<AgentApi | null>(null);
-  const batch = useBatchCheck(batchAgents, settings.disabledChecks);
+  const batch = useBatchCheck(batchAgents, skipped);
 
   const cardSrc = (id: string) => (fitPending ? null : (srcOverrides[id] ?? pageFor(id, src)));
   const cardReloadKey = (id: string) => `${reloadAll}.${cardReloads[id] ?? 0}`;
@@ -1178,7 +1215,9 @@ function Workspace({
 
   const agents = useFrameAgents(tabId, generations, {
     onHello: (cardId, href) => {
-      agents.send(cardId, { type: 'checks', enabled: settings.checks, skip: settings.disabledChecks });
+      agents.send(cardId, { type: 'checks', enabled: settings.checks, skip: skipped });
+      if (hideBanners) agents.send(cardId, { type: 'cookieBanners', hidden: true });
+      if (mirroring) agents.send(cardId, { type: 'mirror', on: true });
       if (outlines) agents.send(cardId, { type: 'outlines', on: true });
       if (hideScrollbars) agents.send(cardId, { type: 'scrollbars', hidden: true });
       if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
@@ -1260,6 +1299,17 @@ function Workspace({
     onKey: (_cardId, key) => {
       if (key === 'Escape') onEscape();
     },
+    onInteraction: (cardId, interaction) => {
+      // The scanner's and Check pages' previews are their own: what happens there isn't repeated.
+      if (!mirroring || cardId === SCAN_CARD_ID || cardId === BATCH_CARD_ID) return;
+      // The other previews of the same page do it too (others may show something else by now).
+      const page = agents.frameOf(cardId)?.href;
+      for (const card of cards) {
+        if (card.id === cardId) continue;
+        const other = agents.frameOf(card.id)?.href;
+        if (page && other && samePage(page, other)) agents.send(card.id, { type: 'replay', interaction });
+      }
+    },
   });
   const { broadcast, send } = agents;
   useLayoutEffect(() => {
@@ -1280,17 +1330,13 @@ function Workspace({
   });
 
   // Keep every connected frame in step with the tools (new frames get them on hello).
-  // The checks switched off in Settings, as a stable key (the list is a new array after every change).
-  const skippedChecks = settings.disabledChecks.join(' ');
+  // The checks skipped (switched off in Settings, or Pro on the free plan): `skipped` is stable while they are the same.
   useEffect(
-    () =>
-      broadcast({
-        type: 'checks',
-        enabled: settings.checks,
-        skip: skippedChecks ? (skippedChecks.split(' ') as CheckKind[]) : [],
-      }),
-    [broadcast, settings.checks, skippedChecks],
+    () => broadcast({ type: 'checks', enabled: settings.checks, skip: skipped }),
+    [broadcast, settings.checks, skipped],
   );
+  useEffect(() => broadcast({ type: 'cookieBanners', hidden: hideBanners }), [broadcast, hideBanners]);
+  useEffect(() => broadcast({ type: 'mirror', on: mirroring }), [broadcast, mirroring]);
   useEffect(() => broadcast({ type: 'outlines', on: outlines }), [broadcast, outlines]);
   useEffect(() => broadcast({ type: 'scrollbars', hidden: hideScrollbars }), [broadcast, hideScrollbars]);
   useEffect(() => broadcast({ type: 'css', css: liveCss }), [broadcast, liveCss]);
@@ -1335,8 +1381,7 @@ function Workspace({
     ) ?? [];
 
   /** A card's check results, without the checks switched off; null when checks are off or unknown. */
-  const checksOf = (cardId: string) =>
-    settings.checks ? withoutKinds(agents.frameOf(cardId)?.report, settings.disabledChecks) : null;
+  const checksOf = (cardId: string) => (settings.checks ? withoutKinds(agents.frameOf(cardId)?.report, skipped) : null);
 
   const reloadAllPreviews = () => {
     setSrcOverrides({});
@@ -1409,6 +1454,20 @@ function Workspace({
 
   const toggleTool = (tool: ToolToggle) => {
     switch (tool) {
+      case 'syncInteractions': {
+        if (!allowPro('syncInteractions')) break;
+        const on = !settings.sync.interactions;
+        dispatch({ type: 'setSync', sync: { interactions: on } });
+        if (on) hintAccess(t('tools.syncInteractions'));
+        break;
+      }
+      case 'cookieBanners': {
+        if (!allowPro('hideCookieBanners')) break;
+        const on = !hideBanners;
+        setHideBanners(on);
+        if (on) hintAccess(t('tools.cookieBanners'));
+        break;
+      }
       case 'syncScroll': {
         const on = !settings.sync.scroll;
         dispatch({ type: 'setSync', sync: { scroll: on } });
@@ -1604,7 +1663,7 @@ function Workspace({
         return {
           width: reply.width,
           height: reply.height,
-          issues: withoutKinds(reply.report, settings.disabledChecks)?.issues ?? [],
+          issues: withoutKinds(reply.report, skipped)?.issues ?? [],
         };
       } finally {
         document.removeEventListener('visibilitychange', onVisibility);
@@ -1619,6 +1678,20 @@ function Workspace({
           ? { message: t('audit.copied'), tone: 'success', key: 'copy' }
           : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
       ),
+    );
+
+  /** Saves an export (Pro) made by `make`, as CSV or JSON. */
+  const saveExport = (name: string, format: ExportFormat, make: () => string) => {
+    if (!allowPro('dataExport')) return;
+    const fileName = `breakpointer-${name}_${timestamp()}.${format}`;
+    const type = format === 'csv' ? 'text/csv;charset=utf-8' : 'application/json';
+    downloadBlob(new Blob([make()], { type }), fileName);
+    toast({ message: t('export.saved', { file: fileName }), tone: 'success', key: 'export' });
+  };
+
+  const exportScan = (result: ScanResult, format: ExportFormat) =>
+    saveExport(`scan_${fileNamePart(displayHost(new URL(result.page)))}`, format, () =>
+      format === 'csv' ? scanCsv(result.samples, t) : scanJson(result.page, result.options, result.samples, version),
     );
 
   /* ---------- Check pages ---------- */
@@ -1752,9 +1825,23 @@ function Workspace({
     );
   };
 
+  const exportBatch = (format: ExportFormat) => {
+    const run = batch.run;
+    if (!run) return;
+    const first = run.pages[0]?.url;
+    const site = first ? displayHost(new URL(first)) : 'pages';
+    saveExport(`pages_${fileNamePart(site)}`, format, () =>
+      format === 'csv' ? batchCsv(run, t) : batchJson(run, version),
+    );
+  };
+
   const downloadBatch = () => {
     if (!batch.run) return;
-    const html = batchReportHtml(batch.run, { created: new Date(), version, language, homepage: HOMEPAGE_URL }, t);
+    const html = batchReportHtml(
+      batch.run,
+      { created: new Date(), version, language, homepage: HOMEPAGE_URL, brand },
+      t,
+    );
     const first = batch.run.pages[0]?.url;
     const site = first ? displayHost(new URL(first)) : 'pages';
     const fileName = `breakpointer-pages_${fileNamePart(site)}_${timestamp()}.html`;
@@ -1993,7 +2080,7 @@ function Workspace({
         const sheet = await composeSheet(entries, {
           heading: displayHost(currentUrl),
           url: currentUrl.href,
-          footer: `Breakpointer · ${new Date().toLocaleString(language)}`,
+          footer: `${imageFooterName(brand)} · ${new Date().toLocaleString(language)}`,
         });
         if (!sheet) throw new Error('Nothing captured');
         const fileName = `breakpointer-windows_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.png`;
@@ -2405,6 +2492,7 @@ function Workspace({
           scan,
           inspector: inspected,
           homepage: HOMEPAGE_URL,
+          brand,
         },
         t,
       );
@@ -2491,6 +2579,8 @@ function Workspace({
         simulate: simulateState,
         windowsOpen: realWindows.length > 0,
         autoReload,
+        pro,
+        cookieBanners: hideBanners,
         actions: {
           reloadAll: reloadKeepingPlace,
           autoReload: setAutoReload,
@@ -2527,7 +2617,9 @@ function Workspace({
           report: exportReport,
           setTheme: (theme) => dispatch({ type: 'setTheme', theme }),
           setLanguage: (lang) => dispatch({ type: 'setLanguage', language: lang }),
-          openSettings: () => setDialog('settings'),
+          openSettings: () => openSettings(),
+          pro: () => (pro ? openSettings('plan') : upgrade()),
+          licence: () => openSettings('plan'),
           siteAccess: () => setDialog('access'),
           help: openHelp,
           exportSettings,
@@ -2657,7 +2749,7 @@ function Workspace({
         ? issuesMarkdown(
             page,
             auditRows,
-            CHECK_KINDS.filter((kind) => !settings.disabledChecks.includes(kind)),
+            CHECK_KINDS.filter((kind) => !skipped.includes(kind)),
             t,
           )
         : audit.tab === 'performance'
@@ -2678,6 +2770,14 @@ function Workspace({
           ? { message: t('audit.copied'), tone: 'success', key: 'copy' }
           : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
       ),
+    );
+  };
+
+  /** Every preview's issues, page stats and type scale (Pro), as CSV (the issues) or JSON (everything). */
+  const exportAudit = (format: ExportFormat) => {
+    const rows = auditRows.map((row) => ({ ...row, stats: row.stats ?? null, type: row.type ?? null }));
+    saveExport(`audit_${fileNamePart(host ?? 'page')}`, format, () =>
+      format === 'csv' ? auditCsv(rows, t) : auditJson(currentUrl?.href ?? null, rows, version),
     );
   };
 
@@ -2735,7 +2835,7 @@ function Workspace({
         const sheet = await composeSheet(entries, {
           heading: label,
           url: currentUrl.href,
-          footer: `Breakpointer · ${new Date().toLocaleString(language)}`,
+          footer: `${imageFooterName(brand)} · ${new Date().toLocaleString(language)}`,
         });
         if (!sheet) throw new Error('Nothing captured');
         const fileName = `breakpointer-element_${fileNamePart(displayHost(currentUrl))}_${fileNamePart(label)}_${timestamp()}.png`;
@@ -2896,9 +2996,42 @@ function Workspace({
     );
   };
 
+  /* ---------- Breakpointer Pro ---------- */
+
+  const licenceDate = (time: number) =>
+    new Date(time).toLocaleDateString(language, { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const onLicenseActivated = ({ claims }: Extract<VerifyResult, { ok: true }>) => {
+    if (claims.expiresAt !== null && Date.now() >= claims.expiresAt) {
+      toast({ message: t('pro.activatedExpired', { date: licenceDate(claims.expiresAt) }), tone: 'info', key: 'pro' });
+      return;
+    }
+    toast({ message: t('pro.activated'), tone: 'success', key: 'pro' });
+    if (dialog === 'upgrade') setDialog(null);
+  };
+
+  const startProTrial = () =>
+    void plan.startTrial().then((started) => {
+      if (!started) return;
+      toast({ message: t('pro.trialStarted', { days: TRIAL_DAYS }), tone: 'success', key: 'pro' });
+      if (dialog === 'upgrade') setDialog(null);
+    });
+
+  /** Forgets the licence key, with undo (the key may not be at hand to paste again). */
+  const removeLicenseKey = async () => {
+    const { key } = await readLicenseRecord();
+    await plan.remove();
+    if (key) withUndo(t('settings.planRemoved'), () => void plan.activate(key));
+  };
+
+  const openSettings = (section?: SettingsSection) => {
+    setSettingsSection(section);
+    setDialog('settings');
+  };
+
   const focusedViewport = focused ? visible.find((vp) => vp.id === focused.id) : undefined;
 
-  return (
+  const content = (
     <div className={styles.app}>
       <VisionFilters />
       <TopBar
@@ -2930,9 +3063,11 @@ function Workspace({
         onSiteAccess={() => setDialog('access')}
         onToggleTheme={toggleTheme}
         resolvedTheme={resolvedTheme}
-        onSettings={() => setDialog('settings')}
+        onSettings={() => openSettings()}
         onHelp={openHelp}
         helpNews={news}
+        entitlement={plan.ready ? entitlement : undefined}
+        onPro={() => upgrade()}
         savedPages={settings.savedPages}
         saved={Boolean(currentUrl && settings.savedPages.includes(currentUrl.href))}
         onToggleSaved={toggleSaved}
@@ -2979,6 +3114,8 @@ function Workspace({
           tabOrder: annotate.tabOrder,
           gridFlex: annotate.layout,
           liveCss: Boolean(liveCss),
+          syncInteractions: mirroring,
+          cookieBanners: hideBanners,
         }}
         hasUrl={Boolean(currentUrl)}
         siteAllowed={siteAccess.site}
@@ -3212,6 +3349,7 @@ function Workspace({
             onReveal={revealCard}
             onRefresh={auditData.refresh}
             onCopy={copyAudit}
+            onExport={exportAudit}
             onTurnOnChecks={() => setChecks(true)}
             onAllowSite={() => void allowSite()}
             onClose={closeAudit}
@@ -3359,6 +3497,16 @@ function Workspace({
             .catch(() => toast({ message: t('visual.storageFailed'), tone: 'error' }))
         }
         onOpenShortcuts={() => void chrome.tabs.create({ url: 'chrome://extensions/shortcuts' })}
+        plan={{
+          entitlement,
+          checkoutUrl: PRO_CHECKOUT_URL || null,
+          onStartTrial: startProTrial,
+          onActivate: plan.activate,
+          onActivated: onLicenseActivated,
+          onRemove: () => void removeLicenseKey(),
+        }}
+        onBranding={(branding) => dispatch({ type: 'setBranding', branding })}
+        initialSection={settingsSection}
         onClose={() => setDialog(null)}
       />
       <LiveCssDialog
@@ -3435,6 +3583,7 @@ function Workspace({
         onAllowSite={() => void allowSite()}
         onAddViewport={(width, height) => addViewport({ name: `${width}px`, width, height })}
         onCopy={copyScan}
+        onExport={exportScan}
         onClose={() => setDialog(null)}
       />
       <CompareDialog
@@ -3491,6 +3640,7 @@ function Workspace({
           navigate(url);
         }}
         onCopy={copyBatch}
+        onExport={exportBatch}
         onDownload={downloadBatch}
       />
       <ShowcaseDialog
@@ -3504,6 +3654,7 @@ function Workspace({
         options={showcase.options}
         onOptions={(patch) => setShowcase((state) => ({ ...state, options: { ...state.options, ...patch } }))}
         host={host ?? ''}
+        brand={brand?.name ?? ''}
         onCapture={() => void captureShowcase()}
         onCopied={(copied) =>
           toast(
@@ -3517,6 +3668,16 @@ function Workspace({
           if (!showcaseBusy) setDialog(null);
         }}
       />
+      <UpgradeDialog
+        open={dialog === 'upgrade'}
+        feature={upgradeFeature}
+        entitlement={entitlement}
+        checkoutUrl={PRO_CHECKOUT_URL || null}
+        onStartTrial={startProTrial}
+        onActivate={plan.activate}
+        onActivated={onLicenseActivated}
+        onClose={() => setDialog(null)}
+      />
       {showNudge && (
         <Nudge
           store={storeName}
@@ -3527,4 +3688,5 @@ function Workspace({
       )}
     </div>
   );
+  return <PlanProvider value={planValue}>{content}</PlanProvider>;
 }

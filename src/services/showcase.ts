@@ -252,8 +252,9 @@ function drawDevice(
  */
 export async function composeShowcase(
   shots: ShowcaseShot[],
-  options: ShowcaseOptions & { host: string },
+  options: ShowcaseOptions & { host: string; brand?: string },
 ): Promise<Blob | null> {
+  const brand = options.brand?.trim() ?? '';
   if (shots.length === 0) return null;
   const pixel = Math.max(2, Math.min(3, window.devicePixelRatio || 1));
   const base = SHAPE_SIZES[options.shape];
@@ -268,7 +269,7 @@ export async function composeShowcase(
       width,
       height,
       top: title ? titleSize * 3.1 : base.height * 0.09 * pixel,
-      bottom: base.height * (options.credit ? 0.1 : 0.08) * pixel,
+      bottom: base.height * (options.credit || brand ? 0.1 : 0.08) * pixel,
       side: base.width * 0.05 * pixel,
     },
   );
@@ -294,6 +295,22 @@ export async function composeShowcase(
     for (const place of [...placements].sort((a, b) => a.z - b.z)) {
       const index = shots.findIndex((shot) => shot.id === place.id);
       drawDevice(context, place, shots[index]!, bitmaps[index]!, palette, pixel, options.host);
+    }
+
+    // Your brand (Pro) in the other corner, in the same quiet style as the credit.
+    if (brand) {
+      const size = Math.round(base.width * 0.0125) * pixel;
+      context.font = `700 ${size}px ${SANS}`;
+      context.textAlign = 'left';
+      context.textBaseline = 'alphabetic';
+      context.globalAlpha = 0.9;
+      context.fillStyle = palette.muted;
+      context.fillText(
+        fit(context, brand, width * 0.4),
+        base.width * 0.03 * pixel,
+        height - base.height * 0.035 * pixel,
+      );
+      context.globalAlpha = 1;
     }
 
     if (options.credit) {

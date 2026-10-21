@@ -1,7 +1,7 @@
 {
   "name": "breakpointer",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Responsive design tester: preview any site at many screen sizes side by side and find the exact width where your layout breaks.",
   "type": "module",
   "scripts": {
@@ -20,7 +20,8 @@
     "screenshots": "npm run build:e2e && playwright test --project=screenshots",
     "demo-video": "npm run build:e2e && playwright test --project=video",
     "site": "node scripts/build-site.mjs",
-    "brand": "node scripts/brand/render.mjs"
+    "brand": "node scripts/brand/render.mjs",
+    "license": "node scripts/license.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

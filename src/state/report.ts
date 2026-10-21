@@ -1,6 +1,8 @@
 import type { CheckReport, PageStats } from '../agent/protocol';
 import type { Language, Translate } from '../i18n/translate';
+import type { BrandingSettings } from '../types';
 import { STAT_KEYS, STAT_METRICS, formatStat } from './audit';
+import { BRAND_STYLES, reportEyebrow, reportFooter } from './branding';
 import { CHECK_KIND_KEYS, issueDetail, localNumbers } from './checks';
 
 export type ReportCard = {
@@ -42,6 +44,8 @@ export type ReportInput = {
   inspector?: ReportInspector | null;
   /** Where "Breakpointer" in the footer links to. */
   homepage?: string;
+  /** Your brand (Pro) instead of Breakpointer in the header and footer. */
+  brand?: BrandingSettings | null;
 };
 
 const ESCAPES: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
@@ -218,12 +222,12 @@ ${issues(card)}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="generator" content="Breakpointer ${escapeHtml(input.version)}">
 <title>${escapeHtml(t('report.title'))} · ${heading}</title>
-<style>${STYLES}</style>
+<style>${STYLES}${input.brand ? BRAND_STYLES : ''}</style>
 </head>
 <body>
 <main>
 <header>
-<p class="eyebrow">Breakpointer · ${escapeHtml(t('report.title'))}</p>
+${reportEyebrow(input.brand ?? null, t('report.title'))}
 <h1>${heading}</h1>
 <p class="meta">${escapeHtml(t('report.page'))}: ${link}<br>${escapeHtml(t('report.created'))}: ${created}</p>
 </header>
@@ -240,12 +244,7 @@ ${statsSection}
 ${scanSection}
 ${inspectorSection}
 ${sections}
-<footer>${escapeHtml(t('report.footer', { version: input.version })).replace(
-    'Breakpointer',
-    input.homepage && SAFE_LINK.test(input.homepage)
-      ? `<a href="${escapeHtml(input.homepage)}">Breakpointer</a>`
-      : 'Breakpointer',
-  )}</footer>
+<footer>${reportFooter(input.brand ?? null, t, input.version, input.homepage)}</footer>
 </main>
 </body>
 </html>

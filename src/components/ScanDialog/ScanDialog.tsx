@@ -1,4 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import type { ExportFormat } from '../../state/export';
 import { useI18n } from '../../i18n/I18nProvider';
 import { issueValue, CHECK_KIND_KEYS } from '../../state/checks';
 import {
@@ -20,6 +21,7 @@ import { Dialog } from '../Dialog/Dialog';
 import { Icon } from '../Icon/Icon';
 import { PreviewFrame } from '../PreviewFrame/PreviewFrame';
 import { Select } from '../Select/Select';
+import { ExportMenu } from '../Plan/ExportMenu';
 import styles from './ScanDialog.module.css';
 
 /** A finished (or stopped) scan of one page. */
@@ -54,6 +56,8 @@ type Props = {
   onAllowSite: () => void;
   onAddViewport: (width: number, height: number) => void;
   onCopy: (result: ScanResult) => void;
+  /** CSV or JSON of the scan shown (Pro; the menu shows when given). */
+  onExport?: (result: ScanResult, format: ExportFormat) => void;
   onClose: () => void;
 };
 
@@ -394,6 +398,13 @@ function ScanBody(props: Props) {
         >
           {t('audit.copy')}
         </Button>
+        {props.onExport && (
+          <ExportMenu
+            onExport={(format) => shown && props.onExport?.(shown, format)}
+            disabled={running || !shown}
+            testId="scan-export"
+          />
+        )}
       </div>
     </div>
   );

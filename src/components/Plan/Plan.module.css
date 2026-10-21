@@ -1,0 +1,248 @@
+.badge {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  height: 18px;
+  padding: 0 6px;
+  border: 1px solid var(--pro-border);
+  border-radius: 999px;
+  background: var(--pro-bg);
+  color: var(--pro-text);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.features {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.feature[data-current] {
+  border-color: var(--pro-border);
+  background: var(--pro-bg);
+}
+
+.featureIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  color: var(--accent);
+}
+
+.feature[data-current] .featureIcon {
+  background: var(--surface);
+  color: var(--pro-text);
+}
+
+.featureText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.featureText strong {
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.feature[data-current] .featureText {
+  color: var(--text);
+}
+
+.freeNote {
+  margin: 10px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.offer {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.offerActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.trialStatus {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.soon {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.buy {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-text);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--shadow-xs), var(--inset-highlight);
+}
+
+.buy:hover {
+  background: var(--accent-hover);
+}
+
+.buy:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.keyTitle {
+  margin: 18px 0 8px;
+  font-size: 13.5px;
+  font-weight: 650;
+}
+
+.licenseForm {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.licenseLabel {
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.licenseRow {
+  display: flex;
+  gap: 8px;
+}
+
+.licenseRow input {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+}
+
+.licenseNote {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.licenseProblem {
+  margin: 0;
+  color: var(--danger);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.brand {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.brandHelp {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.brandFields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.brandFields:disabled {
+  opacity: 0.6;
+}
+
+.brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.brandLabel {
+  font-weight: 550;
+}
+
+.brandInput {
+  flex: none;
+  width: 240px;
+}
+
+.logoControls {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo {
+  display: block;
+  max-width: 96px;
+  max-height: 32px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+}

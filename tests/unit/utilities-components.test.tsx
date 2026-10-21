@@ -379,7 +379,9 @@ describe('WorkspaceBar utilities', () => {
       tools: {
         syncScroll: true,
         syncNavigation: true,
+        syncInteractions: false,
         checks: true,
+        cookieBanners: false,
         outlines: false,
         scrollbars: false,
         grid: false,

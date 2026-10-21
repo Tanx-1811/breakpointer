@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.6.0] — 2026-10-21
+
+**Breakpointer Pro**: tools for people who test websites for a living, with a free 7-day trial. Everything Breakpointer did before stays free.
+
+### Added
+
+- **Plans and licences.** A “Get Pro” button in the toolbar (it counts down the days during the trial), an upgrade dialog that shows what Pro brings — the feature you asked for first — and **Settings → Plan** to start the trial, enter a licence key, see who it is licensed to and until when, or remove it (with Undo). Licence keys are signed by the publisher and checked in your browser: no account, no server, nothing sent. Pro features are marked “Pro” on the free plan; selecting one shows the upgrade dialog. The command palette finds “Breakpointer Pro” and “Enter a licence key”.
+- **Accessibility checks** (Pro): images without alt text, buttons and links without a name (often the icon-only menu button that only shows on phones), form fields without a label, keyboard focus on hidden elements (a closed off-canvas menu the Tab key still reaches, focusable elements inside `aria-hidden`) and a page without a language — in every card, the audit, the width scanner and Check pages, with highlights, and each one can be switched off. The audit mentions them on the free plan.
+- **Sync clicks & typing** (Pro, Tools or Settings): open a menu, switch a tab or fill in a form in one preview and every preview of the same page does the same. Links to other pages still use synced navigation; forms are never submitted in the other previews, and passwords, one-time codes, payment fields and files are never copied.
+- **Hide cookie banners** (Pro, Tools): the consent banners of 25+ common tools (OneTrust, Cookiebot, Didomi, Usercentrics, Quantcast, TrustArc, CookieYes, Complianz, iubenda…) are hidden in the previews for clean screenshots and checks — nothing is accepted or refused.
+- **Your brand** (Pro, Settings → Your brand): your name, website and logo on HTML reports and Check pages reports (“Prepared by …”), and your name on the all-viewports and element images and in a corner of showcase images; keep or drop “Made with Breakpointer”. Included in exported settings so a team shares it.
+- **CSV and JSON exports** (Pro): “Export” in Check pages, the width scanner and the audit panel — a row per page, size and issue (or per issue range, or per preview) for spreadsheets, and the full results for scripts.
+- `npm run license` makes the signing key and issues and checks licence keys; [docs/PRO.md](docs/PRO.md) explains selling Pro and the release steps.
+
+### Changed
+
+- `npm run package` refuses a build that would accept the public test licence key, and a release without a Pro checkout address unless `--allow-no-checkout` is passed.
+- Help's “What's new” describes Pro.
+
+### Security
+
+- CSV exports put an apostrophe before page text that a spreadsheet would run as a formula.
+
 ## [0.5.0] — 2026-10-19
 
 Check a whole site, not just one page — and share what you find.

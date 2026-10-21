@@ -22,7 +22,17 @@ export type CheckKind =
   /** Text whose contrast with a known, solid background is under WCAG AA (4.5:1, 3:1 for large text). */
   | 'low-contrast'
   /** The layout moved while the page loaded: a cumulative layout shift of 0.1 or more. */
-  | 'layout-shift';
+  | 'layout-shift'
+  /** Images without a text alternative (no `alt`, and not hidden from assistive technology). Pro. */
+  | 'missing-alt'
+  /** Buttons and links with no accessible name (icon-only, no label). Pro. */
+  | 'unnamed-control'
+  /** Form fields with no label (no `<label>`, `aria-label`, title or placeholder). Pro. */
+  | 'unlabeled-field'
+  /** Focusable elements the user can't see at this size: off screen, or hidden from assistive technology. Pro. */
+  | 'hidden-focus'
+  /** The page's language isn't set (`<html lang>`). Pro. */
+  | 'missing-lang';
 
 /** Every check, in the order they are shown. */
 export const CHECK_KINDS: readonly CheckKind[] = [
@@ -35,6 +45,11 @@ export const CHECK_KINDS: readonly CheckKind[] = [
   'upscaled-images',
   'fixed-cover',
   'layout-shift',
+  'missing-alt',
+  'unnamed-control',
+  'unlabeled-field',
+  'hidden-focus',
+  'missing-lang',
 ];
 
 export type CheckSample = {
@@ -153,6 +168,19 @@ export type TypeSample = {
   fontFamily: string;
 };
 
+/**
+ * Something the user did in one preview that the others do too (synced
+ * interactions). Elements are found by structural selector, as the inspector
+ * does. Submitting a form is never repeated, and neither is typing in password
+ * or payment fields.
+ */
+export type Interaction =
+  | { kind: 'click'; selector: string }
+  /** The value of a text field, text area or select changed. */
+  | { kind: 'value'; selector: string; value: string }
+  /** A checkbox or radio button was switched. */
+  | { kind: 'checked'; selector: string; checked: boolean };
+
 /** Agent → workspace. `name` identifies the preview frame (its iframe `name`). */
 export type AgentEvent =
   /**
@@ -166,6 +194,8 @@ export type AgentEvent =
   | { type: 'bye' }
   /** The user clicked or typed in the page (sent at most once a second). */
   | { type: 'input' }
+  /** The user clicked or changed a field, to be done in the other previews (only while asked to with `mirror`). */
+  | { type: 'interaction'; interaction: Interaction }
   /**
    * The page scrolled. `y` is the scroll position in CSS pixels (a design
    * overlay follows it). `synced` marks a scroll the workspace asked for (synced
@@ -265,7 +295,13 @@ type Command =
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
   | { type: 'getElementRect'; selector: string; reveal: boolean }
   /** Answer `links` (Check pages: the pages this one links to). */
-  | { type: 'getLinks' };
+  | { type: 'getLinks' }
+  /** Hide cookie and consent banners of the common consent tools (nothing is accepted or refused). */
+  | { type: 'cookieBanners'; hidden: boolean }
+  /** Report the user's clicks and field changes as `interaction` events. */
+  | { type: 'mirror'; on: boolean }
+  /** Do what the user did in another preview (skipped when the element isn't shown here). */
+  | { type: 'replay'; interaction: Interaction };
 
 /** A command as sent: a request that is answered carries an `id`, sent back with its answer. */
 export type AgentCommand = Command & { id?: number };

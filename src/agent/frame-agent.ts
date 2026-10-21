@@ -8,9 +8,24 @@
  * scroll position, the results of layout checks, the widths used by the page's
  * media queries and the box of an element the user inspects — to the workspace
  * tab only. Stress tests (pseudo-translated text, right-to-left) change the
- * page only inside the preview and are undone when switched off.
+ * page only inside the preview and are undone when switched off. With synced
+ * interactions on, the user's clicks and field values go to the other previews
+ * of the same workspace (never form submissions, passwords or payment fields).
  */
+import { consentBannerCss } from '../data/consent-banners';
 import { blend, contrastRatio, formatRatio, toHex, type Rgb } from '../state/contrast';
+import {
+  CONTROL_SELECTOR,
+  FIELD_SELECTOR,
+  FOCUSABLE_SELECTOR,
+  accessibleName,
+  clickTarget,
+  hiddenFromAssistiveTech,
+  inTabOrder,
+  isSensitiveField,
+  lacksTextAlternative,
+  mirrorsClick,
+} from './a11y';
 import {
   compressBox,
   cssPath,
@@ -51,6 +66,7 @@ import {
   type ColorSchemeOverride,
   type ElementInfo,
   type ElementRect,
+  type Interaction,
   type MediaReport,
   type PageStats,
   type ScrollAnchor,
@@ -951,6 +967,128 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
+    // 10. Images without a text alternative (WCAG 1.1.1): no alt attribute (an
+    //     empty one marks a decorative image), or role="img" without a name.
+    //     Tracking pixels and images hidden from assistive technology are skipped.
+    if (wants('missing-alt')) {
+      const missing: Element[] = [];
+      const altSamples: CheckSample[] = [];
+      for (const image of Array.from(document.querySelectorAll('img, [role="img"]')).slice(0, MAX_SCAN)) {
+        const rect = image.getBoundingClientRect();
+        if (!visible(rect, getComputedStyle(image)) || rect.width < 4 || rect.height < 4) continue;
+        if (!lacksTextAlternative(image)) continue;
+        missing.push(image);
+        if (altSamples.length < MAX_SAMPLES)
+          altSamples.push({
+            selector: describeElement(image),
+            detail: `${Math.round(rect.width)}×${Math.round(rect.height)}`,
+          });
+      }
+      if (missing.length) {
+        nextFlagged.set('missing-alt', missing);
+        issues.push({ kind: 'missing-alt', count: missing.length, samples: altSamples });
+      }
+    }
+
+    // 11. Buttons and links without a name (WCAG 4.1.2, 2.4.4): often icon-only
+    //     buttons, such as the menu button that only shows on small screens.
+    if (wants('unnamed-control')) {
+      const unnamed: Element[] = [];
+      const controlSamples: CheckSample[] = [];
+      for (const control of Array.from(document.querySelectorAll(CONTROL_SELECTOR)).slice(0, MAX_SCAN)) {
+        if (control.hasAttribute(OVERLAY_ATTRIBUTE) || hiddenFromAssistiveTech(control)) continue;
+        const rect = control.getBoundingClientRect();
+        if (!visible(rect, getComputedStyle(control)) || accessibleName(control)) continue;
+        unnamed.push(control);
+        if (controlSamples.length < MAX_SAMPLES)
+          controlSamples.push({
+            selector: describeElement(control),
+            detail: `${Math.round(rect.width)}×${Math.round(rect.height)}`,
+          });
+      }
+      if (unnamed.length) {
+        nextFlagged.set('unnamed-control', unnamed);
+        issues.push({ kind: 'unnamed-control', count: unnamed.length, samples: controlSamples });
+      }
+    }
+
+    // 12. Form fields without a label (WCAG 1.3.1, 4.1.2). A placeholder counts
+    //     as a name here (it is one, if a weak one).
+    if (wants('unlabeled-field')) {
+      const unlabeled: Element[] = [];
+      const fieldSamples: CheckSample[] = [];
+      for (const field of Array.from(document.querySelectorAll(FIELD_SELECTOR)).slice(0, MAX_SCAN)) {
+        if (hiddenFromAssistiveTech(field)) continue;
+        const rect = field.getBoundingClientRect();
+        if (!visible(rect, getComputedStyle(field)) || accessibleName(field)) continue;
+        unlabeled.push(field);
+        if (fieldSamples.length < MAX_SAMPLES)
+          fieldSamples.push({
+            selector: describeElement(field),
+            detail: field instanceof HTMLInputElement ? field.type : field.localName,
+          });
+      }
+      if (unlabeled.length) {
+        nextFlagged.set('unlabeled-field', unlabeled);
+        issues.push({ kind: 'unlabeled-field', count: unlabeled.length, samples: fieldSamples });
+      }
+    }
+
+    // 13. Focus that lands on something the user can't see (WCAG 2.4.7, 4.1.2):
+    //     elements in the tab order inside aria-hidden, or entirely off the page
+    //     (an off-canvas menu that is closed but still focusable), or inside a
+    //     transparent box. Links to the same page (skip links appear when focused)
+    //     and visually hidden 1px elements aren't reported as off screen.
+    if (wants('hidden-focus')) {
+      const hiddenFocus: Element[] = [];
+      const focusSamples: CheckSample[] = [];
+      const pageWidth = document.documentElement.scrollWidth;
+      const noSideways = clipsX(document.documentElement) || clipsX(document.body);
+      // Each box's answer is kept for this pass: focusable elements share their ancestors.
+      const clear = new Map<Element, boolean>();
+      const transparent = (element: Element): boolean => {
+        if (element === document.body || element === document.documentElement) return false;
+        let known = clear.get(element);
+        if (known === undefined) {
+          known =
+            Number(getComputedStyle(element).opacity) === 0 ||
+            (element.parentElement ? transparent(element.parentElement) : false);
+          clear.set(element, known);
+        }
+        return known;
+      };
+      for (const element of Array.from(document.querySelectorAll(FOCUSABLE_SELECTOR)).slice(0, MAX_SCAN)) {
+        if (element.hasAttribute(OVERLAY_ATTRIBUTE) || !inTabOrder(element)) continue;
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        if (!visible(rect, style)) continue;
+        let detail = '';
+        if (hiddenFromAssistiveTech(element)) detail = 'aria-hidden';
+        else if (!element.matches('a[href^="#"]')) {
+          if (rect.right <= 0) detail = `← ${Math.round(-rect.left)}px`;
+          else if (rect.bottom + window.scrollY <= 0) detail = `↑ ${Math.round(-(rect.top + window.scrollY))}px`;
+          else if (rect.left + window.scrollX >= pageWidth || (noSideways && rect.left >= width))
+            detail = `→ ${Math.round(rect.left - width)}px`;
+          else if (transparent(element)) detail = 'opacity: 0';
+        }
+        if (!detail) continue;
+        hiddenFocus.push(element);
+        if (focusSamples.length < MAX_SAMPLES) focusSamples.push({ selector: describeElement(element), detail });
+      }
+      if (hiddenFocus.length) {
+        nextFlagged.set('hidden-focus', hiddenFocus);
+        issues.push({ kind: 'hidden-focus', count: hiddenFocus.length, samples: focusSamples });
+      }
+    }
+
+    // 14. The page's language isn't set (WCAG 3.1.1): screen readers then read it in the wrong voice.
+    if (
+      wants('missing-lang') &&
+      document.documentElement instanceof HTMLElement &&
+      !document.documentElement.lang.trim()
+    )
+      issues.push({ kind: 'missing-lang', count: 1, samples: [] });
+
     // A scan doesn't change what Highlight marks in the page.
     if (!scan) flagged = nextFlagged;
     return { width, issues };
@@ -1814,6 +1952,114 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     { capture: true },
   );
 
+  /* ---------- Synced interactions ---------- */
+
+  // The user's clicks and field values, for the other previews (only while the
+  // workspace asks, and only what the user did: replayed events aren't trusted,
+  // so they are never sent back).
+  let mirroring = false;
+  const sendInteraction = (interaction: Interaction) => send({ type: 'interaction', interaction });
+  window.addEventListener(
+    'click',
+    (event) => {
+      if (!mirroring || inspecting || !event.isTrusted) return;
+      const target = pickTarget(event);
+      if (!target) return;
+      const element = clickTarget(target);
+      if (mirrorsClick(element)) sendInteraction({ kind: 'click', selector: cssPath(element) });
+    },
+    { capture: true },
+  );
+  const valueTimers = new Map<Element, number>();
+  const fieldOf = (event: Event) => {
+    const target = event.composedPath()[0] ?? event.target;
+    return target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement
+      ? target
+      : null;
+  };
+  window.addEventListener(
+    'input',
+    (event) => {
+      if (!mirroring || !event.isTrusted) return;
+      const field = fieldOf(event);
+      if (!field || isSensitiveField(field)) return;
+      if (field instanceof HTMLInputElement && (field.type === 'checkbox' || field.type === 'radio')) return;
+      // Typing sends the value once the user pauses.
+      window.clearTimeout(valueTimers.get(field));
+      valueTimers.set(
+        field,
+        window.setTimeout(() => {
+          valueTimers.delete(field);
+          sendInteraction({ kind: 'value', selector: cssPath(field), value: field.value });
+        }, 150),
+      );
+    },
+    { capture: true },
+  );
+  window.addEventListener(
+    'change',
+    (event) => {
+      if (!mirroring || !event.isTrusted) return;
+      const field = fieldOf(event);
+      if (!(field instanceof HTMLInputElement) || (field.type !== 'checkbox' && field.type !== 'radio')) return;
+      sendInteraction({ kind: 'checked', selector: cssPath(field), checked: field.checked });
+    },
+    { capture: true },
+  );
+
+  /** Does what the user did in another preview, when the same element is shown here. */
+  const replay = (interaction: Interaction) => {
+    let element: Element | null;
+    try {
+      element = document.querySelector(interaction.selector);
+    } catch {
+      return;
+    }
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    if (!visible(rect, getComputedStyle(element))) return;
+    switch (interaction.kind) {
+      case 'click': {
+        // The same element may be something else at this size (a link here): the same rules apply.
+        if (!mirrorsClick(element)) return;
+        const position = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+        const init = { bubbles: true, cancelable: true, composed: true, button: 0, ...position };
+        element.dispatchEvent(new PointerEvent('pointerdown', { ...init, pointerType: 'mouse', isPrimary: true }));
+        element.dispatchEvent(new MouseEvent('mousedown', init));
+        element.dispatchEvent(new PointerEvent('pointerup', { ...init, pointerType: 'mouse', isPrimary: true }));
+        element.dispatchEvent(new MouseEvent('mouseup', init));
+        if (element instanceof HTMLElement) element.click();
+        else element.dispatchEvent(new MouseEvent('click', init));
+        break;
+      }
+      case 'value': {
+        if (isSensitiveField(element)) return;
+        const field = element;
+        if (!(
+          field instanceof HTMLInputElement ||
+          field instanceof HTMLTextAreaElement ||
+          field instanceof HTMLSelectElement
+        ))
+          return;
+        if (field.disabled || ('readOnly' in field && field.readOnly) || field.value === interaction.value) return;
+        // The prototype's setter, so frameworks that track the value (React) see the change.
+        const prototype = Object.getPrototypeOf(field) as object;
+        Object.getOwnPropertyDescriptor(prototype, 'value')?.set?.call(field, interaction.value);
+        field.dispatchEvent(new Event('input', { bubbles: true, composed: true }));
+        if (field instanceof HTMLSelectElement) field.dispatchEvent(new Event('change', { bubbles: true }));
+        break;
+      }
+      case 'checked': {
+        if (!(element instanceof HTMLInputElement) || element.disabled) return;
+        // A click switches it the way the page expects (input and change events included).
+        if (element.checked !== interaction.checked) element.click();
+        break;
+      }
+    }
+  };
+
   /* ---------- Changes to the page ---------- */
 
   window.addEventListener('resize', () => {
@@ -2070,6 +2316,15 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         send({ type: 'links', id: command.id, hrefs: [...hrefs] });
         break;
       }
+      case 'cookieBanners':
+        setStyle('bp-consent', command.hidden ? consentBannerCss() : '');
+        break;
+      case 'mirror':
+        mirroring = command.on;
+        break;
+      case 'replay':
+        replay(command.interaction);
+        break;
       case 'getElementRect': {
         let element: Element | null;
         try {

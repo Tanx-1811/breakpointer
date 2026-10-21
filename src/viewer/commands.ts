@@ -91,6 +91,10 @@ export type CommandActions = {
   siteAccess: () => void;
   help: () => void;
   exportSettings: () => void;
+  /** What Breakpointer Pro brings, the trial and buying it (listed when given). */
+  pro?: () => void;
+  /** Settings, where a licence key is entered and managed. */
+  licence?: () => void;
 };
 
 export type CommandContext = {
@@ -116,6 +120,10 @@ export type CommandContext = {
   windowsOpen?: boolean;
   /** Seconds between automatic reloads (0: off). */
   autoReload?: number;
+  /** Breakpointer Pro is active (trial or licence): Pro commands show a "Pro" hint otherwise. */
+  pro?: boolean;
+  /** Cookie banners are hidden in the previews (Pro). */
+  cookieBanners?: boolean;
   actions: CommandActions;
 };
 
@@ -447,19 +455,38 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       run: () => audit('type'),
     });
   }
-  const toggle = (id: ToolToggle, key: MessageKey, checked: boolean) =>
+  /** A switch; a Pro one is "off" with a Pro hint on the free plan (running it shows what Pro brings). */
+  const toggle = (id: ToolToggle, key: MessageKey, checked: boolean, proFeature = false, keywords?: string) => {
+    const locked = proFeature && !ctx.pro;
     named(key, {
       id: `tool-${id}`,
       section: section.tools,
       icon: TOOL_ICONS[id],
-      checked,
+      checked: locked ? false : checked,
+      hint: locked ? t('pro.badge') : undefined,
+      keywords,
       run: () => actions.toggleTool(id),
     });
+  };
   toggle('syncScroll', 'tools.syncScroll', settings.sync.scroll);
   toggle('syncNavigation', 'tools.syncNavigation', settings.sync.navigation);
+  toggle(
+    'syncInteractions',
+    'tools.syncInteractions',
+    settings.sync.interactions,
+    true,
+    'mirror click type form fill menu interactions pro',
+  );
   toggle('checks', 'tools.checks', settings.checks);
   toggle('outlines', 'tools.outlines', ctx.outlines);
   toggle('scrollbars', 'tools.scrollbars', ctx.hideScrollbars);
+  toggle(
+    'cookieBanners',
+    'tools.cookieBanners',
+    Boolean(ctx.cookieBanners),
+    true,
+    'consent gdpr cookie banner popup hide clean screenshot pro',
+  );
   toggle('grid', 'tools.grid', settings.grid.show);
   if (ctx.annotate) {
     toggle('imageSizes', 'tools.imageSizes', ctx.annotate.images);
@@ -708,6 +735,22 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     run: actions.siteAccess,
   });
   named('toolbar.help', { id: 'help', section: section.preferences, icon: 'help', shortcut: '?', run: actions.help });
+  if (actions.pro)
+    named('palette.pro', {
+      id: 'pro',
+      section: section.preferences,
+      icon: 'sparkle',
+      keywords: 'pro upgrade buy purchase trial plan license licence premium',
+      run: actions.pro,
+    });
+  if (actions.licence)
+    named('palette.licence', {
+      id: 'licence',
+      section: section.preferences,
+      icon: 'key',
+      keywords: 'license licence key activate pro serial',
+      run: actions.licence,
+    });
   add({
     id: 'lang-en',
     section: section.preferences,
@@ -731,7 +774,9 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
 const TOOL_ICONS: Record<ToolToggle, PaletteCommand['icon']> = {
   syncScroll: 'link',
   syncNavigation: 'link',
+  syncInteractions: 'pointer',
   checks: 'check',
+  cookieBanners: 'cookie',
   outlines: 'outline',
   scrollbars: 'eyeOff',
   grid: 'columns',

@@ -6,6 +6,7 @@ import type {
   AgentReplyType,
   CheckReport,
   ElementInfo,
+  Interaction,
   MediaReport,
   ScrollAnchor,
 } from '../agent/protocol';
@@ -57,6 +58,8 @@ export type FrameAgentHandlers = {
   onElement: (cardId: string, selector: string, element: ElementInfo | null) => void;
   /** A key the workspace handles was pressed inside a preview. */
   onKey: (cardId: string, key: 'Escape') => void;
+  /** The user clicked or changed a field in a preview that was asked to report it (synced interactions). */
+  onInteraction?: (cardId: string, interaction: Interaction) => void;
 };
 
 type PendingReply = {
@@ -206,6 +209,9 @@ export function useFrameAgents(
           break;
         case 'key':
           handlersRef.current.onKey(cardId, message.key);
+          break;
+        case 'interaction':
+          if (sameFrame) handlersRef.current.onInteraction?.(cardId, message.interaction);
           break;
         case 'metrics':
         case 'scrolled':

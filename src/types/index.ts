@@ -37,6 +37,12 @@ export type SyncSettings = {
   scroll: boolean;
   /** Following a link in one preview loads that page in all of them. */
   navigation: boolean;
+  /**
+   * Clicks and field values in one preview are repeated in the others showing
+   * the same page (Pro; off by default). Never form submissions, passwords or
+   * payment fields.
+   */
+  interactions: boolean;
 };
 
 export type ViewportConfig = {
@@ -67,6 +73,17 @@ export type CssSnippet = {
   id: string;
   name: string;
   css: string;
+};
+
+/** Your brand on reports and images (Pro): used instead of Breakpointer's name once it has a name or a logo. */
+export type BrandingSettings = {
+  name: string;
+  /** The brand's website (http or https), linked from report footers; '' for none. */
+  url: string;
+  /** A small PNG, JPEG or WebP logo as a data: URL; '' for none. */
+  logo: string;
+  /** Keep "Made with Breakpointer" in report footers. */
+  credit: boolean;
 };
 
 export type ViewportGroup = {
@@ -104,6 +121,8 @@ export type BreakpointerSettings = {
   cssSnippets: CssSnippet[];
   /** The size shown in Chrome's side panel. */
   sidePanel: SidePanelSettings;
+  /** Your brand on reports and images (applied with Pro). */
+  branding: BrandingSettings;
   activeUrl?: string;
 };
 

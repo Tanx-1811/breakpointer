@@ -12,6 +12,11 @@ export const CHECK_KIND_KEYS: Record<CheckKind, MessageKey> = {
   'clipped-text': 'checks.kind.clippedText',
   'low-contrast': 'checks.kind.lowContrast',
   'layout-shift': 'checks.kind.layoutShift',
+  'missing-alt': 'checks.kind.missingAlt',
+  'unnamed-control': 'checks.kind.unnamedControl',
+  'unlabeled-field': 'checks.kind.unlabeledField',
+  'hidden-focus': 'checks.kind.hiddenFocus',
+  'missing-lang': 'checks.kind.missingLang',
 };
 
 /** What each check looks for, in a sentence (shown once above the previews that have the issue). */
@@ -25,6 +30,11 @@ export const CHECK_HINT_KEYS: Record<CheckKind, MessageKey> = {
   'clipped-text': 'checks.hint.clippedText',
   'low-contrast': 'checks.hint.lowContrast',
   'layout-shift': 'checks.hint.layoutShift',
+  'missing-alt': 'checks.hint.missingAlt',
+  'unnamed-control': 'checks.hint.unnamedControl',
+  'unlabeled-field': 'checks.hint.unlabeledField',
+  'hidden-focus': 'checks.hint.hiddenFocus',
+  'missing-lang': 'checks.hint.missingLang',
 };
 
 /**
@@ -51,6 +61,8 @@ export function issueValue(issue: CheckIssue, t: Translate): string {
       return `CLS ${localNumbers(issue.detail ?? '', t)}`.trim();
     case 'low-contrast':
       return issue.detail ? `${count} · ${localNumbers(issue.detail, t)}:1` : count;
+    case 'missing-lang':
+      return t('checks.value.missingLang');
     default:
       return count;
   }
@@ -67,7 +79,7 @@ export function withoutKinds(
 }
 
 /** Page-level issues have nothing to point at in the page. */
-export const canHighlight = (kind: CheckKind) => kind !== 'viewport-meta';
+export const canHighlight = (kind: CheckKind) => kind !== 'viewport-meta' && kind !== 'missing-lang';
 
 /** One line explaining an issue, e.g. "The page scrolls sideways by 184px." */
 export function issueDetail(issue: CheckIssue, t: Translate): string {
@@ -82,6 +94,8 @@ export function issueDetail(issue: CheckIssue, t: Translate): string {
       return t('checks.detail.fixedCover', { amount: issue.detail ?? '' });
     case 'layout-shift':
       return t('checks.detail.layoutShift', { amount: localNumbers(issue.detail ?? '', t) });
+    case 'missing-lang':
+      return t('checks.detail.missingLang');
     case 'low-contrast':
       if (issue.detail) {
         const ratio = localNumbers(issue.detail, t);

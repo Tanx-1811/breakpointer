@@ -17,3 +17,4 @@ Chrome extension (MV3) that previews a page at several real viewport sizes. Reac
 - No new permission without updating `docs/PLAN.md` §4, `docs/PRIVACY.md` and `docs/STORE_LISTING.md`. Host access stays optional.
 - Never claim device emulation in copy: previews change the viewport only.
 - E2E tests wait for `html[data-ready]` before using keyboard shortcuts.
+- Breakpointer Pro (`docs/PRO.md`): features free before Pro stay free; a new Pro feature is added to `src/state/plan.ts`, checked with `usePlan()`/`canUse()` and shows the upgrade dialog via `upgrade(feature)` on the free plan. Never commit a private signing key; only the e2e build may accept the test licence key.

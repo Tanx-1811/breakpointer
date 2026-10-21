@@ -4,6 +4,7 @@ import { IconButton } from '../components/Button/Button';
 import { AddressBar } from '../components/AddressBar/AddressBar';
 import { Icon, Logo } from '../components/Icon/Icon';
 import { Menu, type MenuEntry } from '../components/Menu/Menu';
+import type { Entitlement } from '../state/license';
 import styles from './Viewer.module.css';
 
 export type CaptureKind = 'workspace' | 'all' | 'copy' | 'showcase';
@@ -48,6 +49,9 @@ type Props = {
   onHelp: () => void;
   /** This version has news the user hasn't seen: the Help button shows a dot. */
   helpNews?: boolean;
+  /** The plan: on the free plan a "Get Pro" button shows, during the trial the days left (shown when given). */
+  entitlement?: Entitlement;
+  onPro?: () => void;
 };
 
 export function TopBar(props: Props) {
@@ -196,6 +200,7 @@ export function TopBar(props: Props) {
       </div>
 
       <div className={styles.topActions}>
+        {props.entitlement && props.onPro && <ProButton entitlement={props.entitlement} onClick={props.onPro} />}
         <button
           type="button"
           className={styles.searchButton}
@@ -262,5 +267,35 @@ export function TopBar(props: Props) {
         />
       </div>
     </header>
+  );
+}
+
+/** "Get Pro" on the free plan; "Pro trial" and the days left during the trial; nothing with a licence. */
+function ProButton({ entitlement, onClick }: { entitlement: Entitlement; onClick: () => void }) {
+  const { t } = useI18n();
+  if (entitlement.source === 'license') return null;
+  const trial = entitlement.trial.status === 'active' ? entitlement.trial : null;
+  const label = trial
+    ? trial.daysLeft === 1
+      ? t('pro.buttonTrialLabelOne')
+      : t('pro.buttonTrialLabel', { days: trial.daysLeft })
+    : t('pro.button');
+  return (
+    <button
+      type="button"
+      className={styles.proButton}
+      onClick={onClick}
+      aria-label={label}
+      data-tooltip={t('pro.buttonHint')}
+      data-testid="pro-button"
+    >
+      <Icon name="sparkle" size={15} />
+      <span className={styles.proLabel}>{trial ? t('pro.buttonTrial') : t('pro.button')}</span>
+      {trial && (
+        <span className={styles.proDays} aria-hidden="true">
+          {trial.daysLeft}
+        </span>
+      )}
+    </button>
   );
 }

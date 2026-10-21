@@ -55,6 +55,8 @@ type Props = {
   onOptions: (patch: Partial<ShowcaseOptions>) => void;
   /** The page's host, shown in the windows' address bars and used in the file name. */
   host: string;
+  /** Your brand's name in a corner of the image (Pro; '' for none). */
+  brand?: string;
   onCapture: () => void;
   onCopied: (copied: boolean) => void;
   onSaved: (fileName: string) => void;
@@ -97,16 +99,18 @@ function ShowcaseBody(props: Props) {
 
   // Compose again when the previews or the options change (a moment after the last change).
   const { host } = props;
+  const brand = props.brand ?? '';
   const wanted = useMemo(
-    () => JSON.stringify([options, host, shots.map((shot) => [shot.id, shot.width, shot.height, shot.image.size])]),
-    [options, host, shots],
+    () =>
+      JSON.stringify([options, host, brand, shots.map((shot) => [shot.id, shot.width, shot.height, shot.image.size])]),
+    [options, host, brand, shots],
   );
   const ready = image !== null && image.key === wanted;
   useEffect(() => {
     if (shots.length === 0) return;
     let cancelled = false;
     const timer = setTimeout(() => {
-      void composeShowcase(shots, { ...options, host })
+      void composeShowcase(shots, { ...options, host, brand })
         .then((blob) => {
           if (cancelled || !blob) return;
           const url = URL.createObjectURL(blob);
@@ -121,7 +125,7 @@ function ShowcaseBody(props: Props) {
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [shots, options, host, wanted]);
+  }, [shots, options, host, brand, wanted]);
 
   // The last image's object URL is released with the dialog.
   useEffect(() => {
