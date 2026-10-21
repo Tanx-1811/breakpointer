@@ -22,7 +22,7 @@ How Breakpointer Pro is sold, how licence keys are made and checked, and what to
 
 ## Licence keys
 
-A key is a compact JWS signed with ES256: `header.payload.signature`. The payload carries `sub` (licence id), `name` (who it is for, shown in Settings), `plan: "pro"`, `iat` and optionally `exp` (seconds). Breakpointer checks the signature with WebCrypto against the public keys in `src/data/license-keys.ts` — offline, every time a workspace opens.
+A key is a compact JWS signed with ES256: `header.payload.signature`. The payload carries `aud` (the app it unlocks: `breakpointer`), `sub` (licence id), `name` (who it is for, shown in Settings), `plan: "pro"`, `iat` and optionally `exp` (seconds). Breakpointer refuses a key whose `aud` isn't `breakpointer`. Breakpointer checks the signature with WebCrypto against the public keys in `src/data/license-keys.ts` — offline, every time a workspace opens.
 
 ```sh
 # Once: create the signing key (private half in ~/.breakpointer/license-signing-key.json, mode 600).
@@ -42,6 +42,17 @@ npm run license -- verify <key>
 **Rotating:** run `keygen` with a new `--kid` (and `--key` for a new file), add the printed public key to `LICENSE_KEYS` next to the old one, release, and sign new licences with the new key. Keep old public keys so licences already sold stay valid.
 
 **Refunds:** a key can't be revoked offline. Issue yearly keys if that matters, or accept that a refunded key keeps working until it expires.
+
+## Selling several apps
+
+The same tooling sells any number of apps without one app's key unlocking another:
+
+- **One merchant-of-record account**, one product (or one per term, e.g. yearly and lifetime) per app; payouts and tax reports stay in one place.
+- **One publisher website** (one domain) with a page per app and shared Terms, Refund and Privacy pages: Paddle approves each domain separately, so pages under one domain need one approval.
+- **One signing key per app**, so a leaked key affects one app only: `npm run license -- keygen --kid colorpicker-2026 --key ~/.breakpointer/colorpicker-signing-key.json`, and that app embeds only its own public key.
+- **The product claim:** issue with `--product <app id>` (default `breakpointer`); each app accepts only its own `aud`, as defence in depth even if a key were shared.
+- **A register of issued licences** (date, app, licence id, buyer, order id, term) kept with the signing keys, for support, renewals and refunds.
+- Later, one small webhook function can serve every app: the provider calls it after a sale, it signs the key for that product and emails it.
 
 ## Trial
 
