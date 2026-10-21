@@ -16,7 +16,7 @@ import { TopBar } from '../../src/viewer/TopBar';
 const NOW = Date.now();
 const TRIAL = entitlementOf(null, NOW, NOW);
 const LICENSED = entitlementOf(
-  parseClaims({ sub: 'L-42', name: 'Acme Studio', plan: 'pro', iat: Math.floor(NOW / 1000) - 60 }),
+  parseClaims({ aud: 'breakpointer', sub: 'L-42', name: 'Acme Studio', plan: 'pro', iat: Math.floor(NOW / 1000) - 60 }),
   null,
   NOW,
 );
@@ -76,7 +76,7 @@ describe('upgrade dialog', () => {
 
 describe('licence form', () => {
   it('explains why a key was refused, and reports a valid one', async () => {
-    const claims = parseClaims({ sub: 'L-1', name: 'Jane', plan: 'pro', iat: 1_700_000_000 })!;
+    const claims = parseClaims({ aud: 'breakpointer', sub: 'L-1', name: 'Jane', plan: 'pro', iat: 1_700_000_000 })!;
     const onActivate = vi
       .fn()
       .mockResolvedValueOnce({ ok: false, problem: 'format' })

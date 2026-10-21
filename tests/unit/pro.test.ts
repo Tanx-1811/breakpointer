@@ -72,6 +72,7 @@ async function sign(
 }
 
 const claims = (extra: Record<string, unknown> = {}) => ({
+  aud: 'breakpointer',
   sub: 'L-0001',
   name: 'Jane Doe <jane@example.com>',
   plan: 'pro',
@@ -102,6 +103,9 @@ describe('licence keys', () => {
     const iat = Math.floor(NOW / 1000);
     expect(parseClaims(claims({ iat, exp: iat + 100 }))?.expiresAt).toBe((iat + 100) * 1000);
     expect(parseClaims(claims({ plan: 'team' }))).toBeNull();
+    // A licence for another app of the same publisher, or one that names no app.
+    expect(parseClaims(claims({ aud: 'color-picker-pro' }))).toBeNull();
+    expect(parseClaims(claims({ aud: undefined }))).toBeNull();
     expect(parseClaims(claims({ sub: 'has space' }))).toBeNull();
     expect(parseClaims(claims({ name: '   ' }))).toBeNull();
     expect(parseClaims(claims({ name: 'x'.repeat(101) }))).toBeNull();
@@ -170,6 +174,17 @@ describe('licence keys', () => {
     const result = await verifyLicenseKey(licence, { [kid]: { kty, crv, x, y } });
     expect(result).toMatchObject({ ok: true, claims: { id: 'L-SCRIPT', name: 'Script Test' } });
     if (result.ok) expect(result.claims.expiresAt! - result.claims.issuedAt).toBe(30 * DAY);
+
+    // The same signing tool and key, but a licence for another app: Breakpointer refuses it.
+    const other = execFileSync(
+      process.execPath,
+      ['scripts/license.mjs', 'issue', '--key', keyFile, '--name', 'Other', '--product', 'color-picker-pro'],
+      { cwd: root, encoding: 'utf8' },
+    );
+    expect(await verifyLicenseKey(other.trim().split('\n').pop()!, { [kid]: { kty, crv, x, y } })).toEqual({
+      ok: false,
+      problem: 'claims',
+    });
   });
 });
 

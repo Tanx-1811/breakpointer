@@ -11,6 +11,12 @@
 
 /** `typ` of a licence key's header, so another JWS (e.g. a login token) is never taken for one. */
 export const LICENSE_TYPE = 'BPL';
+/**
+ * The product a licence is for (its `aud` claim). The publisher may sell
+ * several apps with the same tooling: a key for another product never unlocks
+ * this one, even if it were signed with the same key.
+ */
+export const LICENSE_PRODUCT = 'breakpointer';
 export const LICENSE_ALG = 'ES256';
 /** A pasted key longer than this isn't a licence key (real ones are about 350 characters). */
 export const MAX_LICENSE_KEY = 4096;
@@ -140,8 +146,8 @@ const isSeconds = (value: unknown): value is number =>
 /** The claims of a licence's payload, or null when they aren't a valid Pro licence. */
 export function parseClaims(payload: unknown): LicenseClaims | null {
   if (!isRecord(payload)) return null;
-  const { sub, name, plan, iat, exp } = payload;
-  if (plan !== 'pro') return null;
+  const { sub, name, plan, iat, exp, aud } = payload;
+  if (aud !== LICENSE_PRODUCT || plan !== 'pro') return null;
   if (typeof sub !== 'string' || !sub || sub.length > MAX_LICENSE_ID || !SAFE_ID.test(sub)) return null;
   if (typeof name !== 'string') return null;
   const shownName = name.replace(/\s+/g, ' ').trim();

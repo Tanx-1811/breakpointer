@@ -150,7 +150,7 @@ test.describe('Breakpointer Pro', () => {
     // A key with a changed payload: its signature no longer matches.
     const valid = await testLicense({ name: 'E2E Tester', id: 'L-E2E-1' });
     const [header, , signature] = valid.split('.');
-    const forged = `${header}.${Buffer.from(JSON.stringify({ sub: 'L-X', name: 'Mallory', plan: 'pro', iat: 1_800_000_000 })).toString('base64url')}.${signature}`;
+    const forged = `${header}.${Buffer.from(JSON.stringify({ aud: 'breakpointer', sub: 'L-X', name: 'Mallory', plan: 'pro', iat: 1_800_000_000 })).toString('base64url')}.${signature}`;
     await field.fill(forged);
     await settings.getByRole('button', { name: 'Activate' }).click();
     await expect(settings.getByRole('alert')).toContainText('This licence key isn’t valid');

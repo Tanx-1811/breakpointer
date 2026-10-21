@@ -1,7 +1,7 @@
 // Breakpointer Pro licence keys: create the signing key, issue keys, check a key.
 //
 //   npm run license -- keygen [--kid bp-2026] [--key <file>]
-//   npm run license -- issue --name "Jane Doe <jane@example.com>" [--id L-0001] [--days 365] [--key <file>]
+//   npm run license -- issue --name "Jane Doe <jane@example.com>" [--id L-0001] [--days 365] [--product breakpointer] [--key <file>]
 //   npm run license -- verify <licence key> [--key <file>]
 //
 // The private signing key never goes into the repository: by default it lives
@@ -35,12 +35,22 @@ export async function generateSigningKey(kid) {
   return { kid, ...jwk, key_ops: undefined, ext: undefined };
 }
 
-/** Signs a licence. `days`: how long it lasts (absent or 0: it never expires). */
-export async function issueLicense(signingKey, { id, name, days = 0, now = Date.now() }) {
+/**
+ * Signs a licence. `days`: how long it lasts (absent or 0: it never expires).
+ * `product` (the `aud` claim) is the app it unlocks: each app accepts only its own.
+ */
+export async function issueLicense(signingKey, { id, name, days = 0, product = 'breakpointer', now = Date.now() }) {
   const { kid, ...jwk } = signingKey;
   const key = await subtle.importKey('jwk', { ...jwk, key_ops: ['sign'] }, ALGORITHM, false, ['sign']);
   const iat = Math.floor(now / 1000);
-  const payload = { sub: id, name, plan: 'pro', iat, ...(days > 0 ? { exp: iat + Math.round(days * 86_400) } : {}) };
+  const payload = {
+    aud: product,
+    sub: id,
+    name,
+    plan: 'pro',
+    iat,
+    ...(days > 0 ? { exp: iat + Math.round(days * 86_400) } : {}),
+  };
   const signingInput = `${jsonPart({ alg: 'ES256', typ: 'BPL', kid })}.${jsonPart(payload)}`;
   const signature = new Uint8Array(await subtle.sign(SIGN, key, new TextEncoder().encode(signingInput)));
   return `${signingInput}.${toBase64Url(signature)}`;
@@ -79,6 +89,7 @@ async function main() {
       name: { type: 'string' },
       id: { type: 'string' },
       days: { type: 'string', default: '0' },
+      product: { type: 'string', default: 'breakpointer' },
     },
   });
   const [command, argument] = positionals;
@@ -111,8 +122,13 @@ async function main() {
       process.exit(1);
     }
     const id = values.id ?? `L-${Date.now().toString(36).toUpperCase()}`;
-    const licence = await issueLicense(readSigningKey(file), { id, name, days });
-    console.log(`Licence ${id} for ${name}${days ? `, valid for ${days} days` : ', never expires'}:\n`);
+    const product = values.product.trim();
+    if (!/^[a-z0-9-]+$/.test(product)) {
+      console.error('--product must be the app id, e.g. breakpointer (lower-case letters, digits and -).');
+      process.exit(1);
+    }
+    const licence = await issueLicense(readSigningKey(file), { id, name, days, product });
+    console.log(`${product} licence ${id} for ${name}${days ? `, valid for ${days} days` : ', never expires'}:\n`);
     console.log(licence);
     return;
   }
@@ -129,7 +145,9 @@ async function main() {
     }
     const { payload } = result;
     const expires = payload.exp ? new Date(payload.exp * 1000).toISOString() : 'never';
-    console.log(`Valid (${result.header.kid}): ${payload.sub} for ${payload.name}, expires ${expires}.`);
+    console.log(
+      `Valid (${result.header.kid}): ${payload.aud ?? '(no product)'} licence ${payload.sub} for ${payload.name}, expires ${expires}.`,
+    );
     return;
   }
 
