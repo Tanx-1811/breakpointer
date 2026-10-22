@@ -431,6 +431,7 @@ describe('WorkspaceBar utilities', () => {
           pseudo: true,
           rtl: false,
           spacing: false,
+          textZoom: false,
         }}
         onVision={onVision}
         onSimulate={onSimulate}

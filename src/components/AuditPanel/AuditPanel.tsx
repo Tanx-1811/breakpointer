@@ -16,6 +16,7 @@ import {
   type StatMetric,
 } from '../../state/audit';
 import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue, localNumbers } from '../../state/checks';
+import { responsiveScore, type ResponsiveScore } from '../../state/score';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
@@ -187,8 +188,10 @@ function IssuesTab(props: Props) {
         {t('audit.waiting')}
       </p>
     );
+  const score = responsiveScore(checked.map((row) => row.report));
   return (
     <>
+      {score && <ScoreCard score={score} />}
       <p className={styles.summary} data-testid="audit-summary" data-issues={groups.length}>
         <Icon name={groups.length ? 'alert' : 'check'} size={15} className={groups.length ? styles.warn : styles.ok} />
         {groups.length === 0
@@ -423,5 +426,37 @@ function TypeTab(props: Props) {
         ))}
       </ul>
     </>
+  );
+}
+
+/** The responsive score of the previews, with what it lost the most points for. */
+function ScoreCard({ score }: { score: ResponsiveScore }) {
+  const { t } = useI18n();
+  return (
+    <section
+      className={styles.score}
+      data-grade={score.grade}
+      data-testid="responsive-score"
+      aria-label={t('score.label', { score: score.score, grade: score.grade })}
+    >
+      <div className={styles.scoreValue} aria-hidden="true">
+        <span className={styles.scoreNumber}>{score.score}</span>
+        <span className={styles.scoreGrade}>{score.grade}</span>
+      </div>
+      <div className={styles.scoreText}>
+        <strong>{t('score.title')}</strong>
+        <span>{score.sizes === 1 ? t('score.hintOne') : t('score.hint', { count: score.sizes })}</span>
+        {score.costs.length > 0 && (
+          <ul className={styles.scoreCosts} aria-label={t('score.costs')}>
+            {score.costs.slice(0, 3).map((cost) => (
+              <li key={cost.kind}>
+                {t(CHECK_KIND_KEYS[cost.kind])}{' '}
+                <span className={styles.scorePoints}>−{localNumbers(String(cost.points), t)}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
   );
 }

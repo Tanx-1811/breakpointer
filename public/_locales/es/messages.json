@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — Probador de diseño responsive",
+    "description": "Nombre de la extensión que se muestra en Chrome y en Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Probador de diseño responsive: mira cualquier web en varios tamaños de pantalla a la vez y encuentra el ancho exacto donde se rompe.",
+    "description": "Descripción breve (máximo 132 caracteres)."
+  },
+  "actionTitle": {
+    "message": "Breakpointer — previsualiza en varios tamaños de pantalla",
+    "description": "Texto emergente del botón de la barra de herramientas."
+  },
+  "commandOpen": {
+    "message": "Abrir Breakpointer",
+    "description": "Atajo de teclado que abre la ventana emergente."
+  },
+  "commandPreview": {
+    "message": "Previsualizar la página actual en Breakpointer",
+    "description": "Atajo de teclado que previsualiza la pestaña activa."
+  },
+  "menuPreviewPage": {
+    "message": "Previsualizar esta página en Breakpointer",
+    "description": "Elemento del menú contextual sobre una página."
+  },
+  "menuPreviewLink": {
+    "message": "Previsualizar enlace en Breakpointer",
+    "description": "Elemento del menú contextual sobre un enlace."
+  },
+  "omniboxDefault": {
+    "message": "Previsualizar <match>%s</match> en varios tamaños de pantalla",
+    "description": "Sugerencia de la barra de direcciones después de escribir la palabra clave."
+  },
+  "menuSidePanelPage": {
+    "message": "Previsualizar esta página en el panel lateral",
+    "description": "Elemento del menú contextual sobre una página: panel lateral de Breakpointer."
+  },
+  "menuSidePanelLink": {
+    "message": "Previsualizar enlace en el panel lateral",
+    "description": "Elemento del menú contextual sobre un enlace: panel lateral de Breakpointer."
+  }
+}

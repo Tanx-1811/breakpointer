@@ -6,13 +6,15 @@ import type { Entitlement } from './license';
  * What Breakpointer Pro adds. Everything else is free, and stays free:
  * features that were free when Pro started are never moved behind it.
  */
-export type ProFeature = 'a11yChecks' | 'syncInteractions' | 'hideCookieBanners' | 'branding' | 'dataExport';
+export type ProFeature =
+  'a11yChecks' | 'syncInteractions' | 'hideCookieBanners' | 'projects' | 'branding' | 'dataExport';
 
 /** In the order they are presented. */
 export const PRO_FEATURES: readonly ProFeature[] = [
   'a11yChecks',
   'syncInteractions',
   'hideCookieBanners',
+  'projects',
   'branding',
   'dataExport',
 ];
@@ -21,6 +23,7 @@ export const PRO_FEATURE_KEYS: Record<ProFeature, { title: MessageKey; descripti
   a11yChecks: { title: 'pro.feature.a11yChecks', description: 'pro.feature.a11yChecksHint' },
   syncInteractions: { title: 'pro.feature.syncInteractions', description: 'pro.feature.syncInteractionsHint' },
   hideCookieBanners: { title: 'pro.feature.hideCookieBanners', description: 'pro.feature.hideCookieBannersHint' },
+  projects: { title: 'pro.feature.projects', description: 'pro.feature.projectsHint' },
   branding: { title: 'pro.feature.branding', description: 'pro.feature.brandingHint' },
   dataExport: { title: 'pro.feature.dataExport', description: 'pro.feature.dataExportHint' },
 };

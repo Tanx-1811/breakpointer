@@ -1,15 +1,20 @@
 import type { CheckKind } from '../agent/protocol';
+import type { CompareTarget } from '../state/compare';
 
 export type Orientation = 'portrait' | 'landscape';
 
 export type ThemePreference = 'light' | 'dark' | 'system';
 
-export type LanguagePreference = 'auto' | 'en' | 'vi';
+/** 'auto' follows Chrome; the others are the UI languages (see i18n/translate.ts). */
+export type LanguagePreference = 'auto' | 'en' | 'vi' | 'es' | 'pt-BR' | 'fr' | 'de' | 'ja' | 'id';
 
 export type WorkspaceLayout = 'wrap' | 'row';
 
+/** The CSS frameworks whose default breakpoints are built in. */
+export type FrameworkSetId = 'tailwind' | 'bootstrap' | 'mui' | 'chakra' | 'bulma' | 'foundation' | 'antd';
+
 /** `site`: the widths found in the previewed page's own media queries (sites you allow). */
-export type BreakpointSetId = 'none' | 'tailwind' | 'bootstrap' | 'custom' | 'site';
+export type BreakpointSetId = 'none' | FrameworkSetId | 'custom' | 'site';
 
 /** Forces a preview to the page's light or dark styles (on sites you allow). */
 export type ColorScheme = 'light' | 'dark';
@@ -86,6 +91,27 @@ export type BrandingSettings = {
   credit: boolean;
 };
 
+/** A viewport in a project: a saved group's, and whether it was hidden. */
+export type ProjectViewport = ViewportTemplate & { hidden?: boolean };
+
+/** A site's whole setup, saved to open again in one click (see state/projects.ts). */
+export type Project = {
+  id: string;
+  name: string;
+  /** The page it opens. */
+  url: string;
+  viewports: ProjectViewport[];
+  breakpoints: BreakpointSetId;
+  customBreakpoints: Breakpoint[];
+  grid: GridSettings;
+  /** Live CSS applied to every preview ('' for none). */
+  css: string;
+  /** The address compared with, or null. */
+  compare: CompareTarget | null;
+  /** When it was saved (milliseconds since the epoch). */
+  saved: number;
+};
+
 export type ViewportGroup = {
   id: string;
   name: string;
@@ -123,6 +149,8 @@ export type BreakpointerSettings = {
   sidePanel: SidePanelSettings;
   /** Your brand on reports and images (applied with Pro). */
   branding: BrandingSettings;
+  /** Saved projects (one free, more with Pro). */
+  projects: Project[];
   activeUrl?: string;
 };
 

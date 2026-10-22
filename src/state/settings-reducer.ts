@@ -6,6 +6,7 @@ import type {
   BreakpointSetId,
   BrandingSettings,
   CssSnippet,
+  Project,
   GridSettings,
   SyncSettings,
   LanguagePreference,
@@ -16,6 +17,7 @@ import type {
   WorkspaceLayout,
 } from '../types';
 import { deleteGroup, renameGroup, replaceGroupViewports, restoreGroup, saveGroup } from './groups';
+import { deleteProject, renameProject, restoreProject, saveProject } from './projects';
 import {
   addViewport,
   duplicateViewport,
@@ -70,6 +72,16 @@ export type SettingsAction =
   | { type: 'saveCssSnippet'; snippet: CssSnippet }
   | { type: 'deleteCssSnippet'; id: string }
   | { type: 'restoreCssSnippet'; snippet: CssSnippet; index: number }
+  /** Saves a project; one with the same name is updated. */
+  | { type: 'saveProject'; project: Project }
+  | { type: 'renameProject'; id: string; name: string }
+  | { type: 'deleteProject'; id: string }
+  | { type: 'restoreProject'; project: Project; index: number }
+  /** The workspace a project sets (opening one), or puts back (undo). */
+  | {
+      type: 'setWorkspace';
+      workspace: Pick<BreakpointerSettings, 'viewports' | 'breakpoints' | 'customBreakpoints' | 'grid'>;
+    }
   /** Changes the brand on reports and images (values already validated, see state/branding.ts). */
   | { type: 'setBranding'; branding: Partial<BrandingSettings> }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
@@ -78,6 +90,16 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
   switch (action.type) {
     case 'setTheme':
       return { ...state, theme: action.theme };
+    case 'saveProject':
+      return { ...state, projects: saveProject(state.projects, action.project) };
+    case 'renameProject':
+      return { ...state, projects: renameProject(state.projects, action.id, action.name) };
+    case 'deleteProject':
+      return { ...state, projects: deleteProject(state.projects, action.id) };
+    case 'restoreProject':
+      return { ...state, projects: restoreProject(state.projects, action.project, action.index) };
+    case 'setWorkspace':
+      return { ...state, ...action.workspace };
     case 'setBranding':
       return { ...state, branding: { ...state.branding, ...action.branding } };
     case 'setLanguage':

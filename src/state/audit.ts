@@ -9,6 +9,7 @@ import {
 import type { MessageKey } from '../i18n/en';
 import type { Translate } from '../i18n/translate';
 import { CHECK_KIND_KEYS } from './checks';
+import { responsiveScore } from './score';
 
 /** One preview in the audit: a column of the comparison. */
 export type AuditColumn = { id: string; name: string; width: number; height: number };
@@ -86,7 +87,9 @@ export function issuesMarkdown(
       return issue ? `⚠ ${issueCell(issue)}` : '✓';
     }),
   ]);
-  return `${t('audit.markdownIssues', { page })}\n\n${table([t('audit.check'), ...columns.map(columnTitle)], rows)}\n`;
+  const score = responsiveScore(columns.map((column) => column.report));
+  const scoreLine = score ? `${t('score.markdown', { score: score.score, grade: score.grade })}\n\n` : '';
+  return `${t('audit.markdownIssues', { page })}\n\n${scoreLine}${table([t('audit.check'), ...columns.map(columnTitle)], rows)}\n`;
 }
 
 /* ---------- Page stats ---------- */

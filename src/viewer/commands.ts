@@ -6,10 +6,11 @@ import {
   type SimulateToggle,
   type ToolToggle,
 } from '../components/WorkspaceBar/WorkspaceBar';
+import { FRAMEWORK_SET_IDS } from '../data/breakpoints';
 import { BUILT_IN_GROUPS } from '../data/groups';
 import { PRESETS } from '../data/presets';
 import type { MessageKey } from '../i18n/en';
-import type { Translate } from '../i18n/translate';
+import { LANGUAGES, LANGUAGE_NAMES, type Translate } from '../i18n/translate';
 import { builtInGroupName } from '../state/groups';
 import { VISION_MODES, type VisionMode } from '../state/vision';
 import type {
@@ -37,6 +38,10 @@ export type CommandActions = {
   copyLink?: () => void;
   cycleFocus?: (delta: 1 | -1) => void;
   measure?: () => void;
+  /** Notes on previews: pin them (N), copy them as a bug report, clear them. */
+  notes?: () => void;
+  copyNotes?: () => void;
+  clearNotes?: () => void;
   contrast?: () => void;
   compare?: () => void;
   stopCompare?: () => void;
@@ -95,6 +100,10 @@ export type CommandActions = {
   pro?: () => void;
   /** Settings, where a licence key is entered and managed. */
   licence?: () => void;
+  /** Projects: open one, save the workspace as one, manage them (listed when given). */
+  openProject?: (id: string) => void;
+  saveProject?: () => void;
+  manageProjects?: () => void;
 };
 
 export type CommandContext = {
@@ -124,6 +133,9 @@ export type CommandContext = {
   pro?: boolean;
   /** Cookie banners are hidden in the previews (Pro). */
   cookieBanners?: boolean;
+  /** Pinning notes, and how many the previews show. */
+  annotating?: boolean;
+  noteCount?: number;
   actions: CommandActions;
 };
 
@@ -143,6 +155,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     pages: t('palette.section.pages'),
     preferences: t('palette.section.preferences'),
     simulate: t('palette.section.simulate'),
+    projects: t('projects.menu'),
   };
   const add = (command: Omit<PaletteCommand, 'title' | 'keywords'> & { title: string; keywords?: string }) =>
     commands.push(command);
@@ -341,6 +354,37 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     });
   }
 
+  /* ---------- Projects ---------- */
+  const { openProject, saveProject, manageProjects } = actions;
+  if (openProject)
+    for (const project of settings.projects)
+      add({
+        id: `project-${project.id}`,
+        section: section.projects,
+        icon: 'save',
+        title: t('palette.openProject', { name: project.name }),
+        keywords: `${en('palette.openProject', { name: project.name })} ${project.url} client site`,
+        hint: shortUrl(project.url),
+        run: () => openProject(project.id),
+      });
+  if (saveProject)
+    named('projects.save', {
+      id: 'project-save',
+      section: section.projects,
+      icon: 'save',
+      keywords: 'project client workspace setup',
+      disabled: !ctx.hasUrl,
+      run: saveProject,
+    });
+  if (manageProjects)
+    named('projects.manage', {
+      id: 'project-manage',
+      section: section.projects,
+      icon: 'settings',
+      disabled: settings.projects.length === 0,
+      run: manageProjects,
+    });
+
   /* ---------- Groups ---------- */
   for (const group of BUILT_IN_GROUPS) {
     add({
@@ -529,6 +573,27 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'ruler distance pixels',
       run: actions.measure,
     });
+  if (actions.notes)
+    named('notes.toggle', {
+      id: 'notes',
+      section: section.tools,
+      icon: 'pencil',
+      shortcut: 'N',
+      checked: ctx.annotating,
+      keywords: 'annotate pin comment bug report qa feedback note marker',
+      run: actions.notes,
+    });
+  if (actions.copyNotes)
+    named('notes.copy', {
+      id: 'notes-copy',
+      section: section.tools,
+      icon: 'clipboard',
+      keywords: 'bug report notes markdown issue jira github',
+      disabled: !ctx.noteCount,
+      run: actions.copyNotes,
+    });
+  if (actions.clearNotes && ctx.noteCount)
+    named('notes.clear', { id: 'notes-clear', section: section.tools, icon: 'trash', run: actions.clearNotes });
   if (actions.contrast)
     named('tools.contrast', {
       id: 'contrast',
@@ -538,7 +603,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'colour color wcag eyedropper picker accessibility',
       run: actions.contrast,
     });
-  for (const set of ['tailwind', 'bootstrap', 'custom', 'site', 'none'] as const) {
+  for (const set of [...FRAMEWORK_SET_IDS, 'custom', 'site', 'none'] as const) {
     named(
       'palette.breakpoints',
       {
@@ -604,6 +669,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
   simulate('pseudo', 'stress.pseudo', 'text', 'pseudo localization translation i18n');
   simulate('rtl', 'stress.rtl', 'arrowLeft', 'rtl arabic hebrew direction');
   simulate('spacing', 'stress.spacing', 'text', 'wcag text spacing letter word line height');
+  simulate('textZoom', 'stress.textZoom', 'text', 'wcag 1.4.4 resize text 200% zoom font size large dynamic type');
 
   /* ---------- View ---------- */
   for (const zoom of ZOOM_OPTIONS) {
@@ -751,22 +817,15 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'license licence key activate pro serial',
       run: actions.licence,
     });
-  add({
-    id: 'lang-en',
-    section: section.preferences,
-    icon: 'globe',
-    title: 'English',
-    keywords: 'language ngon ngu',
-    run: () => actions.setLanguage('en'),
-  });
-  add({
-    id: 'lang-vi',
-    section: section.preferences,
-    icon: 'globe',
-    title: 'Tiếng Việt',
-    keywords: 'language ngon ngu vietnamese',
-    run: () => actions.setLanguage('vi'),
-  });
+  for (const code of LANGUAGES)
+    add({
+      id: `lang-${code}`,
+      section: section.preferences,
+      icon: 'globe',
+      title: LANGUAGE_NAMES[code],
+      keywords: `language ngon ngu idioma langue sprache gengo bahasa ${code}`,
+      run: () => actions.setLanguage(code),
+    });
 
   return commands;
 }

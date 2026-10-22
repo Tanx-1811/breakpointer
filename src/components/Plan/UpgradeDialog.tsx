@@ -12,6 +12,7 @@ export const PRO_FEATURE_ICONS: Record<ProFeature, IconName> = {
   a11yChecks: 'accessibility',
   syncInteractions: 'pointer',
   hideCookieBanners: 'cookie',
+  projects: 'save',
   branding: 'palette',
   dataExport: 'download',
 };

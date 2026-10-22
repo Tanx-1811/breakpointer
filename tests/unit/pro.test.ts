@@ -394,15 +394,16 @@ describe('exports', () => {
     run = updatePage(run, 1, { status: 'failed', failure: 'http', httpStatus: 404 });
     const lines = batchCsv(run, t).replace('\uFEFF', '').trim().split('\r\n');
     expect(lines[0]).toBe(
-      'Page,Ended at,Viewport,Width (px),Height (px),Result,Check,Check id,Elements,Value,Examples',
+      'Page,Ended at,Viewport,Width (px),Height (px),Result,Check,Check id,Elements,Value,Examples,Page score',
     );
     expect(lines).toHaveLength(5);
     expect(lines[1]).toBe(
-      'https://example.com/,,Phone,375,667,Issues,Images without alt text,missing-alt,2,,div.hero > img (320×200); nav > button',
+      // Overflow (25) and a missing alt text (6) at one of two sizes: 100 − 15.5 = 84.5 → 85.
+      'https://example.com/,,Phone,375,667,Issues,Images without alt text,missing-alt,2,,div.hero > img (320×200); nav > button,85',
     );
     expect(lines[2]).toContain(',overflow,2,40px,');
-    expect(lines[3]).toBe('https://example.com/,,Laptop,1280,800,No issues,,,,,');
-    expect(lines[4]).toBe('https://example.com/missing,,,,,Not checked: the page answered HTTP 404,,,,,');
+    expect(lines[3]).toBe('https://example.com/,,Laptop,1280,800,No issues,,,,,,85');
+    expect(lines[4]).toBe('https://example.com/missing,,,,,Not checked: the page answered HTTP 404,,,,,,');
 
     const data = JSON.parse(batchJson(run, '0.6.0', new Date(NOW)));
     expect(data).toMatchObject({ app: 'Breakpointer', kind: 'check-pages', version: '0.6.0', complete: false });
@@ -418,7 +419,8 @@ describe('exports', () => {
         expect.objectContaining({ kind: 'overflow', detail: '40px' }),
       ],
     });
-    expect(data.pages[1]).toMatchObject({ status: 'failed', failure: 'http', httpStatus: 404 });
+    expect(data.pages[0].score).toEqual({ value: 85, grade: 'B', sizes: 2 });
+    expect(data.pages[1]).toMatchObject({ status: 'failed', failure: 'http', httpStatus: 404, score: null });
   });
 
   it('exports a width scan by ranges', () => {

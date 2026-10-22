@@ -1,7 +1,8 @@
 import type { CheckIssue, CheckReport, PageStats, TypeSample } from '../agent/protocol';
 import type { Translate } from '../i18n/translate';
-import { type BatchCell, type BatchRun, failureText } from './batch';
+import { type BatchCell, type BatchRun, failureText, pageScore } from './batch';
 import { CHECK_KIND_KEYS } from './checks';
+import { responsiveScore } from './score';
 import { scanFindings, type ScanOptions, type ScanSample } from './scan';
 
 /**
@@ -87,19 +88,21 @@ export function batchCsv(run: BatchRun, t: Translate): string {
     t('export.elements'),
     t('export.value'),
     t('export.examples'),
+    t('export.pageScore'),
   ];
   const rows: (string | number | null)[][] = [];
   for (const page of run.pages) {
     if (page.status === 'failed') {
-      rows.push([page.url, page.finalUrl ?? '', '', null, null, failureText(page, t), '', '', null, '', '']);
+      rows.push([page.url, page.finalUrl ?? '', '', null, null, failureText(page, t), '', '', null, '', '', null]);
       continue;
     }
+    const score = pageScore(page)?.score ?? null;
     run.sizes.forEach((size, index) => {
       const cell = page.cells[index] ?? null;
       const base = [page.url, page.finalUrl ?? '', size.name, size.width, size.height, cellResult(cell, t)];
       if (cell?.status === 'checked' && cell.issues.length)
-        for (const issue of cell.issues) rows.push([...base, ...issueColumns(issue, t)]);
-      else rows.push([...base, '', '', null, '', '']);
+        for (const issue of cell.issues) rows.push([...base, ...issueColumns(issue, t), score]);
+      else rows.push([...base, '', '', null, '', '', score]);
     });
   }
   return toCsv(header, rows);
@@ -118,6 +121,7 @@ export function batchJson(run: BatchRun, version: string, now = new Date()): str
         status: page.status,
         ...(page.failure ? { failure: page.failure } : {}),
         ...(page.httpStatus ? { httpStatus: page.httpStatus } : {}),
+        score: scoreJson(pageScore(page)),
         results: page.cells.map((cell, index) => ({
           size: run.sizes[index]?.key ?? null,
           status: cell?.status ?? 'notChecked',
@@ -129,6 +133,9 @@ export function batchJson(run: BatchRun, version: string, now = new Date()): str
     2,
   )}\n`;
 }
+
+const scoreJson = (score: ReturnType<typeof pageScore>) =>
+  score ? { value: score.score, grade: score.grade, sizes: score.sizes } : null;
 
 /* ---------- Width scan ---------- */
 
@@ -240,6 +247,7 @@ export function auditJson(page: string | null, rows: AuditExportRow[], version: 
     {
       ...envelope('audit', version, now),
       page,
+      score: scoreJson(responsiveScore(rows.map((row) => row.report))),
       previews: rows.map((row) => ({
         name: row.name,
         width: row.width,

@@ -1,8 +1,10 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import { CHECK_KINDS, type CheckKind } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
+import { LANGUAGES, LANGUAGE_NAMES } from '../../i18n/translate';
 import type { MessageKey } from '../../i18n/en';
 import type { VerifyResult } from '../../services/license';
+import { FRAMEWORK_SET_IDS } from '../../data/breakpoints';
 import { formatBytes } from '../../state/audit';
 import { CHECK_KIND_KEYS } from '../../state/checks';
 import { TRIAL_DAYS, type Entitlement } from '../../state/license';
@@ -232,8 +234,11 @@ function SettingsBody(props: Props) {
               onChange={(event) => props.onLanguage(event.target.value as LanguagePreference)}
             >
               <option value="auto">{t('language.auto')}</option>
-              <option value="en">English</option>
-              <option value="vi">Tiếng Việt</option>
+              {LANGUAGES.map((code) => (
+                <option key={code} value={code} lang={code}>
+                  {LANGUAGE_NAMES[code]}
+                </option>
+              ))}
             </Select>
           </Row>
         </Section>
@@ -247,8 +252,11 @@ function SettingsBody(props: Props) {
               onChange={(event) => props.onBreakpoints(event.target.value as BreakpointSetId)}
             >
               <option value="none">{t('breakpoints.none')}</option>
-              <option value="tailwind">{t('breakpoints.tailwind')}</option>
-              <option value="bootstrap">{t('breakpoints.bootstrap')}</option>
+              {FRAMEWORK_SET_IDS.map((set) => (
+                <option key={set} value={set}>
+                  {t(`breakpoints.${set}`)}
+                </option>
+              ))}
               <option value="custom">{t('breakpoints.custom')}</option>
               <option value="site">{t('breakpoints.site')}</option>
             </Select>

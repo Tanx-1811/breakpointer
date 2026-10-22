@@ -2,6 +2,20 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.7.0] — 2026-10-22
+
+More reasons to open Breakpointer every day — and in more languages. (0.6.0 was never published on its own: the store gets 0.6.0's Breakpointer Pro with this release.)
+
+### Added
+
+- **Responsive score**: one number from 0 to 100 for a page at the sizes it was checked at, with a grade and what cost the most points — at the top of the audit's Issues tab, in the HTML report, as a column of Check pages (also in its Markdown, report, CSV and JSON) and in the audit's Markdown and JSON. Each kind of issue costs points by how bad it is and how many sizes have it.
+- **Notes** (`N`, the Notes toggle or the palette): click a preview to pin a numbered note, type what's wrong, and **copy a bug report** — the page, the browser, and each viewport's size, breakpoint and notes in Markdown, ready for an issue tracker. Notes follow the page as it scrolls (on sites you allow), show in screenshots, can be deleted with undo, and are kept for the session only.
+- **Projects** (the new Projects menu or the palette): save a site's whole setup — the page, the viewports (shown and hidden), breakpoint labels, the column grid, live CSS and the address compared with — and open it again in one click, with undo. Rename, update or delete them in Manage projects; they are part of exported settings. One project is free; Breakpointer Pro keeps up to 50.
+- **Text at 200%** (Simulate): every font size in the previews doubled, like text-only zoom (WCAG 1.4.4), to find text that is cut off or overlaps.
+- **Five more framework breakpoint sets**: Material UI, Chakra UI, Ant Design, Bulma and Foundation, for labels, snapping and breakpoint edges.
+- **Two built-in groups**: the **most-used sizes** worldwide (360 × 800 to 1920 × 1080) and **WCAG reflow** sizes (320 × 256 and 640 × 512: a 1280 × 1024 screen at 400% and 200%); two presets, 360 × 800 and 390 × 844.
+- **Six more languages**: Spanish, Portuguese (Brazil), French, German, Japanese and Indonesian, for the whole interface, Chrome's menus and the store listing.
+
 ## [0.6.0] — 2026-10-21
 
 **Breakpointer Pro**: tools for people who test websites for a living, with a free 7-day trial. Everything Breakpointer did before stays free.

@@ -268,6 +268,26 @@ With **Sync clicks & typing** on (Pro, `settings.sync.interactions`), the worksp
 
 `settings.branding` (`{ name, url, logo, credit }`, validated by `parseBranding`: names trimmed to 60 characters, http(s) links only, PNG/JPEG/WebP data URLs up to 150 KB) applies only with Pro and once it has a name or a logo (`activeBranding`). `state/branding.ts` writes the brand's header (`reportEyebrow`) and footer (`reportFooter`: “Prepared by …”, with or without “Made with Breakpointer”) for the HTML report and the Check pages report, names image footers (`imageFooterName`), and `services/showcase.ts` draws the name in a corner of showcase images. `state/export.ts` makes the CSV and JSON exports of Check pages (a row per page × size × issue), the width scanner (a row per issue range) and the audit (a row per preview × issue; JSON adds page stats and the type scale): CSV per RFC 4180 with a BOM and CRLF, page text that starts like a formula prefixed with an apostrophe (CSV injection), and the measured value as the agent wrote it (no sign).
 
+## Responsive score
+
+`state/score.ts` turns check results into one number: 100 minus, for each kind of issue, its weight (`SCORE_WEIGHTS`: a page that scrolls sideways costs most, a missing page language least) times the share of checked sizes that have it; never below 0, graded A–F, with the costs listed (D59). It is computed wherever results are shown together — the audit's Issues tab (`ScoreCard`), the HTML report's summary, each page of Check pages (`pageScore`), and the Markdown, CSV and JSON exports — from the checks that ran, so a free plan's score leaves out the Pro checks.
+
+## Notes and bug reports
+
+Notes (`state/notes.ts`, `components/Notes/NotesOverlay`) are numbered pins in a layer over each preview's frame, like the measuring overlay, so they work on every site (D60). While pinning (`N`) the layer takes clicks: a click adds a note at that point and opens its editor, a panel in the top layer next to the pin. A note keeps its page (without the fragment) and its position in CSS pixels — from the top of the page when the preview's agent reports the scroll position (previews with notes get `trackScroll`, as for design overlays), else from the top of the screen. Notes live in the workspace's memory for the session; only the notes of the page each preview shows are drawn, numbered in the order they were added. "Copy bug report" writes Markdown (`notesMarkdown`): the page, the browser and Breakpointer's version, then each viewport's size, breakpoint and page colours with its notes. Pins are inside the preview's stage, so screenshots show them.
+
+## Projects
+
+A project (`state/projects.ts`, type `Project`) keeps a page with the viewports (templates, with `hidden`), breakpoint labels and custom breakpoints, the column grid, live CSS and the comparison target (D61). Projects are part of the settings (`settings.projects`, validated by `parseProjects` in `services/storage.ts`, unique names, at most 50) and of exports. Saving under an existing name updates that project; renaming, deleting (with undo) and updating with the current setup happen in Manage projects. Opening one dispatches `setWorkspace` (viewports, breakpoints, custom breakpoints, grid), sets live CSS and the comparison, and shows the page — one toast undoes all of it. `canSaveProject` lets the free plan keep one; the Projects menu marks "Save as project…" with Pro after that.
+
+## Text at 200%
+
+A stress test (`stress.textZoom`) in the frame agent: it reads every element's computed font size first, then gives each twice that size as an inline `!important` style, keeping what the element had inline to put back (D62). Content added later is zoomed again after a short pause (everything measured afresh). Line heights set in pixels stay as they are, as with a browser's text-only zoom — overlapping lines are what the test is for.
+
+## Languages
+
+The UI exists in English (the source of truth), Vietnamese, Spanish, Brazilian Portuguese, French, German, Japanese and Indonesian (`src/i18n/<code>.ts`, each typed `Record<MessageKey, string>`), Chrome's strings in `public/_locales/<locale>/messages.json`, and the store listing in [STORE_LISTING.md](STORE_LISTING.md) (EN, VI) and [store-listing/](store-listing/) (the others). `resolveLanguage` follows Chrome's language by default (D64).
+
 ## Feedback, rating and sharing
 
 - Help links to GitHub's issue forms (`.github/ISSUE_TEMPLATE`: a problem, a site that won't show, an idea), to the store's reviews and to the project on GitHub, and copies a link to the store listing to share. Copies installed from a store use that store's page; others (unpacked, sideloaded) the Chrome Web Store listing (`CHROME_WEB_STORE_ID` in `utils/links.ts`). `services/install-source.ts` asks `chrome.management.getSelf()` (no permission needed) and `state/store-links.ts` tells the store from its update URL (`clients2.google.com` → Chrome Web Store, `edge.microsoft.com` → Edge Add-ons) when the install type is `normal`; listing and review links are built from the extension id.
@@ -340,7 +360,8 @@ src/
                            A/B comparison, contrast, measuring, vision matrices, window
                            placement, full-page slices, audit grouping and Markdown, width
                            scan, pixel diffs, snapshot keys, workspace links; v0.6: licences and
-                           the trial, the plan, branding, CSV/JSON exports)
+                           the trial, the plan, branding, CSV/JSON exports; v0.7: the responsive
+                           score, notes, projects)
   data/                    Presets, built-in groups, framework and site breakpoints, licence
                            public keys, consent tools' banners
   i18n/                    English (source of truth) and Vietnamese UI strings

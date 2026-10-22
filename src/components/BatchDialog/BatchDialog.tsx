@@ -8,6 +8,7 @@ import {
   failureText,
   pageIssueKinds,
   pageLabel,
+  pageScoreText,
   parsePageList,
   summarizeRun,
   type BatchCell,
@@ -316,6 +317,9 @@ function BatchBody(props: Props) {
                     <span className={styles.mono}>{size.width}</span>
                   </th>
                 ))}
+                <th scope="col" className={styles.scoreHead}>
+                  {t('score.column')}
+                </th>
                 <th scope="col">
                   <span className="visually-hidden">{t('batch.actions')}</span>
                 </th>
@@ -365,6 +369,9 @@ function BatchBody(props: Props) {
                         </td>
                       ))
                     )}
+                    <td className={styles.scoreCell} data-testid="batch-score">
+                      {pageScoreText(page)}
+                    </td>
                     <td className={styles.rowActions}>
                       <Button
                         size="sm"

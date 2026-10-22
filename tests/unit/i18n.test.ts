@@ -22,7 +22,11 @@ describe('i18n', () => {
 
   it('resolves the automatic language from Chrome', () => {
     expect(resolveLanguage('auto', 'vi-VN')).toBe('vi');
-    expect(resolveLanguage('auto', 'de')).toBe('en');
+    expect(resolveLanguage('auto', 'de')).toBe('de');
+    expect(resolveLanguage('auto', 'pt-PT')).toBe('pt-BR');
+    expect(resolveLanguage('auto', 'in')).toBe('id');
+    expect(resolveLanguage('auto', 'ja-JP')).toBe('ja');
+    expect(resolveLanguage('auto', 'ko')).toBe('en');
     expect(resolveLanguage('en', 'vi')).toBe('en');
   });
 
@@ -30,9 +34,10 @@ describe('i18n', () => {
     const read = (lang: string) =>
       JSON.parse(readFileSync(resolve(process.cwd(), `public/_locales/${lang}/messages.json`), 'utf8'));
     const enMessages = read('en');
-    const viMessages = read('vi');
-    expect(Object.keys(viMessages).sort()).toEqual(Object.keys(enMessages).sort());
-    for (const messages of [enMessages, viMessages]) {
+    const all = ['en', 'vi', 'es', 'pt_BR', 'fr', 'de', 'ja', 'id'].map(read);
+    for (const messages of all) expect(Object.keys(messages).sort()).toEqual(Object.keys(enMessages).sort());
+    for (const messages of all) {
+      expect(messages.omniboxDefault.message).toContain('<match>%s</match>');
       expect(messages.extName.message.length).toBeLessThanOrEqual(75);
       expect(messages.extDescription.message.length).toBeLessThanOrEqual(132);
     }

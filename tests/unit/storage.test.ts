@@ -34,7 +34,7 @@ describe('parseSettings', () => {
       theme: 'neon',
       language: 'vi',
       layout: 'row',
-      breakpoints: 'foundation',
+      breakpoints: 'semantic-ui',
       showRulers: 'yes',
       viewports: [
         { id: 'a', name: 'Phone', width: 375, height: 667, zoom: 0.75, hidden: true },

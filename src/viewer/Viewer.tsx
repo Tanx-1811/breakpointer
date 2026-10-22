@@ -16,6 +16,7 @@ import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/Fl
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
 import { ErrorState } from '../components/ErrorState/ErrorState';
 import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/GroupDialogs';
+import { ManageProjectsDialog, SaveProjectDialog } from '../components/ProjectDialogs/ProjectDialogs';
 import { HelpDialog } from '../components/HelpDialog/HelpDialog';
 import { InspectorPanel, type InspectorRow } from '../components/Inspector/InspectorPanel';
 import { LiveCssDialog } from '../components/LiveCssDialog/LiveCssDialog';
@@ -112,6 +113,8 @@ import { DEFAULT_SHOWCASE, pickShowcaseViewports, type ShowcaseOptions } from '.
 import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
 import { activeBranding, imageFooterName } from '../state/branding';
+import { MAX_NOTES, newNote, normalizeNoteText, notesMarkdown, type Note, type NoteCard } from '../state/notes';
+import { canSaveProject, createProject, projectViewports, type ProjectState } from '../state/projects';
 import { auditCsv, auditJson, batchCsv, batchJson, scanCsv, scanJson, type ExportFormat } from '../state/export';
 import { TRIAL_DAYS } from '../state/license';
 import { canUse, isPro, skippedChecks as skippedCheckKinds, type ProFeature } from '../state/plan';
@@ -203,7 +206,9 @@ type DialogName =
   | 'visual'
   | 'batch'
   | 'showcase'
-  | 'upgrade';
+  | 'upgrade'
+  | 'saveProject'
+  | 'manageProjects';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -217,6 +222,7 @@ const SIMULATE_LABELS: Record<SimulateToggle, MessageKey> = {
   pseudo: 'stress.pseudo',
   rtl: 'stress.rtl',
   spacing: 'stress.spacing',
+  textZoom: 'stress.textZoom',
   reduceMotion: 'motion.reduce',
   moreContrast: 'prefs.moreContrast',
   print: 'prefs.print',
@@ -374,7 +380,7 @@ function Workspace({
   // Utilities for this session (not saved).
   const [measuring, setMeasuring] = useState(false);
   const [vision, setVision] = useState<VisionMode>('none');
-  const [stress, setStress] = useState({ pseudo: false, rtl: false, spacing: false });
+  const [stress, setStress] = useState({ pseudo: false, rtl: false, spacing: false, textZoom: false });
   // The page's styles for preferences the browser doesn't have.
   const [preferences, setPreferences] = useState({ reducedMotion: false, moreContrast: false, print: false });
   const [pauseAnimations, setPauseAnimations] = useState(false);
@@ -392,6 +398,13 @@ function Workspace({
   const [realWindows, setRealWindows] = useState<ManagedWindow[]>([]);
   // The always-on-top floating preview, and which viewport it shows.
   const [floating, setFloating] = useState<{ pip: Window; viewportId: string } | null>(null);
+  // Notes pinned on previews (for bug reports), for the session; pinning them, and the one being edited.
+  const [notes, setNotes] = useState<Note[]>([]);
+  const [annotating, setAnnotating] = useState(false);
+  const [editingNote, setEditingNote] = useState<string | null>(null);
+  /** Previews whose page reports every scroll: a design overlay or notes move with the page. */
+  const tracksScroll = (cardId: string) =>
+    Boolean(overlays[cardId]) || annotating || notes.some((note) => note.cardId === cardId);
   // Cookie and consent banners hidden in the previews (Pro; for this session).
   const [hideBannersOn, setHideBanners] = useState(false);
 
@@ -445,6 +458,7 @@ function Workspace({
     pseudo: stress.pseudo,
     rtl: stress.rtl,
     spacing: stress.spacing,
+    textZoom: stress.textZoom,
   };
 
   // Each visible viewport is a card; when comparing, its B side is a second card next to it.
@@ -1163,8 +1177,9 @@ function Workspace({
   };
 
   const startPicking = () => {
-    // Measuring and picking both take clicks in the previews: one at a time.
+    // Measuring, notes and picking all take clicks in the previews: one at a time.
     setMeasuring(false);
+    setAnnotating(false);
     // The inspector and the audit share the side of the workspace.
     setAudit((state) => (state.open ? { ...state, open: false } : state));
     setInspector((state) => ({ ...state, open: true, picking: true }));
@@ -1207,6 +1222,7 @@ function Workspace({
   const onEscape = () => {
     if (inspector.picking) stopPicking();
     else if (measuring) setMeasuring(false);
+    else if (annotating) setAnnotating(false);
     else if (focused) exitFocus();
     else if (inspector.open) closeInspector();
     else if (vision !== 'none') setVision('none');
@@ -1223,13 +1239,14 @@ function Workspace({
       if (liveCss) agents.send(cardId, { type: 'css', css: liveCss });
       const scheme = viewports.find((vp) => vp.id === viewportIdOf(cardId))?.colorScheme;
       if (scheme) agents.send(cardId, { type: 'colorScheme', scheme });
-      if (stress.pseudo || stress.rtl || stress.spacing) agents.send(cardId, { type: 'stress', ...stress });
+      if (stress.pseudo || stress.rtl || stress.spacing || stress.textZoom)
+        agents.send(cardId, { type: 'stress', ...stress });
       if (preferences.reducedMotion || preferences.moreContrast || preferences.print)
         agents.send(cardId, { type: 'preferences', ...preferences });
       if (annotate.images || annotate.tabOrder || annotate.layout)
         agents.send(cardId, { type: 'annotate', ...annotate });
       if (pauseAnimations) agents.send(cardId, { type: 'animations', paused: true });
-      if (overlays[cardId]) agents.send(cardId, { type: 'trackScroll', on: true });
+      if (tracksScroll(cardId)) agents.send(cardId, { type: 'trackScroll', on: true });
       if (inspector.picking) agents.send(cardId, { type: 'inspect', on: true });
       if (inspector.selector) agents.send(cardId, { type: 'select', selector: inspector.selector });
       setHighlights((map) => (map[cardId] ? { ...map, [cardId]: null } : map));
@@ -1261,7 +1278,7 @@ function Workspace({
       const href = agents.frameOf(cardId)?.href;
       if (href) lastScroll.current[cardId] = { href, y };
       // A design overlay moves with its page.
-      if (overlays[cardId]) setOverlayScroll((map) => (map[cardId] === y ? map : { ...map, [cardId]: y }));
+      if (tracksScroll(cardId)) setOverlayScroll((map) => (map[cardId] === y ? map : { ...map, [cardId]: y }));
       // Scrolls the workspace caused itself are reported only for overlays.
       if (synced || !settings.sync.scroll) return;
       // Content anchors only fit previews of the same page; others scroll to the same ratio.
@@ -1356,7 +1373,7 @@ function Workspace({
     }
   }, [schemeKey, send]);
   // Previews with a design overlay report every scroll (also synced ones), so the overlay follows.
-  const trackKey = cards.map((card) => `${card.id}:${overlays[card.id] ? 1 : 0}`).join(' ');
+  const trackKey = cards.map((card) => `${card.id}:${tracksScroll(card.id) ? 1 : 0}`).join(' ');
   useEffect(() => {
     for (const entry of trackKey.split(' ')) {
       const [id, on] = entry.split(':');
@@ -1852,13 +1869,197 @@ function Workspace({
   /** Measuring and picking both take clicks in the previews: one at a time. */
   const toggleMeasure = () => {
     if (!measuring && inspector.picking) stopPicking();
+    if (!measuring) setAnnotating(false);
     setMeasuring(!measuring);
+  };
+
+  /* ---------- Projects ---------- */
+
+  /** What a project keeps of the workspace now (null without a page). */
+  const projectState = (): ProjectState | null =>
+    currentUrl
+      ? {
+          url: currentUrl.href,
+          viewports,
+          breakpoints: settings.breakpoints,
+          customBreakpoints: settings.customBreakpoints,
+          grid: settings.grid,
+          css: liveCss,
+          compare,
+        }
+      : null;
+
+  const openSaveProject = () => {
+    if (!currentUrl) {
+      toast({ message: t('projects.needsPage'), tone: 'info', key: 'projects' });
+      return;
+    }
+    setDialog('saveProject');
+  };
+
+  /** Saves the workspace as a project (one with the same name is updated). */
+  const saveCurrentProject = (name: string, id = createId()) => {
+    const state = projectState();
+    if (!state) return;
+    if (!canSaveProject(settings.projects, name, pro)) {
+      upgrade('projects');
+      return;
+    }
+    const project = createProject(id, name, state);
+    dispatch({ type: 'saveProject', project });
+    setDialog((current) => (current === 'saveProject' ? null : current));
+    toast({ message: t('projects.saved', { name: project.name }), tone: 'success', key: 'projects' });
+  };
+
+  /** Opens a project: its page, viewports, breakpoints, grid, live CSS and comparison — all undone at once. */
+  const openProject = (id: string) => {
+    const project = settings.projects.find((item) => item.id === id);
+    if (!project) return;
+    const previous = {
+      workspace: {
+        viewports,
+        breakpoints: settings.breakpoints,
+        customBreakpoints: settings.customBreakpoints,
+        grid: settings.grid,
+      },
+      css: liveCss,
+      compare,
+      url: currentUrl,
+    };
+    setFocus(null);
+    setDialog(null);
+    dispatch({
+      type: 'setWorkspace',
+      workspace: {
+        viewports: projectViewports(project),
+        breakpoints: project.breakpoints,
+        customBreakpoints: project.customBreakpoints.length ? project.customBreakpoints : settings.customBreakpoints,
+        grid: project.grid,
+      },
+    });
+    setLiveCss(project.css);
+    setCompare(project.compare);
+    showPage(new URL(project.url), 'push');
+    withUndo(t('projects.opened', { name: project.name }), () => {
+      dispatch({ type: 'setWorkspace', workspace: previous.workspace });
+      setLiveCss(previous.css);
+      setCompare(previous.compare);
+      if (previous.url) showPage(previous.url, 'push');
+    });
+  };
+
+  const deleteProjectById = (id: string) => {
+    const index = settings.projects.findIndex((item) => item.id === id);
+    const project = settings.projects[index];
+    if (!project) return;
+    dispatch({ type: 'deleteProject', id });
+    withUndo(t('projects.deleted', { name: project.name }), () => dispatch({ type: 'restoreProject', project, index }));
+  };
+
+  /* ---------- Notes ---------- */
+
+  /** The page a preview shows now (its own, after following a link), without the fragment. */
+  const cardPage = (cardId: string) =>
+    pageOf(agents.frameOf(cardId)?.href ?? srcOverrides[cardId] ?? pageFor(cardId, src) ?? '');
+  // The notes on the pages the previews show, numbered in the order they were added.
+  const shownNotes = notes.filter((note) =>
+    cards.some((card) => card.id === note.cardId && cardPage(card.id) === note.page),
+  );
+  const noteNumbers = new Map(shownNotes.map((note, index) => [note.id, index + 1]));
+  const notesOfCard = (cardId: string) =>
+    shownNotes.filter((note) => note.cardId === cardId).map((note) => ({ note, number: noteNumbers.get(note.id)! }));
+
+  /** N: pin notes (a click on a preview adds one), or stop. */
+  const toggleNotes = () => {
+    if (!annotating) {
+      setMeasuring(false);
+      if (inspector.picking) stopPicking();
+    }
+    setAnnotating(!annotating);
+  };
+
+  const addNote = (cardId: string, point: { x: number; y: number }) => {
+    if (notes.length >= MAX_NOTES) {
+      toast({ message: t('notes.limit', { max: MAX_NOTES }), tone: 'info', key: 'notes' });
+      return;
+    }
+    // Pinned to the page where its scroll position is known (an agent runs there), else to the screen.
+    const scrollY = agents.frameOf(cardId) ? (overlayScroll[cardId] ?? 0) : null;
+    const note = newNote(createId(), cardId, cardPage(cardId), point, scrollY);
+    setNotes((list) => [...list, note]);
+    setEditingNote(note.id);
+  };
+
+  const changeNote = (id: string, text: string) =>
+    setNotes((list) => list.map((note) => (note.id === id ? { ...note, text: normalizeNoteText(text) } : note)));
+
+  const removeNote = (id: string) => {
+    const index = notes.findIndex((note) => note.id === id);
+    const note = notes[index];
+    if (!note) return;
+    setNotes((list) => list.filter((item) => item.id !== id));
+    setEditingNote(null);
+    withUndo(t('notes.deleted'), () =>
+      setNotes((list) => {
+        const next = [...list];
+        next.splice(Math.min(index, next.length), 0, note);
+        return next;
+      }),
+    );
+  };
+
+  /** Removes the notes shown on the previews now, with undo. */
+  const clearNotes = () => {
+    if (!shownNotes.length) return;
+    const previous = notes;
+    const ids = new Set(shownNotes.map((note) => note.id));
+    setNotes((list) => list.filter((note) => !ids.has(note.id)));
+    setEditingNote(null);
+    withUndo(t('notes.cleared'), () => setNotes(previous));
+  };
+
+  /** The notes shown now as a bug report in Markdown: the page, the browser, then each viewport. */
+  const copyNotes = () => {
+    if (!shownNotes.length) {
+      toast({ message: t('notes.none'), tone: 'info', key: 'notes' });
+      return;
+    }
+    const noteCards: NoteCard[] = cards.map((card) => ({
+      id: card.id,
+      name: cardTitle(card),
+      width: card.viewport.width,
+      height: card.viewport.height,
+      details: cardLabel(card.viewport, card.compare).split(' · ').slice(1).filter(Boolean),
+    }));
+    const chrome = /Chrome\/(\d+)/.exec(navigator.userAgent)?.[1];
+    const page = currentUrl?.href ?? shownNotes[0]!.page;
+    const markdown = notesMarkdown(
+      shownNotes,
+      noteCards,
+      {
+        page,
+        title: visible.map((vp) => agents.frameOf(vp.id)?.title).find(Boolean) ?? '',
+        created: new Date(),
+        language,
+        browser: chrome ? `Chrome ${chrome}` : 'Chrome',
+        version,
+      },
+      t,
+    );
+    void copyText(markdown).then((copied) =>
+      toast(
+        copied
+          ? { message: t('notes.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
   };
 
   /** Simulations inside the previews (stress tests, page preferences) need the site's permission. */
   const toggleSimulate = (toggle: SimulateToggle) => {
     const on = !simulateState[toggle];
-    if (toggle === 'pseudo' || toggle === 'rtl' || toggle === 'spacing') setStress({ ...stress, [toggle]: on });
+    if (toggle === 'pseudo' || toggle === 'rtl' || toggle === 'spacing' || toggle === 'textZoom')
+      setStress({ ...stress, [toggle]: on });
     else if (toggle === 'reduceMotion') setPreferences({ ...preferences, reducedMotion: on });
     else if (toggle === 'moreContrast' || toggle === 'print') setPreferences({ ...preferences, [toggle]: on });
     else setPauseAnimations(on);
@@ -2544,6 +2745,7 @@ function Workspace({
     nextViewport: () => cycleFocus(1),
     actualSize: () => visible.length > 0 && zoomTo(1),
     floating: () => void openFloating(),
+    notes: toggleNotes,
     escape: onEscape,
     // 1–8 show that viewport on its own (again: all of them).
     viewportAt: (index) => {
@@ -2581,6 +2783,8 @@ function Workspace({
         autoReload,
         pro,
         cookieBanners: hideBanners,
+        annotating,
+        noteCount: shownNotes.length,
         actions: {
           reloadAll: reloadKeepingPlace,
           autoReload: setAutoReload,
@@ -2618,6 +2822,9 @@ function Workspace({
           setTheme: (theme) => dispatch({ type: 'setTheme', theme }),
           setLanguage: (lang) => dispatch({ type: 'setLanguage', language: lang }),
           openSettings: () => openSettings(),
+          openProject,
+          saveProject: openSaveProject,
+          manageProjects: () => setDialog('manageProjects'),
           pro: () => (pro ? openSettings('plan') : upgrade()),
           licence: () => openSettings('plan'),
           siteAccess: () => setDialog('access'),
@@ -2628,6 +2835,9 @@ function Workspace({
           copyLink: copyWorkspaceLink,
           cycleFocus,
           measure: toggleMeasure,
+          notes: toggleNotes,
+          copyNotes,
+          clearNotes,
           contrast: () => setDialog('contrast'),
           compare: () => setDialog('compare'),
           stopCompare,
@@ -2900,6 +3110,14 @@ function Workspace({
             measuring={measuring}
             overlay={overlays[card.id]}
             overlayScroll={overlayScroll[card.id]}
+            notes={notesOfCard(card.id)}
+            notesAdding={annotating && !capturing}
+            editingNote={capturing ? null : editingNote}
+            notesScroll={overlayScroll[card.id]}
+            onAddNote={(point) => addNote(card.id, point)}
+            onEditNote={setEditingNote}
+            onNoteChange={changeNote}
+            onRemoveNote={removeNote}
             onOverlayFile={(file) => addOverlay(card.id, cardTitle(card), file)}
             onOverlayChange={(patch) => updateOverlay(card.id, patch)}
             onOverlayRemove={() => removeOverlay(card.id)}
@@ -3075,6 +3293,10 @@ function Workspace({
       <WorkspaceBar
         viewports={viewports}
         groups={settings.groups}
+        projects={settings.projects}
+        onOpenProject={openProject}
+        onSaveProject={openSaveProject}
+        onManageProjects={() => setDialog('manageProjects')}
         canAddViewport={canAddViewport(viewports)}
         breakpoints={settings.breakpoints}
         siteBreakpoints={siteBreakpoints}
@@ -3091,6 +3313,11 @@ function Workspace({
         measuring={measuring}
         comparing={compare !== null}
         simulate={simulateState}
+        notesOn={annotating}
+        noteCount={shownNotes.length}
+        onNotes={toggleNotes}
+        onCopyNotes={copyNotes}
+        onClearNotes={clearNotes}
         onMeasure={toggleMeasure}
         onContrast={() => setDialog('contrast')}
         onCompare={() => setDialog('compare')}
@@ -3272,6 +3499,26 @@ function Workspace({
                   >
                     {t('inspector.pickingHint')}
                   </DockStatus>
+                ) : annotating ? (
+                  <DockStatus
+                    icon="pencil"
+                    testId="notes-status"
+                    action={t('notes.done')}
+                    onAction={() => setAnnotating(false)}
+                    extra={
+                      shownNotes.length > 0 && (
+                        <Button size="sm" variant="subtle" icon="clipboard" onClick={copyNotes}>
+                          {t('notes.copy')}
+                        </Button>
+                      )
+                    }
+                  >
+                    {shownNotes.length === 0
+                      ? t('notes.status')
+                      : shownNotes.length === 1
+                        ? t('notes.statusCountOne')
+                        : t('notes.statusCount', { count: shownNotes.length })}
+                  </DockStatus>
                 ) : measuring ? (
                   <DockStatus
                     icon="measure"
@@ -3384,6 +3631,31 @@ function Workspace({
           addViewport(viewport);
           setDialog(null);
         }}
+        onClose={() => setDialog(null)}
+      />
+      <SaveProjectDialog
+        open={dialog === 'saveProject'}
+        projects={settings.projects}
+        suggestedName={host ?? ''}
+        canSaveNew={canSaveProject(settings.projects, '', pro)}
+        onSave={(name) => saveCurrentProject(name)}
+        onUpgrade={() => upgrade('projects')}
+        onClose={() => setDialog(null)}
+      />
+      <ManageProjectsDialog
+        open={dialog === 'manageProjects'}
+        projects={settings.projects}
+        onOpen={openProject}
+        onRename={(id, name) => dispatch({ type: 'renameProject', id, name })}
+        onUpdate={
+          currentUrl
+            ? (id) => {
+                const project = settings.projects.find((item) => item.id === id);
+                if (project) saveCurrentProject(project.name, project.id);
+              }
+            : null
+        }
+        onDelete={deleteProjectById}
         onClose={() => setDialog(null)}
       />
       <SaveGroupDialog

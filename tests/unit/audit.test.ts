@@ -237,6 +237,9 @@ describe('audit: issues across previews', () => {
       [
         '**Responsive checks** · https://example.com/',
         '',
+        // Overflow at one of two sizes (−12.5) and low contrast at both (−8).
+        '**Responsive score:** 80/100 (B)',
+        '',
         '| Check | Phone (375px) | Tablet (768px) | Laptop (1366px) |',
         '| --- | --- | --- | --- |',
         '| Content wider than the screen | ⚠ +184px | ✓ | — |',

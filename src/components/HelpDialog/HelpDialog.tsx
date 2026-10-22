@@ -24,6 +24,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['B'], label: 'help.batch' },
   { keys: ['V'], label: 'help.visual' },
   { keys: ['X'], label: 'help.measure' },
+  { keys: ['N'], label: 'help.notes' },
   { keys: ['C'], label: 'help.contrast' },
   { keys: ['O'], label: 'help.outlines' },
   { keys: ['P'], label: 'help.floating' },
@@ -39,7 +40,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 ];
 
 /** What this version brings, shown at the top of Help. */
-const NEWS: MessageKey[] = ['news.pro', 'news.proFree'];
+const NEWS: MessageKey[] = ['news.score', 'news.notes', 'news.projects', 'news.languages'];
 
 type Props = {
   open: boolean;

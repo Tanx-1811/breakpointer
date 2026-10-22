@@ -1353,6 +1353,55 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     originalDir = null;
   };
 
+  // Text at 200% (WCAG 1.4.4, like a browser's text-only zoom): every element
+  // gets twice the font size it had, as an inline !important style, measured
+  // before any is changed (so inherited sizes don't double twice). What the
+  // page had inline is kept and put back. New content is zoomed too, a moment
+  // after it appears (everything is measured afresh then).
+  const TEXT_ZOOM = 2;
+  let textZoom = false;
+  const zoomedText = new Map<HTMLElement, { value: string; priority: string }>();
+  const unzoomText = () => {
+    for (const [element, { value, priority }] of zoomedText) {
+      if (value) element.style.setProperty('font-size', value, priority);
+      else element.style.removeProperty('font-size');
+    }
+    zoomedText.clear();
+  };
+  const zoomText = () => {
+    unzoomText();
+    const all = [document.documentElement, ...Array.from(document.body?.querySelectorAll('*') ?? [])];
+    const elements = all
+      .slice(0, MAX_TEXT_NODES)
+      .filter(
+        (element): element is HTMLElement =>
+          element instanceof HTMLElement &&
+          !element.closest(`[${OVERLAY_ATTRIBUTE}], script, style, noscript, template`),
+      );
+    const sizes = elements.map((element) => Number.parseFloat(getComputedStyle(element).fontSize));
+    elements.forEach((element, index) => {
+      const size = sizes[index];
+      if (!size) return;
+      zoomedText.set(element, {
+        value: element.style.getPropertyValue('font-size'),
+        priority: element.style.getPropertyPriority('font-size'),
+      });
+      element.style.setProperty('font-size', `${Math.round(size * TEXT_ZOOM * 100) / 100}px`, 'important');
+    });
+  };
+  const textZoomUpdate = scheduler(() => {
+    if (textZoom) zoomText();
+  });
+  const setTextZoom = (on: boolean) => {
+    if (on === textZoom) return;
+    textZoom = on;
+    quiet();
+    if (on) zoomText();
+    else unzoomText();
+    // Inline styles aren't watched as page changes: check the new layout.
+    scheduleChecks();
+  };
+
   /* ---------- Annotations: image sizes and tab order ---------- */
 
   let annotateImages = false;
@@ -2083,6 +2132,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       })
     )
       return;
+    if (textZoom && records.some((record) => [...record.addedNodes].some((node) => node instanceof HTMLElement)))
+      textZoomUpdate(300);
     if (pseudo)
       for (const record of records) {
         if (record.type === 'characterData' && record.target instanceof Text) translateText(record.target);
@@ -2203,6 +2254,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         }
         setRtl(command.rtl);
         setStyle('bp-text-spacing', command.spacing ? TEXT_SPACING_CSS : '');
+        setTextZoom(command.textZoom === true);
         break;
       case 'trackScroll':
         trackScroll = command.on;

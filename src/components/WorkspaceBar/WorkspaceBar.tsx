@@ -1,4 +1,5 @@
 import { useState, type DragEvent, type KeyboardEvent, type ReactNode } from 'react';
+import { FRAMEWORK_SET_IDS } from '../../data/breakpoints';
 import { BUILT_IN_GROUPS } from '../../data/groups';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
@@ -6,7 +7,9 @@ import { builtInGroupName } from '../../state/groups';
 import type { ProFeature } from '../../state/plan';
 import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { VISION_MODES, type VisionMode } from '../../state/vision';
-import type { BreakpointSetId, ColorScheme, ViewportConfig, ViewportGroup } from '../../types';
+import { FREE_PROJECTS } from '../../state/projects';
+import type { BreakpointSetId, ColorScheme, Project, ViewportConfig, ViewportGroup } from '../../types';
+import { displayHost } from '../../utils/url';
 import { MAX_VIEWPORTS } from '../../utils/constants';
 import { Icon, type IconName } from '../Icon/Icon';
 import { Menu, type MenuEntry } from '../Menu/Menu';
@@ -32,7 +35,7 @@ export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 /** Simulations that run inside the previews (sites the user allowed). */
 export type SimulateToggle =
-  'reduceMotion' | 'moreContrast' | 'print' | 'pauseAnimations' | 'pseudo' | 'rtl' | 'spacing';
+  'reduceMotion' | 'moreContrast' | 'print' | 'pauseAnimations' | 'pseudo' | 'rtl' | 'spacing' | 'textZoom';
 export type SimulateState = Record<SimulateToggle, boolean> & { vision: VisionMode };
 
 export const VISION_KEYS: Record<VisionMode, MessageKey> = {
@@ -47,6 +50,11 @@ export const VISION_KEYS: Record<VisionMode, MessageKey> = {
 type Props = {
   viewports: ViewportConfig[];
   groups: ViewportGroup[];
+  /** Saved projects (the Projects menu shows when the handlers are given). */
+  projects?: Project[];
+  onOpenProject?: (id: string) => void;
+  onSaveProject?: () => void;
+  onManageProjects?: () => void;
   canAddViewport: boolean;
   breakpoints: BreakpointSetId;
   /** Breakpoints detected in the page (null: not known yet). */
@@ -71,6 +79,12 @@ type Props = {
   pageColors?: ColorScheme | null | 'mixed';
   onPageColors?: (scheme: ColorScheme | null) => void;
   measuring?: boolean;
+  /** Notes: pinning them, and how many the page has (the toggle shows with its handler). */
+  notesOn?: boolean;
+  noteCount?: number;
+  onNotes?: () => void;
+  onCopyNotes?: () => void;
+  onClearNotes?: () => void;
   /** Comparing two addresses. */
   comparing?: boolean;
   tools: ToolState;
@@ -275,6 +289,35 @@ export function WorkspaceBar(props: Props) {
   ];
 
   /** A switch; a Pro feature shows its badge on the free plan, and selecting it shows what Pro brings. */
+  const projects = props.projects ?? [];
+  const projectEntries: MenuEntry[] = [
+    { kind: 'heading', id: 'projects-heading', label: t('projects.menu') },
+    ...(projects.length
+      ? projects.map<MenuEntry>((project) => ({
+          id: `project-${project.id}`,
+          label: project.name,
+          icon: 'save',
+          hint: displayHost(new URL(project.url)),
+          onSelect: () => props.onOpenProject?.(project.id),
+        }))
+      : [{ kind: 'note', id: 'projects-none', label: t('projects.empty') } satisfies MenuEntry]),
+    { kind: 'separator', id: 'projects-sep' },
+    {
+      id: 'project-save',
+      label: t('projects.save'),
+      icon: 'save',
+      badge: !pro && projects.length >= FREE_PROJECTS ? t('pro.badge') : undefined,
+      onSelect: () => props.onSaveProject?.(),
+    },
+    {
+      id: 'project-manage',
+      label: t('projects.manage'),
+      icon: 'settings',
+      disabled: projects.length === 0,
+      onSelect: () => props.onManageProjects?.(),
+    },
+  ];
+
   const toolToggle = (id: ToolToggle, label: MessageKey, description?: MessageKey, feature?: ProFeature): MenuEntry => {
     const locked = Boolean(feature) && !pro;
     return {
@@ -318,6 +361,18 @@ export function WorkspaceBar(props: Props) {
       disabled: !props.hasUrl,
       onSelect: props.onVisual,
     });
+  if (props.onCopyNotes && props.onClearNotes) {
+    utilityEntries.push({
+      id: 'notes-copy',
+      label: t('notes.copy'),
+      description: t('notes.copyHint'),
+      icon: 'clipboard',
+      disabled: !props.noteCount,
+      onSelect: props.onCopyNotes,
+    });
+    if (props.noteCount)
+      utilityEntries.push({ id: 'notes-clear', label: t('notes.clear'), icon: 'trash', onSelect: props.onClearNotes });
+  }
   if (props.onContrast)
     utilityEntries.push({
       id: 'contrast',
@@ -482,6 +537,7 @@ export function WorkspaceBar(props: Props) {
     simulateToggle('pseudo', 'stress.pseudo', 'stress.pseudoHint'),
     simulateToggle('rtl', 'stress.rtl', 'stress.rtlHint'),
     simulateToggle('spacing', 'stress.spacing', 'stress.spacingHint'),
+    simulateToggle('textZoom', 'stress.textZoom', 'stress.textZoomHint'),
   ];
   const simulating = Boolean(
     simulate &&
@@ -492,7 +548,8 @@ export function WorkspaceBar(props: Props) {
       simulate.pauseAnimations ||
       simulate.pseudo ||
       simulate.rtl ||
-      simulate.spacing),
+      simulate.spacing ||
+      simulate.textZoom),
   );
 
   const siteCount = props.siteBreakpoints?.length ?? 0;
@@ -500,6 +557,22 @@ export function WorkspaceBar(props: Props) {
   return (
     <div className={styles.bar}>
       <div className={styles.chipsArea}>
+        {props.onOpenProject && props.onSaveProject && props.onManageProjects && (
+          <Menu
+            label={t('projects.menu')}
+            entries={projectEntries}
+            minWidth={280}
+            trigger={(triggerProps) => (
+              <MenuButton
+                triggerProps={triggerProps}
+                icon="save"
+                label={t('projects.menu')}
+                tooltip={t('projects.menuHint')}
+                dataAttribute={{ 'data-projects-trigger': true }}
+              />
+            )}
+          />
+        )}
         <Menu
           label={t('toolbar.groups')}
           entries={groupEntries}
@@ -596,8 +669,11 @@ export function WorkspaceBar(props: Props) {
             onChange={(event) => props.onBreakpoints(event.target.value as BreakpointSetId)}
           >
             <option value="none">{t('breakpoints.noneLabel')}</option>
-            <option value="tailwind">{t('breakpoints.tailwind')}</option>
-            <option value="bootstrap">{t('breakpoints.bootstrap')}</option>
+            {FRAMEWORK_SET_IDS.map((set) => (
+              <option key={set} value={set}>
+                {t(`breakpoints.${set}`)}
+              </option>
+            ))}
             <option value="custom">{t('breakpoints.custom')}</option>
             <option value="site">
               {siteCount ? t('breakpoints.siteCount', { count: siteCount }) : t('breakpoints.site')}
@@ -663,6 +739,19 @@ export function WorkspaceBar(props: Props) {
               shortcut="X"
               onClick={props.onMeasure}
               testId="measure-toggle"
+            />
+          )}
+          {props.onNotes && (
+            <Toggle
+              pressed={Boolean(props.notesOn)}
+              label={t('notes.toggle')}
+              icon="pencil"
+              tooltip={t('notes.toggleHint')}
+              shortcut="N"
+              onClick={props.onNotes}
+              testId="notes-toggle"
+              count={props.noteCount}
+              countLabel={`${t('notes.toggle')} ${props.noteCount ?? 0}`}
             />
           )}
         </div>

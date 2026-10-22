@@ -14,6 +14,9 @@ import { DesignOverlay, type DesignOverlayState } from '../DesignOverlay/DesignO
 import { GridOverlay } from '../GridOverlay/GridOverlay';
 import { Icon } from '../Icon/Icon';
 import { MeasureOverlay } from '../MeasureOverlay/MeasureOverlay';
+import { NotesOverlay } from '../Notes/NotesOverlay';
+import type { Note } from '../../state/notes';
+import type { Point } from '../../state/measure';
 import { Menu, type MenuEntry } from '../Menu/Menu';
 import { PreviewFrame } from '../PreviewFrame/PreviewFrame';
 import { RULER_SIZE, Ruler } from '../Ruler/Ruler';
@@ -104,6 +107,18 @@ type Props = ViewportCardActions & {
   httpStatus?: number;
   /** Captures the whole page, scrolling the preview screen by screen. */
   onFullPage?: () => void;
+  /** Notes pinned on this preview, numbered; the pins show when the handlers are given. */
+  notes?: { note: Note; number: number }[];
+  /** Adding notes: a click on the preview pins one there. */
+  notesAdding?: boolean;
+  /** The note being edited (on any preview). */
+  editingNote?: string | null;
+  /** How far the page is scrolled, for the notes (0 when unknown). */
+  notesScroll?: number;
+  onAddNote?: (point: Point) => void;
+  onEditNote?: (id: string | null) => void;
+  onNoteChange?: (id: string, text: string) => void;
+  onRemoveNote?: (id: string) => void;
 };
 
 type Drag = {
@@ -555,6 +570,26 @@ export function ViewportCard(props: Props) {
               />
             )}
             {src && props.measuring && <MeasureOverlay width={width} height={height} zoom={zoom} />}
+            {src &&
+              props.onAddNote &&
+              props.onEditNote &&
+              props.onNoteChange &&
+              props.onRemoveNote &&
+              (props.notesAdding || (props.notes?.length ?? 0) > 0) && (
+                <NotesOverlay
+                  notes={props.notes ?? []}
+                  width={width}
+                  height={height}
+                  zoom={zoom}
+                  scrollY={props.notesScroll ?? 0}
+                  adding={Boolean(props.notesAdding)}
+                  editing={props.editingNote ?? null}
+                  onAdd={props.onAddNote}
+                  onEdit={props.onEditNote}
+                  onChange={props.onNoteChange}
+                  onRemove={props.onRemoveNote}
+                />
+              )}
             {guides.map((value) => (
               <span
                 key={value}

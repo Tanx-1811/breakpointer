@@ -348,6 +348,45 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.screenshot({ path: resolve(OUT, lang, '13-showcase.png') });
     });
 
+    test('notes', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.62 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.46 },
+          { id: 'l', name: 'Laptop', width: 1440, height: 900, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3, true);
+      await page.keyboard.press('n');
+      const pin = async (name: RegExp, x: number, y: number, text: string) => {
+        await page.getByRole('region', { name }).getByTestId('notes-overlay').click({ position: { x, y } });
+        await page.keyboard.type(text);
+        await page.keyboard.press('Escape');
+      };
+      await pin(
+        /^(Phone|Điện thoại),/,
+        150,
+        210,
+        lang === 'vi' ? 'Bảng giá tràn ra ngoài màn hình' : 'The pricing board runs off the screen',
+      );
+      await pin(
+        /^(Tablet|Máy tính bảng),/,
+        250,
+        120,
+        lang === 'vi' ? 'Logo quá sát menu' : 'Logo too close to the menu',
+      );
+      // The first note open, as when writing it.
+      await page.getByTestId('note-pin').first().click();
+      await page.mouse.move(5, 795);
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: resolve(OUT, lang, '14-notes.png') });
+    });
+
     test('popup', async ({ context, extensionId }) => {
       const page = context.pages()[0]!;
       await page.setViewportSize({ width: 360, height: 560 });

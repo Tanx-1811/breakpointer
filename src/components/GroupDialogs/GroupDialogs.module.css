@@ -103,3 +103,14 @@
   align-items: center;
   gap: 2px;
 }
+
+/* A quiet line under a field (e.g. "saving updates it"). */
+.note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}

@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — Penguji Desain Responsif",
+    "description": "Nama ekstensi yang ditampilkan di Chrome dan Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Penguji desain responsif: pratinjau situs di banyak ukuran layar berdampingan dan temukan lebar persis tempat tata letak rusak.",
+    "description": "Deskripsi singkat (maksimal 132 karakter)."
+  },
+  "actionTitle": {
+    "message": "Breakpointer — pratinjau di berbagai ukuran layar",
+    "description": "Tooltip tombol di bilah alat."
+  },
+  "commandOpen": {
+    "message": "Buka Breakpointer",
+    "description": "Pintasan keyboard yang membuka popup."
+  },
+  "commandPreview": {
+    "message": "Pratinjau halaman saat ini di Breakpointer",
+    "description": "Pintasan keyboard yang mempratinjau tab aktif."
+  },
+  "menuPreviewPage": {
+    "message": "Pratinjau halaman ini di Breakpointer",
+    "description": "Item menu konteks pada halaman."
+  },
+  "menuPreviewLink": {
+    "message": "Pratinjau tautan di Breakpointer",
+    "description": "Item menu konteks pada tautan."
+  },
+  "omniboxDefault": {
+    "message": "Pratinjau <match>%s</match> di berbagai ukuran layar",
+    "description": "Saran di bilah alamat setelah mengetik kata kunci."
+  },
+  "menuSidePanelPage": {
+    "message": "Pratinjau halaman ini di panel samping",
+    "description": "Item menu konteks pada halaman: panel samping Breakpointer."
+  },
+  "menuSidePanelLink": {
+    "message": "Pratinjau tautan di panel samping",
+    "description": "Item menu konteks pada tautan: panel samping Breakpointer."
+  }
+}

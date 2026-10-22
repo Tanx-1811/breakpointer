@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — レスポンシブデザインテスター",
+    "description": "ChromeとChrome Web Storeに表示される拡張機能の名前。"
+  },
+  "extDescription": {
+    "message": "レスポンシブデザインのチェックツール：あらゆるサイトを複数の画面サイズで並べてプレビューし、レイアウトが崩れる正確な幅を見つけます。",
+    "description": "短い説明（最大132文字）。"
+  },
+  "actionTitle": {
+    "message": "Breakpointer — 複数の画面サイズでプレビュー",
+    "description": "ツールバーボタンのツールチップ。"
+  },
+  "commandOpen": {
+    "message": "Breakpointerを開く",
+    "description": "ポップアップを開くキーボードコマンド。"
+  },
+  "commandPreview": {
+    "message": "現在のページをBreakpointerでプレビュー",
+    "description": "アクティブなタブをプレビューするキーボードコマンド。"
+  },
+  "menuPreviewPage": {
+    "message": "このページをBreakpointerでプレビュー",
+    "description": "ページ上のコンテキストメニュー項目。"
+  },
+  "menuPreviewLink": {
+    "message": "リンクをBreakpointerでプレビュー",
+    "description": "リンク上のコンテキストメニュー項目。"
+  },
+  "omniboxDefault": {
+    "message": "<match>%s</match> を複数の画面サイズでプレビュー",
+    "description": "キーワード入力後にアドレスバーに表示される候補。"
+  },
+  "menuSidePanelPage": {
+    "message": "このページをサイドパネルでプレビュー",
+    "description": "ページ上のコンテキストメニュー項目：Breakpointerのサイドパネル。"
+  },
+  "menuSidePanelLink": {
+    "message": "リンクをサイドパネルでプレビュー",
+    "description": "リンク上のコンテキストメニュー項目：Breakpointerのサイドパネル。"
+  }
+}

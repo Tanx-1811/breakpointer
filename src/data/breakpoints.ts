@@ -1,10 +1,24 @@
-import type { Breakpoint, BreakpointSetId } from '../types';
+import type { Breakpoint, BreakpointSetId, FrameworkSetId } from '../types';
 import { MAX_DIMENSION, MIN_DIMENSION } from '../utils/constants';
 
 type BreakpointSet = { base: string; breakpoints: Breakpoint[] };
 
-/** Default min-width breakpoints of popular CSS frameworks. */
-export const FRAMEWORK_BREAKPOINTS: Record<'tailwind' | 'bootstrap', BreakpointSet> = {
+/** The frameworks in the order they are offered (most used first). */
+export const FRAMEWORK_SET_IDS: readonly FrameworkSetId[] = [
+  'tailwind',
+  'bootstrap',
+  'mui',
+  'chakra',
+  'antd',
+  'bulma',
+  'foundation',
+];
+
+/**
+ * Default min-width breakpoints of popular CSS frameworks, as their docs give
+ * them (em values at 16px). `base` names the range below the first one.
+ */
+export const FRAMEWORK_BREAKPOINTS: Record<FrameworkSetId, BreakpointSet> = {
   tailwind: {
     base: 'base',
     breakpoints: [
@@ -23,6 +37,58 @@ export const FRAMEWORK_BREAKPOINTS: Record<'tailwind' | 'bootstrap', BreakpointS
       { name: 'lg', min: 992 },
       { name: 'xl', min: 1200 },
       { name: 'xxl', min: 1400 },
+    ],
+  },
+  // Material UI (MUI): xs 0, sm 600, md 900, lg 1200, xl 1536.
+  mui: {
+    base: 'xs',
+    breakpoints: [
+      { name: 'sm', min: 600 },
+      { name: 'md', min: 900 },
+      { name: 'lg', min: 1200 },
+      { name: 'xl', min: 1536 },
+    ],
+  },
+  // Chakra UI: sm 30em, md 48em, lg 62em, xl 80em, 2xl 96em.
+  chakra: {
+    base: 'base',
+    breakpoints: [
+      { name: 'sm', min: 480 },
+      { name: 'md', min: 768 },
+      { name: 'lg', min: 992 },
+      { name: 'xl', min: 1280 },
+      { name: '2xl', min: 1536 },
+    ],
+  },
+  // Ant Design: xs below 576, then sm, md, lg, xl, xxl.
+  antd: {
+    base: 'xs',
+    breakpoints: [
+      { name: 'sm', min: 576 },
+      { name: 'md', min: 768 },
+      { name: 'lg', min: 992 },
+      { name: 'xl', min: 1200 },
+      { name: 'xxl', min: 1600 },
+    ],
+  },
+  // Bulma: mobile up to 768, tablet from 769.
+  bulma: {
+    base: 'mobile',
+    breakpoints: [
+      { name: 'tablet', min: 769 },
+      { name: 'desktop', min: 1024 },
+      { name: 'widescreen', min: 1216 },
+      { name: 'fullhd', min: 1408 },
+    ],
+  },
+  // Foundation for Sites 6: small 0, medium 40em, large 64em, xlarge 75em, xxlarge 90em.
+  foundation: {
+    base: 'small',
+    breakpoints: [
+      { name: 'medium', min: 640 },
+      { name: 'large', min: 1024 },
+      { name: 'xlarge', min: 1200 },
+      { name: 'xxlarge', min: 1440 },
     ],
   },
 };

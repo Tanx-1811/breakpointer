@@ -6,6 +6,7 @@ import { issueCell } from './audit';
 import { BRAND_STYLES, reportEyebrow, reportFooter } from './branding';
 import { CHECK_KIND_KEYS, issueDetail, localNumbers } from './checks';
 import { isOneTimeUrl } from './follow';
+import { scoreIssues, type ResponsiveScore } from './score';
 import { escapeHtml } from './report';
 import { viewportKey } from './snapshots';
 
@@ -226,6 +227,17 @@ export function pageIssueKinds(page: BatchPage): CheckKind[] {
   return CHECK_KINDS.filter((kind) => found.has(kind));
 }
 
+/** The responsive score of a page at the sizes it was checked at (null when none was). */
+export function pageScore(page: BatchPage): ResponsiveScore | null {
+  return scoreIssues(page.cells.flatMap((cell) => (cell?.status === 'checked' ? [cell.issues] : [])));
+}
+
+/** "86 · B", or "—" for a page that wasn't checked. */
+export const pageScoreText = (page: BatchPage) => {
+  const score = pageScore(page);
+  return score ? `${score.score} · ${score.grade}` : '—';
+};
+
 export type BatchSummary = {
   pages: number;
   /** Pages checked at every size, or at some sizes before the run stopped. */
@@ -305,12 +317,12 @@ function cellText(cell: BatchCell | null, t: Translate): string {
  */
 export function batchMarkdown(run: BatchRun, t: Translate): string {
   const base = commonOrigin(run.pages.map((page) => page.url));
-  const header = [t('batch.page'), ...run.sizes.map(sizeTitle)];
+  const header = [t('batch.page'), ...run.sizes.map(sizeTitle), t('score.column')];
   const rows = run.pages.map((page) => {
     const label = pageLabel(page.url, base);
     const name = page.finalUrl ? `${label} → ${pageLabel(page.finalUrl, base)}` : label;
-    if (page.status === 'failed') return [`${name} (${failureText(page, t)})`, ...run.sizes.map(() => '—')];
-    return [name, ...page.cells.map((cell) => cellText(cell, t))];
+    if (page.status === 'failed') return [`${name} (${failureText(page, t)})`, ...run.sizes.map(() => '—'), '—'];
+    return [name, ...page.cells.map((cell) => cellText(cell, t)), pageScoreText(page)];
   });
   const summary = summarizeRun(run);
   const lines = [
@@ -392,8 +404,8 @@ export function batchReportHtml(run: BatchRun, input: BatchReportInput, t: Trans
       const label = pageLabel(page.url, base);
       const name = `<a href="#page-${index + 1}">${escapeHtml(label)}</a>`;
       if (page.status === 'failed')
-        return `<tr><td>${name}</td><td colspan="${run.sizes.length}" class="bad">${escapeHtml(failureText(page, t))}</td></tr>`;
-      return `<tr><td>${name}</td>${page.cells.map((cell) => `<td>${cellHtml(cell)}</td>`).join('')}</tr>`;
+        return `<tr><td>${name}</td><td colspan="${run.sizes.length}" class="bad">${escapeHtml(failureText(page, t))}</td><td class="muted">—</td></tr>`;
+      return `<tr><td>${name}</td>${page.cells.map((cell) => `<td>${cellHtml(cell)}</td>`).join('')}<td class="num">${escapeHtml(pageScoreText(page))}</td></tr>`;
     })
     .join('\n');
 
@@ -459,7 +471,7 @@ ${reportEyebrow(input.brand ?? null, t('batch.title'))}
 <table>
 <thead><tr><th>${escapeHtml(t('batch.page'))}</th>${run.sizes
     .map((size) => `<th>${escapeHtml(size.name)} <span class="num">${size.width}</span></th>`)
-    .join('')}</tr></thead>
+    .join('')}<th>${escapeHtml(t('score.column'))}</th></tr></thead>
 <tbody>
 ${rows}
 </tbody>

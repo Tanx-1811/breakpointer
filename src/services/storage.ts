@@ -1,7 +1,10 @@
 import { CHECK_KINDS, type CheckKind } from '../agent/protocol';
+import { FRAMEWORK_SET_IDS } from '../data/breakpoints';
 import { DEFAULT_PRESET_IDS, findPreset } from '../data/presets';
 import { en, type MessageKey } from '../i18n/en';
 import { EMPTY_BRANDING, parseBranding } from '../state/branding';
+import type { CompareTarget } from '../state/compare';
+import { MAX_PROJECTS, normalizeProjectName } from '../state/projects';
 import { normalizeGroupName } from '../state/groups';
 import {
   clampDimension,
@@ -21,6 +24,8 @@ import type {
   GridSettings,
   LanguagePreference,
   ThemePreference,
+  Project,
+  ProjectViewport,
   ViewportConfig,
   ViewportGroup,
   BreakpointerSettings,
@@ -48,9 +53,9 @@ import { toSafeHref } from '../utils/url';
 export const STORAGE_KEY = 'breakpointer.settings';
 
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
-const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi'];
+const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi', 'es', 'pt-BR', 'fr', 'de', 'ja', 'id'];
 const LAYOUTS: readonly WorkspaceLayout[] = ['wrap', 'row'];
-const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', 'tailwind', 'bootstrap', 'custom', 'site'];
+const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', ...FRAMEWORK_SET_IDS, 'custom', 'site'];
 const COLOR_SCHEMES: readonly ColorScheme[] = ['light', 'dark'];
 
 /** Names default viewports; lets callers create them in the user's language. */
@@ -98,6 +103,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     cssSnippets: [],
     sidePanel: { ...DEFAULT_SIDE_PANEL },
     branding: { ...EMPTY_BRANDING },
+    projects: [],
   };
 }
 
@@ -237,6 +243,59 @@ function parseSnippets(raw: unknown): CssSnippet[] {
   return snippets;
 }
 
+function parseCompareTarget(raw: unknown): CompareTarget | null {
+  if (!isRecord(raw)) return null;
+  if (raw.mode === 'fixed') {
+    const url = toSafeHref(raw.url);
+    return url ? { mode: 'fixed', url } : null;
+  }
+  if (raw.mode === 'mirror' && typeof raw.origin === 'string') {
+    const href = toSafeHref(raw.origin);
+    return href ? { mode: 'mirror', origin: new URL(href).origin } : null;
+  }
+  return null;
+}
+
+/** Saved projects: each one checked field by field; names are unique (the first wins). */
+function parseProjects(raw: unknown): Project[] {
+  if (!Array.isArray(raw)) return [];
+  const seenIds = new Set<string>();
+  const names = new Set<string>();
+  const projects: Project[] = [];
+  for (const item of raw) {
+    if (!isRecord(item) || typeof item.name !== 'string' || !Array.isArray(item.viewports)) continue;
+    const name = normalizeProjectName(item.name);
+    const url = toSafeHref(item.url);
+    const viewports = item.viewports
+      .map((vp): ProjectViewport | null => {
+        const template = parseTemplate(vp);
+        if (!template) return null;
+        return isRecord(vp) && vp.hidden === true ? { ...template, hidden: true } : template;
+      })
+      .filter((vp): vp is ProjectViewport => vp !== null)
+      .slice(0, MAX_VIEWPORTS);
+    if (!name || !url || viewports.length === 0 || names.has(name.toLocaleLowerCase())) continue;
+    let id = safeId(item.id);
+    if (!id || seenIds.has(id)) id = createId();
+    seenIds.add(id);
+    names.add(name.toLocaleLowerCase());
+    projects.push({
+      id,
+      name,
+      url,
+      viewports,
+      breakpoints: oneOf(item.breakpoints, BREAKPOINT_SETS, 'none'),
+      customBreakpoints: parseBreakpoints(item.customBreakpoints) ?? [],
+      grid: parseGrid(item.grid),
+      css: typeof item.css === 'string' ? item.css.slice(0, MAX_LIVE_CSS) : '',
+      compare: parseCompareTarget(item.compare),
+      saved: isFiniteNumber(item.saved) && item.saved > 0 ? item.saved : 0,
+    });
+    if (projects.length === MAX_PROJECTS) break;
+  }
+  return projects;
+}
+
 /** Known check ids only, each once, in the order the checks are shown. */
 function parseDisabledChecks(raw: unknown): CheckKind[] {
   if (!Array.isArray(raw)) return [];
@@ -302,6 +361,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     cssSnippets: parseSnippets(raw.cssSnippets),
     sidePanel: parseSidePanel(raw.sidePanel),
     branding: parseBranding(raw.branding),
+    projects: parseProjects(raw.projects),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;

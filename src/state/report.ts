@@ -4,6 +4,7 @@ import type { BrandingSettings } from '../types';
 import { STAT_KEYS, STAT_METRICS, formatStat } from './audit';
 import { BRAND_STYLES, reportEyebrow, reportFooter } from './branding';
 import { CHECK_KIND_KEYS, issueDetail, localNumbers } from './checks';
+import { responsiveScore } from './score';
 
 export type ReportCard = {
   name: string;
@@ -75,6 +76,7 @@ th{color:#5b6472;font-size:12px;font-weight:600;text-transform:uppercase;letter-
 .ok{color:#15803d;font-weight:600}
 .warn{color:#b45309;font-weight:600}
 .muted{color:#5b6472}
+.score{margin:0 0 14px}
 .card h2 span{margin-left:8px;color:#5b6472;font:500 14px ui-monospace,SFMono-Regular,Menlo,monospace}
 figure{margin:12px 0 16px}
 figure img{display:block;max-width:100%;height:auto;border:1px solid #e3e6eb;border-radius:8px}
@@ -133,6 +135,11 @@ export function buildReportHtml(input: ReportInput, t: Translate): string {
       })
       .join('')}</ul>`;
   };
+
+  const score = responsiveScore(cards.map((card) => card.checks));
+  const scoreLine = score
+    ? `<p class="score"><strong>${escapeHtml(t('score.title'))}: ${score.score}/100</strong> <span class="tag">${score.grade}</span> <span class="muted">${escapeHtml(score.sizes === 1 ? t('score.hintOne') : t('score.hint', { count: score.sizes }))}</span></p>\n`
+    : '';
 
   const measured = cards.filter((card) => card.stats);
   const statsSection = measured.length
@@ -233,7 +240,7 @@ ${reportEyebrow(input.brand ?? null, t('report.title'))}
 </header>
 <section>
 <h2>${escapeHtml(t('report.summary'))}</h2>
-<table>
+${scoreLine}<table>
 <thead><tr><th>${escapeHtml(t('report.viewport'))}</th><th>${escapeHtml(t('report.size'))}</th><th>${escapeHtml(t('report.breakpoint'))}</th><th>${escapeHtml(t('report.issues'))}</th></tr></thead>
 <tbody>
 ${rows}

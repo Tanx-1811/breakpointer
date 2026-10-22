@@ -123,6 +123,84 @@
   text-align: center;
 }
 
+/* The responsive score */
+.score {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-2);
+}
+
+.scoreValue {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: inset 0 0 0 3px var(--score-ring, var(--success));
+}
+
+.score[data-grade='B'] {
+  --score-ring: var(--info);
+}
+
+.score[data-grade='C'],
+.score[data-grade='D'] {
+  --score-ring: var(--breakpoint);
+}
+
+.score[data-grade='F'] {
+  --score-ring: var(--danger);
+}
+
+.scoreNumber {
+  font-size: 20px;
+  font-weight: 750;
+  line-height: 1;
+}
+
+.scoreGrade {
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.scoreText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.scoreText strong {
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.scoreCosts {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.scorePoints {
+  color: var(--danger);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
 .summary {
   display: flex;
   align-items: center;

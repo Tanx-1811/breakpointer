@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — Responsive-Design-Tester",
+    "description": "Name der Erweiterung in Chrome und im Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Responsive-Design-Tester: jede Website in vielen Bildschirmgrößen nebeneinander. Finde die genaue Breite, an der dein Layout bricht.",
+    "description": "Kurzbeschreibung (maximal 132 Zeichen)."
+  },
+  "actionTitle": {
+    "message": "Breakpointer — Vorschau in mehreren Bildschirmgrößen",
+    "description": "Tooltip der Schaltfläche in der Symbolleiste."
+  },
+  "commandOpen": {
+    "message": "Breakpointer öffnen",
+    "description": "Tastenkürzel, das das Pop-up öffnet."
+  },
+  "commandPreview": {
+    "message": "Vorschau der aktuellen Seite in Breakpointer",
+    "description": "Tastenkürzel, das den aktiven Tab in der Vorschau anzeigt."
+  },
+  "menuPreviewPage": {
+    "message": "Vorschau dieser Seite in Breakpointer",
+    "description": "Kontextmenüeintrag auf einer Seite."
+  },
+  "menuPreviewLink": {
+    "message": "Link-Vorschau in Breakpointer",
+    "description": "Kontextmenüeintrag auf einem Link."
+  },
+  "omniboxDefault": {
+    "message": "Vorschau von <match>%s</match> in mehreren Bildschirmgrößen",
+    "description": "Vorschlag in der Adressleiste nach Eingabe des Schlüsselworts."
+  },
+  "menuSidePanelPage": {
+    "message": "Vorschau dieser Seite in der Seitenleiste",
+    "description": "Kontextmenüeintrag auf einer Seite: Breakpointer-Seitenleiste."
+  },
+  "menuSidePanelLink": {
+    "message": "Link-Vorschau in der Seitenleiste",
+    "description": "Kontextmenüeintrag auf einem Link: Breakpointer-Seitenleiste."
+  }
+}

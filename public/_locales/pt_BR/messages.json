@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — Testador de design responsivo",
+    "description": "Nome da extensão exibido no Chrome e na Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Testador de design responsivo: veja sites em vários tamanhos de tela lado a lado e ache a largura exata em que o layout quebra.",
+    "description": "Descrição curta (máximo de 132 caracteres)."
+  },
+  "actionTitle": {
+    "message": "Breakpointer — pré-visualizar em vários tamanhos de tela",
+    "description": "Dica do botão na barra de ferramentas."
+  },
+  "commandOpen": {
+    "message": "Abrir o Breakpointer",
+    "description": "Atalho de teclado que abre o pop-up."
+  },
+  "commandPreview": {
+    "message": "Pré-visualizar a página atual no Breakpointer",
+    "description": "Atalho de teclado que pré-visualiza a aba ativa."
+  },
+  "menuPreviewPage": {
+    "message": "Pré-visualizar esta página no Breakpointer",
+    "description": "Item do menu de contexto em uma página."
+  },
+  "menuPreviewLink": {
+    "message": "Pré-visualizar o link no Breakpointer",
+    "description": "Item do menu de contexto em um link."
+  },
+  "omniboxDefault": {
+    "message": "Pré-visualizar <match>%s</match> em vários tamanhos de tela",
+    "description": "Sugestão na barra de endereços depois de digitar a palavra-chave."
+  },
+  "menuSidePanelPage": {
+    "message": "Pré-visualizar esta página no painel lateral",
+    "description": "Item do menu de contexto em uma página: painel lateral do Breakpointer."
+  },
+  "menuSidePanelLink": {
+    "message": "Pré-visualizar o link no painel lateral",
+    "description": "Item do menu de contexto em um link: painel lateral do Breakpointer."
+  }
+}

@@ -262,9 +262,10 @@ type Command =
   | { type: 'trackScroll'; on: boolean }
   /**
    * Layout stress tests: pseudo-translated text (longer, accented, in brackets),
-   * right-to-left direction and WCAG text spacing. Everything is restored.
+   * right-to-left direction, WCAG text spacing and text at 200% (every font size
+   * doubled, as with text-only zoom). Everything is restored.
    */
-  | { type: 'stress'; pseudo: boolean; rtl: boolean; spacing: boolean }
+  | { type: 'stress'; pseudo: boolean; rtl: boolean; spacing: boolean; textZoom?: boolean }
   /**
    * The page's styles for preferences the browser doesn't have:
    * `prefers-reduced-motion: reduce`, `prefers-contrast: more`, and `@media print`.

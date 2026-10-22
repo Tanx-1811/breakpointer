@@ -116,18 +116,22 @@ export function DockStatus({
   children,
   action,
   onAction,
+  extra,
   testId,
 }: {
   icon: IconName;
   children: ReactNode;
   action: string;
   onAction: () => void;
+  /** Another control before the action (it never gets cut off with the text). */
+  extra?: ReactNode;
   testId?: string;
 }) {
   return (
     <span className={styles.status} role="status" data-testid={testId}>
       <Icon name={icon} size={15} className={styles.statusIcon} />
       <span className={styles.statusText}>{children}</span>
+      {extra}
       <Button size="sm" variant="subtle" shortcut="Esc" tooltip={action} onClick={onAction}>
         {action}
       </Button>

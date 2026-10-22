@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — Testeur de design responsive",
+    "description": "Nom de l’extension affiché dans Chrome et sur le Chrome Web Store."
+  },
+  "extDescription": {
+    "message": "Testeur de design responsive : prévisualisez un site à plusieurs tailles d’écran côte à côte et trouvez où la mise en page casse.",
+    "description": "Description courte (132 caractères maximum)."
+  },
+  "actionTitle": {
+    "message": "Breakpointer — aperçu à plusieurs tailles d’écran",
+    "description": "Info-bulle du bouton de la barre d’outils."
+  },
+  "commandOpen": {
+    "message": "Ouvrir Breakpointer",
+    "description": "Raccourci clavier qui ouvre la fenêtre contextuelle."
+  },
+  "commandPreview": {
+    "message": "Prévisualiser la page actuelle dans Breakpointer",
+    "description": "Raccourci clavier qui prévisualise l’onglet actif."
+  },
+  "menuPreviewPage": {
+    "message": "Prévisualiser cette page dans Breakpointer",
+    "description": "Élément du menu contextuel sur une page."
+  },
+  "menuPreviewLink": {
+    "message": "Prévisualiser le lien dans Breakpointer",
+    "description": "Élément du menu contextuel sur un lien."
+  },
+  "omniboxDefault": {
+    "message": "Prévisualiser <match>%s</match> à plusieurs tailles d’écran",
+    "description": "Suggestion de la barre d’adresse après la saisie du mot-clé."
+  },
+  "menuSidePanelPage": {
+    "message": "Prévisualiser cette page dans le panneau latéral",
+    "description": "Élément du menu contextuel sur une page : panneau latéral de Breakpointer."
+  },
+  "menuSidePanelLink": {
+    "message": "Prévisualiser le lien dans le panneau latéral",
+    "description": "Élément du menu contextuel sur un lien : panneau latéral de Breakpointer."
+  }
+}

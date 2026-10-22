@@ -472,6 +472,7 @@ describe('command palette', () => {
       moreContrast: false,
       print: false,
       spacing: false,
+      textZoom: false,
       pauseAnimations: false,
       pseudo: false,
       rtl: false,

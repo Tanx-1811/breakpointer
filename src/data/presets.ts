@@ -10,8 +10,10 @@ export const PRESET_CATEGORIES: PresetCategory[] = ['mobile', 'foldable', 'table
 export const PRESETS: ViewportPreset[] = [
   { id: 'mobile-xs', category: 'mobile', width: 320, height: 568 },
   { id: 'mobile-s', category: 'mobile', width: 360, height: 640 },
+  { id: 'mobile-common', category: 'mobile', width: 360, height: 800 },
   { id: 'mobile-tall', category: 'mobile', width: 360, height: 780 },
   { id: 'mobile-m', category: 'mobile', width: 375, height: 667 },
+  { id: 'mobile-std', category: 'mobile', width: 390, height: 844 },
   { id: 'mobile-l', category: 'mobile', width: 393, height: 852 },
   { id: 'mobile-pro', category: 'mobile', width: 402, height: 874 },
   { id: 'mobile-android', category: 'mobile', width: 412, height: 915 },
