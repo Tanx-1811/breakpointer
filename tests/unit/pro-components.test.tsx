@@ -46,7 +46,7 @@ describe('upgrade dialog', () => {
     const props = upgradeProps();
     wrap(<UpgradeDialog {...props} />);
     const dialog = screen.getByTestId('upgrade-dialog');
-    expect(within(dialog).getAllByRole('listitem')).toHaveLength(6);
+    expect(within(dialog).getAllByRole('listitem')).toHaveLength(7);
     expect(within(dialog).getByText(/licences go on sale soon/)).toBeInTheDocument();
     expect(within(dialog).queryByRole('link', { name: /Get Pro/ })).not.toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Try Pro free for 7 days' }));

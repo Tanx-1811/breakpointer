@@ -8,6 +8,7 @@ import {
   visibilityChanges,
   type InspectedProperty,
 } from '../../state/inspector';
+import { gapChanges, gapText, type Gap } from '../../state/gap';
 import { SIZE_CLASS_ICONS, type SizeClass } from '../../state/size-class';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
@@ -21,6 +22,8 @@ export type InspectorRow = {
   sizeClass: SizeClass;
   /** undefined: no answer yet (or no agent in that preview); null: not on the page. */
   info: ElementInfo | null | undefined;
+  /** The distance to the second element (undefined: not measured; null: one of them isn't shown). */
+  gap?: Gap | null;
 };
 
 type Props = {
@@ -41,6 +44,14 @@ type Props = {
   /** The element cut out of every preview, in one image (the button shows when given). */
   onCaptureAll?: () => void;
   onAllowSite: () => void;
+  /** The second element the distance is measured to. */
+  target?: { selector: string; label: string } | null;
+  /** The next pick is the second element. */
+  pickingTarget?: boolean;
+  /** Picks a second element to measure the distance to (the button shows when given). */
+  onPickTarget?: () => void;
+  onClearTarget?: () => void;
+  onMeasureGaps?: () => void;
 };
 
 const PROPERTY_KEYS: Record<InspectedProperty, MessageKey> = {
@@ -60,6 +71,8 @@ export function InspectorPanel(props: Props) {
   const infos = rows.map((row) => row.info);
   const changing = changingProperties(infos);
   const label = rows.find((row) => row.info)?.info?.label ?? selector;
+  const target = props.target ?? null;
+  const gapsChange = gapChanges(rows.map((row) => row.gap));
 
   return (
     <aside className={styles.panel} aria-labelledby="inspector-title" data-testid="inspector">
@@ -133,10 +146,46 @@ export function InspectorPanel(props: Props) {
                     {t('inspector.captureAll')}
                   </Button>
                 )}
+                {props.onPickTarget && !target && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    icon="ruler"
+                    onClick={props.onPickTarget}
+                    aria-pressed={props.pickingTarget}
+                    data-testid="inspector-distance-pick"
+                  >
+                    {props.pickingTarget ? t('inspector.distanceStop') : t('inspector.distancePick')}
+                  </Button>
+                )}
                 <Button size="sm" variant="ghost" icon="close" onClick={props.onClear}>
                   {t('inspector.clear')}
                 </Button>
               </div>
+              {target && (
+                <div className={styles.distance} data-testid="inspector-distance">
+                  <Icon name="ruler" size={14} className={styles.distanceIcon} />
+                  <span className={styles.distanceText}>
+                    {t('inspector.distanceTo')} <code title={target.selector}>{target.label}</code>
+                  </span>
+                  {props.onMeasureGaps && (
+                    <IconButton
+                      icon="reload"
+                      size="sm"
+                      label={t('inspector.distanceAgain')}
+                      onClick={props.onMeasureGaps}
+                    />
+                  )}
+                  {props.onClearTarget && (
+                    <IconButton
+                      icon="close"
+                      size="sm"
+                      label={t('inspector.distanceClear')}
+                      onClick={props.onClearTarget}
+                    />
+                  )}
+                </div>
+              )}
             </div>
             {(changing.size > 0 || visibilityChanges(infos)) && (
               <p className={styles.legend}>
@@ -160,6 +209,7 @@ export function InspectorPanel(props: Props) {
                     <span className={styles.rowWidth}>{row.width}</span>
                     <RowState info={row.info} changed={changing.has('size')} />
                   </button>
+                  {target && <GapLine gap={row.gap} changed={gapsChange} />}
                   {row.info?.visible && (
                     <dl className={styles.props}>
                       {INSPECTED_PROPERTIES.filter((property) => property !== 'size').map((property) => {
@@ -197,5 +247,19 @@ function RowState({ info, changed }: { info: ElementInfo | null | undefined; cha
     <span className={styles.stateSize} data-changed={changed || undefined} data-testid="inspector-size">
       {info.width} × {info.height}
     </span>
+  );
+}
+
+function GapLine({ gap, changed }: { gap: Gap | null | undefined; changed: boolean }) {
+  const { t } = useI18n();
+  return (
+    <p className={styles.gap} data-changed={(changed && Boolean(gap)) || undefined} data-testid="inspector-gap">
+      <Icon name="ruler" size={12} />
+      {gap === undefined
+        ? t('inspector.waiting')
+        : gap === null
+          ? t('inspector.distanceMissing')
+          : gapText(gap, { overlap: t('inspector.distanceOverlap'), inside: t('inspector.distanceInside') })}
+    </p>
   );
 }

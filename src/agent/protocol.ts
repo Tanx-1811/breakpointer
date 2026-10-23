@@ -118,6 +118,32 @@ export type ElementInfo = {
   layout: string;
 };
 
+/** An image at one viewport size, for the responsive images helper (the audit's Images tab). */
+export type ImageSample = {
+  /** Structural selector, to find the same image in the other previews. */
+  selector: string;
+  /** Short description, e.g. "main > img.hero". */
+  label: string;
+  /** The file's name (the last part of its address, without the query), to recognise it. */
+  file: string;
+  /** Shown size in CSS pixels. */
+  width: number;
+  height: number;
+  /** Pixels of the file the browser picked. */
+  naturalWidth: number;
+  naturalHeight: number;
+  /** Device pixels per CSS pixel of this screen. */
+  dpr: number;
+  /** The image offers several files (srcset, or sources in a <picture>). */
+  responsive: boolean;
+};
+
+/** A colour and how many elements use it. */
+export type ColorCount = { hex: string; count: number };
+
+/** The colours the page shows, for the audit's Colours tab. */
+export type ColorSample = { text: ColorCount[]; background: ColorCount[]; border: ColorCount[] };
+
 /** Where an element is in the preview's window (CSS pixels), e.g. to crop a screenshot to it. */
 export type ElementRect = { x: number; y: number; width: number; height: number };
 
@@ -222,8 +248,14 @@ export type AgentEvent =
   | { type: 'stats'; id?: number; stats: PageStats }
   /** Answer to `getTypeScale`. */
   | { type: 'typeScale'; id?: number; samples: TypeSample[] }
+  /** Answer to `getImages`. */
+  | { type: 'images'; id?: number; images: ImageSample[] }
+  /** Answer to `getColors`. */
+  | { type: 'colors'; id?: number; colors: ColorSample }
   /** Answer to `getElementRect` (null when the element isn't shown). */
   | { type: 'elementRect'; id?: number; rect: ElementRect | null }
+  /** Answer to `getRects`: each element's box in the viewport, measured together (null when not shown). */
+  | { type: 'rects'; id?: number; rects: (ElementRect | null)[] }
   /**
    * Answer to `getLinks`: the addresses of the page's links to other pages of
    * the same site, in document order, without fragments — never their text.
@@ -231,7 +263,8 @@ export type AgentEvent =
   | { type: 'links'; id?: number; hrefs: string[] };
 
 /** Events that answer a request from the workspace; they carry the `id` of the request. */
-export type AgentReplyType = 'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'elementRect' | 'links';
+export type AgentReplyType =
+  'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'images' | 'colors' | 'elementRect' | 'rects' | 'links';
 export type AgentReply = Extract<AgentEvent, { type: AgentReplyType }>;
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
@@ -293,8 +326,14 @@ type Command =
   | { type: 'getStats' }
   /** Answer `typeScale`. */
   | { type: 'getTypeScale' }
+  /** Answer `images`: the images shown, their shown and file sizes (never their content). */
+  | { type: 'getImages' }
+  /** Answer `colors`: the colours of text, backgrounds and borders, with how often each is used. */
+  | { type: 'getColors' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
   | { type: 'getElementRect'; selector: string; reveal: boolean }
+  /** Answer `rects` with where these elements are, at the same moment (the inspector's distance). */
+  | { type: 'getRects'; selectors: string[] }
   /** Answer `links` (Check pages: the pages this one links to). */
   | { type: 'getLinks' }
   /** Hide cookie and consent banners of the common consent tools (nothing is accepted or refused). */

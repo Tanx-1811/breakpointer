@@ -6,6 +6,13 @@ import type { MessageKey } from '../../i18n/en';
 import type { VerifyResult } from '../../services/license';
 import { FRAMEWORK_SET_IDS } from '../../data/breakpoints';
 import { formatBytes } from '../../state/audit';
+import {
+  BUDGET_MAX,
+  BUDGET_METRICS,
+  budgetValue,
+  type BudgetMetric,
+  type PerformanceBudgets,
+} from '../../state/budgets';
 import { CHECK_KIND_KEYS } from '../../state/checks';
 import { TRIAL_DAYS, type Entitlement } from '../../state/license';
 import { PRO_FEATURES, PRO_FEATURE_KEYS, isProCheck, type ProFeature } from '../../state/plan';
@@ -81,6 +88,8 @@ type Props = {
     onActivated: (result: Extract<VerifyResult, { ok: true }>) => void;
     onRemove: () => void;
   };
+  /** Changes the performance budgets (the fields show when given). */
+  onBudgets?: (budgets: Partial<PerformanceBudgets>) => void;
   /** Changes the brand on reports and images (the section shows when given). */
   onBranding?: (branding: Partial<BrandingSettings>) => void;
   /** The section shown when Settings opens (default: the first). */
@@ -434,6 +443,34 @@ function SettingsBody(props: Props) {
               </Select>
             </label>
           </div>
+          {props.onBudgets && (
+            <div className={styles.budgets} data-testid="budgets">
+              <div className={styles.rowText}>
+                <span className={styles.rowLabel}>
+                  {t('settings.budgets')}
+                  {!pro && <ProBadge feature="budgets" className={styles.inlineBadge} />}
+                </span>
+                <span className={styles.rowHelp}>{t('settings.budgetsHelp')}</span>
+              </div>
+              <div className={styles.gridOptions}>
+                {BUDGET_METRICS.map((metric) => (
+                  <BudgetField
+                    key={metric}
+                    metric={metric}
+                    label={t(BUDGET_LABEL_KEYS[metric])}
+                    value={pro ? settings.budgets[metric] : null}
+                    disabled={!pro}
+                    onCommit={(value) => props.onBudgets?.({ [metric]: value })}
+                  />
+                ))}
+                {!pro && (
+                  <Button size="sm" variant="ghost" onClick={() => upgrade('budgets')}>
+                    {t('pro.see')}
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
         </Section>
 
         {props.onBranding && (
@@ -656,6 +693,65 @@ function PlanSection({
         ))}
       </ul>
     </Section>
+  );
+}
+
+const BUDGET_LABEL_KEYS: Record<BudgetMetric, MessageKey> = {
+  transferred: 'settings.budgetTransferred',
+  requests: 'settings.budgetRequests',
+  lcp: 'settings.budgetLcp',
+  cls: 'settings.budgetCls',
+};
+
+/** A budget's limit, saved on blur or Enter; empty is no limit. */
+function BudgetField({
+  metric,
+  label,
+  value,
+  disabled,
+  onCommit,
+}: {
+  metric: BudgetMetric;
+  label: string;
+  value: number | null;
+  disabled: boolean;
+  onCommit: (value: number | null) => void;
+}) {
+  const { t } = useI18n();
+  const [draft, setDraft] = useState<string | null>(null);
+  const commit = () => {
+    if (draft === null) return;
+    setDraft(null);
+    // A typo that isn't a number goes back; an emptied field removes the limit.
+    if (draft.trim() !== '' && budgetValue(metric, draft) === null) return;
+    const next = budgetValue(metric, draft);
+    if (next !== value) onCommit(next);
+  };
+  return (
+    <label className={styles.inlineField}>
+      <span>{label}</span>
+      <input
+        className={`field ${styles.numberField}`}
+        type="number"
+        inputMode="decimal"
+        min={0}
+        max={BUDGET_MAX[metric]}
+        step={metric === 'cls' ? 0.01 : 1}
+        placeholder={t('settings.budgetNone')}
+        disabled={disabled}
+        value={draft ?? (value === null ? '' : String(value))}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit();
+          if (event.key === 'Escape' && draft !== null) {
+            event.preventDefault();
+            setDraft(null);
+          }
+        }}
+        data-budget={metric}
+      />
+    </label>
   );
 }
 

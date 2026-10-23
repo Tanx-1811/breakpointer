@@ -9,6 +9,8 @@ type Props = {
   paletteShortcut: string;
   onOpen: (url: string) => void;
   onTryExample: () => void;
+  /** Starts the tour of the workspace (the button shows when given). */
+  onTour?: () => void;
 };
 
 const STEPS: {
@@ -26,7 +28,7 @@ const MAX_PAGES = 6;
 const shortUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
 
 /** First thing a user sees in an empty workspace: what it does and how to start. */
-export function Welcome({ savedPages, recentUrls, paletteShortcut, onOpen, onTryExample }: Props) {
+export function Welcome({ savedPages, recentUrls, paletteShortcut, onOpen, onTryExample, onTour }: Props) {
   const { t } = useI18n();
   const pages = [
     ...savedPages.map((url) => ({ url, saved: true })),
@@ -49,6 +51,11 @@ export function Welcome({ savedPages, recentUrls, paletteShortcut, onOpen, onTry
             <Button variant="primary" size="lg" iconEnd="arrowRight" onClick={onTryExample}>
               {t('welcome.try')}
             </Button>
+            {onTour && (
+              <Button size="lg" variant="ghost" icon="sparkle" onClick={onTour} data-testid="welcome-tour">
+                {t('tour.start')}
+              </Button>
+            )}
             <p className={styles.tips}>
               <span>
                 <kbd>/</kbd> {t('welcome.tipAddress')}

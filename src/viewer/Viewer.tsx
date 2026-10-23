@@ -31,6 +31,7 @@ import { ToastProvider, useToast } from '../components/Toast/Toast';
 import { TooltipLayer } from '../components/Tooltip/TooltipLayer';
 import { CARD_CHROME_WIDTH, MIN_CARD_WIDTH, ViewportCard } from '../components/ViewportCard/ViewportCard';
 import { VisionFilters } from '../components/VisionFilters/VisionFilters';
+import { Tour } from '../components/Tour/Tour';
 import { Welcome } from '../components/Welcome/Welcome';
 import {
   VISION_KEYS,
@@ -112,6 +113,8 @@ import { finish, shouldNudge, snooze, type Usage } from '../state/nudge';
 import { DEFAULT_SHOWCASE, pickShowcaseViewports, type ShowcaseOptions } from '../state/showcase';
 import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
+import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors';
+import { imageRows, imagesMarkdown } from '../state/images';
 import { activeBranding, imageFooterName } from '../state/branding';
 import { MAX_NOTES, newNote, normalizeNoteText, notesMarkdown, type Note, type NoteCard } from '../state/notes';
 import { canSaveProject, createProject, projectViewports, type ProjectState } from '../state/projects';
@@ -176,6 +179,7 @@ import {
 } from '../utils/url';
 import { buildCommands } from './commands';
 import { useAuditData } from './useAuditData';
+import { useElementGaps } from './useElementGaps';
 import { batchGeneration, useBatchCheck, type AgentApi } from './useBatchCheck';
 import { useVisualCheck, type Capture } from './useVisualCheck';
 import { TopBar, type CaptureKind } from './TopBar';
@@ -244,9 +248,20 @@ type InspectorState = {
   selector: string | null;
   /** Each card's answer, for the frame (generation) that gave it. */
   results: Record<string, { generation: string; info: ElementInfo | null }>;
+  /** A second element, to measure the distance to (picked after the first). */
+  target: { selector: string; label: string } | null;
+  /** The next pick is that second element. */
+  pickingTarget: boolean;
 };
 
-const CLOSED_INSPECTOR: InspectorState = { open: false, picking: false, selector: null, results: {} };
+const CLOSED_INSPECTOR: InspectorState = {
+  open: false,
+  picking: false,
+  selector: null,
+  results: {},
+  target: null,
+  pickingTarget: false,
+};
 
 export type ViewerProps = {
   initialSettings: BreakpointerSettings;
@@ -326,6 +341,8 @@ function Workspace({
   // Hosts whose blocked-site tip was dismissed, until Chrome closes.
   const [dismissedHosts, setDismissedHosts] = useState<string[]>([]);
   const [dialog, setDialog] = useState<DialogName | null>(null);
+  // The tour of the workspace's controls (started from the welcome screen, Help or the palette).
+  const [touring, setTouring] = useState(false);
   // Synced navigation: a card that led a navigation keeps its own frame (its
   // address is pinned), and cards whose page moved without the others following
   // are "strays" ("Navigated away · Back").
@@ -501,7 +518,7 @@ function Workspace({
     inspectedNow.current = inspector.selector;
   });
   const resetInspection = useCallback(
-    () => setInspector((state) => (state.selector ? { ...state, selector: null, results: {} } : state)),
+    () => setInspector((state) => (state.selector ? { ...state, selector: null, results: {}, target: null } : state)),
     [],
   );
 
@@ -1006,6 +1023,11 @@ function Workspace({
 
   // News of this version, until Help is opened.
   const [news, setNews] = useState(Boolean(whatsNew));
+  const startTour = () => {
+    setDialog(null);
+    setTouring(true);
+  };
+
   const openHelp = () => {
     setDialog('help');
     if (news) {
@@ -1162,7 +1184,7 @@ function Workspace({
   /* ---------- Inspector ---------- */
 
   const stopPicking = () => {
-    setInspector((state) => ({ ...state, picking: false }));
+    setInspector((state) => ({ ...state, picking: false, pickingTarget: false }));
     agents.broadcast({ type: 'inspect', on: false });
   };
 
@@ -1182,9 +1204,17 @@ function Workspace({
     setAnnotating(false);
     // The inspector and the audit share the side of the workspace.
     setAudit((state) => (state.open ? { ...state, open: false } : state));
-    setInspector((state) => ({ ...state, open: true, picking: true }));
+    setInspector((state) => ({ ...state, open: true, picking: true, pickingTarget: false }));
     agents.broadcast({ type: 'inspect', on: true });
     hintAccess(t('tools.inspect'));
+  };
+
+  /** Picks a second element: the inspector then shows the distance between the two at every size. */
+  const startPickingTarget = () => {
+    setMeasuring(false);
+    setAnnotating(false);
+    setInspector((state) => ({ ...state, picking: true, pickingTarget: true }));
+    agents.broadcast({ type: 'inspect', on: true });
   };
 
   /** The toolbar toggle and I: open the inspector and pick, or close it. */
@@ -1215,7 +1245,7 @@ function Workspace({
   };
 
   const clearSelection = () => {
-    setInspector((state) => ({ ...state, selector: null, results: {} }));
+    setInspector((state) => ({ ...state, selector: null, results: {}, target: null }));
     agents.broadcast({ type: 'select', selector: null });
   };
 
@@ -1294,14 +1324,28 @@ function Workspace({
     onPick: (cardId, selector, element) => {
       const generation = generations[cardId];
       if (!generation) return;
+      agents.broadcast({ type: 'inspect', on: false });
+      // The second element of a distance: the first stays selected (picking it again measures nothing).
+      if (inspector.pickingTarget && inspector.selector) {
+        const first = inspector.selector;
+        setInspector((state) => ({
+          ...state,
+          picking: false,
+          pickingTarget: false,
+          target: selector === first ? state.target : { selector, label: element.label },
+        }));
+        agents.broadcast({ type: 'select', selector: first });
+        return;
+      }
       setInspector((state) => ({
         ...state,
         open: true,
         picking: false,
+        pickingTarget: false,
         selector,
         results: { [cardId]: { generation, info: element } },
+        target: null,
       }));
-      agents.broadcast({ type: 'inspect', on: false });
       agents.broadcast({ type: 'select', selector });
     },
     onElement: (cardId, selector, element) => {
@@ -1343,6 +1387,15 @@ function Workspace({
     cardIds: cards.map((card) => card.id),
     generations,
     connectedKey,
+    ask: agents.ask,
+  });
+
+  // The inspector's distance between two elements, measured in every preview.
+  const elementGaps = useElementGaps({
+    pair: inspector.selector && inspector.target ? [inspector.selector, inspector.target.selector] : null,
+    cardIds: cards.map((card) => card.id),
+    generations,
+    layoutKey: `${connectedKey} ${cards.map((card) => `${card.viewport.width}x${card.viewport.height}`).join(' ')}`,
     ask: agents.ask,
   });
 
@@ -2829,6 +2882,7 @@ function Workspace({
           licence: () => openSettings('plan'),
           siteAccess: () => setDialog('access'),
           help: openHelp,
+          tour: startTour,
           exportSettings,
           scrollBottom: scrollAllToBottom,
           copyAddress,
@@ -2910,25 +2964,37 @@ function Workspace({
       height,
       sizeClass: sizeClassOf(width, height),
       info: result && result.generation === generations[card.id] ? result.info : undefined,
+      gap: inspector.target ? elementGaps.gapOf(card.id) : undefined,
     };
   });
 
   /** The inspector's comparison as a Markdown table, for a ticket or a pull request. */
   const copyComparison = () => {
     if (!inspector.selector) return;
-    const markdown = comparisonMarkdown(inspector.selector, inspectorRows, {
-      viewport: t('inspector.tableViewport'),
-      missing: t('inspector.missing'),
-      hidden: t('inspector.hidden'),
-      waiting: t('inspector.waiting'),
-      size: t('inspector.prop.size'),
-      display: t('inspector.prop.display'),
-      font: t('inspector.prop.font'),
-      margin: t('inspector.prop.margin'),
-      padding: t('inspector.prop.padding'),
-      layout: t('inspector.prop.layout'),
-      position: t('inspector.prop.position'),
-    });
+    const markdown = comparisonMarkdown(
+      inspector.selector,
+      inspectorRows,
+      {
+        viewport: t('inspector.tableViewport'),
+        missing: t('inspector.missing'),
+        hidden: t('inspector.hidden'),
+        waiting: t('inspector.waiting'),
+        size: t('inspector.prop.size'),
+        display: t('inspector.prop.display'),
+        font: t('inspector.prop.font'),
+        margin: t('inspector.prop.margin'),
+        padding: t('inspector.prop.padding'),
+        layout: t('inspector.prop.layout'),
+        position: t('inspector.prop.position'),
+      },
+      inspector.target
+        ? {
+            heading: t('inspector.distanceColumn', { element: inspector.target.label }),
+            missing: t('inspector.distanceMissing'),
+            words: { overlap: t('inspector.distanceOverlap'), inside: t('inspector.distanceInside') },
+          }
+        : undefined,
+    );
     void copyText(markdown).then((copied) =>
       toast(
         copied
@@ -2947,6 +3013,8 @@ function Workspace({
     report: checksOf(card.id),
     stats: auditData.statsOf(card.id),
     type: auditData.typeOf(card.id),
+    images: auditData.imagesOf(card.id),
+    colors: auditData.colorsOf(card.id),
   }));
   // Kinds of issue found in any preview (shown on the toolbar's Audit button).
   const issueKinds = groupIssues(auditRows).length;
@@ -2969,11 +3037,30 @@ function Workspace({
               t,
               language,
             )
-          : typeMarkdown(
-              page,
-              auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
-              t,
-            );
+          : audit.tab === 'images'
+            ? imagesMarkdown(
+                page,
+                imageRows(
+                  auditRows.flatMap((row) =>
+                    (row.images ?? []).map((sample) => ({ cardId: row.id, viewport: row.width, sample })),
+                  ),
+                ),
+                t('images.heading'),
+                [t('images.colImage'), t('images.colShown'), t('images.colSizes'), t('images.colSrcset')],
+              )
+            : audit.tab === 'colors'
+              ? paletteMarkdown(
+                  page,
+                  mergePalettes(auditRows.map((row) => row.colors)),
+                  t('colorAudit.heading'),
+                  [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
+                  (role) => t(COLOR_ROLE_KEYS[role]),
+                )
+              : typeMarkdown(
+                  page,
+                  auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
+                  t,
+                );
     void copyText(markdown).then((copied) =>
       toast(
         copied
@@ -2983,9 +3070,30 @@ function Workspace({
     );
   };
 
+  /** A suggestion from the audit (an image's srcset and sizes, the palette as CSS). */
+  const copyAuditText = (text: string) => {
+    void copyText(text).then((copied) =>
+      toast(
+        copied
+          ? {
+              message: t(audit.tab === 'colors' ? 'colorAudit.copied' : 'images.copied'),
+              tone: 'success',
+              key: 'copy',
+            }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+  };
+
   /** Every preview's issues, page stats and type scale (Pro), as CSV (the issues) or JSON (everything). */
   const exportAudit = (format: ExportFormat) => {
-    const rows = auditRows.map((row) => ({ ...row, stats: row.stats ?? null, type: row.type ?? null }));
+    const rows = auditRows.map((row) => ({
+      ...row,
+      stats: row.stats ?? null,
+      type: row.type ?? null,
+      images: row.images ?? null,
+      colors: row.colors ?? null,
+    }));
     saveExport(`audit_${fileNamePart(host ?? 'page')}`, format, () =>
       format === 'csv' ? auditCsv(rows, t) : auditJson(currentUrl?.href ?? null, rows, version),
     );
@@ -3178,6 +3286,7 @@ function Workspace({
       paletteShortcut={paletteShortcut}
       onOpen={navigate}
       onTryExample={() => navigate('https://example.com')}
+      onTour={startTour}
     />
   );
 
@@ -3497,7 +3606,7 @@ function Workspace({
                     action={t('inspector.stopPicking')}
                     onAction={stopPicking}
                   >
-                    {t('inspector.pickingHint')}
+                    {inspector.pickingTarget ? t('inspector.distancePickingHint') : t('inspector.pickingHint')}
                   </DockStatus>
                 ) : annotating ? (
                   <DockStatus
@@ -3553,9 +3662,14 @@ function Workspace({
         </div>
         {inspector.open && (
           <InspectorPanel
-            picking={inspector.picking}
+            picking={inspector.picking && !inspector.pickingTarget}
             selector={inspector.selector}
             rows={inspectorRows}
+            target={inspector.target}
+            pickingTarget={inspector.pickingTarget}
+            onPickTarget={() => (inspector.pickingTarget ? stopPicking() : startPickingTarget())}
+            onClearTarget={() => setInspector((state) => ({ ...state, target: null }))}
+            onMeasureGaps={() => void elementGaps.refresh()}
             needsAccess={Boolean(currentUrl && siteAccess.site === false)}
             host={host}
             busy={requesting}
@@ -3596,7 +3710,9 @@ function Workspace({
             onReveal={revealCard}
             onRefresh={auditData.refresh}
             onCopy={copyAudit}
+            onCopyText={copyAuditText}
             onExport={exportAudit}
+            budgets={pro ? settings.budgets : null}
             onTurnOnChecks={() => setChecks(true)}
             onAllowSite={() => void allowSite()}
             onClose={closeAudit}
@@ -3778,6 +3894,7 @@ function Workspace({
           onRemove: () => void removeLicenseKey(),
         }}
         onBranding={(branding) => dispatch({ type: 'setBranding', branding })}
+        onBudgets={(budgets) => dispatch({ type: 'setBudgets', budgets })}
         initialSection={settingsSection}
         onClose={() => setDialog(null)}
       />
@@ -3866,12 +3983,14 @@ function Workspace({
         onStop={stopCompare}
         onClose={() => setDialog(null)}
       />
+      <Tour open={touring} onClose={() => setTouring(false)} />
       <HelpDialog
         open={dialog === 'help'}
         version={version}
         onClose={() => setDialog(null)}
         commandShortcuts={commandShortcuts}
         paletteShortcut={paletteShortcut}
+        onTour={startTour}
         support={{
           feedbackUrl: FEEDBACK_URL,
           rateUrl,

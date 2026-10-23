@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { AgentCommand, AgentEvent, AgentReplyType, PageStats, TypeSample } from '../agent/protocol';
+import type {
+  AgentCommand,
+  AgentEvent,
+  AgentReplyType,
+  ColorSample,
+  ImageSample,
+  PageStats,
+  TypeSample,
+} from '../agent/protocol';
 import type { AuditTab } from '../components/AuditPanel/AuditPanel';
 
 type Ask = <T extends AgentReplyType>(
@@ -25,8 +33,17 @@ type Options = {
   ask: Ask;
 };
 
+/** What each tab measures (the issues come with the checks). */
+type Measure = 'stats' | 'type' | 'images' | 'colors';
+const MEASURE_OF: Record<Exclude<AuditTab, 'issues'>, Measure> = {
+  performance: 'stats',
+  type: 'type',
+  images: 'images',
+  colors: 'colors',
+};
+
 /**
- * The page stats and type samples of every preview for the audit panel: asked
+ * The page stats, type samples, images and colours of every preview for the audit panel: asked
  * for when their tab is shown, again a moment after previews connect, and on
  * request. Results are kept per frame, so a reloaded preview is never shown
  * with its previous page's numbers.
@@ -34,6 +51,8 @@ type Options = {
 export function useAuditData({ open, tab, cardIds, generations, connectedKey, ask }: Options) {
   const [stats, setStats] = useState<Measured<PageStats>>({});
   const [type, setType] = useState<Measured<TypeSample[]>>({});
+  const [images, setImages] = useState<Measured<ImageSample[]>>({});
+  const [colors, setColors] = useState<Measured<ColorSample>>({});
   const [pending, setPending] = useState(0);
   const latest = useRef({ cardIds, generations });
   useLayoutEffect(() => {
@@ -41,7 +60,7 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
   });
 
   const measure = useCallback(
-    async (which: 'stats' | 'type') => {
+    async (which: Measure) => {
       const { cardIds: ids, generations: frames } = latest.current;
       setPending((count) => count + 1);
       try {
@@ -54,11 +73,21 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
                 .then((reply) => reply.stats)
                 .catch(() => null);
               setStats((map) => ({ ...map, [cardId]: { generation, value } }));
-            } else {
+            } else if (which === 'type') {
               const value = await ask(cardId, { type: 'getTypeScale' }, 'typeScale', 3000)
                 .then((reply) => reply.samples)
                 .catch(() => null);
               setType((map) => ({ ...map, [cardId]: { generation, value } }));
+            } else if (which === 'images') {
+              const value = await ask(cardId, { type: 'getImages' }, 'images', 3000)
+                .then((reply) => reply.images)
+                .catch(() => null);
+              setImages((map) => ({ ...map, [cardId]: { generation, value } }));
+            } else {
+              const value = await ask(cardId, { type: 'getColors' }, 'colors', 4000)
+                .then((reply) => reply.colors)
+                .catch(() => null);
+              setColors((map) => ({ ...map, [cardId]: { generation, value } }));
             }
           }),
         );
@@ -71,7 +100,7 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
 
   useEffect(() => {
     if (!open || tab === 'issues') return;
-    const which = tab === 'performance' ? 'stats' : 'type';
+    const which = MEASURE_OF[tab];
     const now = setTimeout(() => void measure(which), 0);
     const later = setTimeout(() => void measure(which), SETTLE_MS);
     return () => {
@@ -81,7 +110,7 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
   }, [open, tab, connectedKey, measure]);
 
   const refresh = useCallback(() => {
-    if (tab !== 'issues') void measure(tab === 'performance' ? 'stats' : 'type');
+    if (tab !== 'issues') void measure(MEASURE_OF[tab]);
   }, [measure, tab]);
 
   /** undefined: not measured yet; null: it couldn't be (no agent in that preview). */
@@ -94,5 +123,14 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
     return entry && entry.generation === generations[cardId] ? entry.value : undefined;
   };
 
-  return { statsOf, typeOf, measuring: pending > 0, refresh };
+  const imagesOf = (cardId: string): ImageSample[] | null | undefined => {
+    const entry = images[cardId];
+    return entry && entry.generation === generations[cardId] ? entry.value : undefined;
+  };
+  const colorsOf = (cardId: string): ColorSample | null | undefined => {
+    const entry = colors[cardId];
+    return entry && entry.generation === generations[cardId] ? entry.value : undefined;
+  };
+
+  return { statsOf, typeOf, imagesOf, colorsOf, measuring: pending > 0, refresh };
 }

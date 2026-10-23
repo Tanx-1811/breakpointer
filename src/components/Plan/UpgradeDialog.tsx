@@ -13,6 +13,7 @@ export const PRO_FEATURE_ICONS: Record<ProFeature, IconName> = {
   syncInteractions: 'pointer',
   hideCookieBanners: 'cookie',
   projects: 'save',
+  budgets: 'clock',
   branding: 'palette',
   dataExport: 'download',
 };

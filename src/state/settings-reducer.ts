@@ -17,6 +17,7 @@ import type {
   WorkspaceLayout,
 } from '../types';
 import { deleteGroup, renameGroup, replaceGroupViewports, restoreGroup, saveGroup } from './groups';
+import type { PerformanceBudgets } from './budgets';
 import { deleteProject, renameProject, restoreProject, saveProject } from './projects';
 import {
   addViewport,
@@ -82,6 +83,8 @@ export type SettingsAction =
       type: 'setWorkspace';
       workspace: Pick<BreakpointerSettings, 'viewports' | 'breakpoints' | 'customBreakpoints' | 'grid'>;
     }
+  /** Changes performance budgets (values already validated, see state/budgets.ts). */
+  | { type: 'setBudgets'; budgets: Partial<PerformanceBudgets> }
   /** Changes the brand on reports and images (values already validated, see state/branding.ts). */
   | { type: 'setBranding'; branding: Partial<BrandingSettings> }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
@@ -100,6 +103,8 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, projects: restoreProject(state.projects, action.project, action.index) };
     case 'setWorkspace':
       return { ...state, ...action.workspace };
+    case 'setBudgets':
+      return { ...state, budgets: { ...state.budgets, ...action.budgets } };
     case 'setBranding':
       return { ...state, branding: { ...state.branding, ...action.branding } };
     case 'setLanguage':

@@ -594,3 +594,121 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.summary > button {
+  margin-left: auto;
+}
+
+/* ---------- Budgets ---------- */
+
+.budget {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.overBudget {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 650;
+  line-height: 18px;
+}
+
+/* ---------- Images ---------- */
+
+.fit {
+  flex: none;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 19px;
+}
+
+.fit[data-fit='large'],
+.fit[data-fit='small'] {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+}
+
+.suggestion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+}
+
+.suggestionLabel {
+  color: var(--text-subtle);
+  font-size: 11.5px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.code {
+  min-width: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.suggestion > .code:first-of-type {
+  flex: 1 1 100%;
+}
+
+.suggestion > button {
+  margin-left: auto;
+}
+
+/* ---------- Colours ---------- */
+
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.swatch {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  padding: 4px 6px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+}
+
+.swatch code {
+  min-width: 0;
+  font-family: var(--font-mono);
+}
+
+.chip {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xs);
+}
+
+.swatchCount {
+  margin-left: auto;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}

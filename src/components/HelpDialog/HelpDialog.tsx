@@ -1,6 +1,7 @@
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
 import { OMNIBOX_KEYWORD } from '../../utils/constants';
+import { Button } from '../Button/Button';
 import { Dialog } from '../Dialog/Dialog';
 import { Icon } from '../Icon/Icon';
 import styles from './HelpDialog.module.css';
@@ -51,6 +52,8 @@ type Props = {
   commandShortcuts: { open: string; preview: string };
   /** "⌘K" or "Ctrl K". */
   paletteShortcut?: string;
+  /** Starts the tour of the workspace (the button shows when given). */
+  onTour?: () => void;
   /** Feedback, rating and sharing (the section shows when given). */
   support?: {
     feedbackUrl: string;
@@ -63,7 +66,15 @@ type Props = {
   };
 };
 
-export function HelpDialog({ open, version, onClose, commandShortcuts, paletteShortcut = 'Ctrl K', support }: Props) {
+export function HelpDialog({
+  open,
+  version,
+  onClose,
+  commandShortcuts,
+  paletteShortcut = 'Ctrl K',
+  onTour,
+  support,
+}: Props) {
   const { t } = useI18n();
 
   return (
@@ -92,6 +103,11 @@ export function HelpDialog({ open, version, onClose, commandShortcuts, paletteSh
             ))}
           </dl>
           <p className={styles.note}>{t('help.shortcutsNote')}</p>
+          {onTour && (
+            <Button size="sm" icon="sparkle" className={styles.tour} onClick={onTour} data-testid="help-tour">
+              {t('tour.start')}
+            </Button>
+          )}
         </section>
         <section aria-labelledby="help-global">
           {version && (

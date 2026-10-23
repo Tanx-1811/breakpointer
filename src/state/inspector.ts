@@ -1,4 +1,5 @@
 import type { ElementInfo } from '../agent/protocol';
+import { gapText, type Gap, type GapWords } from './gap';
 
 /** The details the inspector compares across viewports, in display order. */
 export const INSPECTED_PROPERTIES = ['size', 'display', 'font', 'margin', 'padding', 'layout', 'position'] as const;
@@ -44,7 +45,10 @@ export function changingProperties(infos: (ElementInfo | null | undefined)[]): S
   return changing;
 }
 
-export type ComparisonRow = { name: string; width: number; info: ElementInfo | null | undefined };
+export type ComparisonRow = { name: string; width: number; info: ElementInfo | null | undefined; gap?: Gap | null };
+
+/** The distance column, when a second element is measured. */
+export type DistanceColumn = { heading: string; missing: string; words: GapWords };
 
 /** Text used in the comparison table for states other than a shown element. */
 export type ComparisonLabels = { viewport: string; missing: string; hidden: string; waiting: string } & Record<
@@ -58,8 +62,17 @@ const cell = (value: string) => value.replace(/\|/g, '\\|').replace(/\s+/g, ' ')
  * The comparison as a Markdown table (one row per viewport, one column per
  * property), to paste into a ticket or a pull request.
  */
-export function comparisonMarkdown(selector: string, rows: ComparisonRow[], labels: ComparisonLabels): string {
-  const header = [labels.viewport, ...INSPECTED_PROPERTIES.map((property) => labels[property])];
+export function comparisonMarkdown(
+  selector: string,
+  rows: ComparisonRow[],
+  labels: ComparisonLabels,
+  distance?: DistanceColumn,
+): string {
+  const header = [
+    labels.viewport,
+    ...INSPECTED_PROPERTIES.map((property) => labels[property]),
+    ...(distance ? [distance.heading] : []),
+  ];
   const lines = [
     `\`${selector.replace(/`/g, "'")}\``,
     '',
@@ -73,6 +86,8 @@ export function comparisonMarkdown(selector: string, rows: ComparisonRow[], labe
       row.info && row.info.visible
         ? INSPECTED_PROPERTIES.map((property) => propertyValue(row.info!, property))
         : [state, ...INSPECTED_PROPERTIES.slice(1).map(() => '')];
+    if (distance)
+      values.push(row.gap ? gapText(row.gap, distance.words) : row.gap === null ? distance.missing : labels.waiting);
     lines.push(`| ${[name, ...values].map(cell).join(' | ')} |`);
   }
   return `${lines.join('\n')}\n`;

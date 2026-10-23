@@ -65,7 +65,10 @@ import {
   type CheckSample,
   type ColorSchemeOverride,
   type ElementInfo,
+  type ColorCount,
+  type ColorSample,
   type ElementRect,
+  type ImageSample,
   type Interaction,
   type MediaReport,
   type PageStats,
@@ -108,6 +111,10 @@ const UPSCALE_MIN_PX = 24;
 const MAX_FIXED_COVER = 0.35;
 /** Text nodes changed at most by the pseudo-translation, per pass. */
 const MAX_TEXT_NODES = 20_000;
+/** Images reported at most to the responsive images helper (the largest ones). */
+const MAX_IMAGES = 40;
+/** Colours of each kind reported at most (the most used). */
+const MAX_COLORS = 24;
 /** Addresses of links reported at most (Check pages keeps fewer). */
 const MAX_LINKS = 300;
 const OVERLAY_ATTRIBUTE = 'data-breakpointer-overlay';
@@ -1729,6 +1736,71 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     return samples;
   };
 
+  /** Images shown at this size, the largest first (at most MAX_IMAGES), for the responsive images helper. */
+  const imageSamples = (): ImageSample[] => {
+    const found: (ImageSample & { area: number; index: number })[] = [];
+    Array.from(document.images)
+      .slice(0, MAX_SCAN)
+      .forEach((image, index) => {
+        if (!image.complete || !image.naturalWidth || !image.naturalHeight || isVectorImage(image.currentSrc)) return;
+        if (image.closest(`[${OVERLAY_ATTRIBUTE}]`)) return;
+        const rect = image.getBoundingClientRect();
+        if (!visible(rect, getComputedStyle(image)) || rect.width < 24 || rect.height < 24) return;
+        let file: string;
+        try {
+          file = decodeURIComponent(new URL(image.currentSrc).pathname.split('/').pop() ?? '');
+        } catch {
+          file = '';
+        }
+        found.push({
+          selector: cssPath(image),
+          label: describeElement(image),
+          file: file.slice(0, 80),
+          width: Math.round(rect.width),
+          height: Math.round(rect.height),
+          naturalWidth: image.naturalWidth,
+          naturalHeight: image.naturalHeight,
+          dpr: window.devicePixelRatio || 1,
+          responsive: image.hasAttribute('srcset') || image.parentElement?.localName === 'picture',
+          area: rect.width * rect.height,
+          index,
+        });
+      });
+    return found
+      .sort((a, b) => b.area - a.area)
+      .slice(0, MAX_IMAGES)
+      .sort((a, b) => a.index - b.index)
+      .map(({ area: _area, index: _index, ...sample }) => sample);
+  };
+
+  /** The colours of text, backgrounds and borders of the elements shown, and how many use each. */
+  const colorSample = (): ColorSample => {
+    const text = new Map<string, number>();
+    const background = new Map<string, number>();
+    const border = new Map<string, number>();
+    const canvas = canvasColor();
+    const add = (map: Map<string, number>, value: string) => {
+      const color = parseCssColor(value);
+      if (!color || color.a < 0.05) return;
+      const hex = toHex(color.a < 1 ? blend(color, canvas) : color);
+      map.set(hex, (map.get(hex) ?? 0) + 1);
+    };
+    for (const element of pageElements()) {
+      const style = getComputedStyle(element);
+      if (!visible(element.getBoundingClientRect(), style)) continue;
+      if (ownText(element)) add(text, style.color);
+      add(background, style.backgroundColor);
+      if (Number.parseFloat(style.borderTopWidth) > 0 && style.borderTopStyle !== 'none')
+        add(border, style.borderTopColor);
+    }
+    const top = (map: Map<string, number>): ColorCount[] =>
+      [...map.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, MAX_COLORS)
+        .map(([hex, count]) => ({ hex, count }));
+    return { text: top(text), background: top(background), border: top(border) };
+  };
+
   /* ---------- Inspector ---------- */
 
   let inspecting = false;
@@ -2351,6 +2423,12 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'getTypeScale':
         send({ type: 'typeScale', id: command.id, samples: typeScale() });
         break;
+      case 'getImages':
+        send({ type: 'images', id: command.id, images: imageSamples() });
+        break;
+      case 'getColors':
+        send({ type: 'colors', id: command.id, colors: colorSample() });
+        break;
       case 'getLinks': {
         // Addresses only, never the links' text: pages of this site, without fragments.
         const hrefs = new Set<string>();
@@ -2377,6 +2455,22 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       case 'replay':
         replay(command.interaction);
         break;
+      case 'getRects': {
+        const rects = command.selectors.slice(0, 8).map((selector): ElementRect | null => {
+          let element: Element | null;
+          try {
+            element = document.querySelector(selector);
+          } catch {
+            element = null;
+          }
+          const rect = element?.getBoundingClientRect();
+          return rect && rect.width > 0 && rect.height > 0
+            ? { x: rect.left, y: rect.top, width: rect.width, height: rect.height }
+            : null;
+        });
+        send({ type: 'rects', id: command.id, rects });
+        break;
+      }
       case 'getElementRect': {
         let element: Element | null;
         try {

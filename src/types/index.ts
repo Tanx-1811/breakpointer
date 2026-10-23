@@ -1,4 +1,5 @@
 import type { CheckKind } from '../agent/protocol';
+import type { PerformanceBudgets } from '../state/budgets';
 import type { CompareTarget } from '../state/compare';
 
 export type Orientation = 'portrait' | 'landscape';
@@ -151,6 +152,8 @@ export type BreakpointerSettings = {
   branding: BrandingSettings;
   /** Saved projects (one free, more with Pro). */
   projects: Project[];
+  /** Performance budgets the audit marks previews against (Pro); null limits are off. */
+  budgets: PerformanceBudgets;
   activeUrl?: string;
 };
 

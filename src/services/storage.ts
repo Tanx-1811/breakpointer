@@ -3,6 +3,7 @@ import { FRAMEWORK_SET_IDS } from '../data/breakpoints';
 import { DEFAULT_PRESET_IDS, findPreset } from '../data/presets';
 import { en, type MessageKey } from '../i18n/en';
 import { EMPTY_BRANDING, parseBranding } from '../state/branding';
+import { EMPTY_BUDGETS, parseBudgets } from '../state/budgets';
 import type { CompareTarget } from '../state/compare';
 import { MAX_PROJECTS, normalizeProjectName } from '../state/projects';
 import { normalizeGroupName } from '../state/groups';
@@ -104,6 +105,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     sidePanel: { ...DEFAULT_SIDE_PANEL },
     branding: { ...EMPTY_BRANDING },
     projects: [],
+    budgets: { ...EMPTY_BUDGETS },
   };
 }
 
@@ -362,6 +364,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     sidePanel: parseSidePanel(raw.sidePanel),
     branding: parseBranding(raw.branding),
     projects: parseProjects(raw.projects),
+    budgets: parseBudgets(raw.budgets),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;

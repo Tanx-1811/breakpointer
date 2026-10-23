@@ -252,6 +252,18 @@
   width: 76px;
 }
 
+.budgets {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.budgets .numberField {
+  width: 92px;
+}
+
 .empty {
   margin: 0;
   padding: 16px;

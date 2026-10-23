@@ -597,7 +597,7 @@ export function WorkspaceBar(props: Props) {
             {t('workspace.countLabel', { count: viewports.length, max: MAX_VIEWPORTS })}
           </span>
         </span>
-        <ul className={styles.chips} aria-label={t('workspace.viewports')}>
+        <ul className={styles.chips} aria-label={t('workspace.viewports')} data-tour="viewports">
           {viewports.map((vp, index) => {
             const sizeClass = sizeClassOf(vp.width, vp.height);
             return (
@@ -658,7 +658,7 @@ export function WorkspaceBar(props: Props) {
       </div>
 
       <div className={styles.controls}>
-        <label className={styles.control}>
+        <label className={styles.control} data-tour="breakpoints">
           <span className="visually-hidden">{t('workspace.breakpoints')}</span>
           <Select
             size="sm"

@@ -95,6 +95,8 @@ export type CommandActions = {
   openSettings: () => void;
   siteAccess: () => void;
   help: () => void;
+  /** The tour of the workspace (listed when given). */
+  tour?: () => void;
   exportSettings: () => void;
   /** What Breakpointer Pro brings, the trial and buying it (listed when given). */
   pro?: () => void;
@@ -801,6 +803,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     run: actions.siteAccess,
   });
   named('toolbar.help', { id: 'help', section: section.preferences, icon: 'help', shortcut: '?', run: actions.help });
+  if (actions.tour)
+    named('tour.start', {
+      id: 'tour',
+      section: section.preferences,
+      icon: 'sparkle',
+      keywords: 'tour guide walkthrough onboarding introduction tutorial',
+      run: actions.tour,
+    });
   if (actions.pro)
     named('palette.pro', {
       id: 'pro',
