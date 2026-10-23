@@ -1357,7 +1357,8 @@ export const vi: Record<MessageKey, string> = {
   'budgets.limit': 'Ngân sách: {value}',
   'budgets.over': 'Vượt ngân sách',
   'pro.feature.budgets': 'Ngân sách hiệu năng',
-  'pro.feature.budgetsHint': 'Đặt giới hạn dung lượng trang, số yêu cầu, LCP và CLS; bản xem trước vượt giới hạn sẽ được đánh dấu.',
+  'pro.feature.budgetsHint':
+    'Đặt giới hạn dung lượng trang, số yêu cầu, LCP và CLS; bản xem trước vượt giới hạn sẽ được đánh dấu.',
   'colorAudit.heading': 'Màu sắc',
   'colorAudit.colRole': 'Dùng cho',
   'colorAudit.colColor': 'Màu',
@@ -1378,7 +1379,7 @@ export const vi: Record<MessageKey, string> = {
   'inspector.distanceClear': 'Bỏ đo khoảng cách',
   'inspector.distanceMissing': 'Không hiển thị cả hai ở kích thước này',
   'inspector.distanceOverlap': 'Chồng lên nhau',
-  'inspector.distanceInside': 'Nằm trong',
+  'inspector.distanceInside': 'Nằm trong: {insets}',
   'inspector.distanceColumn': 'Khoảng cách đến {element}',
   'tour.start': 'Xem hướng dẫn nhanh',
   'tour.count': 'Bước {current}/{total}',
@@ -1389,13 +1390,16 @@ export const vi: Record<MessageKey, string> = {
   'tour.addressTitle': 'Mở trang bất kỳ',
   'tour.addressBody': 'Nhập địa chỉ hoặc dán liên kết. Mỗi bản xem trước tải trang ở kích thước riêng của nó.',
   'tour.viewportsTitle': 'Các viewport của bạn',
-  'tour.viewportsBody': 'Mỗi thẻ là một bản xem trước. Bấm để ẩn hoặc hiện, kéo để đổi thứ tự, nhấn A để thêm kích thước.',
+  'tour.viewportsBody':
+    'Mỗi thẻ là một bản xem trước. Bấm để ẩn hoặc hiện, kéo để đổi thứ tự, nhấn A để thêm kích thước.',
   'tour.breakpointsTitle': 'Breakpoint',
-  'tour.breakpointsBody': 'Gắn nhãn mỗi viewport theo breakpoint của một framework, của riêng bạn, hoặc của chính trang.',
+  'tour.breakpointsBody':
+    'Gắn nhãn mỗi viewport theo breakpoint của một framework, của riêng bạn, hoặc của chính trang.',
   'tour.syncTitle': 'Đồng bộ',
   'tour.syncBody': 'Cuộn và mở liên kết trong mọi bản xem trước cùng lúc (trên các trang bạn cho phép).',
   'tour.inspectTitle': 'Kiểm tra phần tử',
-  'tour.inspectBody': 'Chọn một phần tử và so sánh kích thước, kiểu chữ, khoảng cách ở mọi viewport, hoặc đo khoảng cách đến phần tử khác. Phím tắt: I.',
+  'tour.inspectBody':
+    'Chọn một phần tử và so sánh kích thước, kiểu chữ, khoảng cách ở mọi viewport, hoặc đo khoảng cách đến phần tử khác. Phím tắt: I.',
   'tour.auditTitle': 'Rà soát',
   'tour.auditBody': 'Vấn đề, hiệu năng, kiểu chữ, hình ảnh và màu sắc của mọi bản xem trước ở một chỗ. Phím tắt: E.',
   'tour.notesTitle': 'Ghi chú',
@@ -1405,4 +1409,10 @@ export const vi: Record<MessageKey, string> = {
   'tour.helpTitle': 'Trợ giúp',
   'tour.helpBody': 'Mọi phím tắt, tính năng mới, và tour này bất cứ khi nào bạn muốn xem lại.',
   'notes.saveImage': 'Lưu các bản xem trước kèm ghi chú thành một ảnh',
+  'news.images': 'Hình ảnh trong phần rà soát: mỗi ảnh so với chiều rộng hiển thị, kèm gợi ý sizes và srcset để chép.',
+  'news.colors': 'Màu sắc trong phần rà soát: màu chữ, nền và viền của trang, chép thành biến CSS.',
+  'news.budgets':
+    'Ngân sách hiệu năng (Pro): đặt giới hạn dung lượng, số yêu cầu, LCP và CLS và thấy bản xem trước nào vượt.',
+  'news.distance': 'Trình kiểm tra đo khoảng cách giữa hai phần tử ở mọi kích thước.',
+  'news.tour': 'Mới dùng? Xem hướng dẫn nhanh trong Trợ giúp — và lưu ghi chú cùng bản xem trước thành một ảnh.',
 };

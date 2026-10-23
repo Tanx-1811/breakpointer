@@ -18,12 +18,14 @@ Breakpointer affiche n’importe quel site web à plusieurs tailles de viewport 
 
 **Trouver où ça casse**
 • Score responsive : une note de 0 à 100 pour chaque page — voyez ce qui coûte le plus de points, dans l’audit, les rapports et Vérifier des pages.
-• Notes : épinglez ce qui ne va pas sur n’importe quel aperçu (touche N) et copiez un rapport de bug prêt à coller, avec la page, les tailles de viewport et vos notes.
+• Notes : épinglez ce qui ne va pas sur n’importe quel aperçu (touche N) et copiez un rapport de bug prêt à coller, avec la page, les tailles de viewport et vos notes — ou enregistrez tous les aperçus avec leurs notes en une seule image.
 • Vérifier des pages : toute une liste de pages — vos pages enregistrées, les liens d’une page ou le sitemap du site — vérifiée à chaque viewport en une seule passe. Voyez quelles pages cassent et à quelles tailles, puis copiez le tableau en Markdown ou téléchargez un rapport HTML.
 • Analyser toutes les largeurs : la page est vérifiée à chaque largeur d’une plage, et la première et la dernière largeur de chaque problème sont trouvées au pixel près — sur un graphique avec la hauteur de la page, ses breakpoints et vos viewports. Ajoutez un viewport à la pire largeur en un clic.
 • Audit : tous les problèmes de toutes les tailles au même endroit, le poids de la page, les requêtes, les pixels d’image, le Largest Contentful Paint et le décalage de mise en page par taille, ainsi que l’échelle typographique des titres, du texte et des boutons — copiez n’importe quelle partie sous forme de tableau Markdown.
+• Images responsive : chaque image face à sa largeur d’affichage à chaque viewport — trop grande, trop petite ou de la bonne taille — avec un attribut sizes et des largeurs srcset suggérés, prêts à copier.
+• Audit des couleurs de la page : les couleurs du texte, des arrière-plans et des bordures à toutes les tailles, à copier sous forme de variables CSS.
 • Contrôle visuel : enregistrez une référence de chaque viewport, comparez après une modification et voyez ce qui a bougé, pixel par pixel — côte à côte, avec un curseur ou avec les différences encadrées.
-• Inspecteur : cliquez sur un élément dans un aperçu et comparez sa taille, son display, sa police, ses espacements et sa mise en page à chaque taille — ce qui change est mis en évidence.
+• Inspecteur : cliquez sur un élément dans un aperçu et comparez sa taille, son display, sa police, ses espacements et sa mise en page à chaque taille — ce qui change est mis en évidence — et mesurez la distance jusqu’à un second élément à chaque taille.
 • Breakpoints lus dans le CSS de la page elle-même, ainsi que ceux de Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation ou les vôtres — étiquetez chaque viewport et testez les deux côtés de chaque breakpoint.
 • Clair et sombre côte à côte : affichez n’importe quel aperçu avec les styles clairs ou sombres de la page.
 • Les vérifications responsive détectent le défilement horizontal (et l’élément qui le provoque), une balise viewport manquante, le texte minuscule, les cibles tactiles trop petites, le texte tronqué par son conteneur, le texte peu contrasté, les images floues, les éléments qui couvrent l’écran et les décalages de mise en page — et les mettent en évidence directement dans la page.
@@ -52,6 +54,7 @@ Breakpointer affiche n’importe quel site web à plusieurs tailles de viewport 
 • Synchro des clics et de la saisie : ouvrez un menu ou remplissez un formulaire dans un aperçu et tous les aperçus de la page font de même — les formulaires ne sont jamais envoyés deux fois, et les mots de passe et champs de paiement ne sont jamais copiés.
 • Masquez les bandeaux de cookies des outils de consentement courants pour des captures et des vérifications propres (rien n’est accepté).
 • Projets : enregistrez pour chaque site la page, les viewports, les breakpoints, la grille, le CSS en direct et la comparaison, et passez d’un client à l’autre en un clic (un projet est gratuit).
+• Budgets de performance : fixez des limites de poids de page, de requêtes, de LCP et de CLS, et voyez chaque aperçu qui les dépasse.
 • Votre marque — nom, logo et lien — sur les rapports et les images que vous envoyez à vos clients.
 • Exports CSV et JSON de Vérifier des pages, des analyses de largeurs et des audits.
 • Les licences sont vérifiées dans votre navigateur : pas de compte, rien n’est envoyé.

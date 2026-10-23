@@ -18,12 +18,14 @@ Breakpointer muestra cualquier sitio web en varios tamaños de viewport, uno al 
 
 **Encuentra dónde se rompe**
 • Puntuación responsive: una cifra de 0 a 100 para cada página; mira qué resta más puntos, en la auditoría, los informes y Revisar páginas.
-• Notas: fija lo que falla en cualquier vista previa (pulsa N) y copia un informe de error listo para pegar, con la página, los tamaños de viewport y tus notas.
+• Notas: fija lo que falla en cualquier vista previa (pulsa N) y copia un informe de error listo para pegar, con la página, los tamaños de viewport y tus notas, o guarda todas las vistas previas con sus notas en una sola imagen.
 • Revisar páginas: una lista entera de páginas (tus páginas guardadas, los enlaces de una página o el sitemap del sitio) revisada en todos los viewports de una sola vez. Mira qué páginas se rompen y en qué tamaños, y copia la tabla como Markdown o descarga un informe HTML.
 • Escanear todos los anchos: la página se comprueba en cada ancho de un rango y se encuentra al píxel el primer y el último ancho de cada problema, en un gráfico con la altura de la página, sus breakpoints y tus viewports. Añade un viewport en el peor ancho con un clic.
 • Auditoría: todos los problemas de todos los tamaños en un solo lugar; el peso de la página, las solicitudes, los píxeles de imagen, el Largest Contentful Paint y el cambio de diseño por tamaño; y la escala tipográfica de títulos, texto y botones. Copia cualquier parte como tabla Markdown.
+• Imágenes responsive: cada imagen frente al ancho al que se muestra en cada viewport (demasiado grande, demasiado pequeña o del tamaño correcto), con un atributo sizes y unos anchos de srcset sugeridos, listos para copiar.
+• Auditoría de colores de la página: los colores del texto, los fondos y los bordes en todos los tamaños, para copiarlos como variables CSS.
 • Comprobación visual: guarda una referencia de cada viewport, compara tras un cambio y mira qué se movió, píxel a píxel: en paralelo, con un deslizador o con las diferencias recuadradas.
-• Inspector: haz clic en un elemento de una vista previa y compara su tamaño, display, fuente, espaciado y diseño en todos los tamaños; lo que cambia queda resaltado.
+• Inspector: haz clic en un elemento de una vista previa y compara su tamaño, display, fuente, espaciado y diseño en todos los tamaños (lo que cambia queda resaltado) y mide la distancia a un segundo elemento en cada tamaño.
 • Breakpoints leídos del propio CSS de la página, además de Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation o los tuyos: etiqueta cada viewport y prueba ambos lados de cada breakpoint.
 • Claro y oscuro en paralelo: muestra cualquier vista previa con los estilos claros u oscuros de la página.
 • Las comprobaciones responsive detectan el desplazamiento horizontal (y el elemento que lo causa), la falta de etiqueta viewport, el texto diminuto, las áreas táctiles pequeñas, el texto cortado por su caja, el texto con poco contraste, las imágenes borrosas, los elementos que tapan la pantalla y los cambios de diseño, y los resaltan directamente en la página.
@@ -52,6 +54,7 @@ Breakpointer muestra cualquier sitio web en varios tamaños de viewport, uno al 
 • Sincronizar clics y escritura: abre un menú o rellena un formulario en una vista previa y todas las vistas previas de la página hacen lo mismo; los formularios nunca se envían dos veces, y las contraseñas y los campos de pago nunca se copian.
 • Oculta los avisos de cookies de las herramientas de consentimiento habituales para obtener capturas y comprobaciones limpias (no se acepta nada).
 • Proyectos: guarda la página, los viewports, los breakpoints, la cuadrícula, el CSS en vivo y la comparación de cada sitio, y cambia de cliente con un clic (un proyecto es gratis).
+• Presupuestos de rendimiento: fija límites de peso de la página, solicitudes, LCP y CLS, y mira qué vistas previas los superan.
 • Tu marca (nombre, logo y enlace) en los informes e imágenes que envías a tus clientes.
 • Exportación a CSV y JSON de Revisar páginas, los escaneos de anchos y las auditorías.
 • Las licencias se comprueban en tu navegador: sin cuenta y sin enviar nada.

@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createServer, type IncomingMessage, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { deflateSync } from 'node:zlib';
 
 const DEMO_PAGE = readFileSync(new URL('./fixtures/demo.html', import.meta.url), 'utf8');
 
@@ -241,7 +242,61 @@ const sitemapRoute = (req: IncomingMessage): Route => {
   };
 };
 
-type Route = { status?: number; headers?: Record<string, string | string[]>; body: string };
+type Route = { status?: number; headers?: Record<string, string | string[]>; body: string | Buffer };
+
+/** A plain-coloured PNG of the given size (a real raster image, unlike the SVG pictures). */
+function solidPng(width: number, height: number, [r, g, b]: [number, number, number]): Buffer {
+  const crcTable = Array.from({ length: 256 }, (_, n) => {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    return c >>> 0;
+  });
+  const crc = (data: Buffer) => {
+    let c = 0xffffffff;
+    for (const byte of data) c = crcTable[(c ^ byte) & 0xff]! ^ (c >>> 8);
+    return (c ^ 0xffffffff) >>> 0;
+  };
+  const chunk = (type: string, data: Buffer) => {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length);
+    const body = Buffer.concat([Buffer.from(type, 'ascii'), data]);
+    const sum = Buffer.alloc(4);
+    sum.writeUInt32BE(crc(body));
+    return Buffer.concat([length, body, sum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header.set([8, 2, 0, 0, 0], 8);
+  const row = Buffer.alloc(1 + width * 3);
+  for (let x = 0; x < width; x++) row.set([r, g, b], 1 + x * 3);
+  const pixels = Buffer.concat(Array.from({ length: height }, () => row));
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+const PHOTO = solidPng(1600, 400, [11, 61, 46]);
+
+/** A full-width photo and a small logo from the same large file, on a page with a few colours. */
+const IMAGES_PAGE = page(
+  'Images page',
+  `<style>
+  body { background: #ffffff; color: #111111; }
+  .hero { display: block; width: 100%; height: auto; }
+  .logo { display: block; width: 120px; height: 30px; }
+  .cta { display: inline-block; padding: 8px 12px; background: #0055aa; color: #ffffff; border: 2px solid #003377; }
+  </style>
+  <script>addEventListener('DOMContentLoaded', () => {
+    const add = (tag, props) => document.body.append(Object.assign(document.createElement(tag), props));
+    add('img', { className: 'hero', src: '/photo.png', alt: 'Hero' });
+    add('img', { className: 'logo', src: '/photo.png?logo', alt: 'Logo' });
+    add('a', { className: 'cta', href: '#', textContent: 'Buy now' });
+  });</script>`,
+);
 
 /** Answers like Facebook: a request that says it is for a frame (`Sec-Fetch-Dest: iframe`) gets an error page. */
 const fetchMetadataRoute = (req: IncomingMessage): Route =>
@@ -335,6 +390,8 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/scheme': { body: SCHEME_PAGE },
   '/scheme-css': { body: SCHEME_CSS_PAGE },
   '/inspect': { body: INSPECT_PAGE },
+  '/images': { body: IMAGES_PAGE },
+  '/photo.png': { headers: { 'Content-Type': 'image/png' }, body: PHOTO },
   '/utilities': { body: UTILITIES_PAGE },
   '/cover': { body: COVER_PAGE },
   '/audit': { body: AUDIT_PAGE },

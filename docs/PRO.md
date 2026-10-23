@@ -1,6 +1,6 @@
 # Breakpointer Pro — selling and licences
 
-How Breakpointer Pro is sold, how licence keys are made and checked, and what to do before each release. The design (and why it needs no server) is in [ARCHITECTURE.md — Plans and licences](ARCHITECTURE.md#plans-and-licences-breakpointer-pro); the decisions are D51–D57 in [PLAN.md](PLAN.md#2-decisions-made).
+How Breakpointer Pro is sold, how licence keys are made and checked, and what to do before each release. The design (and why it needs no server) is in [ARCHITECTURE.md — Plans and licences](ARCHITECTURE.md#plans-and-licences-breakpointer-pro); the decisions are D51–D58, D61 and D67 in [PLAN.md](PLAN.md#2-decisions-made).
 
 ## What is in Pro
 
@@ -10,6 +10,7 @@ How Breakpointer Pro is sold, how licence keys are made and checked, and what to
 | Sync clicks & typing  | Tools menu, Settings → Preview tools, command palette                                                                                                   | Marked “Pro”; selecting it shows what Pro brings                       |
 | Hide cookie banners   | Tools menu, command palette                                                                                                                             | Same                                                                   |
 | Unlimited projects    | Projects menu: a site's whole setup saved and opened in one click                                                                                       | One project; saving a second shows what Pro brings                     |
+| Performance budgets   | Settings → Preview tools → Performance budgets; the audit's Performance tab marks previews over a limit                                                 | Fields disabled with “See Pro”; no marks                               |
 | Your brand on reports | Settings → Your brand; reports, Check pages reports, showcase and sheet images                                                                          | Fields disabled with “See Pro”                                         |
 | CSV & JSON exports    | “Export” in Check pages, the width scanner and the audit panel                                                                                          | Items marked “Pro”                                                     |
 

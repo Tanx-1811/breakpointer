@@ -259,7 +259,10 @@ function GapLine({ gap, changed }: { gap: Gap | null | undefined; changed: boole
         ? t('inspector.waiting')
         : gap === null
           ? t('inspector.distanceMissing')
-          : gapText(gap, { overlap: t('inspector.distanceOverlap'), inside: t('inspector.distanceInside') })}
+          : gapText(gap, {
+              overlap: t('inspector.distanceOverlap'),
+              inside: (insets) => t('inspector.distanceInside', { insets }),
+            })}
     </p>
   );
 }

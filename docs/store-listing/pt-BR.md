@@ -18,12 +18,14 @@ O Breakpointer mostra qualquer site em vários tamanhos de viewport lado a lado,
 
 **Descubra onde quebra**
 • Pontuação responsiva: um número de 0 a 100 para cada página — veja o que tira mais pontos, na auditoria, nos relatórios e em Verificar páginas.
-• Notas: marque o que está errado em qualquer pré-visualização (pressione N) e copie um relatório de bug pronto para colar, com a página, os tamanhos de viewport e as suas notas.
+• Notas: marque o que está errado em qualquer pré-visualização (pressione N) e copie um relatório de bug pronto para colar, com a página, os tamanhos de viewport e as suas notas — ou salve todas as pré-visualizações com as notas delas em uma só imagem.
 • Verificar páginas: uma lista inteira de páginas — suas páginas salvas, os links de uma página ou o sitemap do site — verificada em todos os viewports de uma só vez. Veja quais páginas quebram e em quais tamanhos, depois copie a tabela em Markdown ou baixe um relatório HTML.
 • Varrer todas as larguras: a página é verificada em cada largura de um intervalo, e a primeira e a última largura de cada problema são encontradas com precisão de pixel — em um gráfico com a altura da página, os breakpoints dela e os seus viewports. Adicione um viewport na pior largura com um clique.
 • Auditoria: todos os problemas de todos os tamanhos em um só lugar; o peso da página, as requisições, os pixels de imagem, a maior exibição de conteúdo (LCP) e a mudança de layout por tamanho; e a escala tipográfica de títulos, textos e botões — copie qualquer parte como tabela Markdown.
+• Imagens responsivas: cada imagem comparada com a largura em que é exibida em cada viewport — grande demais, pequena demais ou do tamanho certo — com um atributo sizes e larguras para o srcset sugeridos, prontos para copiar.
+• Auditoria de cores da página: as cores usadas em textos, fundos e bordas em todos os tamanhos, prontas para copiar como variáveis CSS.
 • Verificação visual: salve uma referência de cada viewport, compare depois de uma mudança e veja o que mudou de lugar, pixel a pixel — lado a lado, com um controle deslizante ou com as diferenças marcadas em caixas.
-• Inspetor: clique em um elemento em uma pré-visualização e compare o tamanho, o display, a fonte, o espaçamento e o layout dele em todos os tamanhos — o que muda fica destacado.
+• Inspetor: clique em um elemento em uma pré-visualização e compare o tamanho, o display, a fonte, o espaçamento e o layout dele em todos os tamanhos — o que muda fica destacado — e meça a distância até um segundo elemento em todos os tamanhos.
 • Breakpoints lidos do próprio CSS da página, além de Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation ou os seus — rotule cada viewport e teste os dois lados de cada breakpoint.
 • Claro e escuro lado a lado: mostre qualquer pré-visualização com os estilos claros ou escuros da página.
 • As verificações responsivas encontram rolagem lateral (e o elemento que a causa), tag viewport ausente, texto minúsculo, alvos de toque pequenos, texto cortado pela própria caixa, texto com baixo contraste, imagens borradas, elementos cobrindo a tela e mudanças de layout — e os destacam direto na página.
@@ -52,6 +54,7 @@ O Breakpointer mostra qualquer site em vários tamanhos de viewport lado a lado,
 • Sincronizar cliques e digitação: abra um menu ou preencha um formulário em uma pré-visualização e todas as pré-visualizações da página fazem o mesmo — formulários nunca são enviados duas vezes, e senhas e campos de pagamento nunca são copiados.
 • Oculte os banners de cookies das ferramentas de consentimento comuns para capturas de tela e verificações limpas (nada é aceito).
 • Projetos: salve a página, os viewports, os breakpoints, a grade, o CSS ao vivo e a comparação de cada site, e alterne entre clientes com um clique (um projeto é grátis).
+• Orçamentos de desempenho: defina limites para o peso da página, as requisições, o LCP e o CLS, e veja todas as pré-visualizações que passam do limite.
 • Sua marca — nome, logo e link — nos relatórios e imagens que você envia aos clientes.
 • Exportações CSV e JSON de Verificar páginas, varreduras de larguras e auditorias.
 • As licenças são verificadas no seu navegador: sem conta, nada é enviado.

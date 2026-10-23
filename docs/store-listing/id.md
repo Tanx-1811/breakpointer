@@ -18,12 +18,14 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 
 **Temukan di mana tata letak rusak**
 • Skor responsif: satu angka dari 0 hingga 100 untuk setiap halaman — lihat apa yang paling banyak mengurangi poin, di audit, laporan, dan Periksa halaman.
-• Catatan: sematkan apa yang salah di pratinjau mana pun (tekan N) dan salin laporan bug siap tempel berisi halaman, ukuran viewport, dan catatan Anda.
+• Catatan: sematkan apa yang salah di pratinjau mana pun (tekan N) dan salin laporan bug siap tempel berisi halaman, ukuran viewport, dan catatan Anda — atau simpan setiap pratinjau beserta catatannya sebagai satu gambar.
 • Periksa halaman: seluruh daftar halaman — halaman tersimpan Anda, tautan di sebuah halaman, atau sitemap situs — diperiksa di setiap viewport dalam sekali jalan. Lihat halaman mana yang rusak dan di ukuran berapa, lalu salin tabelnya sebagai Markdown atau unduh laporan HTML.
 • Pindai setiap lebar: halaman diperiksa di setiap lebar dalam suatu rentang, dan lebar pertama serta terakhir setiap masalah ditemukan tepat sampai ke piksel — pada grafik bersama tinggi halaman, breakpoint-nya, dan viewport Anda. Tambahkan viewport di lebar terburuk dengan sekali klik.
 • Audit: setiap masalah di setiap ukuran dalam satu tempat; bobot halaman, permintaan, piksel gambar, Largest Contentful Paint, dan pergeseran tata letak per ukuran; serta skala tipografi judul, teks, dan tombol — salin bagian mana pun sebagai tabel Markdown.
+• Gambar responsif: setiap gambar dibandingkan dengan lebar tampilnya di setiap viewport — terlalu besar, terlalu kecil, atau ukurannya tepat — beserta atribut sizes dan lebar srcset yang disarankan untuk disalin.
+• Audit warna halaman: warna yang digunakan untuk teks, latar belakang, dan garis batas di semua ukuran, siap disalin sebagai variabel CSS.
 • Pemeriksaan visual: simpan acuan setiap viewport, bandingkan setelah ada perubahan, dan lihat apa yang bergeser, piksel demi piksel — berdampingan, dengan penggeser, atau dengan perbedaan yang ditandai kotak.
-• Inspektor: klik elemen di satu pratinjau dan bandingkan ukuran, display, font, spasi, dan tata letaknya di setiap ukuran — yang berubah akan disorot.
+• Inspektor: klik elemen di satu pratinjau dan bandingkan ukuran, display, font, spasi, dan tata letaknya di setiap ukuran — yang berubah akan disorot — dan ukur jarak ke elemen kedua di setiap ukuran.
 • Breakpoint dibaca dari CSS halaman itu sendiri, plus Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation, atau milik Anda sendiri — beri label setiap viewport dan uji kedua sisi setiap breakpoint.
 • Terang dan gelap berdampingan: tampilkan pratinjau mana pun dengan gaya terang atau gelap halaman.
 • Pemeriksaan responsif menemukan gulir ke samping (dan elemen penyebabnya), tag viewport yang tidak ada, teks terlalu kecil, target sentuh kecil, teks terpotong oleh kotaknya, teks berkontras rendah, gambar buram, elemen yang menutupi layar, dan pergeseran tata letak — sorot semuanya langsung di halaman.
@@ -52,6 +54,7 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 • Sinkronkan klik & ketikan: buka menu atau isi formulir di satu pratinjau dan setiap pratinjau halaman itu melakukan hal yang sama — formulir tidak pernah dikirim dua kali, dan kata sandi serta kolom pembayaran tidak pernah disalin.
 • Sembunyikan banner cookie dari alat persetujuan umum untuk tangkapan layar dan pemeriksaan yang bersih (tidak ada yang disetujui).
 • Proyek: simpan halaman, viewport, breakpoint, grid, CSS langsung, dan perbandingan setiap situs, lalu beralih antarklien dengan sekali klik (satu proyek gratis).
+• Anggaran performa: tetapkan batas untuk bobot halaman, permintaan, LCP, dan CLS, lalu lihat setiap pratinjau yang melampauinya.
 • Merek Anda — nama, logo, dan tautan — di laporan dan gambar yang Anda kirim ke klien.
 • Ekspor CSV dan JSON dari Periksa halaman, pemindaian lebar, dan audit.
 • Lisensi diperiksa di browser Anda: tanpa akun, tidak ada yang dikirim.

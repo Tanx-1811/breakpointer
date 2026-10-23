@@ -6,7 +6,8 @@ import type { ElementRect } from '../agent/protocol';
  * inner one's distance from each edge of the outer one.
  */
 export type Gap =
-  | { relation: 'apart'; horizontal: number; vertical: number }
+  /** The space across and down; null along an axis where the two overlap (a stack has no space across). */
+  | { relation: 'apart'; horizontal: number | null; vertical: number | null }
   | { relation: 'overlap' }
   | { relation: 'inside'; top: number; right: number; bottom: number; left: number };
 
@@ -18,7 +19,11 @@ export function gapBetween(a: ElementRect, b: ElementRect): Gap {
   const across = Math.min(right(a), right(b)) - Math.max(a.x, b.x);
   const down = Math.min(bottom(a), bottom(b)) - Math.max(a.y, b.y);
   if (across <= 0 || down <= 0)
-    return { relation: 'apart', horizontal: round(Math.max(0, -across)), vertical: round(Math.max(0, -down)) };
+    return {
+      relation: 'apart',
+      horizontal: across <= 0 ? round(-across) : null,
+      vertical: down <= 0 ? round(-down) : null,
+    };
   const contains = (outer: ElementRect, inner: ElementRect) =>
     inner.x >= outer.x && inner.y >= outer.y && right(inner) <= right(outer) && bottom(inner) <= bottom(outer);
   const [outer, inner] = contains(a, b) ? [a, b] : contains(b, a) ? [b, a] : [null, null];
@@ -32,24 +37,22 @@ export function gapBetween(a: ElementRect, b: ElementRect): Gap {
   };
 }
 
-/** Words for the relations without a number. */
-export type GapWords = { overlap: string; inside: string };
+/** Words for the relations: overlapping, and the insets of one element inside the other ("Inside: …"). */
+export type GapWords = { overlap: string; inside: (insets: string) => string };
 
 const px = (value: number) => `${value} px`;
 
 /** "↔ 24 px", "↕ 16 px", "↔ 24 px · ↕ 16 px", "Inside: 8 px 16 px 8 px 16 px" or "Overlap". */
 export function gapText(gap: Gap, words: GapWords): string {
   if (gap.relation === 'overlap') return words.overlap;
-  if (gap.relation === 'inside')
-    return `${words.inside}: ${[gap.top, gap.right, gap.bottom, gap.left].map(px).join(' ')}`;
-  const parts = [gap.horizontal > 0 && `↔ ${px(gap.horizontal)}`, gap.vertical > 0 && `↕ ${px(gap.vertical)}`].filter(
-    Boolean,
-  );
-  return parts.length ? parts.join(' · ') : `↔ ${px(0)}`;
+  if (gap.relation === 'inside') return words.inside([gap.top, gap.right, gap.bottom, gap.left].map(px).join(' '));
+  return [gap.horizontal !== null && `↔ ${px(gap.horizontal)}`, gap.vertical !== null && `↕ ${px(gap.vertical)}`]
+    .filter(Boolean)
+    .join(' · ');
 }
 
 /** Whether the distance isn't the same at every viewport where both elements are shown. */
 export function gapChanges(gaps: readonly (Gap | null | undefined)[]): boolean {
-  const words = { overlap: 'overlap', inside: 'inside' };
+  const words: GapWords = { overlap: 'overlap', inside: (insets) => insets };
   return new Set(gaps.filter((gap): gap is Gap => Boolean(gap)).map((gap) => gapText(gap, words))).size > 1;
 }

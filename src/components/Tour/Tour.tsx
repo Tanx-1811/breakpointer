@@ -67,10 +67,12 @@ function TourCard({ onClose }: { onClose: () => void }) {
     };
   }, [step]);
 
-  // Each step starts on its main button; when the tour ends, focus goes back to what started it.
+  // Each step starts on its main button (once the card is placed and shown); when the tour ends,
+  // focus goes back to what started it.
+  const placed = layout !== null;
   useEffect(() => {
-    cardRef.current?.querySelector<HTMLElement>('[data-tour-next]')?.focus();
-  }, [index]);
+    if (placed) cardRef.current?.querySelector<HTMLElement>('[data-tour-next]')?.focus();
+  }, [index, placed]);
   useEffect(() => {
     const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     return () => {

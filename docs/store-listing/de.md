@@ -18,12 +18,14 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 
 **Finde, wo es bricht**
 • Responsive-Score: eine Zahl von 0 bis 100 für jede Seite — sieh, was die meisten Punkte kostet, im Audit, in Berichten und in „Seiten prüfen“.
-• Notizen: Hefte an jede Vorschau, was nicht stimmt (Taste N), und kopiere einen fertigen Fehlerbericht mit der Seite, den Viewport-Größen und deinen Notizen.
+• Notizen: Hefte an jede Vorschau, was nicht stimmt (Taste N), und kopiere einen fertigen Fehlerbericht mit der Seite, den Viewport-Größen und deinen Notizen — oder speichere alle Vorschauen mit ihren Notizen als ein Bild.
 • Seiten prüfen: eine ganze Liste von Seiten — deine gespeicherten Seiten, die Links einer Seite oder die Sitemap der Website — in einem Durchlauf in jedem Viewport geprüft. Sieh, welche Seiten in welchen Größen brechen, und kopiere die Tabelle als Markdown oder lade einen HTML-Bericht herunter.
 • Alle Breiten scannen: Die Seite wird in jeder Breite eines Bereichs geprüft, und die erste und letzte Breite jedes Problems wird pixelgenau ermittelt — in einem Diagramm mit der Seitenhöhe, ihren Breakpoints und deinen Viewports. Füge mit einem Klick einen Viewport in der schlimmsten Breite hinzu.
 • Audit: alle Probleme aller Größen an einem Ort, Seitengewicht, Anfragen, Bildpixel, Largest Contentful Paint und Layout-Verschiebung pro Größe sowie die Typografie-Skala von Überschriften, Text und Buttons — alles als Markdown-Tabelle kopierbar.
+• Responsive Bilder: jedes Bild im Vergleich zur Breite, in der es in jedem Viewport angezeigt wird — zu groß, zu klein oder passend — mit einem vorgeschlagenen sizes-Attribut und srcset-Breiten zum Kopieren.
+• Audit der Seitenfarben: die Farben von Texten, Hintergründen und Rahmen über alle Größen hinweg, als CSS-Variablen kopierbar.
 • Visuelle Prüfung: Speichere eine Baseline jedes Viewports, vergleiche nach einer Änderung und sieh pixelgenau, was sich verschoben hat — nebeneinander, mit Schieberegler oder mit umrahmten Unterschieden.
-• Inspektor: Klicke in einer Vorschau auf ein Element und vergleiche Größe, Display, Schrift, Abstände und Layout in jeder Größe — Änderungen werden hervorgehoben.
+• Inspektor: Klicke in einer Vorschau auf ein Element und vergleiche Größe, Display, Schrift, Abstände und Layout in jeder Größe — Änderungen werden hervorgehoben — und miss den Abstand zu einem zweiten Element in jeder Größe.
 • Breakpoints aus dem CSS der Seite selbst, dazu Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation oder deine eigenen — beschrifte jeden Viewport und teste beide Seiten jedes Breakpoints.
 • Hell und dunkel nebeneinander: Zeige jede Vorschau mit den hellen oder dunklen Styles der Seite.
 • Responsive-Prüfungen finden seitliches Scrollen (und das verursachende Element), ein fehlendes Viewport-Tag, winzigen Text, kleine Touch-Ziele, von ihrer Box abgeschnittenen Text, Text mit geringem Kontrast, unscharfe Bilder, Elemente, die den Bildschirm verdecken, und Layout-Verschiebungen — und heben sie direkt in der Seite hervor.
@@ -52,6 +54,7 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 • Klicks & Eingaben synchronisieren: Öffne ein Menü oder fülle ein Formular in einer Vorschau aus, und jede Vorschau der Seite tut dasselbe — Formulare werden nie doppelt abgeschickt, Passwörter und Zahlungsfelder nie kopiert.
 • Blende Cookie-Banner gängiger Consent-Tools aus, für saubere Screenshots und Prüfungen (nichts wird akzeptiert).
 • Projekte: Speichere für jede Website Seite, Viewports, Breakpoints, Raster, Live-CSS und Vergleich, und wechsle mit einem Klick zwischen Kunden (ein Projekt ist kostenlos).
+• Performance-Budgets: Lege Grenzen für Seitengewicht, Anfragen, LCP und CLS fest und sieh jede Vorschau, die eine Grenze überschreitet.
 • Deine Marke — Name, Logo und Link — auf Berichten und Bildern, die du an Kunden sendest.
 • CSV- und JSON-Exporte von „Seiten prüfen“, Breiten-Scans und Audits.
 • Lizenzen werden in deinem Browser geprüft: kein Konto, nichts wird gesendet.

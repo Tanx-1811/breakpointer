@@ -1372,7 +1372,7 @@ export const en = {
   'inspector.distanceClear': 'Remove the distance',
   'inspector.distanceMissing': 'Not both shown at this size',
   'inspector.distanceOverlap': 'Overlapping',
-  'inspector.distanceInside': 'Inside',
+  'inspector.distanceInside': 'Inside: {insets}',
   'inspector.distanceColumn': 'Distance to {element}',
   'tour.start': 'Take the tour',
   'tour.count': 'Step {current} of {total}',
@@ -1383,13 +1383,15 @@ export const en = {
   'tour.addressTitle': 'Open any page',
   'tour.addressBody': 'Type an address or paste a link. Every preview loads it at its own size.',
   'tour.viewportsTitle': 'Your viewports',
-  'tour.viewportsBody': 'Each chip is a preview. Click one to hide or show it, drag to reorder, and press A to add a size.',
+  'tour.viewportsBody':
+    'Each chip is a preview. Click one to hide or show it, drag to reorder, and press A to add a size.',
   'tour.breakpointsTitle': 'Breakpoints',
   'tour.breakpointsBody': 'Label every viewport with a framework’s breakpoints, your own, or the ones the page uses.',
   'tour.syncTitle': 'Stay in sync',
   'tour.syncBody': 'Scroll and follow links in every preview at once (on sites you allow).',
   'tour.inspectTitle': 'Inspect',
-  'tour.inspectBody': 'Pick an element and compare its size, type and spacing at every viewport, or measure the distance to another. Shortcut: I.',
+  'tour.inspectBody':
+    'Pick an element and compare its size, type and spacing at every viewport, or measure the distance to another. Shortcut: I.',
   'tour.auditTitle': 'Audit',
   'tour.auditBody': 'Issues, performance, type, images and colours of every preview in one place. Shortcut: E.',
   'tour.notesTitle': 'Notes',
@@ -1399,6 +1401,13 @@ export const en = {
   'tour.helpTitle': 'Help',
   'tour.helpBody': 'Every shortcut, what’s new, and this tour whenever you want it again.',
   'notes.saveImage': 'Save the previews and their notes as one image',
+  'news.images':
+    'Images in the audit: every image against the width it is shown at, with a suggested sizes and srcset to copy.',
+  'news.colors': 'Colours in the audit: the page’s text, background and border colours, copied as CSS variables.',
+  'news.budgets':
+    'Performance budgets (Pro): set limits for page weight, requests, LCP and CLS and see every preview over them.',
+  'news.distance': 'The inspector measures the distance between two elements at every size.',
+  'news.tour': 'New here? Take the tour from Help — and save notes with the previews as one image.',
 } as const;
 
 export type MessageKey = keyof typeof en;

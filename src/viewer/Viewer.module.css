@@ -110,6 +110,10 @@
   border-color: var(--pro-text);
 }
 
+.proDays::after {
+  content: attr(data-days);
+}
+
 .proDays {
   min-width: 18px;
   padding: 0 5px;

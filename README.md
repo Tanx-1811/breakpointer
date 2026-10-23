@@ -22,14 +22,15 @@ Breakpointer is a Chrome extension (Manifest V3) for frontend developers, design
 - **Showcase image**: your page at several sizes in simple device frames (or browser windows) on a backdrop — for a portfolio, a client or a post. Download a crisp PNG or copy it.
 - **Scan every width** (`W`): the page is checked at every width of a range and each issue's first and last width is found **to the pixel** — on a chart with the page's height, this site's breakpoints and your viewports. Jump to the worst width and add a viewport there in one click.
 - **Responsive score**: one number from 0 to 100 (graded A–F) for every page, with what costs the most points — in the audit, reports and Check pages.
-- **Notes & bug reports** (`N`): pin what's wrong on any preview and copy a Markdown bug report with the page, the browser, each viewport's size and your notes.
+- **Notes & bug reports** (`N`): pin what's wrong on any preview and copy a Markdown bug report with the page, the browser, each viewport's size and your notes — or save every preview with its notes as one image.
 - **Projects**: save a site's whole setup — page, viewports, breakpoints, grid, live CSS and comparison — and switch between clients in one click (one free, unlimited with Pro).
-- **Audit** (`E`): every issue of every preview in one place, **page weight, requests, image pixels, LCP and layout shift** as bars per size, and the **type scale** (headings, text, buttons) at every size — each copied as a Markdown table.
+- **Audit** (`E`): every issue of every preview in one place, **page weight, requests, image pixels, LCP and layout shift** as bars per size, the **type scale** (headings, text, buttons) at every size, every **image** against the width it is shown at — too large, too small or right, with a **suggested `sizes` and `srcset`** to copy — and the page's **colours** for text, backgrounds and borders (copied as CSS variables) — each copied as a Markdown table.
 - **Visual check** (`V`): save a **baseline** of every viewport, compare later and see what moved, pixel by pixel — side by side, with a slider, or the differences boxed. Baselines stay in your browser.
 - **28 presets** for phones, foldables, tablets, laptops and desktops (searchable, with aspect-ratio thumbnails), plus **custom sizes** (200–3840 px).
 - **Drag to resize:** pull a preview's edge and watch the page reflow live; edges **snap to breakpoints** with guides and a live size read-out (also from the keyboard).
 - **Command palette** (`Ctrl/⌘ + K`): every action, preset, group, page and setting in one search — or type an address to preview it.
-- **Inspector:** click an element in one preview and compare its size, display, font, spacing and flex/grid layout **at every size**, with what changes highlighted.
+- **Inspector:** click an element in one preview and compare its size, display, font, spacing and flex/grid layout **at every size**, with what changes highlighted — and the **distance to a second element** at every size.
+- **Tour:** a short walk through the workspace's main controls, from the welcome screen, Help or the command palette.
 - **This site's breakpoints:** reads the widths in the page's own media queries — label viewports with them, snap to them and test both sides of each.
 - **Light and dark side by side:** show any preview with the page's light or dark styles (`prefers-color-scheme`), whatever your browser prefers.
 - **Synced scrolling and navigation:** scroll or follow a link in one preview and the others follow — keeping the **same content** in view.
@@ -60,6 +61,7 @@ Everything above is free and stays free. **Breakpointer Pro** adds tools for peo
 - **Accessibility checks** at every size: images without alt text, buttons and links without a name (often the icon-only menu button that only exists on phones), unlabeled fields, keyboard focus on hidden elements (a closed off-canvas menu the Tab key still reaches) and a missing page language — in the cards, the audit, the width scanner and Check pages.
 - **Sync clicks & typing:** open a menu or fill in a form in one preview and every preview does the same. Forms are never submitted twice; passwords and payment fields are never copied.
 - **Hide cookie banners** of 25+ common consent tools for clean screenshots (nothing is accepted).
+- **Performance budgets:** limits for page weight, requests, LCP and CLS; the audit marks every preview over one.
 - **Your brand** — name, website and logo — on reports and images you send to clients.
 - **CSV & JSON exports** of Check pages, width scans and audits.
 
@@ -101,37 +103,37 @@ After pulling changes, run `npm run build` again and click the reload icon on th
 
 ## Keyboard shortcuts
 
-| In the workspace      |                                          | Anywhere in Chrome |                          |
-| --------------------- | ---------------------------------------- | ------------------ | ------------------------ |
-| `Ctrl/⌘ + K` or `K`   | Command palette                          | `Alt+Shift+V`      | Open Breakpointer        |
-| `/`                   | Focus the address bar                    | `Alt+Shift+P`      | Preview the current page |
-| `R`                   | Reload all previews                      | `bpt` + space      | Address-bar keyword      |
-| `A`                   | Add viewport                             |                    |                          |
-| `G`                   | Groups                                   |                    |                          |
-| `F`                   | Fit to screen                            |                    |                          |
-| `+` / `−`             | Zoom in / out                            |                    |                          |
-| `L`                   | Switch layout                            |                    |                          |
-| `M`                   | Toggle rulers                            |                    |                          |
-| `I`                   | Inspect an element                       |                    |                          |
-| `E`                   | Audit: issues, performance, type         |                    |                          |
-| `W`                   | Scan every width                         |                    |                          |
-| `B`                   | Check pages                              |                    |                          |
-| `V`                   | Visual check against a baseline          |                    |                          |
-| `X`                   | Measure in a preview                     |                    |                          |
-| `C`                   | Colour contrast checker                  |                    |                          |
-| `O`                   | Toggle layout outlines                   |                    |                          |
-| `[` / `]`             | Focus the previous / next viewport       |                    |                          |
-| `1` … `8`             | Focus that viewport (again: show all)    |                    |                          |
-| `0`                   | Zoom to 100%                             |                    |                          |
-| `P`                   | Floating preview (always on top)         |                    |                          |
-| `S`                   | Screenshot of the workspace              |                    |                          |
-| `T`                   | Switch theme                             |                    |                          |
-| `Esc`                 | Leave measuring, focus or the inspector  |                    |                          |
-| `Alt + ←` / `Alt + →` | Previous / next previewed page           |                    |                          |
-| `?`                   | Help                                     |                    |                          |
-| `Space` + drag        | Pan the workspace                        |                    |                          |
-| `Ctrl/⌘` + wheel      | Zoom all viewports                       |                    |                          |
-| Drag a preview edge   | Resize (`Shift` 10px, `Alt` no snapping) |                    |                          |
+| In the workspace      |                                                   | Anywhere in Chrome |                          |
+| --------------------- | ------------------------------------------------- | ------------------ | ------------------------ |
+| `Ctrl/⌘ + K` or `K`   | Command palette                                   | `Alt+Shift+V`      | Open Breakpointer        |
+| `/`                   | Focus the address bar                             | `Alt+Shift+P`      | Preview the current page |
+| `R`                   | Reload all previews                               | `bpt` + space      | Address-bar keyword      |
+| `A`                   | Add viewport                                      |                    |                          |
+| `G`                   | Groups                                            |                    |                          |
+| `F`                   | Fit to screen                                     |                    |                          |
+| `+` / `−`             | Zoom in / out                                     |                    |                          |
+| `L`                   | Switch layout                                     |                    |                          |
+| `M`                   | Toggle rulers                                     |                    |                          |
+| `I`                   | Inspect an element                                |                    |                          |
+| `E`                   | Audit: issues, performance, type, images, colours |                    |                          |
+| `W`                   | Scan every width                                  |                    |                          |
+| `B`                   | Check pages                                       |                    |                          |
+| `V`                   | Visual check against a baseline                   |                    |                          |
+| `X`                   | Measure in a preview                              |                    |                          |
+| `C`                   | Colour contrast checker                           |                    |                          |
+| `O`                   | Toggle layout outlines                            |                    |                          |
+| `[` / `]`             | Focus the previous / next viewport                |                    |                          |
+| `1` … `8`             | Focus that viewport (again: show all)             |                    |                          |
+| `0`                   | Zoom to 100%                                      |                    |                          |
+| `P`                   | Floating preview (always on top)                  |                    |                          |
+| `S`                   | Screenshot of the workspace                       |                    |                          |
+| `T`                   | Switch theme                                      |                    |                          |
+| `Esc`                 | Leave measuring, focus or the inspector           |                    |                          |
+| `Alt + ←` / `Alt + →` | Previous / next previewed page                    |                    |                          |
+| `?`                   | Help                                              |                    |                          |
+| `Space` + drag        | Pan the workspace                                 |                    |                          |
+| `Ctrl/⌘` + wheel      | Zoom all viewports                                |                    |                          |
+| Drag a preview edge   | Resize (`Shift` 10px, `Alt` no snapping)          |                    |                          |
 
 Chrome shortcuts can be changed at `chrome://extensions/shortcuts`.
 
@@ -192,7 +194,7 @@ Read [ARCHITECTURE.md](docs/ARCHITECTURE.md) before changing how previews render
 
 ## Roadmap
 
-V1 covers the preview workflow, v0.2 the inspection toolkit, v0.3 the redesign with the command palette, inspector, drag-to-resize, site breakpoints, A/B comparison, simulations, measuring and design overlays, v0.4 the width scanner, the audit panel, visual baselines, three new checks and access until Chrome closes, v0.5 Check pages, showcase images and feedback in the product, and v0.6 Breakpointer Pro (accessibility checks, synced clicks and typing, hidden cookie banners, your brand on reports, CSV/JSON exports). Next, driven by feedback: per-group breakpoints, screenshots and baselines across pages, container-query breakpoints and more languages — see [docs/PLAN.md](docs/PLAN.md#9-roadmap-ideas-ordered-by-expected-value).
+V1 covers the preview workflow, v0.2 the inspection toolkit, v0.3 the redesign with the command palette, inspector, drag-to-resize, site breakpoints, A/B comparison, simulations, measuring and design overlays, v0.4 the width scanner, the audit panel, visual baselines, three new checks and access until Chrome closes, v0.5 Check pages, showcase images and feedback in the product, v0.6 Breakpointer Pro (accessibility checks, synced clicks and typing, hidden cookie banners, your brand on reports, CSV/JSON exports), v0.7 the responsive score, notes, projects and six more languages, and v0.8 the Images and Colours audits, performance budgets (Pro), the distance between two elements and a tour. Next, driven by feedback: per-group breakpoints, screenshots and baselines across pages, container-query breakpoints and more languages — see [docs/PLAN.md](docs/PLAN.md#9-roadmap-ideas-ordered-by-expected-value).
 
 ## Feedback
 
@@ -212,7 +214,9 @@ No license has been chosen yet; all rights reserved by the author.
 
 **Mới ở 0.7:** **điểm responsive** 0–100 cho mỗi trang · **ghi chú & báo lỗi** (`N`): ghim chỗ có vấn đề lên bản xem trước và chép báo cáo lỗi dạng Markdown · **dự án**: lưu cả thiết lập của một website (một dự án miễn phí) · **chữ phóng to 200%** · breakpoint Material UI, Chakra UI, Ant Design, Bulma, Foundation · nhóm **kích thước phổ biến nhất** và **reflow WCAG** · giao diện thêm tiếng Tây Ban Nha, Bồ Đào Nha, Pháp, Đức, Nhật, Indonesia.
 
-**Breakpointer Pro** (dùng thử miễn phí 7 ngày; mọi tính năng ở trên vẫn miễn phí): **kiểm tra trợ năng** ở mọi kích thước (ảnh thiếu alt, nút/liên kết không có tên, trường không có nhãn, tiêu điểm bàn phím rơi vào phần tử bị ẩn, trang thiếu ngôn ngữ) · **đồng bộ nhấp & gõ phím** giữa các bản xem trước (không bao giờ gửi biểu mẫu hai lần, không chép mật khẩu hay thông tin thanh toán) · **ẩn banner cookie** của 25+ công cụ phổ biến · **thương hiệu riêng** (tên, website, logo) trên báo cáo và hình ảnh · **xuất CSV & JSON**. Khóa giấy phép được kiểm tra ngay trong trình duyệt — không tài khoản, không gửi gì đi.
+**Mới ở 0.8:** tab **Hình ảnh** trong phần rà soát: mỗi ảnh ở mọi viewport (quá lớn, quá nhỏ hay vừa) kèm gợi ý `sizes` và `srcset` để chép · tab **Màu sắc**: màu chữ, nền và viền, chép thành biến CSS · **khoảng cách giữa hai phần tử** ở mọi kích thước trong trình kiểm tra · **tour hướng dẫn** từ màn hình chào, Trợ giúp hoặc bảng lệnh · lưu bản xem trước kèm **ghi chú thành một ảnh**.
+
+**Breakpointer Pro** (dùng thử miễn phí 7 ngày; mọi tính năng ở trên vẫn miễn phí): **kiểm tra trợ năng** ở mọi kích thước (ảnh thiếu alt, nút/liên kết không có tên, trường không có nhãn, tiêu điểm bàn phím rơi vào phần tử bị ẩn, trang thiếu ngôn ngữ) · **đồng bộ nhấp & gõ phím** giữa các bản xem trước (không bao giờ gửi biểu mẫu hai lần, không chép mật khẩu hay thông tin thanh toán) · **ẩn banner cookie** của 25+ công cụ phổ biến · **ngân sách hiệu năng** (dung lượng, số yêu cầu, LCP, CLS; bản xem trước vượt giới hạn được đánh dấu) · **thương hiệu riêng** (tên, website, logo) trên báo cáo và hình ảnh · **xuất CSV & JSON**. Khóa giấy phép được kiểm tra ngay trong trình duyệt — không tài khoản, không gửi gì đi.
 
 **Cài đặt:** [thêm Breakpointer vào Chrome](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh?utm_source=github&utm_medium=readme&utm_campaign=install) từ Chrome Web Store — miễn phí (tìm đúng tên đầy đủ “Breakpointer — Responsive Viewport Tester”, vì trên store có một tiện ích khác cũng tên Breakpointer).
 

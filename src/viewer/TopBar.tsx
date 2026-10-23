@@ -291,11 +291,8 @@ function ProButton({ entitlement, onClick }: { entitlement: Entitlement; onClick
     >
       <Icon name="sparkle" size={15} />
       <span className={styles.proLabel}>{trial ? t('pro.buttonTrial') : t('pro.button')}</span>
-      {trial && (
-        <span className={styles.proDays} aria-hidden="true">
-          {trial.daysLeft}
-        </span>
-      )}
+      {/* The number is drawn by CSS: the visible text stays the start of the button's name (WCAG 2.5.3). */}
+      {trial && <span className={styles.proDays} data-days={trial.daysLeft} aria-hidden="true" />}
     </button>
   );
 }

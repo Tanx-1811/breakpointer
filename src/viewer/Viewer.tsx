@@ -2991,7 +2991,10 @@ function Workspace({
         ? {
             heading: t('inspector.distanceColumn', { element: inspector.target.label }),
             missing: t('inspector.distanceMissing'),
-            words: { overlap: t('inspector.distanceOverlap'), inside: t('inspector.distanceInside') },
+            words: {
+              overlap: t('inspector.distanceOverlap'),
+              inside: (insets) => t('inspector.distanceInside', { insets }),
+            },
           }
         : undefined,
     );

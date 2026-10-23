@@ -1748,7 +1748,9 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         if (!visible(rect, getComputedStyle(image)) || rect.width < 24 || rect.height < 24) return;
         let file: string;
         try {
-          file = decodeURIComponent(new URL(image.currentSrc).pathname.split('/').pop() ?? '');
+          // A file's name only: an inline image (data:, blob:) has none.
+          const address = new URL(image.currentSrc);
+          file = /^https?:$/.test(address.protocol) ? decodeURIComponent(address.pathname.split('/').pop() ?? '') : '';
         } catch {
           file = '';
         }

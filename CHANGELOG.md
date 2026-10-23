@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] — 2026-10-23
+
+Two new audits, a Pro feature for performance work, and help for new users.
+
+### Added
+
+- **Images** in the audit (`E` → Images): every image the previews show (24 px or larger), at every viewport — the width it is shown at, its file's width and what the screen needs (shown width × pixel ratio), marked **too large**, **too small** or **right size**, the most wasteful first. For each image, a **suggested `sizes`** that matches the viewports previewed (in `vw` where the image follows the viewport, in px where it stops growing) and **`srcset` widths** for 1× and 2× screens — copied in one click, or the whole tab as a Markdown table.
+- **Colours** in the audit (`E` → Colours): the colours the page uses for text, backgrounds and borders across the previews, as swatches with how many elements use each — copied as **CSS custom properties** or a Markdown table.
+- **Performance budgets** (Breakpointer Pro, Settings → Preview tools): limits for page weight (kB), requests, LCP (ms) and CLS. The audit's Performance tab shows each limit and marks every preview over one, with a summary at the top. Budgets are part of the settings and exports.
+- **Distance between two elements** in the inspector: pick an element, choose **Distance to…** and pick a second one — the inspector shows the space between them (across and down), or how far one sits inside the other, at every viewport, measured again when sizes change and added to the copied table.
+- **Tour**: a short walk through the workspace's main controls, from the welcome screen, Help or the command palette (it never starts by itself).
+- **Save notes as an image**: the camera button in the notes bar saves every preview with its notes in one labelled image.
+- Image and colour data in the audit's JSON export (Pro).
+
+### Changed
+
+- The audit's toolbar hint lists its five tabs; Help's “What's new” shows this release.
+
+### Fixed
+
+- During the Pro trial, the toolbar's Pro button's accessible name now contains its visible text (WCAG 2.5.3, Label in Name).
+
 ## [0.7.0] — 2026-10-22
 
 More reasons to open Breakpointer every day — and in more languages. (0.6.0 was never published on its own: the store gets 0.6.0's Breakpointer Pro with this release.)
