@@ -3,7 +3,7 @@ import { CHECK_KINDS, type CheckKind, type ElementInfo, type ElementRect, type M
 import { AddViewportDialog } from '../components/DevicePresetPicker/AddViewportDialog';
 import { AuditPanel, type AuditRow, type AuditTab } from '../components/AuditPanel/AuditPanel';
 import { BatchDialog } from '../components/BatchDialog/BatchDialog';
-import { Button } from '../components/Button/Button';
+import { Button, IconButton } from '../components/Button/Button';
 import { CaptureDialog } from '../components/CaptureDialog/CaptureDialog';
 import { Banner } from '../components/Banner/Banner';
 import { CommandPalette, type PaletteCommand } from '../components/CommandPalette/CommandPalette';
@@ -3616,9 +3616,19 @@ function Workspace({
                     onAction={() => setAnnotating(false)}
                     extra={
                       shownNotes.length > 0 && (
-                        <Button size="sm" variant="subtle" icon="clipboard" onClick={copyNotes}>
-                          {t('notes.copy')}
-                        </Button>
+                        <>
+                          <Button size="sm" variant="subtle" icon="clipboard" onClick={copyNotes}>
+                            {t('notes.copy')}
+                          </Button>
+                          <IconButton
+                            icon="camera"
+                            size="sm"
+                            label={t('notes.saveImage')}
+                            disabled={capturing}
+                            onClick={() => void captureAll()}
+                            data-testid="notes-save-image"
+                          />
+                        </>
                       )
                     }
                   >

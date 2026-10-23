@@ -783,7 +783,7 @@ export const en = {
     'The site answered this preview with an error ({status}). Some sites refuse frames, run bot checks or need you to sign in in a tab first. Try “Open in a window of this size” from the menu.',
   'help.mouseOverlay': 'Put a design mockup over a preview (⋯ → Overlay a design) to compare it pixel by pixel.',
   'workspace.audit': 'Audit',
-  'workspace.auditHint': 'Issues, performance and type at every size',
+  'workspace.auditHint': 'Issues, performance, type, images and colours at every size',
   'workspace.auditCount': 'Audit, {count} kinds of issue found',
   'workspace.auditCountOne': 'Audit, 1 kind of issue found',
   'audit.title': 'Audit',
@@ -1398,6 +1398,7 @@ export const en = {
   'tour.toolsBody': 'Screenshots, the breakpoint scanner, visual checks, live CSS and more.',
   'tour.helpTitle': 'Help',
   'tour.helpBody': 'Every shortcut, what’s new, and this tour whenever you want it again.',
+  'notes.saveImage': 'Save the previews and their notes as one image',
 } as const;
 
 export type MessageKey = keyof typeof en;

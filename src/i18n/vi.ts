@@ -782,7 +782,7 @@ export const vi: Record<MessageKey, string> = {
     'Trang web trả lỗi ({status}) cho bản xem trước này. Một số trang từ chối hiển thị trong khung, kiểm tra bot hoặc cần bạn đăng nhập trong một tab trước. Hãy thử “Mở cửa sổ đúng kích thước này” trong menu.',
   'help.mouseOverlay': 'Phủ ảnh thiết kế lên bản xem trước (⋯ → Phủ ảnh thiết kế) để so từng pixel.',
   'workspace.audit': 'Rà soát',
-  'workspace.auditHint': 'Vấn đề, hiệu năng và kiểu chữ ở mọi kích thước',
+  'workspace.auditHint': 'Vấn đề, hiệu năng, kiểu chữ, hình ảnh và màu sắc ở mọi kích thước',
   'workspace.auditCount': 'Rà soát, tìm thấy {count} loại vấn đề',
   'workspace.auditCountOne': 'Rà soát, tìm thấy 1 loại vấn đề',
   'audit.title': 'Rà soát',
@@ -1404,4 +1404,5 @@ export const vi: Record<MessageKey, string> = {
   'tour.toolsBody': 'Chụp màn hình, quét breakpoint, kiểm tra hình ảnh, CSS trực tiếp và nhiều hơn nữa.',
   'tour.helpTitle': 'Trợ giúp',
   'tour.helpBody': 'Mọi phím tắt, tính năng mới, và tour này bất cứ khi nào bạn muốn xem lại.',
+  'notes.saveImage': 'Lưu các bản xem trước kèm ghi chú thành một ảnh',
 };

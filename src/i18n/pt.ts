@@ -1429,4 +1429,5 @@ export const pt: Record<MessageKey, string> = {
   'tour.toolsBody': 'Screenshots, the breakpoint scanner, visual checks, live CSS and more.',
   'tour.helpTitle': 'Help',
   'tour.helpBody': 'Every shortcut, what’s new, and this tour whenever you want it again.',
+  'notes.saveImage': 'Save the previews and their notes as one image',
 };
