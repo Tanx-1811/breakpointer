@@ -3,7 +3,9 @@
   flex-direction: column;
   flex: none;
   width: 360px;
+  min-width: 0;
   min-height: 0;
+  overflow: hidden;
   border-left: 1px solid var(--border);
   background: var(--bg);
 }
@@ -40,19 +42,25 @@
 
 /* ---------- Tabs ---------- */
 
+/* Five tabs are wider than the panel: they scroll here instead of pushing the whole viewer sideways. */
 .tabs {
   display: flex;
-  gap: 2px;
-  padding: 6px 10px 0;
+  flex: none;
+  gap: 0;
+  padding: 6px 6px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
   border-bottom: 1px solid var(--border-subtle);
 }
 
 .tab {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   height: 34px;
-  padding: 0 10px;
+  padding: 0 8px;
+  white-space: nowrap;
   border: 0;
   border-bottom: 2px solid transparent;
   background: transparent;

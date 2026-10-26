@@ -472,6 +472,7 @@ export const en = {
   'palette.run': 'run',
   'palette.close': 'close',
   'palette.off': 'Off',
+  'palette.current': 'Current',
   'palette.section.page': 'Page',
   'palette.section.viewports': 'Viewports',
   'palette.section.add': 'Add viewport',

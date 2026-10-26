@@ -57,6 +57,7 @@
   background: transparent;
   outline: none;
   font-size: 14px;
+  text-overflow: ellipsis;
 }
 
 .input:focus-visible {
@@ -68,7 +69,8 @@
 }
 
 .kbd {
-  margin-right: 8px;
+  flex: none;
+  margin: 0 8px;
 }
 
 .inputWrap:focus-within .kbd {

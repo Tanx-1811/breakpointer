@@ -477,6 +477,7 @@ export const ja: Record<MessageKey, string> = {
   'palette.run': '実行',
   'palette.close': '閉じる',
   'palette.off': 'オフ',
+  'palette.current': '使用中',
   'palette.section.page': 'ページ',
   'palette.section.viewports': 'ビューポート',
   'palette.section.add': 'ビューポートを追加',

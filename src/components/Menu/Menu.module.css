@@ -3,6 +3,7 @@
   inset: auto;
   margin: 0;
   max-height: min(80vh, 640px);
+  max-width: min(400px, calc(100vw - 16px));
   overflow: auto;
   padding: 5px;
   border: 1px solid var(--border);
@@ -135,11 +136,9 @@
 }
 
 .itemDescription {
-  overflow: hidden;
   color: var(--text-subtle);
   font-size: 12px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.4;
 }
 
 .hint {

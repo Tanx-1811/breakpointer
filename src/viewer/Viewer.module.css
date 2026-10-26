@@ -2,7 +2,8 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  overflow: hidden;
+  /* clip, not hidden: focusing something that overflows must not scroll the whole viewer sideways. */
+  overflow: clip;
   background: var(--canvas);
 }
 

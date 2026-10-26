@@ -497,8 +497,8 @@ describe('command palette', () => {
     ])
       expect(byId(id), id).toBeDefined();
     expect(byId('measure')?.checked).toBe(true);
-    expect(byId('vision-tritanopia')?.checked).toBe(true);
-    expect(byId('vision-none')?.checked).toBeUndefined();
+    expect(byId('vision-tritanopia')?.current).toBe(true);
+    expect(byId('vision-none')?.current).toBe(false);
     expect(byId('simulate-reduceMotion')?.checked).toBe(true);
     expect(byId('vision-deuteranopia')?.title).toBe('Vision: No green (deuteranopia)');
 

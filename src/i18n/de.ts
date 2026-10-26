@@ -478,6 +478,7 @@ export const de: Record<MessageKey, string> = {
   'palette.run': 'ausführen',
   'palette.close': 'schließen',
   'palette.off': 'Aus',
+  'palette.current': 'Aktuell',
   'palette.section.page': 'Seite',
   'palette.section.viewports': 'Viewports',
   'palette.section.add': 'Viewport hinzufügen',

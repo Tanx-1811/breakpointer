@@ -477,6 +477,7 @@ export const id: Record<MessageKey, string> = {
   'palette.run': 'jalankan',
   'palette.close': 'tutup',
   'palette.off': 'Nonaktif',
+  'palette.current': 'Saat ini',
   'palette.section.page': 'Halaman',
   'palette.section.viewports': 'Viewport',
   'palette.section.add': 'Tambah viewport',

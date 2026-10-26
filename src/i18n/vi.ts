@@ -470,6 +470,7 @@ export const vi: Record<MessageKey, string> = {
   'palette.run': 'chạy',
   'palette.close': 'đóng',
   'palette.off': 'Tắt',
+  'palette.current': 'Đang dùng',
   'palette.section.page': 'Trang',
   'palette.section.viewports': 'Viewport',
   'palette.section.add': 'Thêm viewport',

@@ -191,7 +191,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
         keywords: `${en('palette.autoReload', {
           interval: seconds === 0 ? en('reload.off') : en('reload.every', { seconds }),
         })} refresh live watch interval`,
-        checked: (ctx.autoReload ?? 0) === seconds || undefined,
+        current: (ctx.autoReload ?? 0) === seconds,
         disabled: !ctx.hasUrl,
         run: () => autoReload(seconds),
       });
@@ -612,7 +612,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
         id: `breakpoints-${set}`,
         section: section.tools,
         icon: 'tag',
-        checked: settings.breakpoints === set || undefined,
+        current: settings.breakpoints === set,
         run: () => actions.setBreakpoints(set),
       },
       { set: t(set === 'none' ? 'breakpoints.noneLabel' : (`breakpoints.${set}` as MessageKey)) },
@@ -630,7 +630,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
           id: `vision-${mode}`,
           section: section.simulate,
           icon: 'eye',
-          checked: state.vision === mode || undefined,
+          current: state.vision === mode,
           keywords: 'colour blind color blindness simulate',
           run: () => setVision(mode),
         },
@@ -685,14 +685,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     id: 'layout-wrap',
     section: section.view,
     icon: 'wrap',
-    checked: settings.layout === 'wrap' || undefined,
+    current: settings.layout === 'wrap',
     run: () => actions.setLayout('wrap'),
   });
   named('palette.layoutRow', {
     id: 'layout-row',
     section: section.view,
     icon: 'row',
-    checked: settings.layout === 'row' || undefined,
+    current: settings.layout === 'row',
     run: () => actions.setLayout('row'),
   });
   named('palette.themeLight', {

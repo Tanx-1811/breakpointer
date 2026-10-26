@@ -17,6 +17,8 @@ export type PaletteCommand = {
   shortcut?: string;
   /** A switch that is on. */
   checked?: boolean;
+  /** One of several choices (e.g. a layout) that is the one in use. */
+  current?: boolean;
   disabled?: boolean;
   run: () => void;
 };
@@ -149,6 +151,12 @@ function Palette({ commands, fromQuery, onClose }: Omit<Props, 'open'>) {
         {command.checked !== undefined && (
           <span className={styles.state} data-on={command.checked || undefined}>
             {command.checked ? t('tools.on') : t('palette.off')}
+          </span>
+        )}
+        {command.current && (
+          <span className={styles.current} title={t('palette.current')}>
+            <Icon name="check" size={14} />
+            <span className="visually-hidden">{t('palette.current')}</span>
           </span>
         )}
         {query.trim() && <span className={styles.optionSection}>{command.section}</span>}
