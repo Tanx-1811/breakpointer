@@ -291,7 +291,7 @@ A stress test (`stress.textZoom`) in the frame agent: it reads every element's c
 
 ## Languages
 
-The UI exists in English (the source of truth), Vietnamese, Spanish, Brazilian Portuguese, French, German, Japanese and Indonesian (`src/i18n/<code>.ts`, each typed `Record<MessageKey, string>`), Chrome's strings in `public/_locales/<locale>/messages.json`, and the store listing in [STORE_LISTING.md](STORE_LISTING.md) (EN, VI) and [store-listing/](store-listing/) (the others). `resolveLanguage` follows Chrome's language by default (D64).
+The UI exists in English (the source of truth), Vietnamese, Spanish, Brazilian Portuguese, French, German, Russian, Japanese, Simplified Chinese (v0.9; any Chinese Chrome gets it) and Indonesian (`src/i18n/<code>.ts`, each typed `Record<MessageKey, string>`), Chrome's strings in `public/_locales/<locale>/messages.json`, and the store listing in [STORE_LISTING.md](STORE_LISTING.md) (EN, VI) and [store-listing/](store-listing/) (the others). `resolveLanguage` follows Chrome's language by default (D64).
 
 ## Feedback, rating and sharing
 
@@ -384,7 +384,7 @@ src/
                            v0.9: the breakpoint map, the minimap, meta tag checks)
   data/                    Presets, built-in groups, framework and site breakpoints, licence
                            public keys, consent tools' banners
-  i18n/                    English (source of truth), Vietnamese and six more languages
+  i18n/                    English (source of truth), Vietnamese and eight more languages
   shared/viewer-url.ts     Builds viewer URLs (used by popup and service worker)
   shared/side-panel.ts     Opens the side panel with an address (popup and context menu)
   styles/global.css        Design tokens (both themes) and shared control styles

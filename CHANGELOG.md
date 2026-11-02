@@ -13,6 +13,7 @@ A more professional workspace you can make your own, and a new audit for search 
 - **Minimap** (on by default): while the workspace scrolls, an overview of every preview in its size-class colour and the part on screen; press or drag on it to scroll there.
 - **Stack layout**: previews in one centred column that scrolls down (Fit fits the widest one to the width). `L` now cycles wrap → one row → stack.
 - **Accent colours**: indigo, blue, violet, teal, rose and graphite, each with light and dark values that keep text readable (WCAG AA). **Canvas styles**: dots, grid or plain. Both in Settings → Appearance and the palette, with the layout and the three panels.
+- **Two more languages**: Simplified Chinese and Russian, for the whole interface, Chrome's menus and the store listing (Chrome in any Chinese gets the simplified UI).
 - **Meta & social** in the audit (`E` → Meta, or “Audit: meta & social previews” in the palette): an approximate **search result** and **link preview** of the page (its social image loads with its size), its **tags** checked — title and description length, social title and image, X card, canonical address, language, viewport (and whether it blocks zooming), robots (`noindex`) and icons — and the **outline of its headings**, with skipped levels, a missing or second `H1` and headings hidden at that size. Pick which preview to read; copy the tab as Markdown; meta tags are part of the audit's JSON export (Pro).
 
 ### Changed

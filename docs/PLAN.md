@@ -222,6 +222,7 @@
 - [x] **Status bar**: previews, HTTP errors, site access, sync, issues, breakpoints, widths, zoom and layout, each a shortcut. **Minimap**: an overview of the workspace while it scrolls; press or drag to scroll.
 - [x] **Stack layout** (one column), `L` cycles three layouts; **six accent colours** and **three canvas styles** in Settings → Appearance and the palette.
 - [x] **Meta & social** in the audit: approximate search result and link preview, ten tag checks, the headings outline; Markdown and JSON (Pro).
+- [x] **Simplified Chinese and Russian**: the interface, Chrome's strings and the store listing (ten languages in all).
 - [x] **Flat icons** across the workspace; the audit's six tabs fit the panel (icons, the selected tab named). Designed first on a Claude Design canvas (four artboards: light and dark workspace, Appearance, Meta).
 
 ### Non-goals (unchanged)
