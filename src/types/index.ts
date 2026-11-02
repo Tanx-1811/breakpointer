@@ -7,18 +7,7 @@ export type Orientation = 'portrait' | 'landscape';
 export type ThemePreference = 'light' | 'dark' | 'system';
 
 /** 'auto' follows Chrome; the others are the UI languages (see i18n/translate.ts). */
-export type LanguagePreference =
-  | 'auto'
-  | 'en'
-  | 'vi'
-  | 'es'
-  | 'pt-BR'
-  | 'fr'
-  | 'de'
-  | 'ru'
-  | 'ja'
-  | 'zh-CN'
-  | 'id';
+export type LanguagePreference = 'auto' | 'en' | 'vi' | 'es' | 'pt-BR' | 'fr' | 'de' | 'ru' | 'ja' | 'zh-CN' | 'id';
 
 /** `wrap`: rows that wrap; `row`: one row that scrolls sideways; `stack`: one column that scrolls down. */
 export type WorkspaceLayout = 'wrap' | 'row' | 'stack';
