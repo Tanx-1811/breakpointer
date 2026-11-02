@@ -142,15 +142,12 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--class-color) 14%, transparent);
+  width: 20px;
+  height: 20px;
   color: var(--class-color);
 }
 
 .item[data-hidden] .icon {
-  background: var(--surface-3);
   color: var(--text-subtle);
 }
 
@@ -191,10 +188,6 @@
 
 .breakpoint {
   flex: none;
-  padding: 0 4px;
-  border: 1px solid color-mix(in srgb, var(--breakpoint) 45%, transparent);
-  border-radius: var(--radius-xs);
-  background: var(--breakpoint-soft);
   color: var(--breakpoint-text);
   font-family: var(--font-mono);
   font-size: 10.5px;
@@ -206,14 +199,9 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 2px;
-  height: 18px;
-  padding: 0 5px;
-  border: 1px solid var(--warning-border);
-  border-radius: var(--radius-xs);
-  background: var(--warning-bg);
+  gap: 3px;
   color: var(--warning-text);
-  font-size: 10.5px;
+  font-size: 11px;
   font-weight: 700;
 }
 

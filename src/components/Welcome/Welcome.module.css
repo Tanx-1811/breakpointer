@@ -218,11 +218,9 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius);
-  background: var(--accent-soft);
-  color: var(--accent);
+  width: 24px;
+  height: 24px;
+  color: var(--text-muted);
 }
 
 .stepTitle {

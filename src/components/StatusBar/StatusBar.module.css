@@ -78,7 +78,6 @@
 
 .dot[data-on] {
   background: var(--success);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 18%, transparent);
 }
 
 .muted {

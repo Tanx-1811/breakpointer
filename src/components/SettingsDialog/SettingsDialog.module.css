@@ -400,10 +400,8 @@
   display: inline-grid;
   flex: none;
   place-items: center;
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius);
-  background: var(--surface);
+  width: 24px;
+  height: 24px;
   color: var(--accent);
 }
 

@@ -26,20 +26,16 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: var(--radius-md);
-  background: var(--success-soft);
+  width: 22px;
+  height: 22px;
   color: var(--success);
 }
 
 .summaryIcon[data-tone='warn'] {
-  background: var(--warning-bg);
   color: var(--warning-text);
 }
 
 .summaryIcon[data-tone='bad'] {
-  background: var(--danger-soft);
   color: var(--danger);
 }
 
@@ -274,26 +270,21 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   margin-top: 1px;
-  border-radius: 50%;
-  background: var(--success-soft);
   color: var(--success);
 }
 
 .check[data-status='warn'] .status {
-  background: var(--warning-bg);
   color: var(--warning-text);
 }
 
 .check[data-status='bad'] .status {
-  background: var(--danger-soft);
   color: var(--danger);
 }
 
 .check[data-status='info'] .status {
-  background: var(--accent-soft);
   color: var(--accent);
 }
 

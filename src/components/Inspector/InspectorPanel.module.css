@@ -24,11 +24,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
-  border-radius: 8px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
 }
 
 .title {
@@ -76,12 +74,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 32px;
+  height: 32px;
   margin-bottom: 4px;
-  border-radius: 14px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text-subtle);
 }
 
 .emptyIcon[data-picking] {

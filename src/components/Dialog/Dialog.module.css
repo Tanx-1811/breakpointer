@@ -54,13 +54,10 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 34px;
-  height: 34px;
+  width: 22px;
+  height: 22px;
   margin-top: -1px;
-  border: 1px solid var(--accent-border);
-  border-radius: var(--radius-md);
-  background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--text-muted);
 }
 
 .heading {

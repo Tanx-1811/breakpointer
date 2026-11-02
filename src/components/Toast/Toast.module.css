@@ -56,23 +56,19 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  width: 20px;
+  height: 20px;
 }
 
 .info .icon {
-  background: rgb(165 180 252 / 16%);
   color: #b4c0fd;
 }
 
 .success .icon {
-  background: rgb(110 231 168 / 15%);
   color: #7beab0;
 }
 
 .error .icon {
-  background: rgb(252 165 165 / 16%);
   color: #fcb0b0;
 }
 

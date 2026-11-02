@@ -68,10 +68,8 @@
   align-items: center;
   justify-content: center;
   flex: none;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--class-color) 13%, var(--surface));
+  width: 20px;
+  height: 20px;
   color: var(--class-color);
 }
 
@@ -202,10 +200,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--surface-3);
+  width: 16px;
+  height: 16px;
   color: var(--text-muted);
 }
 
@@ -358,10 +354,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--class-color) 12%, var(--surface));
+  width: 32px;
+  height: 32px;
   color: var(--class-color);
 }
 

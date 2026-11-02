@@ -133,8 +133,8 @@
   flex: none;
   width: 38px;
   height: 38px;
+  border: 1px solid var(--border);
   border-radius: var(--radius);
-  background: color-mix(in srgb, var(--class-color) 10%, var(--surface));
 }
 
 .thumb span {
@@ -192,8 +192,6 @@
   justify-content: center;
   width: 18px;
   height: 18px;
-  border-radius: 50%;
-  background: var(--success-soft);
   color: var(--success);
 }
 
