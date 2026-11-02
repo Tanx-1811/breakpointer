@@ -77,10 +77,7 @@ test.describe('v0.9', () => {
     await expect(status).toHaveCount(0);
   });
 
-  test('L cycles the layouts through stack, and the minimap scrolls the workspace', async ({
-    openViewer,
-    server,
-  }) => {
+  test('L cycles the layouts through stack, and the minimap scrolls the workspace', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/responsive') });
     await agentsReady(page, '/responsive');
     const cards = page.locator('[data-cards]');

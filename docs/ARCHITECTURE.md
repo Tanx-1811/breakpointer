@@ -197,7 +197,8 @@ A card's "Full-page screenshot" (sites you allow, with screenshot access) shows 
 - **Images** (v0.8, D65) asks `getImages`: the agent lists the raster images shown at 24 px or more (complete, not SVG, not its own overlay), the largest 40 by area, each with a structural selector, a short label, the file's name (the last path segment of `currentSrc`; none for `data:`/`blob:`), its shown and natural size, the screen's pixel ratio and whether it has `srcset`. `state/images.ts` merges them across previews by selector (`imageRows`, most wasteful first), grades each size (`imageFit`: needs = shown width × DPR; too large at 1.8× and 200 px more, too small below 0.9×), and suggests `sizes` (`suggestSizes`: vw where the image follows the viewport, px where neighbouring viewports share a width, conditions at one pixel below the next viewport) and `srcset` widths (`suggestSrcset`, `srcsetText`).
 - **Colours** (v0.8, D66) asks `getColors`: computed text colours of elements with their own text, background colours and top-border colours, blended over the canvas, counted per element, the top 24 per role. `state/colors.ts` merges previews by the largest count and writes CSS custom properties (`paletteCss`) or Markdown (`paletteMarkdown`).
 - **Performance budgets** (v0.8, D67, Pro): `settings.budgets` (`state/budgets.ts`, validated by `parseBudgets`) gives limits for `transferred` (kB), `requests`, `lcp` (ms) and `cls`; the Performance tab gets them only with Pro (`budgets={pro ? settings.budgets : null}`), shows each metric's limit, marks values over it (`overBudget`) and sums the breaches (`budgetBreaches`).
-- Each tab copies as a Markdown table (`issuesMarkdown`, `statsMarkdown`, `typeMarkdown`, `imagesMarkdown`, `paletteMarkdown`); a suggestion (an image's `srcset` and `sizes`, the palette as CSS) copies on its own with `onCopyText`. The bars follow the product's chart rules: one hue, thin, values in a column at their tip, warnings with an icon and text.
+- **Meta** (v0.9, D74) asks `getMeta`: the agent's `collectMeta` (`agent/page-utils.ts`) reads the title, `lang`, `<meta>` tags by `name`/`property` (lower case, at most 80, values cut to 400 characters; addresses such as `og:image` made absolute), the canonical address, icons, `hreflang` alternates and the headings (at most 80, text cut to 120, each marked hidden at that size with `checkVisibility`). `state/meta.ts` checks them (`metaChecks`: ok / warn / bad / info, with a message and its values), outlines the headings (`headingOutline`: a level skipped after the first heading, a second `h1`; hidden ones don't count), and writes Markdown (`metaMarkdown`). `components/AuditPanel/MetaTab.tsx` reads one preview (the one picked, else the first that answered) and draws an approximate search result (title and description cut like results show them, the address as a breadcrumb) and link preview; the social image and icon are `<img>`s loaded by the workspace with `referrerPolicy="no-referrer"`, the image's natural size shown once loaded. With six tabs, only the selected tab shows its label; the others show their icon with the name as `aria-label` and tooltip.
+- Each tab copies as a Markdown table (`issuesMarkdown`, `statsMarkdown`, `typeMarkdown`, `imagesMarkdown`, `paletteMarkdown`, `metaMarkdown`); a suggestion (an image's `srcset` and `sizes`, the palette as CSS) copies on its own with `onCopyText`. The bars follow the product's chart rules: one hue, thin, values in a column at their tip, warnings with an icon and text.
 
 ## Newer checks
 
@@ -319,6 +320,20 @@ Each visible preview is captured as on screen (the same `captureVisibleTab` + cr
 
 Tokens (colours for both themes, radii, shadows, motion) are CSS custom properties in `styles/global.css`; components use semantic names only. Native controls keep their behaviour and accessibility and get the product's look (`components/Select` wraps a `<select>`; dialogs are `<dialog>`, menus and popovers use the Popover API). One `TooltipLayer` shows `data-tooltip` (and `data-shortcut`) for the hovered or keyboard-focused control in the top layer, hidden from assistive technology because it repeats the accessible name. Entry animations only use `transform` (axe measures colours mid-animation) and respect reduced motion.
 
+## Workspace panels and appearance
+
+v0.9 (D71–D73) adds three optional parts around the cards, each a switch in `settings.panels` (validated by `parsePanels`), Settings → Appearance and the palette:
+
+- **Viewports sidebar** (`components/Sidebar`, off by default, `\`): a row per viewport (size class icon, name, size, breakpoint from `breakpointFor`, kinds of issue from the card's check report), with drag-and-drop and `Alt` + `↑` `↓` reordering (`moveViewportTo`, like the chips), a click that shows a hidden viewport and scrolls to its card (`revealViewport`), a double-click that focuses it and an eye button that hides or shows it. The **breakpoint map** (`state/breakpoint-map.ts`) is a 320–1920 ruler (wider when a width needs it) with the active set's breakpoints as ticks (labels only where they have room) and the visible viewports as markers; it is one `role="img"` with the whole list as its name. The Page card shows the first preview's title and HTTP status (from its agent), the site access state with Allow, and the responsive score (opens the audit). Above 860 px of window width the toolbar's chip strip is hidden while the sidebar is open (`.strip` with `display: contents`); below that the sidebar is hidden instead, so a list of viewports is always on screen. The tour's `viewports` step points at whichever list is shown.
+- **Status bar** (`components/StatusBar`, on by default) sits under the workspace, outside the stage, so the fit simply has less height. Each part is a button where it changes something (site access dialog, sync on/off, audit, fit, sidebar, minimap).
+- **Minimap** (`components/Minimap`, on by default) measures the workspace's scroll size and every `[data-card-id]` box (on scroll, `ResizeObserver` of the workspace and the cards, and a `layoutKey` of ids, sizes, zoom and layout), and shows only while the workspace scrolls. It is drawn in the stage's bottom-right corner like the zoom dock (hidden while capturing, and below 1000 px where it would meet the dock); a press or drag scrolls the workspace so the view is centred on that point (`state/minimap.ts`). It is `aria-hidden`: the workspace scrolls with the keyboard anyway.
+
+**Layouts**: `stack` joins `wrap` and `row`: one centred column (`min-width: max-content`, so a card wider than the window scrolls sideways). Its fit is the width only (`perCardZoom(…, 'width')`), as the row's is the height only. `L` cycles wrap → row → stack.
+
+**Accent colours and canvas** (D72): `settings.accent` sets `<html data-accent>` (`useTheme`, also in the popup and side panel); `styles/global.css` overrides the `--accent*` tokens and the canvas glow per accent, with a more specific rule for the dark theme. Every pair keeps `--accent` on `--surface`, `--accent` on `--accent-soft` and `--accent-text` on `--accent` (and on the light primary button's lighter gradient top) at 4.5:1 or more. `settings.canvas` sets `data-canvas` on the workspace: dots (the default), a 24 px grid (`--canvas-line`) or plain.
+
+**Flat icons** (D73): icons in dialog titles, panel headers, cards, the sidebar, toasts and lists are drawn without a tinted square or circle behind them; colour is kept for meaning (size classes, warnings, success).
+
 ## Modules
 
 ```
@@ -365,10 +380,11 @@ src/
                            placement, full-page slices, audit grouping and Markdown, width
                            scan, pixel diffs, snapshot keys, workspace links; v0.6: licences and
                            the trial, the plan, branding, CSV/JSON exports; v0.7: the responsive
-                           score, notes, projects)
+                           score, notes, projects; v0.8: images, colours, budgets, gaps, the tour;
+                           v0.9: the breakpoint map, the minimap, meta tag checks)
   data/                    Presets, built-in groups, framework and site breakpoints, licence
                            public keys, consent tools' banners
-  i18n/                    English (source of truth) and Vietnamese UI strings
+  i18n/                    English (source of truth), Vietnamese and six more languages
   shared/viewer-url.ts     Builds viewer URLs (used by popup and service worker)
   shared/side-panel.ts     Opens the side panel with an address (popup and context menu)
   styles/global.css        Design tokens (both themes) and shared control styles
@@ -388,13 +404,14 @@ Data flows one way: `Viewer` owns the settings via `useReducer` (`state/settings
 - v0.4 added `disabledChecks` (known check ids only, in display order). Outside the settings key: `breakpointer.sessionGrants` and `breakpointer.seenVersion` in local storage, and visual baselines in IndexedDB (see [Visual check](#visual-check)); none of them is exported. v0.5 adds `breakpointer.usage` (days of use and the answer to the rating question, validated by `parseUsage`, not exported); Check pages and the showcase image keep their state for the session only.
 - v0.2 added `customBreakpoints`, `grid`, `sync`, `checks` and `savedPages`; v0.3 added the `site` breakpoint set, an optional `colorScheme` (`light`/`dark`) per viewport and saved-group viewport, `cssSnippets` (name and CSS, at most 20; saving under an existing name replaces it), `grid.baseline` (0, 4, 8, 12, 16 or 24 px) and `sidePanel` (a preset id and its orientation). The side panel changes its own setting by reading, changing and saving the stored settings (`updateStoredSettings`); open workspaces follow the change. Older stored data simply gets their defaults. Importing a file only replaces the settings the file contains, so an older export keeps the newer settings as they are.
 - v0.8 added `budgets` (four limits or null, validated by `parseBudgets`; used only with Pro).
+- v0.9 added `accent` (six names), `canvas` (`dots`, `grid`, `plain`), `panels` (`sidebar` off, `statusBar` and `minimap` on unless stored as off, validated by `parsePanels`) and the `stack` layout.
 - v0.6 added `sync.interactions` (Pro, off by default) and `branding` (name, website, logo, credit; validated by `parseBranding` and included in exports). Outside the settings key: `breakpointer.license` (the licence key and the trial's start, validated by `parseLicenseRecord`, never exported).
 - On the very first run the defaults are saved at once. The default viewports have fixed ids (`default-<preset>`), so two workspace tabs opened on a fresh install write the same workspace instead of replacing each other's (which would reload every preview).
 - Two open workspace tabs each keep their own state; the last change saved wins.
 
 ## Fitting viewports to the screen
 
-`state/fit.ts` finds the largest single zoom (≤ 100%) at which all visible cards fit in the workspace, simulating `flex-wrap` (or a single row) with the measured card chrome, minimum card width and gaps, by binary search over whole percents. One zoom for all keeps sizes comparable. The space under the cards that the floating zoom dock covers is left out. The first-run fit waits until a page is shown (before that the welcome panel takes the room), and the previews start loading after it (see _Input to preview frames_).
+`state/fit.ts` finds the largest single zoom (≤ 100%) at which all visible cards fit in the workspace, simulating `flex-wrap` (or a single row, or a single column) with the measured card chrome, minimum card width and gaps, by binary search over whole percents. One zoom for all keeps sizes comparable. The space under the cards that the floating zoom dock covers is left out. The first-run fit waits until a page is shown (before that the welcome panel takes the room), and the previews start loading after it (see _Input to preview frames_).
 
 ## Internationalisation
 

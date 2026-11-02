@@ -28,7 +28,10 @@ const meta = (extra: Partial<PageMeta> = {}): PageMeta => ({
   title: 'Pricing — Brightside: plans for teams of every size',
   lang: 'en',
   tags: [
-    { key: 'description', value: 'Start free for teams up to five people, then add shared boards and guests when you need them.' },
+    {
+      key: 'description',
+      value: 'Start free for teams up to five people, then add shared boards and guests when you need them.',
+    },
     { key: 'viewport', value: 'width=device-width, initial-scale=1' },
     { key: 'og:title', value: 'Pricing — Brightside' },
     { key: 'og:image', value: 'https://brightside.example/og.png' },
@@ -48,7 +51,8 @@ const meta = (extra: Partial<PageMeta> = {}): PageMeta => ({
   ...extra,
 });
 
-const statusOf = (page: PageMeta, id: string) => metaChecks(page, 'https://brightside.example/pricing').find((check) => check.id === id)!;
+const statusOf = (page: PageMeta, id: string) =>
+  metaChecks(page, 'https://brightside.example/pricing').find((check) => check.id === id)!;
 
 describe('appearance and panel settings', () => {
   it('defaults to indigo, dots, the status bar and the minimap, without the sidebar', () => {
@@ -88,7 +92,16 @@ describe('appearance and panel settings', () => {
 
   it('toggles the sidebar with the backslash key', () => {
     const key = (code: string, extra = {}) =>
-      shortcutFor({ key: '\\', code, shiftKey: false, ctrlKey: false, metaKey: false, altKey: false, isComposing: false, ...extra });
+      shortcutFor({
+        key: '\\',
+        code,
+        shiftKey: false,
+        ctrlKey: false,
+        metaKey: false,
+        altKey: false,
+        isComposing: false,
+        ...extra,
+      });
     expect(key('Backslash')).toBe('sidebar');
     expect(key('IntlBackslash')).toBe('sidebar');
     expect(key('Backslash', { metaKey: true })).toBeNull();
@@ -134,11 +147,14 @@ describe('breakpoint map', () => {
   });
 
   it('widens to every width shown and only labels ticks that have room', () => {
-    const map = breakpointMap([{ item: '4k', width: 3840 }], [
-      { name: 'a', min: 700 },
-      { name: 'b', min: 720 },
-      { name: 'c', min: 2000 },
-    ]);
+    const map = breakpointMap(
+      [{ item: '4k', width: 3840 }],
+      [
+        { name: 'a', min: 700 },
+        { name: 'b', min: 720 },
+        { name: 'c', min: 2000 },
+      ],
+    );
     expect(map.end).toBe(3840);
     expect(map.ticks.map((tick) => tick.labelled)).toEqual([true, false, true]);
   });
@@ -212,7 +228,9 @@ describe('meta tags', () => {
   it('cuts text like search results do, and writes addresses as breadcrumbs', () => {
     expect(truncate('Plans for teams of every size and every budget', 20)).toBe('Plans for teams of …');
     expect(truncate('Short', 20)).toBe('Short');
-    expect(breadcrumb('https://brightside.example/pricing/teams?x=1')).toBe('https://brightside.example › pricing › teams');
+    expect(breadcrumb('https://brightside.example/pricing/teams?x=1')).toBe(
+      'https://brightside.example › pricing › teams',
+    );
   });
 
   it('outlines headings, with skipped levels and extra h1s (hidden ones aside)', () => {
@@ -231,13 +249,19 @@ describe('meta tags', () => {
   it('copies the tab as Markdown', () => {
     const markdown = metaMarkdown('https://brightside.example/pricing', meta(), t);
     expect(markdown).toContain('## Meta tags and headings');
-    expect(markdown).toContain('| Title | OK · 51 characters | `Pricing — Brightside: plans for teams of every size` |');
+    expect(markdown).toContain(
+      '| Title | OK · 51 characters | `Pricing — Brightside: plans for teams of every size` |',
+    );
     expect(markdown).toContain('  - H2 Choose a plan');
   });
 
   it('is part of the audit JSON', () => {
     const json = JSON.parse(
-      auditJson('https://brightside.example/', [{ name: 'Phone', width: 390, height: 844, report: null, meta: meta() }], '0.9.0'),
+      auditJson(
+        'https://brightside.example/',
+        [{ name: 'Phone', width: 390, height: 844, report: null, meta: meta() }],
+        '0.9.0',
+      ),
     );
     expect(json.previews[0].meta.canonical).toBe('https://brightside.example/pricing');
   });

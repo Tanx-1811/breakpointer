@@ -15,6 +15,7 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 • 28 gängige Größen für Smartphones, Foldables, Tablets, Laptops und Desktops (Suche nach Name oder Größe) sowie jede beliebige eigene Größe.
 • Ziehe am Rand einer Vorschau, um ihre Größe zu ändern, und sieh live zu, wie sich die Seite neu anordnet — sie rastet an deinen Breakpoints ein.
 • Drücke Ctrl/⌘ + K, um alle Befehle, Größen, Gruppen und Seiten zu durchsuchen.
+• Ein Arbeitsbereich für lange Sitzungen: eine Viewport-Seitenleiste mit Breakpoint-Karte, eine Statusleiste und eine Minimap, drei Layouts (umbrechend, eine Zeile, gestapelt), sechs Akzentfarben und drei Canvas-Stile.
 
 **Finde, wo es bricht**
 • Responsive-Score: eine Zahl von 0 bis 100 für jede Seite — sieh, was die meisten Punkte kostet, im Audit, in Berichten und in „Seiten prüfen“.
@@ -24,6 +25,7 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 • Audit: alle Probleme aller Größen an einem Ort, Seitengewicht, Anfragen, Bildpixel, Largest Contentful Paint und Layout-Verschiebung pro Größe sowie die Typografie-Skala von Überschriften, Text und Buttons — alles als Markdown-Tabelle kopierbar.
 • Responsive Bilder: jedes Bild im Vergleich zur Breite, in der es in jedem Viewport angezeigt wird — zu groß, zu klein oder passend — mit einem vorgeschlagenen sizes-Attribut und srcset-Breiten zum Kopieren.
 • Audit der Seitenfarben: die Farben von Texten, Hintergründen und Rahmen über alle Größen hinweg, als CSS-Variablen kopierbar.
+• Meta & Social: wie die Seite in Suchergebnissen und Link-Vorschauen (annähernd) erscheint, mit Prüfung von Titel, Beschreibung, Social-Bild, kanonischer Adresse, Robots und Icons sowie der Gliederung ihrer Überschriften.
 • Visuelle Prüfung: Speichere eine Baseline jedes Viewports, vergleiche nach einer Änderung und sieh pixelgenau, was sich verschoben hat — nebeneinander, mit Schieberegler oder mit umrahmten Unterschieden.
 • Inspektor: Klicke in einer Vorschau auf ein Element und vergleiche Größe, Display, Schrift, Abstände und Layout in jeder Größe — Änderungen werden hervorgehoben — und miss den Abstand zu einem zweiten Element in jeder Größe.
 • Breakpoints aus dem CSS der Seite selbst, dazu Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation oder deine eigenen — beschrifte jeden Viewport und teste beide Seiten jedes Breakpoints.

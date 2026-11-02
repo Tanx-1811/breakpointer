@@ -87,7 +87,9 @@ describe('ViewportSidebar', () => {
     expect(rows[0]).toHaveTextContent('2');
     // Hidden viewports show no breakpoint or issues.
     expect(rows[2]).not.toHaveTextContent('2xl');
-    expect(screen.getByRole('img', { name: /Breakpoints: sm 640, md 768\. Viewports: Phone 390, Tablet 768/ })).toBeVisible();
+    expect(
+      screen.getByRole('img', { name: /Breakpoints: sm 640, md 768\. Viewports: Phone 390, Tablet 768/ }),
+    ).toBeVisible();
   });
 
   it('goes to, focuses, shows, hides and reorders viewports', async () => {

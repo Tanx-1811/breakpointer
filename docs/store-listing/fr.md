@@ -15,6 +15,7 @@ Breakpointer affiche n’importe quel site web à plusieurs tailles de viewport 
 • 28 tailles courantes pour téléphones, pliables, tablettes, portables et ordinateurs de bureau (recherche par nom ou par taille), plus toutes les tailles personnalisées.
 • Faites glisser le bord d’un aperçu pour le redimensionner et voyez la page se réorganiser en direct — il s’aimante à vos breakpoints.
 • Appuyez sur Ctrl/⌘ + K pour rechercher toutes les commandes, tailles, groupes et pages.
+• Un espace de travail pensé pour les longues sessions : une barre latérale des viewports avec une carte des breakpoints, une barre d’état et une minicarte, trois dispositions (sur plusieurs lignes, sur une seule ligne, empilée), six couleurs d’accent et trois styles de canevas.
 
 **Trouver où ça casse**
 • Score responsive : une note de 0 à 100 pour chaque page — voyez ce qui coûte le plus de points, dans l’audit, les rapports et Vérifier des pages.
@@ -24,6 +25,7 @@ Breakpointer affiche n’importe quel site web à plusieurs tailles de viewport 
 • Audit : tous les problèmes de toutes les tailles au même endroit, le poids de la page, les requêtes, les pixels d’image, le Largest Contentful Paint et le décalage de mise en page par taille, ainsi que l’échelle typographique des titres, du texte et des boutons — copiez n’importe quelle partie sous forme de tableau Markdown.
 • Images responsive : chaque image face à sa largeur d’affichage à chaque viewport — trop grande, trop petite ou de la bonne taille — avec un attribut sizes et des largeurs srcset suggérés, prêts à copier.
 • Audit des couleurs de la page : les couleurs du texte, des arrière-plans et des bordures à toutes les tailles, à copier sous forme de variables CSS.
+• Meta et réseaux sociaux : l’affichage de la page dans les résultats de recherche et les aperçus de liens (approximatif), avec vérification de son titre, de sa description, de son image sociale, de son adresse canonique, des robots et des icônes, et le plan de ses titres.
 • Contrôle visuel : enregistrez une référence de chaque viewport, comparez après une modification et voyez ce qui a bougé, pixel par pixel — côte à côte, avec un curseur ou avec les différences encadrées.
 • Inspecteur : cliquez sur un élément dans un aperçu et comparez sa taille, son display, sa police, ses espacements et sa mise en page à chaque taille — ce qui change est mis en évidence — et mesurez la distance jusqu’à un second élément à chaque taille.
 • Breakpoints lus dans le CSS de la page elle-même, ainsi que ceux de Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation ou les vôtres — étiquetez chaque viewport et testez les deux côtés de chaque breakpoint.

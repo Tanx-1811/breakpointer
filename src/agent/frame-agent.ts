@@ -6,8 +6,8 @@
  *
  * It never sends page content anywhere: it reports the page address and title,
  * scroll position, the results of layout checks, the widths used by the page's
- * media queries and the box of an element the user inspects — to the workspace
- * tab only. Stress tests (pseudo-translated text, right-to-left) change the
+ * media queries, the box of an element the user inspects and, for the audit's
+ * Meta tab, the page's meta tags and headings — to the workspace tab only. Stress tests (pseudo-translated text, right-to-left) change the
  * page only inside the preview and are undone when switched off. With synced
  * interactions on, the user's clicks and field values go to the other previews
  * of the same workspace (never form submissions, passwords or payment fields).

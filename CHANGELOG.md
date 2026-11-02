@@ -2,6 +2,25 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] — 2026-11-02
+
+A more professional workspace you can make your own, and a new audit for search and social.
+
+### Added
+
+- **Viewports sidebar** (`\`, the toolbar's sidebar button, the status bar, the palette or Settings → Appearance): every viewport as a row with its size, breakpoint and kinds of issue — click to go to its preview (showing it if hidden), double-click to focus it, the eye to show or hide it, drag or `Alt` + `↑` `↓` to reorder. A **breakpoint map** shows where each viewport sits against the breakpoints in use, and a **Page** card shows the page's title, HTTP status, site access (with **Allow** when it's missing) and its responsive score (opens the audit). While the sidebar is open on a wide window, it replaces the viewport chips on the toolbar. Off by default.
+- **Status bar** along the bottom (on by default): previews shown and hidden, the page's HTTP error if any, site access, sync, kinds of issue, the breakpoint set, the range of widths, the zoom and the layout — each a shortcut (site access, sync on/off, the audit, fit, the sidebar and the minimap).
+- **Minimap** (on by default): while the workspace scrolls, an overview of every preview in its size-class colour and the part on screen; press or drag on it to scroll there.
+- **Stack layout**: previews in one centred column that scrolls down (Fit fits the widest one to the width). `L` now cycles wrap → one row → stack.
+- **Accent colours**: indigo, blue, violet, teal, rose and graphite, each with light and dark values that keep text readable (WCAG AA). **Canvas styles**: dots, grid or plain. Both in Settings → Appearance and the palette, with the layout and the three panels.
+- **Meta & social** in the audit (`E` → Meta, or “Audit: meta & social previews” in the palette): an approximate **search result** and **link preview** of the page (its social image loads with its size), its **tags** checked — title and description length, social title and image, X card, canonical address, language, viewport (and whether it blocks zooming), robots (`noindex`) and icons — and the **outline of its headings**, with skipped levels, a missing or second `H1` and headings hidden at that size. Pick which preview to read; copy the tab as Markdown; meta tags are part of the audit's JSON export (Pro).
+
+### Changed
+
+- **Flatter icons**, closer to tools like Figma: icons in dialog titles, the audit and inspector headers, preview cards, the add-viewport list, groups, the welcome steps, toasts and Pro's feature list no longer sit on tinted squares or circles.
+- The audit's tabs show their icon, with the name of the tab shown (six tabs now fit the panel); every tab keeps its name for screen readers and as a tooltip.
+- Help's “What's new” shows this release, and its shortcuts list `\`.
+
 ## [0.8.0] — 2026-10-23
 
 Two new audits, a Pro feature for performance work, and help for new users.

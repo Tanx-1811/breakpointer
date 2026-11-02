@@ -15,6 +15,7 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 • 28 ukuran umum untuk ponsel, ponsel lipat, tablet, laptop, dan desktop (cari menurut nama atau ukuran), plus ukuran kustom apa pun.
 • Seret tepi pratinjau untuk mengubah ukurannya dan lihat halaman menata ulang secara langsung — ukurannya menempel ke breakpoint Anda.
 • Tekan Ctrl/⌘ + K untuk mencari setiap perintah, ukuran, grup, dan halaman.
+• Ruang kerja yang dirancang untuk sesi panjang: bilah sisi viewport dengan peta breakpoint, bilah status, dan minimap, tiga tata letak (membungkus, satu baris, bertumpuk), enam warna aksen, dan tiga gaya kanvas.
 
 **Temukan di mana tata letak rusak**
 • Skor responsif: satu angka dari 0 hingga 100 untuk setiap halaman — lihat apa yang paling banyak mengurangi poin, di audit, laporan, dan Periksa halaman.
@@ -24,6 +25,7 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 • Audit: setiap masalah di setiap ukuran dalam satu tempat; bobot halaman, permintaan, piksel gambar, Largest Contentful Paint, dan pergeseran tata letak per ukuran; serta skala tipografi judul, teks, dan tombol — salin bagian mana pun sebagai tabel Markdown.
 • Gambar responsif: setiap gambar dibandingkan dengan lebar tampilnya di setiap viewport — terlalu besar, terlalu kecil, atau ukurannya tepat — beserta atribut sizes dan lebar srcset yang disarankan untuk disalin.
 • Audit warna halaman: warna yang digunakan untuk teks, latar belakang, dan garis batas di semua ukuran, siap disalin sebagai variabel CSS.
+• Meta & sosial: tampilan halaman di hasil pencarian dan pratinjau tautan (perkiraan), dengan judul, deskripsi, gambar sosial, alamat kanonis, robots, dan ikon yang diperiksa, serta kerangka judulnya.
 • Pemeriksaan visual: simpan acuan setiap viewport, bandingkan setelah ada perubahan, dan lihat apa yang bergeser, piksel demi piksel — berdampingan, dengan penggeser, atau dengan perbedaan yang ditandai kotak.
 • Inspektor: klik elemen di satu pratinjau dan bandingkan ukuran, display, font, spasi, dan tata letaknya di setiap ukuran — yang berubah akan disorot — dan ukur jarak ke elemen kedua di setiap ukuran.
 • Breakpoint dibaca dari CSS halaman itu sendiri, plus Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation, atau milik Anda sendiri — beri label setiap viewport dan uji kedua sisi setiap breakpoint.
