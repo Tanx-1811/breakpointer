@@ -283,7 +283,7 @@ export type ViewerProps = {
 export function ViewerApp(props: ViewerProps) {
   const [settings, dispatch] = usePersistentSettings(props.initialSettings);
   const language = resolveLanguage(settings.language);
-  const resolvedTheme = useTheme(settings.theme);
+  const resolvedTheme = useTheme(settings.theme, settings.accent);
 
   return (
     <I18nProvider language={language}>

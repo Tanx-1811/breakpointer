@@ -21,6 +21,13 @@ const PATHS = {
   minimize: 'M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7',
   wrap: 'M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4z',
   row: 'M3 5h5v14H3zM10 5h5v14h-5zM17 5h4v14h-4',
+  stack: 'M5 3h14v6H5zM5 11h14v6H5zM8 20h8',
+  sidebar: 'M4 4h16v16H4zM10 4v16M6.5 8h1M6.5 11h1',
+  statusBar: 'M3 4h18v16H3zM3 16h18M6 18h3',
+  minimap: 'M3 6l6-3 6 3 6-3v15l-6 3-6-3-6 3zM9 3v15M15 6v15',
+  share:
+    'M18 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM18 22a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
+  heading: 'M6 4v16M18 4v16M6 12h12',
   sun: 'M12 4V2M12 22v-2M4.93 4.93 3.52 3.52M20.48 20.48l-1.41-1.41M4 12H2M22 12h-2M4.93 19.07l-1.41 1.41M20.48 3.52l-1.41 1.41M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0z',
   moon: 'M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z',
   system: 'M3 5h18v11H3zM8 20h8M12 16v4',

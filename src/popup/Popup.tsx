@@ -33,7 +33,7 @@ type Props = {
 };
 
 export function PopupApp(props: Props) {
-  useTheme(props.settings.theme);
+  useTheme(props.settings.theme, props.settings.accent);
   return (
     <I18nProvider language={resolveLanguage(props.settings.language)}>
       <Popup {...props} />

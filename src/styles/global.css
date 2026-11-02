@@ -14,6 +14,7 @@
   --bg: #ffffff;
   --canvas: #eff1f5;
   --canvas-dot: rgb(104 113 132 / 26%);
+  --canvas-line: rgb(104 113 132 / 12%);
   --canvas-glow: rgb(99 102 241 / 7%);
 
   /* Surfaces, from flat to raised. */
@@ -99,6 +100,7 @@
   --bg: #111318;
   --canvas: #08090c;
   --canvas-dot: rgb(255 255 255 / 8%);
+  --canvas-line: rgb(255 255 255 / 5%);
   --canvas-glow: rgb(129 140 248 / 8%);
 
   --surface: #16181e;
@@ -157,6 +159,123 @@
 
   --scrollbar: rgb(255 255 255 / 16%);
   --scrollbar-hover: rgb(255 255 255 / 28%);
+}
+
+/*
+ * Accent colours (Settings → Appearance); indigo is the default above. Each one
+ * keeps --accent on --surface, --accent on --accent-soft and --accent-text on
+ * --accent at 4.5:1 or more, in both themes. The dark rule is more specific,
+ * so it wins over the light one.
+ */
+
+:root[data-accent='blue'] {
+  --accent: #1d4ed8;
+  --accent-hover: #1e40af;
+  --accent-strong: #1e3a8a;
+  --accent-soft: #eaf1fe;
+  --accent-soft-hover: #dbe7fd;
+  --accent-border: #b9cff9;
+  --accent-text: #ffffff;
+  --canvas-glow: rgb(37 99 235 / 7%);
+}
+
+:root[data-theme='dark'][data-accent='blue'] {
+  --accent: #6ea8fe;
+  --accent-hover: #8fbcff;
+  --accent-strong: #b6d3ff;
+  --accent-soft: #162338;
+  --accent-soft-hover: #1c2c47;
+  --accent-border: #2f4a78;
+  --accent-text: #0b1220;
+  --canvas-glow: rgb(110 168 254 / 8%);
+}
+
+:root[data-accent='violet'] {
+  --accent: #7c3aed;
+  --accent-hover: #6d28d9;
+  --accent-strong: #5b21b6;
+  --accent-soft: #f3edfe;
+  --accent-soft-hover: #ebe1fd;
+  --accent-border: #d6c4fb;
+  --accent-text: #ffffff;
+  --canvas-glow: rgb(124 58 237 / 7%);
+}
+
+:root[data-theme='dark'][data-accent='violet'] {
+  --accent: #b197fc;
+  --accent-hover: #c4b1fd;
+  --accent-strong: #d9ccfe;
+  --accent-soft: #251d3d;
+  --accent-soft-hover: #2d2449;
+  --accent-border: #4c3a80;
+  --accent-text: #140d24;
+  --canvas-glow: rgb(177 151 252 / 8%);
+}
+
+:root[data-accent='teal'] {
+  --accent: #0f766e;
+  --accent-hover: #115e59;
+  --accent-strong: #134e4a;
+  --accent-soft: #e6f5f3;
+  --accent-soft-hover: #d5eeea;
+  --accent-border: #a7dcd5;
+  --accent-text: #ffffff;
+  --canvas-glow: rgb(15 118 110 / 7%);
+}
+
+:root[data-theme='dark'][data-accent='teal'] {
+  --accent: #2dd4bf;
+  --accent-hover: #5eead4;
+  --accent-strong: #99f6e4;
+  --accent-soft: #0f2a28;
+  --accent-soft-hover: #143532;
+  --accent-border: #1e5a54;
+  --accent-text: #04201d;
+  --canvas-glow: rgb(45 212 191 / 7%);
+}
+
+:root[data-accent='rose'] {
+  --accent: #be123c;
+  --accent-hover: #9f1239;
+  --accent-strong: #881337;
+  --accent-soft: #fdecf0;
+  --accent-soft-hover: #fbdde4;
+  --accent-border: #f4b9c7;
+  --accent-text: #ffffff;
+  --canvas-glow: rgb(225 29 72 / 6%);
+}
+
+:root[data-theme='dark'][data-accent='rose'] {
+  --accent: #fb7185;
+  --accent-hover: #fda4af;
+  --accent-strong: #fecdd3;
+  --accent-soft: #3a1820;
+  --accent-soft-hover: #451d27;
+  --accent-border: #7a2c3d;
+  --accent-text: #2a0a12;
+  --canvas-glow: rgb(251 113 133 / 7%);
+}
+
+:root[data-accent='graphite'] {
+  --accent: #27272a;
+  --accent-hover: #18181b;
+  --accent-strong: #09090b;
+  --accent-soft: #ececef;
+  --accent-soft-hover: #e2e2e6;
+  --accent-border: #c9c9cf;
+  --accent-text: #ffffff;
+  --canvas-glow: rgb(39 39 42 / 5%);
+}
+
+:root[data-theme='dark'][data-accent='graphite'] {
+  --accent: #e4e4e7;
+  --accent-hover: #f4f4f5;
+  --accent-strong: #ffffff;
+  --accent-soft: #27282d;
+  --accent-soft-hover: #2f3036;
+  --accent-border: #4a4b52;
+  --accent-text: #111318;
+  --canvas-glow: rgb(255 255 255 / 4%);
 }
 
 *,

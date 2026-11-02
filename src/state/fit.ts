@@ -31,6 +31,10 @@ export function fitsAt(
   metrics: CardMetrics,
 ): boolean {
   const sizes = viewports.map((vp) => cardSize(vp, zoom, metrics));
+  if (layout === 'stack') {
+    const totalHeight = sizes.reduce((sum, size) => sum + size.height, 0) + metrics.gap * (sizes.length - 1);
+    return totalHeight <= area.height && sizes.every((size) => size.width <= area.width);
+  }
   if (layout === 'row') {
     const totalWidth = sizes.reduce((sum, size) => sum + size.width, 0) + metrics.gap * (sizes.length - 1);
     return totalWidth <= area.width && sizes.every((size) => size.height <= area.height);
@@ -61,13 +65,21 @@ export const MIN_READABLE_ZOOM = 0.25;
 const floorPercent = (zoom: number) => Math.floor(zoom * 100) / 100;
 const clampZoomRange = (zoom: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, zoom));
 
-/** The largest zoom at which every card, on its own, fits the area (nothing is cut off). */
-function perCardZoom(visible: ViewportConfig[], area: Area, metrics: CardMetrics, includeWidth: boolean): number {
+/**
+ * The largest zoom at which every card, on its own, fits the area (nothing is cut off):
+ * by its height, its width or both.
+ */
+function perCardZoom(
+  visible: ViewportConfig[],
+  area: Area,
+  metrics: CardMetrics,
+  by: 'height' | 'width' | 'both',
+): number {
   return Math.min(
     ...visible.map((vp) => {
       const byHeight = (area.height - metrics.chromeHeight - metrics.stageExtraHeight) / vp.height;
       const byWidth = (area.width - metrics.chromeWidth) / vp.width;
-      return includeWidth ? Math.min(byHeight, byWidth) : byHeight;
+      return by === 'both' ? Math.min(byHeight, byWidth) : by === 'height' ? byHeight : byWidth;
     }),
   );
 }
@@ -76,6 +88,7 @@ function perCardZoom(visible: ViewportConfig[], area: Area, metrics: CardMetrics
  * One zoom for every visible viewport (so sizes stay comparable), or null when
  * none is visible.
  * - Row layout scrolls sideways by design: fit the height only.
+ * - Stack layout scrolls down by design: fit the width only.
  * - Wrap layout: the largest zoom at which everything fits on screen. If that
  *   would be unreadably small (or impossible, e.g. many cards in a small
  *   window), use a readable zoom instead and let the workspace scroll.
@@ -90,7 +103,8 @@ export function fitZoomForAll(
   if (visible.length === 0) return null;
   if (area.width <= 0 || area.height <= 0) return MIN_ZOOM;
 
-  if (layout === 'row') return clampZoomRange(floorPercent(perCardZoom(visible, area, metrics, false)));
+  if (layout === 'row') return clampZoomRange(floorPercent(perCardZoom(visible, area, metrics, 'height')));
+  if (layout === 'stack') return clampZoomRange(floorPercent(perCardZoom(visible, area, metrics, 'width')));
 
   if (fitsAt(visible, MAX_ZOOM, area, layout, metrics)) return MAX_ZOOM;
   // Search in whole percents for the largest zoom that fits.
@@ -107,5 +121,5 @@ export function fitZoomForAll(
   }
   if (fitted !== null && fitted >= MIN_READABLE_ZOOM) return fitted;
   // Everything can't fit readably: keep each card whole and readable, and scroll.
-  return clampZoomRange(floorPercent(Math.min(perCardZoom(visible, area, metrics, true), MIN_READABLE_ZOOM)));
+  return clampZoomRange(floorPercent(Math.min(perCardZoom(visible, area, metrics, 'both'), MIN_READABLE_ZOOM)));
 }

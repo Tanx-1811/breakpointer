@@ -2,14 +2,17 @@ import type { CheckKind } from '../agent/protocol';
 import { addRecentUrl } from '../services/storage';
 import { MAX_CSS_SNIPPETS, MAX_SAVED_PAGES } from '../utils/constants';
 import type {
+  AccentColor,
   Breakpoint,
   BreakpointSetId,
   BrandingSettings,
+  CanvasStyle,
   CssSnippet,
   Project,
   GridSettings,
   SyncSettings,
   LanguagePreference,
+  PanelSettings,
   ThemePreference,
   ViewportConfig,
   ViewportGroup,
@@ -38,6 +41,9 @@ export type SettingsAction =
   | { type: 'setTheme'; theme: ThemePreference }
   | { type: 'setLanguage'; language: LanguagePreference }
   | { type: 'setLayout'; layout: WorkspaceLayout }
+  | { type: 'setAccent'; accent: AccentColor }
+  | { type: 'setCanvas'; canvas: CanvasStyle }
+  | { type: 'setPanels'; panels: Partial<PanelSettings> }
   | { type: 'setBreakpoints'; breakpoints: BreakpointSetId }
   | { type: 'setShowRulers'; showRulers: boolean }
   | { type: 'setSync'; sync: Partial<SyncSettings> }
@@ -111,6 +117,12 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, language: action.language };
     case 'setLayout':
       return { ...state, layout: action.layout };
+    case 'setAccent':
+      return { ...state, accent: action.accent };
+    case 'setCanvas':
+      return { ...state, canvas: action.canvas };
+    case 'setPanels':
+      return { ...state, panels: { ...state.panels, ...action.panels } };
     case 'setBreakpoints':
       return { ...state, breakpoints: action.breakpoints };
     case 'setShowRulers':

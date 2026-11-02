@@ -36,7 +36,7 @@ type Props = {
 };
 
 export function SidePanelApp(props: Props) {
-  useTheme(props.settings.theme);
+  useTheme(props.settings.theme, props.settings.accent);
   return (
     <I18nProvider language={resolveLanguage(props.settings.language)}>
       <SidePanel {...props} />

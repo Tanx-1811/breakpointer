@@ -16,14 +16,17 @@ import {
   suggestedZoom,
 } from '../state/viewports';
 import type {
+  AccentColor,
   Breakpoint,
   BreakpointSetId,
+  CanvasStyle,
   ColorScheme,
   CssSnippet,
   SidePanelSettings,
   GridColumns,
   GridSettings,
   LanguagePreference,
+  PanelSettings,
   ThemePreference,
   Project,
   ProjectViewport,
@@ -55,7 +58,9 @@ export const STORAGE_KEY = 'breakpointer.settings';
 
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
 const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi', 'es', 'pt-BR', 'fr', 'de', 'ja', 'id'];
-const LAYOUTS: readonly WorkspaceLayout[] = ['wrap', 'row'];
+const LAYOUTS: readonly WorkspaceLayout[] = ['wrap', 'row', 'stack'];
+export const ACCENTS: readonly AccentColor[] = ['indigo', 'blue', 'violet', 'teal', 'rose', 'graphite'];
+export const CANVASES: readonly CanvasStyle[] = ['dots', 'grid', 'plain'];
 const BREAKPOINT_SETS: readonly BreakpointSetId[] = ['none', ...FRAMEWORK_SET_IDS, 'custom', 'site'];
 const COLOR_SCHEMES: readonly ColorScheme[] = ['light', 'dark'];
 
@@ -87,6 +92,9 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     version: 1,
     theme: 'system',
     language: 'auto',
+    accent: 'indigo',
+    canvas: 'dots',
+    panels: { ...DEFAULT_PANELS },
     layout: 'wrap',
     breakpoints: 'none',
     customBreakpoints: DEFAULT_CUSTOM_BREAKPOINTS.map((breakpoint) => ({ ...breakpoint })),
@@ -106,6 +114,17 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     branding: { ...EMPTY_BRANDING },
     projects: [],
     budgets: { ...EMPTY_BUDGETS },
+  };
+}
+
+export const DEFAULT_PANELS: PanelSettings = { sidebar: false, statusBar: true, minimap: true };
+
+function parsePanels(raw: unknown): PanelSettings {
+  if (!isRecord(raw)) return { ...DEFAULT_PANELS };
+  return {
+    sidebar: raw.sidebar === true,
+    statusBar: raw.statusBar !== false,
+    minimap: raw.minimap !== false,
   };
 }
 
@@ -342,6 +361,9 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     version: 1,
     theme: oneOf(raw.theme, THEMES, defaults.theme),
     language: oneOf(raw.language, LANGUAGES, defaults.language),
+    accent: oneOf(raw.accent, ACCENTS, defaults.accent),
+    canvas: oneOf(raw.canvas, CANVASES, defaults.canvas),
+    panels: parsePanels(raw.panels),
     layout: oneOf(raw.layout, LAYOUTS, defaults.layout),
     breakpoints: oneOf(raw.breakpoints, BREAKPOINT_SETS, defaults.breakpoints),
     customBreakpoints: parseBreakpoints(raw.customBreakpoints) ?? defaults.customBreakpoints,

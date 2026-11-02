@@ -1,5 +1,5 @@
 import { useEffect, useSyncExternalStore } from 'react';
-import type { ThemePreference } from '../types';
+import type { AccentColor, ThemePreference } from '../types';
 
 const DARK_QUERY = '(prefers-color-scheme: dark)';
 
@@ -13,14 +13,18 @@ function systemPrefersDark() {
   return window.matchMedia(DARK_QUERY).matches;
 }
 
-/** Applies the theme to <html data-theme> and returns the resolved value. */
-export function useTheme(preference: ThemePreference): 'light' | 'dark' {
+/** Applies the theme to <html data-theme> (and the accent to <html data-accent>) and returns the resolved theme. */
+export function useTheme(preference: ThemePreference, accent: AccentColor = 'indigo'): 'light' | 'dark' {
   const prefersDark = useSyncExternalStore(subscribe, systemPrefersDark, () => false);
   const resolved = preference === 'system' ? (prefersDark ? 'dark' : 'light') : preference;
 
   useEffect(() => {
     document.documentElement.dataset.theme = resolved;
   }, [resolved]);
+
+  useEffect(() => {
+    document.documentElement.dataset.accent = accent;
+  }, [accent]);
 
   return resolved;
 }

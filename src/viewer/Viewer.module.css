@@ -271,6 +271,24 @@
   scroll-padding: 24px;
 }
 
+/* Settings → Appearance → Canvas. */
+.workspace[data-canvas='grid'] {
+  background-image:
+    radial-gradient(1200px 520px at 15% -10%, var(--canvas-glow), transparent 70%),
+    linear-gradient(var(--canvas-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-line) 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    24px 24px,
+    24px 24px;
+  background-attachment: local, local, local;
+}
+
+.workspace[data-canvas='plain'] {
+  background-image: radial-gradient(1200px 520px at 15% -10%, var(--canvas-glow), transparent 70%);
+  background-size: 100% 100%;
+}
+
 .cards {
   display: flex;
   align-items: flex-start;
@@ -284,6 +302,13 @@
 .cards[data-layout='row'] {
   flex-wrap: nowrap;
   width: max-content;
+}
+
+/* One column, centred; wider cards than the workspace scroll sideways. */
+.cards[data-layout='stack'] {
+  flex-direction: column;
+  align-items: center;
+  min-width: max-content;
 }
 
 /* Focus mode: the one card on show sits in the middle. */

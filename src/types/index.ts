@@ -9,7 +9,24 @@ export type ThemePreference = 'light' | 'dark' | 'system';
 /** 'auto' follows Chrome; the others are the UI languages (see i18n/translate.ts). */
 export type LanguagePreference = 'auto' | 'en' | 'vi' | 'es' | 'pt-BR' | 'fr' | 'de' | 'ja' | 'id';
 
-export type WorkspaceLayout = 'wrap' | 'row';
+/** `wrap`: rows that wrap; `row`: one row that scrolls sideways; `stack`: one column that scrolls down. */
+export type WorkspaceLayout = 'wrap' | 'row' | 'stack';
+
+/** The colour of buttons, selections and focus rings (see styles/global.css). */
+export type AccentColor = 'indigo' | 'blue' | 'violet' | 'teal' | 'rose' | 'graphite';
+
+/** The background behind the previews. */
+export type CanvasStyle = 'dots' | 'grid' | 'plain';
+
+/** Optional parts of the workspace. */
+export type PanelSettings = {
+  /** The viewports sidebar (replaces the chips on the toolbar while it is open). */
+  sidebar: boolean;
+  /** The status bar along the bottom. */
+  statusBar: boolean;
+  /** The overview of the workspace, shown when it scrolls. */
+  minimap: boolean;
+};
 
 /** The CSS frameworks whose default breakpoints are built in. */
 export type FrameworkSetId = 'tailwind' | 'bootstrap' | 'mui' | 'chakra' | 'bulma' | 'foundation' | 'antd';
@@ -123,6 +140,9 @@ export type BreakpointerSettings = {
   version: 1;
   theme: ThemePreference;
   language: LanguagePreference;
+  accent: AccentColor;
+  canvas: CanvasStyle;
+  panels: PanelSettings;
   layout: WorkspaceLayout;
   breakpoints: BreakpointSetId;
   /** Used when `breakpoints` is "custom"; sorted by `min`. */
