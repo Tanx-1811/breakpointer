@@ -1444,141 +1444,143 @@ export const pt: Record<MessageKey, string> = {
   'news.distance': 'O inspetor mede a distância entre dois elementos em todos os tamanhos.',
   'news.tour': 'É novo por aqui? Faça o tour pela Ajuda — e salve as notas com as pré-visualizações em uma só imagem.',
   // v0.9 keys
-  'layout.stack': 'Stack', // TRANSLATE
-  'palette.layoutStack': 'Layout: stack (one column)', // TRANSLATE
-  'sidebar.label': 'Viewports sidebar', // TRANSLATE
-  'sidebar.toggle': 'Viewports sidebar', // TRANSLATE
-  'sidebar.hide': 'Hide the sidebar', // TRANSLATE
-  'sidebar.show': 'Show {name}', // TRANSLATE
-  'sidebar.hideViewport': 'Hide {name}', // TRANSLATE
-  'sidebar.issues': '{count} kinds of issue', // TRANSLATE
-  'sidebar.rowHint': 'Click to go to a preview, double-click to focus it. Drag, or press Alt + ↑ ↓, to reorder.', // TRANSLATE
-  'sidebar.map': 'Breakpoint map', // TRANSLATE
-  'sidebar.mapBreakpoints': 'Breakpoints: {list}', // TRANSLATE
-  'sidebar.mapNoBreakpoints': 'No breakpoint labels', // TRANSLATE
-  'sidebar.mapViewports': 'Viewports: {list}', // TRANSLATE
-  'sidebar.mapHint': 'Pick a set of breakpoints on the toolbar to see which side of each one your viewports are on.', // TRANSLATE
-  'sidebar.page': 'Page', // TRANSLATE
-  'sidebar.allowed': 'Allowed', // TRANSLATE
-  'sidebar.score': 'Responsive score · {grade}', // TRANSLATE
-  'sidebar.noIssues': 'No issues found', // TRANSLATE
-  'sidebar.issueKindsOne': '1 kind of issue', // TRANSLATE
-  'sidebar.issueKinds': '{count} kinds of issue', // TRANSLATE
-  'status.label': 'Status', // TRANSLATE
-  'status.previewsOne': '1 preview', // TRANSLATE
-  'status.previews': '{count} previews', // TRANSLATE
-  'status.hidden': '{count} hidden', // TRANSLATE
-  'status.http': 'HTTP {status}', // TRANSLATE
-  'status.allSites': 'Allowed on all sites', // TRANSLATE
-  'status.allowed': 'Allowed on {host}', // TRANSLATE
-  'status.notAllowed': 'Not allowed on {host}', // TRANSLATE
-  'status.syncBoth': 'Sync: scrolling, links', // TRANSLATE
-  'status.syncScroll': 'Sync: scrolling', // TRANSLATE
-  'status.syncLinks': 'Sync: links', // TRANSLATE
-  'status.syncOff': 'Sync off', // TRANSLATE
-  'status.noIssues': 'No issues', // TRANSLATE
-  'status.issuesOne': '1 kind of issue', // TRANSLATE
-  'status.issues': '{count} kinds of issue', // TRANSLATE
-  'status.widths': '{range} px', // TRANSLATE
-  'status.fit': 'Fit to the window', // TRANSLATE
-  'minimap.toggle': 'Minimap', // TRANSLATE
-  'minimap.hint': 'Press or drag to scroll there', // TRANSLATE
-  'settings.accent': 'Accent colour', // TRANSLATE
-  'settings.accentHelp': 'Buttons, selections and focus rings.', // TRANSLATE
-  'accent.indigo': 'Indigo', // TRANSLATE
-  'accent.blue': 'Blue', // TRANSLATE
-  'accent.violet': 'Violet', // TRANSLATE
-  'accent.teal': 'Teal', // TRANSLATE
-  'accent.rose': 'Rose', // TRANSLATE
-  'accent.graphite': 'Graphite', // TRANSLATE
-  'settings.canvas': 'Canvas', // TRANSLATE
-  'settings.canvasHelp': 'The background behind the previews.', // TRANSLATE
-  'canvas.dots': 'Dots', // TRANSLATE
-  'canvas.grid': 'Grid', // TRANSLATE
-  'canvas.plain': 'Plain', // TRANSLATE
-  'settings.layout': 'Layout', // TRANSLATE
-  'settings.panels': 'Panels', // TRANSLATE
-  'settings.sidebar': 'Viewports sidebar', // TRANSLATE
-  'settings.sidebarHelp': 'Every viewport, a breakpoint map and the page at a glance. Shortcut: \\', // TRANSLATE
-  'settings.statusBar': 'Status bar', // TRANSLATE
-  'settings.statusBarHelp': 'Previews, site access, sync, issues and zoom along the bottom.', // TRANSLATE
-  'settings.minimap': 'Minimap', // TRANSLATE
-  'settings.minimapHelp': 'An overview of the workspace in a corner, shown while it scrolls.', // TRANSLATE
-  'palette.sidebar': 'Viewports sidebar', // TRANSLATE
-  'palette.statusBar': 'Status bar', // TRANSLATE
-  'palette.minimap': 'Minimap', // TRANSLATE
-  'palette.accent': 'Accent colour: {color}', // TRANSLATE
-  'palette.canvas': 'Canvas: {style}', // TRANSLATE
-  'help.sidebar': 'Show or hide the viewports sidebar', // TRANSLATE
+  'layout.stack': 'Empilhado',
+  'palette.layoutStack': 'Layout: empilhado (uma coluna)',
+  'sidebar.label': 'Barra lateral de viewports',
+  'sidebar.toggle': 'Barra lateral de viewports',
+  'sidebar.hide': 'Ocultar a barra lateral',
+  'sidebar.show': 'Mostrar {name}',
+  'sidebar.hideViewport': 'Ocultar {name}',
+  'sidebar.issues': '{count} tipos de problema',
+  'sidebar.rowHint':
+    'Clique para ir a uma pré-visualização e dê dois cliques para focá-la. Arraste, ou pressione Alt + ↑ ↓, para reordenar.',
+  'sidebar.map': 'Mapa de breakpoints',
+  'sidebar.mapBreakpoints': 'Breakpoints: {list}',
+  'sidebar.mapNoBreakpoints': 'Sem rótulos de breakpoint',
+  'sidebar.mapViewports': 'Viewports: {list}',
+  'sidebar.mapHint':
+    'Escolha um conjunto de breakpoints na barra de ferramentas para ver de que lado de cada um ficam os seus viewports.',
+  'sidebar.page': 'Página',
+  'sidebar.allowed': 'Permitido',
+  'sidebar.score': 'Nota responsiva · {grade}',
+  'sidebar.noIssues': 'Nenhum problema encontrado',
+  'sidebar.issueKindsOne': '1 tipo de problema',
+  'sidebar.issueKinds': '{count} tipos de problema',
+  'status.label': 'Status',
+  'status.previewsOne': '1 pré-visualização',
+  'status.previews': '{count} pré-visualizações',
+  'status.hidden': '{count} ocultas',
+  'status.http': 'HTTP {status}',
+  'status.allSites': 'Permitido em todos os sites',
+  'status.allowed': 'Permitido em {host}',
+  'status.notAllowed': 'Não permitido em {host}',
+  'status.syncBoth': 'Sincronização: rolagem, links',
+  'status.syncScroll': 'Sincronização: rolagem',
+  'status.syncLinks': 'Sincronização: links',
+  'status.syncOff': 'Sincronização desativada',
+  'status.noIssues': 'Sem problemas',
+  'status.issuesOne': '1 tipo de problema',
+  'status.issues': '{count} tipos de problema',
+  'status.widths': '{range} px',
+  'status.fit': 'Ajustar à janela',
+  'minimap.toggle': 'Minimapa',
+  'minimap.hint': 'Clique ou arraste para rolar até lá',
+  'settings.accent': 'Cor de destaque',
+  'settings.accentHelp': 'Botões, seleções e anéis de foco.',
+  'accent.indigo': 'Índigo',
+  'accent.blue': 'Azul',
+  'accent.violet': 'Violeta',
+  'accent.teal': 'Verde-azulado',
+  'accent.rose': 'Rosa',
+  'accent.graphite': 'Grafite',
+  'settings.canvas': 'Tela',
+  'settings.canvasHelp': 'O fundo atrás das pré-visualizações.',
+  'canvas.dots': 'Pontos',
+  'canvas.grid': 'Grade',
+  'canvas.plain': 'Liso',
+  'settings.layout': 'Layout',
+  'settings.panels': 'Painéis',
+  'settings.sidebar': 'Barra lateral de viewports',
+  'settings.sidebarHelp': 'Todos os viewports, um mapa de breakpoints e a página num relance. Atalho: \\',
+  'settings.statusBar': 'Barra de status',
+  'settings.statusBarHelp': 'Pré-visualizações, acesso ao site, sincronização, problemas e zoom na parte inferior.',
+  'settings.minimap': 'Minimapa',
+  'settings.minimapHelp': 'Uma visão geral da área de trabalho em um canto, exibida enquanto ela rola.',
+  'palette.sidebar': 'Barra lateral de viewports',
+  'palette.statusBar': 'Barra de status',
+  'palette.minimap': 'Minimapa',
+  'palette.accent': 'Cor de destaque: {color}',
+  'palette.canvas': 'Tela: {style}',
+  'help.sidebar': 'Mostrar ou ocultar a barra lateral de viewports',
   'news.workspace':
-    'A more professional workspace: a viewports sidebar with a breakpoint map (press \\), a status bar and a minimap.', // TRANSLATE
+    'Uma área de trabalho mais profissional: uma barra lateral de viewports com mapa de breakpoints (pressione \\), uma barra de status e um minimapa.',
   'news.appearance':
-    'Make it yours: six accent colours and three canvas styles in Settings → Appearance, and a new Stack layout.', // TRANSLATE
-  'audit.tab.meta': 'Meta', // TRANSLATE
-  'meta.heading': 'Meta tags and headings', // TRANSLATE
-  'meta.empty': 'No preview could be read. Allow the site, then reload the previews.', // TRANSLATE
-  'meta.allGood': 'Everything looks right', // TRANSLATE
-  'meta.summary': '{fix} to fix · {look} to check', // TRANSLATE
-  'meta.readFrom': 'Read from {name} · {width}', // TRANSLATE
-  'meta.preview': 'Preview to read', // TRANSLATE
-  'meta.searchResult': 'Search result', // TRANSLATE
-  'meta.approximate': 'approximate', // TRANSLATE
-  'meta.linkPreview': 'Link preview', // TRANSLATE
-  'meta.noTitle': 'No title', // TRANSLATE
-  'meta.noDescription': 'No description: search engines pick text from the page.', // TRANSLATE
-  'meta.noImage': 'No social image', // TRANSLATE
-  'meta.imageFailed': 'The social image couldn’t be loaded', // TRANSLATE
-  'meta.imageAlt': 'The page’s social image', // TRANSLATE
-  'meta.tags': 'Tags', // TRANSLATE
-  'meta.headings': 'Headings', // TRANSLATE
-  'meta.noHeadings': 'The page has no headings.', // TRANSLATE
-  'meta.noH1': 'No H1', // TRANSLATE
-  'meta.skips': '{count} skipped levels', // TRANSLATE
-  'meta.skip': 'Skips a level', // TRANSLATE
-  'meta.extraH1': 'Another H1', // TRANSLATE
-  'meta.hiddenHeading': 'hidden', // TRANSLATE
+    'Deixe com a sua cara: seis cores de destaque e três estilos de tela em Configurações → Aparência, e um novo layout Empilhado.',
+  'audit.tab.meta': 'Meta',
+  'meta.heading': 'Meta tags e títulos',
+  'meta.empty': 'Nenhuma pré-visualização pôde ser lida. Permita o site e recarregue as pré-visualizações.',
+  'meta.allGood': 'Tudo parece certo',
+  'meta.summary': '{fix} para corrigir · {look} para verificar',
+  'meta.readFrom': 'Lido de {name} · {width}',
+  'meta.preview': 'Pré-visualização a ler',
+  'meta.searchResult': 'Resultado de busca',
+  'meta.approximate': 'aproximado',
+  'meta.linkPreview': 'Pré-visualização do link',
+  'meta.noTitle': 'Sem título',
+  'meta.noDescription': 'Sem descrição: os buscadores escolhem um trecho da página.',
+  'meta.noImage': 'Sem imagem de compartilhamento',
+  'meta.imageFailed': 'Não foi possível carregar a imagem de compartilhamento',
+  'meta.imageAlt': 'A imagem de compartilhamento da página',
+  'meta.tags': 'Tags',
+  'meta.headings': 'Títulos',
+  'meta.noHeadings': 'A página não tem títulos.',
+  'meta.noH1': 'Sem H1',
+  'meta.skips': '{count} níveis pulados',
+  'meta.skip': 'Pula um nível',
+  'meta.extraH1': 'Outro H1',
+  'meta.hiddenHeading': 'oculto',
   'meta.note':
-    'Previews are approximate: every search engine and app shows links its own way, and may keep an older copy. Hidden headings aren’t shown at this size.', // TRANSLATE
-  'meta.colTag': 'Tag', // TRANSLATE
-  'meta.colStatus': 'Status', // TRANSLATE
-  'meta.colValue': 'Value', // TRANSLATE
-  'meta.status.ok': 'OK', // TRANSLATE
-  'meta.status.warn': 'Check', // TRANSLATE
-  'meta.status.bad': 'Fix', // TRANSLATE
-  'meta.status.info': 'Note', // TRANSLATE
-  'meta.check.title': 'Title', // TRANSLATE
-  'meta.check.description': 'Description', // TRANSLATE
-  'meta.check.socialTitle': 'Social title', // TRANSLATE
-  'meta.check.socialImage': 'Social image', // TRANSLATE
-  'meta.check.xCard': 'X card', // TRANSLATE
-  'meta.check.canonical': 'Canonical address', // TRANSLATE
-  'meta.check.lang': 'Language', // TRANSLATE
-  'meta.check.viewport': 'Viewport', // TRANSLATE
-  'meta.check.robots': 'Robots', // TRANSLATE
-  'meta.check.icons': 'Icons', // TRANSLATE
-  'meta.missing': 'Missing', // TRANSLATE
-  'meta.tooLong': '{count} characters · results show about {max}', // TRANSLATE
-  'meta.short': 'Only {count} characters', // TRANSLATE
-  'meta.characters': '{count} characters', // TRANSLATE
-  'meta.descriptionMissing': 'Missing · search engines pick text from the page', // TRANSLATE
-  'meta.present': 'Set', // TRANSLATE
-  'meta.socialTitleMissing': 'Not set · link previews use the page title', // TRANSLATE
-  'meta.imageMissing': 'Missing · link previews show no image', // TRANSLATE
-  'meta.cardMissing': 'Not set · X may show a small card', // TRANSLATE
-  'meta.canonicalMissing': 'Not set · search engines choose the address', // TRANSLATE
-  'meta.canonicalOther': 'Points to another address', // TRANSLATE
-  'meta.canonicalSelf': 'This page', // TRANSLATE
-  'meta.langMissing': 'Missing · screen readers and translators guess the language', // TRANSLATE
-  'meta.viewportMissing': 'Missing · phones show the page zoomed out', // TRANSLATE
-  'meta.viewportZoom': 'Stops people from zooming in', // TRANSLATE
-  'meta.robotsMissing': 'Not set · the page can be indexed', // TRANSLATE
-  'meta.noindex': 'Search engines are asked not to index this page', // TRANSLATE
-  'meta.iconsBoth': 'Favicon and Apple touch icon', // TRANSLATE
-  'meta.iconOnly': 'Favicon · no Apple touch icon', // TRANSLATE
-  'meta.touchOnly': 'Apple touch icon only', // TRANSLATE
-  'meta.iconMissing': 'Missing · browsers look for /favicon.ico', // TRANSLATE
+    'As pré-visualizações são aproximadas: cada buscador e aplicativo mostra os links à sua maneira e pode manter uma cópia antiga. Títulos ocultos não aparecem neste tamanho.',
+  'meta.colTag': 'Tag',
+  'meta.colStatus': 'Status',
+  'meta.colValue': 'Valor',
+  'meta.status.ok': 'OK',
+  'meta.status.warn': 'Verificar',
+  'meta.status.bad': 'Corrigir',
+  'meta.status.info': 'Nota',
+  'meta.check.title': 'Título',
+  'meta.check.description': 'Descrição',
+  'meta.check.socialTitle': 'Título de compartilhamento',
+  'meta.check.socialImage': 'Imagem de compartilhamento',
+  'meta.check.xCard': 'Card do X',
+  'meta.check.canonical': 'Endereço canônico',
+  'meta.check.lang': 'Idioma',
+  'meta.check.viewport': 'Viewport',
+  'meta.check.robots': 'Robots',
+  'meta.check.icons': 'Ícones',
+  'meta.missing': 'Ausente',
+  'meta.tooLong': '{count} caracteres · os resultados mostram cerca de {max}',
+  'meta.short': 'Só {count} caracteres',
+  'meta.characters': '{count} caracteres',
+  'meta.descriptionMissing': 'Ausente · os buscadores escolhem um trecho da página',
+  'meta.present': 'Definido',
+  'meta.socialTitleMissing': 'Não definido · as pré-visualizações de link usam o título da página',
+  'meta.imageMissing': 'Ausente · as pré-visualizações de link não mostram imagem',
+  'meta.cardMissing': 'Não definido · o X pode mostrar um card pequeno',
+  'meta.canonicalMissing': 'Não definido · os buscadores escolhem o endereço',
+  'meta.canonicalOther': 'Aponta para outro endereço',
+  'meta.canonicalSelf': 'Esta página',
+  'meta.langMissing': 'Ausente · leitores de tela e tradutores adivinham o idioma',
+  'meta.viewportMissing': 'Ausente · os celulares mostram a página reduzida',
+  'meta.viewportZoom': 'Impede que as pessoas ampliem',
+  'meta.robotsMissing': 'Não definido · a página pode ser indexada',
+  'meta.noindex': 'Pede-se aos buscadores que não indexem esta página',
+  'meta.iconsBoth': 'Favicon e ícone Apple touch',
+  'meta.iconOnly': 'Favicon · sem ícone Apple touch',
+  'meta.touchOnly': 'Só o ícone Apple touch',
+  'meta.iconMissing': 'Ausente · os navegadores procuram /favicon.ico',
   'news.meta':
-    'Meta & social in the audit: how the page shows in search results and link previews, its tags and its headings.', // TRANSLATE
-  'palette.auditMeta': 'Audit: meta & social previews', // TRANSLATE
+    'Meta e redes sociais na auditoria: como a página aparece nos resultados de busca e nas pré-visualizações de link, suas tags e seus títulos.',
+  'palette.auditMeta': 'Auditoria: meta e pré-visualizações sociais',
   // end v0.9 keys
 };

@@ -1432,141 +1432,143 @@ export const ja: Record<MessageKey, string> = {
   'news.tour':
     'はじめての方はヘルプからツアーをどうぞ。メモをプレビューと一緒に 1 枚の画像として保存することもできます。',
   // v0.9 keys
-  'layout.stack': 'Stack', // TRANSLATE
-  'palette.layoutStack': 'Layout: stack (one column)', // TRANSLATE
-  'sidebar.label': 'Viewports sidebar', // TRANSLATE
-  'sidebar.toggle': 'Viewports sidebar', // TRANSLATE
-  'sidebar.hide': 'Hide the sidebar', // TRANSLATE
-  'sidebar.show': 'Show {name}', // TRANSLATE
-  'sidebar.hideViewport': 'Hide {name}', // TRANSLATE
-  'sidebar.issues': '{count} kinds of issue', // TRANSLATE
-  'sidebar.rowHint': 'Click to go to a preview, double-click to focus it. Drag, or press Alt + ↑ ↓, to reorder.', // TRANSLATE
-  'sidebar.map': 'Breakpoint map', // TRANSLATE
-  'sidebar.mapBreakpoints': 'Breakpoints: {list}', // TRANSLATE
-  'sidebar.mapNoBreakpoints': 'No breakpoint labels', // TRANSLATE
-  'sidebar.mapViewports': 'Viewports: {list}', // TRANSLATE
-  'sidebar.mapHint': 'Pick a set of breakpoints on the toolbar to see which side of each one your viewports are on.', // TRANSLATE
-  'sidebar.page': 'Page', // TRANSLATE
-  'sidebar.allowed': 'Allowed', // TRANSLATE
-  'sidebar.score': 'Responsive score · {grade}', // TRANSLATE
-  'sidebar.noIssues': 'No issues found', // TRANSLATE
-  'sidebar.issueKindsOne': '1 kind of issue', // TRANSLATE
-  'sidebar.issueKinds': '{count} kinds of issue', // TRANSLATE
-  'status.label': 'Status', // TRANSLATE
-  'status.previewsOne': '1 preview', // TRANSLATE
-  'status.previews': '{count} previews', // TRANSLATE
-  'status.hidden': '{count} hidden', // TRANSLATE
-  'status.http': 'HTTP {status}', // TRANSLATE
-  'status.allSites': 'Allowed on all sites', // TRANSLATE
-  'status.allowed': 'Allowed on {host}', // TRANSLATE
-  'status.notAllowed': 'Not allowed on {host}', // TRANSLATE
-  'status.syncBoth': 'Sync: scrolling, links', // TRANSLATE
-  'status.syncScroll': 'Sync: scrolling', // TRANSLATE
-  'status.syncLinks': 'Sync: links', // TRANSLATE
-  'status.syncOff': 'Sync off', // TRANSLATE
-  'status.noIssues': 'No issues', // TRANSLATE
-  'status.issuesOne': '1 kind of issue', // TRANSLATE
-  'status.issues': '{count} kinds of issue', // TRANSLATE
-  'status.widths': '{range} px', // TRANSLATE
-  'status.fit': 'Fit to the window', // TRANSLATE
-  'minimap.toggle': 'Minimap', // TRANSLATE
-  'minimap.hint': 'Press or drag to scroll there', // TRANSLATE
-  'settings.accent': 'Accent colour', // TRANSLATE
-  'settings.accentHelp': 'Buttons, selections and focus rings.', // TRANSLATE
-  'accent.indigo': 'Indigo', // TRANSLATE
-  'accent.blue': 'Blue', // TRANSLATE
-  'accent.violet': 'Violet', // TRANSLATE
-  'accent.teal': 'Teal', // TRANSLATE
-  'accent.rose': 'Rose', // TRANSLATE
-  'accent.graphite': 'Graphite', // TRANSLATE
-  'settings.canvas': 'Canvas', // TRANSLATE
-  'settings.canvasHelp': 'The background behind the previews.', // TRANSLATE
-  'canvas.dots': 'Dots', // TRANSLATE
-  'canvas.grid': 'Grid', // TRANSLATE
-  'canvas.plain': 'Plain', // TRANSLATE
-  'settings.layout': 'Layout', // TRANSLATE
-  'settings.panels': 'Panels', // TRANSLATE
-  'settings.sidebar': 'Viewports sidebar', // TRANSLATE
-  'settings.sidebarHelp': 'Every viewport, a breakpoint map and the page at a glance. Shortcut: \\', // TRANSLATE
-  'settings.statusBar': 'Status bar', // TRANSLATE
-  'settings.statusBarHelp': 'Previews, site access, sync, issues and zoom along the bottom.', // TRANSLATE
-  'settings.minimap': 'Minimap', // TRANSLATE
-  'settings.minimapHelp': 'An overview of the workspace in a corner, shown while it scrolls.', // TRANSLATE
-  'palette.sidebar': 'Viewports sidebar', // TRANSLATE
-  'palette.statusBar': 'Status bar', // TRANSLATE
-  'palette.minimap': 'Minimap', // TRANSLATE
-  'palette.accent': 'Accent colour: {color}', // TRANSLATE
-  'palette.canvas': 'Canvas: {style}', // TRANSLATE
-  'help.sidebar': 'Show or hide the viewports sidebar', // TRANSLATE
+  'layout.stack': '縦積み',
+  'palette.layoutStack': 'レイアウト: 縦積み（1列）',
+  'sidebar.label': 'ビューポートサイドバー',
+  'sidebar.toggle': 'ビューポートサイドバー',
+  'sidebar.hide': 'サイドバーを隠す',
+  'sidebar.show': '{name}を表示',
+  'sidebar.hideViewport': '{name}を非表示',
+  'sidebar.issues': '{count}種類の問題',
+  'sidebar.rowHint': 'クリックでプレビューへ移動、ダブルクリックでフォーカス。ドラッグまたは Alt + ↑ ↓ で並べ替え。',
+  'sidebar.map': 'ブレークポイントマップ',
+  'sidebar.mapBreakpoints': 'ブレークポイント: {list}',
+  'sidebar.mapNoBreakpoints': 'ブレークポイントのラベルなし',
+  'sidebar.mapViewports': 'ビューポート: {list}',
+  'sidebar.mapHint':
+    'ツールバーでブレークポイントのセットを選ぶと、各ブレークポイントのどちら側にビューポートがあるか確認できます。',
+  'sidebar.page': 'ページ',
+  'sidebar.allowed': '許可済み',
+  'sidebar.score': 'レスポンシブスコア · {grade}',
+  'sidebar.noIssues': '問題は見つかりませんでした',
+  'sidebar.issueKindsOne': '1種類の問題',
+  'sidebar.issueKinds': '{count}種類の問題',
+  'status.label': 'ステータス',
+  'status.previewsOne': '1個のプレビュー',
+  'status.previews': '{count}個のプレビュー',
+  'status.hidden': '{count}個を非表示',
+  'status.http': 'HTTP {status}',
+  'status.allSites': 'すべてのサイトで許可済み',
+  'status.allowed': '{host}で許可済み',
+  'status.notAllowed': '{host}は未許可',
+  'status.syncBoth': '同期: スクロール、リンク',
+  'status.syncScroll': '同期: スクロール',
+  'status.syncLinks': '同期: リンク',
+  'status.syncOff': '同期オフ',
+  'status.noIssues': '問題なし',
+  'status.issuesOne': '1種類の問題',
+  'status.issues': '{count}種類の問題',
+  'status.widths': '{range} px',
+  'status.fit': 'ウィンドウに合わせる',
+  'minimap.toggle': 'ミニマップ',
+  'minimap.hint': 'クリックまたはドラッグでその位置へスクロール',
+  'settings.accent': 'アクセントカラー',
+  'settings.accentHelp': 'ボタン、選択、フォーカスリングに使われます。',
+  'accent.indigo': 'インディゴ',
+  'accent.blue': 'ブルー',
+  'accent.violet': 'バイオレット',
+  'accent.teal': 'ティール',
+  'accent.rose': 'ローズ',
+  'accent.graphite': 'グラファイト',
+  'settings.canvas': 'キャンバス',
+  'settings.canvasHelp': 'プレビューの背景です。',
+  'canvas.dots': 'ドット',
+  'canvas.grid': 'グリッド',
+  'canvas.plain': '無地',
+  'settings.layout': 'レイアウト',
+  'settings.panels': 'パネル',
+  'settings.sidebar': 'ビューポートサイドバー',
+  'settings.sidebarHelp':
+    'すべてのビューポート、ブレークポイントマップ、ページの概要を一覧表示します。ショートカット: \\',
+  'settings.statusBar': 'ステータスバー',
+  'settings.statusBarHelp': 'プレビュー、サイトアクセス、同期、問題、ズームを下部に表示します。',
+  'settings.minimap': 'ミニマップ',
+  'settings.minimapHelp': 'ワークスペース全体を隅に表示します。スクロール中に表示されます。',
+  'palette.sidebar': 'ビューポートサイドバー',
+  'palette.statusBar': 'ステータスバー',
+  'palette.minimap': 'ミニマップ',
+  'palette.accent': 'アクセントカラー: {color}',
+  'palette.canvas': 'キャンバス: {style}',
+  'help.sidebar': 'ビューポートサイドバーを表示/非表示',
   'news.workspace':
-    'A more professional workspace: a viewports sidebar with a breakpoint map (press \\), a status bar and a minimap.', // TRANSLATE
+    'より本格的なワークスペース: ブレークポイントマップ付きのビューポートサイドバー（\\ で切り替え）、ステータスバー、ミニマップ。',
   'news.appearance':
-    'Make it yours: six accent colours and three canvas styles in Settings → Appearance, and a new Stack layout.', // TRANSLATE
-  'audit.tab.meta': 'Meta', // TRANSLATE
-  'meta.heading': 'Meta tags and headings', // TRANSLATE
-  'meta.empty': 'No preview could be read. Allow the site, then reload the previews.', // TRANSLATE
-  'meta.allGood': 'Everything looks right', // TRANSLATE
-  'meta.summary': '{fix} to fix · {look} to check', // TRANSLATE
-  'meta.readFrom': 'Read from {name} · {width}', // TRANSLATE
-  'meta.preview': 'Preview to read', // TRANSLATE
-  'meta.searchResult': 'Search result', // TRANSLATE
-  'meta.approximate': 'approximate', // TRANSLATE
-  'meta.linkPreview': 'Link preview', // TRANSLATE
-  'meta.noTitle': 'No title', // TRANSLATE
-  'meta.noDescription': 'No description: search engines pick text from the page.', // TRANSLATE
-  'meta.noImage': 'No social image', // TRANSLATE
-  'meta.imageFailed': 'The social image couldn’t be loaded', // TRANSLATE
-  'meta.imageAlt': 'The page’s social image', // TRANSLATE
-  'meta.tags': 'Tags', // TRANSLATE
-  'meta.headings': 'Headings', // TRANSLATE
-  'meta.noHeadings': 'The page has no headings.', // TRANSLATE
-  'meta.noH1': 'No H1', // TRANSLATE
-  'meta.skips': '{count} skipped levels', // TRANSLATE
-  'meta.skip': 'Skips a level', // TRANSLATE
-  'meta.extraH1': 'Another H1', // TRANSLATE
-  'meta.hiddenHeading': 'hidden', // TRANSLATE
+    '自分好みに: 設定 → 外観で6色のアクセントカラーと3種類のキャンバススタイルを選べます。新しい縦積みレイアウトも追加されました。',
+  'audit.tab.meta': 'メタ',
+  'meta.heading': 'メタタグと見出し',
+  'meta.empty': '読み取れるプレビューがありません。サイトを許可してから、プレビューを再読み込みしてください。',
+  'meta.allGood': '問題ありません',
+  'meta.summary': '修正 {fix}件 · 確認 {look}件',
+  'meta.readFrom': '{name} · {width}から読み取り',
+  'meta.preview': '読み取るプレビュー',
+  'meta.searchResult': '検索結果',
+  'meta.approximate': '概算',
+  'meta.linkPreview': 'リンクプレビュー',
+  'meta.noTitle': 'タイトルなし',
+  'meta.noDescription': '説明なし: 検索エンジンがページ内からテキストを選びます。',
+  'meta.noImage': 'ソーシャル画像なし',
+  'meta.imageFailed': 'ソーシャル画像を読み込めませんでした',
+  'meta.imageAlt': 'ページのソーシャル画像',
+  'meta.tags': 'タグ',
+  'meta.headings': '見出し',
+  'meta.noHeadings': 'このページには見出しがありません。',
+  'meta.noH1': 'H1なし',
+  'meta.skips': '{count}個のレベル飛び',
+  'meta.skip': 'レベルを飛ばしています',
+  'meta.extraH1': '別のH1',
+  'meta.hiddenHeading': '非表示',
   'meta.note':
-    'Previews are approximate: every search engine and app shows links its own way, and may keep an older copy. Hidden headings aren’t shown at this size.', // TRANSLATE
-  'meta.colTag': 'Tag', // TRANSLATE
-  'meta.colStatus': 'Status', // TRANSLATE
-  'meta.colValue': 'Value', // TRANSLATE
-  'meta.status.ok': 'OK', // TRANSLATE
-  'meta.status.warn': 'Check', // TRANSLATE
-  'meta.status.bad': 'Fix', // TRANSLATE
-  'meta.status.info': 'Note', // TRANSLATE
-  'meta.check.title': 'Title', // TRANSLATE
-  'meta.check.description': 'Description', // TRANSLATE
-  'meta.check.socialTitle': 'Social title', // TRANSLATE
-  'meta.check.socialImage': 'Social image', // TRANSLATE
-  'meta.check.xCard': 'X card', // TRANSLATE
-  'meta.check.canonical': 'Canonical address', // TRANSLATE
-  'meta.check.lang': 'Language', // TRANSLATE
-  'meta.check.viewport': 'Viewport', // TRANSLATE
-  'meta.check.robots': 'Robots', // TRANSLATE
-  'meta.check.icons': 'Icons', // TRANSLATE
-  'meta.missing': 'Missing', // TRANSLATE
-  'meta.tooLong': '{count} characters · results show about {max}', // TRANSLATE
-  'meta.short': 'Only {count} characters', // TRANSLATE
-  'meta.characters': '{count} characters', // TRANSLATE
-  'meta.descriptionMissing': 'Missing · search engines pick text from the page', // TRANSLATE
-  'meta.present': 'Set', // TRANSLATE
-  'meta.socialTitleMissing': 'Not set · link previews use the page title', // TRANSLATE
-  'meta.imageMissing': 'Missing · link previews show no image', // TRANSLATE
-  'meta.cardMissing': 'Not set · X may show a small card', // TRANSLATE
-  'meta.canonicalMissing': 'Not set · search engines choose the address', // TRANSLATE
-  'meta.canonicalOther': 'Points to another address', // TRANSLATE
-  'meta.canonicalSelf': 'This page', // TRANSLATE
-  'meta.langMissing': 'Missing · screen readers and translators guess the language', // TRANSLATE
-  'meta.viewportMissing': 'Missing · phones show the page zoomed out', // TRANSLATE
-  'meta.viewportZoom': 'Stops people from zooming in', // TRANSLATE
-  'meta.robotsMissing': 'Not set · the page can be indexed', // TRANSLATE
-  'meta.noindex': 'Search engines are asked not to index this page', // TRANSLATE
-  'meta.iconsBoth': 'Favicon and Apple touch icon', // TRANSLATE
-  'meta.iconOnly': 'Favicon · no Apple touch icon', // TRANSLATE
-  'meta.touchOnly': 'Apple touch icon only', // TRANSLATE
-  'meta.iconMissing': 'Missing · browsers look for /favicon.ico', // TRANSLATE
+    'プレビューは概算です。検索エンジンやアプリごとにリンクの表示方法が異なり、古いコピーが残っていることもあります。非表示の見出しはこのサイズでは表示されません。',
+  'meta.colTag': 'タグ',
+  'meta.colStatus': '状態',
+  'meta.colValue': '値',
+  'meta.status.ok': 'OK',
+  'meta.status.warn': '確認',
+  'meta.status.bad': '修正',
+  'meta.status.info': 'メモ',
+  'meta.check.title': 'タイトル',
+  'meta.check.description': '説明',
+  'meta.check.socialTitle': 'ソーシャルタイトル',
+  'meta.check.socialImage': 'ソーシャル画像',
+  'meta.check.xCard': 'Xカード',
+  'meta.check.canonical': '正規アドレス',
+  'meta.check.lang': '言語',
+  'meta.check.viewport': 'ビューポート',
+  'meta.check.robots': 'ロボット',
+  'meta.check.icons': 'アイコン',
+  'meta.missing': 'なし',
+  'meta.tooLong': '{count}文字 · 検索結果では約{max}文字まで表示',
+  'meta.short': '{count}文字のみ',
+  'meta.characters': '{count}文字',
+  'meta.descriptionMissing': 'なし · 検索エンジンがページ内からテキストを選びます',
+  'meta.present': '設定済み',
+  'meta.socialTitleMissing': '未設定 · リンクプレビューにはページタイトルが使われます',
+  'meta.imageMissing': 'なし · リンクプレビューに画像が表示されません',
+  'meta.cardMissing': '未設定 · Xで小さなカードが表示される場合があります',
+  'meta.canonicalMissing': '未設定 · 検索エンジンがアドレスを選びます',
+  'meta.canonicalOther': '別のアドレスを指しています',
+  'meta.canonicalSelf': 'このページ',
+  'meta.langMissing': 'なし · スクリーンリーダーや翻訳ツールが言語を推測します',
+  'meta.viewportMissing': 'なし · スマートフォンでページが縮小表示されます',
+  'meta.viewportZoom': 'ズームインできなくなります',
+  'meta.robotsMissing': '未設定 · ページはインデックスされる可能性があります',
+  'meta.noindex': '検索エンジンにこのページをインデックスしないよう求めています',
+  'meta.iconsBoth': 'faviconとApple touchアイコン',
+  'meta.iconOnly': 'favicon · Apple touchアイコンなし',
+  'meta.touchOnly': 'Apple touchアイコンのみ',
+  'meta.iconMissing': 'なし · ブラウザは /favicon.ico を探します',
   'news.meta':
-    'Meta & social in the audit: how the page shows in search results and link previews, its tags and its headings.', // TRANSLATE
-  'palette.auditMeta': 'Audit: meta & social previews', // TRANSLATE
+    '監査にメタ情報とソーシャルを追加: 検索結果やリンクプレビューでのページの見え方、タグ、見出しを確認できます。',
+  'palette.auditMeta': '監査: メタ情報とソーシャルプレビュー',
   // end v0.9 keys
 };

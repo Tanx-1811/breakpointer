@@ -391,6 +391,18 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/scheme-css': { body: SCHEME_CSS_PAGE },
   '/inspect': { body: INSPECT_PAGE },
   '/images': { body: IMAGES_PAGE },
+  // Tags for the audit's Meta tab: a long description, a social image, a canonical address and an outline with a skipped level.
+  '/meta': {
+    body: page(
+      'Pricing — Meta test page',
+      `<meta name="description" content="${'A description that is much longer than what search results show. '.repeat(3).trim()}" />
+  <meta property="og:title" content="Social title" />
+  <meta property="og:image" content="/photo.png" />
+  <link rel="canonical" href="/meta" />
+  <link rel="icon" href="/photo.png" sizes="32x32" />
+  <style>.deep { margin: 0; }</style>`,
+    ).replace('</body>', '<h3 class="deep">Deep heading</h3></body>'),
+  },
   '/photo.png': { headers: { 'Content-Type': 'image/png' }, body: PHOTO },
   '/utilities': { body: UTILITIES_PAGE },
   '/cover': { body: COVER_PAGE },

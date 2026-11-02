@@ -1441,141 +1441,143 @@ export const id: Record<MessageKey, string> = {
   'news.distance': 'Inspeksi kini mengukur jarak antara dua elemen di setiap ukuran.',
   'news.tour': 'Baru di sini? Ikuti tur dari Bantuan — dan simpan catatan bersama pratinjau sebagai satu gambar.',
   // v0.9 keys
-  'layout.stack': 'Stack', // TRANSLATE
-  'palette.layoutStack': 'Layout: stack (one column)', // TRANSLATE
-  'sidebar.label': 'Viewports sidebar', // TRANSLATE
-  'sidebar.toggle': 'Viewports sidebar', // TRANSLATE
-  'sidebar.hide': 'Hide the sidebar', // TRANSLATE
-  'sidebar.show': 'Show {name}', // TRANSLATE
-  'sidebar.hideViewport': 'Hide {name}', // TRANSLATE
-  'sidebar.issues': '{count} kinds of issue', // TRANSLATE
-  'sidebar.rowHint': 'Click to go to a preview, double-click to focus it. Drag, or press Alt + ↑ ↓, to reorder.', // TRANSLATE
-  'sidebar.map': 'Breakpoint map', // TRANSLATE
-  'sidebar.mapBreakpoints': 'Breakpoints: {list}', // TRANSLATE
-  'sidebar.mapNoBreakpoints': 'No breakpoint labels', // TRANSLATE
-  'sidebar.mapViewports': 'Viewports: {list}', // TRANSLATE
-  'sidebar.mapHint': 'Pick a set of breakpoints on the toolbar to see which side of each one your viewports are on.', // TRANSLATE
-  'sidebar.page': 'Page', // TRANSLATE
-  'sidebar.allowed': 'Allowed', // TRANSLATE
-  'sidebar.score': 'Responsive score · {grade}', // TRANSLATE
-  'sidebar.noIssues': 'No issues found', // TRANSLATE
-  'sidebar.issueKindsOne': '1 kind of issue', // TRANSLATE
-  'sidebar.issueKinds': '{count} kinds of issue', // TRANSLATE
-  'status.label': 'Status', // TRANSLATE
-  'status.previewsOne': '1 preview', // TRANSLATE
-  'status.previews': '{count} previews', // TRANSLATE
-  'status.hidden': '{count} hidden', // TRANSLATE
-  'status.http': 'HTTP {status}', // TRANSLATE
-  'status.allSites': 'Allowed on all sites', // TRANSLATE
-  'status.allowed': 'Allowed on {host}', // TRANSLATE
-  'status.notAllowed': 'Not allowed on {host}', // TRANSLATE
-  'status.syncBoth': 'Sync: scrolling, links', // TRANSLATE
-  'status.syncScroll': 'Sync: scrolling', // TRANSLATE
-  'status.syncLinks': 'Sync: links', // TRANSLATE
-  'status.syncOff': 'Sync off', // TRANSLATE
-  'status.noIssues': 'No issues', // TRANSLATE
-  'status.issuesOne': '1 kind of issue', // TRANSLATE
-  'status.issues': '{count} kinds of issue', // TRANSLATE
-  'status.widths': '{range} px', // TRANSLATE
-  'status.fit': 'Fit to the window', // TRANSLATE
-  'minimap.toggle': 'Minimap', // TRANSLATE
-  'minimap.hint': 'Press or drag to scroll there', // TRANSLATE
-  'settings.accent': 'Accent colour', // TRANSLATE
-  'settings.accentHelp': 'Buttons, selections and focus rings.', // TRANSLATE
-  'accent.indigo': 'Indigo', // TRANSLATE
-  'accent.blue': 'Blue', // TRANSLATE
-  'accent.violet': 'Violet', // TRANSLATE
-  'accent.teal': 'Teal', // TRANSLATE
-  'accent.rose': 'Rose', // TRANSLATE
-  'accent.graphite': 'Graphite', // TRANSLATE
-  'settings.canvas': 'Canvas', // TRANSLATE
-  'settings.canvasHelp': 'The background behind the previews.', // TRANSLATE
-  'canvas.dots': 'Dots', // TRANSLATE
-  'canvas.grid': 'Grid', // TRANSLATE
-  'canvas.plain': 'Plain', // TRANSLATE
-  'settings.layout': 'Layout', // TRANSLATE
-  'settings.panels': 'Panels', // TRANSLATE
-  'settings.sidebar': 'Viewports sidebar', // TRANSLATE
-  'settings.sidebarHelp': 'Every viewport, a breakpoint map and the page at a glance. Shortcut: \\', // TRANSLATE
-  'settings.statusBar': 'Status bar', // TRANSLATE
-  'settings.statusBarHelp': 'Previews, site access, sync, issues and zoom along the bottom.', // TRANSLATE
-  'settings.minimap': 'Minimap', // TRANSLATE
-  'settings.minimapHelp': 'An overview of the workspace in a corner, shown while it scrolls.', // TRANSLATE
-  'palette.sidebar': 'Viewports sidebar', // TRANSLATE
-  'palette.statusBar': 'Status bar', // TRANSLATE
-  'palette.minimap': 'Minimap', // TRANSLATE
-  'palette.accent': 'Accent colour: {color}', // TRANSLATE
-  'palette.canvas': 'Canvas: {style}', // TRANSLATE
-  'help.sidebar': 'Show or hide the viewports sidebar', // TRANSLATE
+  'layout.stack': 'Tumpuk',
+  'palette.layoutStack': 'Tata letak: tumpuk (satu kolom)',
+  'sidebar.label': 'Bilah samping viewport',
+  'sidebar.toggle': 'Bilah samping viewport',
+  'sidebar.hide': 'Sembunyikan bilah samping',
+  'sidebar.show': 'Tampilkan {name}',
+  'sidebar.hideViewport': 'Sembunyikan {name}',
+  'sidebar.issues': '{count} jenis masalah',
+  'sidebar.rowHint':
+    'Klik untuk menuju ke pratinjau, klik dua kali untuk memfokuskannya. Seret, atau tekan Alt + ↑ ↓, untuk mengurutkan ulang.',
+  'sidebar.map': 'Peta breakpoint',
+  'sidebar.mapBreakpoints': 'Breakpoint: {list}',
+  'sidebar.mapNoBreakpoints': 'Tidak ada label breakpoint',
+  'sidebar.mapViewports': 'Viewport: {list}',
+  'sidebar.mapHint':
+    'Pilih satu set breakpoint di bilah alat untuk melihat di sisi mana dari tiap breakpoint viewport Anda berada.',
+  'sidebar.page': 'Halaman',
+  'sidebar.allowed': 'Diizinkan',
+  'sidebar.score': 'Skor responsif · {grade}',
+  'sidebar.noIssues': 'Tidak ada masalah ditemukan',
+  'sidebar.issueKindsOne': '1 jenis masalah',
+  'sidebar.issueKinds': '{count} jenis masalah',
+  'status.label': 'Status',
+  'status.previewsOne': '1 pratinjau',
+  'status.previews': '{count} pratinjau',
+  'status.hidden': '{count} disembunyikan',
+  'status.http': 'HTTP {status}',
+  'status.allSites': 'Diizinkan di semua situs',
+  'status.allowed': 'Diizinkan di {host}',
+  'status.notAllowed': 'Tidak diizinkan di {host}',
+  'status.syncBoth': 'Sinkron: gulir, tautan',
+  'status.syncScroll': 'Sinkron: gulir',
+  'status.syncLinks': 'Sinkron: tautan',
+  'status.syncOff': 'Sinkron mati',
+  'status.noIssues': 'Tidak ada masalah',
+  'status.issuesOne': '1 jenis masalah',
+  'status.issues': '{count} jenis masalah',
+  'status.widths': '{range} px',
+  'status.fit': 'Paskan ke jendela',
+  'minimap.toggle': 'Peta mini',
+  'minimap.hint': 'Tekan atau seret untuk menggulir ke sana',
+  'settings.accent': 'Warna aksen',
+  'settings.accentHelp': 'Tombol, pilihan, dan cincin fokus.',
+  'accent.indigo': 'Indigo',
+  'accent.blue': 'Biru',
+  'accent.violet': 'Ungu',
+  'accent.teal': 'Teal',
+  'accent.rose': 'Mawar',
+  'accent.graphite': 'Grafit',
+  'settings.canvas': 'Kanvas',
+  'settings.canvasHelp': 'Latar belakang di balik pratinjau.',
+  'canvas.dots': 'Titik',
+  'canvas.grid': 'Kisi',
+  'canvas.plain': 'Polos',
+  'settings.layout': 'Tata letak',
+  'settings.panels': 'Panel',
+  'settings.sidebar': 'Bilah samping viewport',
+  'settings.sidebarHelp': 'Semua viewport, peta breakpoint, dan ringkasan halaman sekilas. Pintasan: \\',
+  'settings.statusBar': 'Bilah status',
+  'settings.statusBarHelp': 'Pratinjau, akses situs, sinkron, masalah, dan zoom di sepanjang bagian bawah.',
+  'settings.minimap': 'Peta mini',
+  'settings.minimapHelp': 'Gambaran ruang kerja di sudut layar, tampil saat Anda menggulir.',
+  'palette.sidebar': 'Bilah samping viewport',
+  'palette.statusBar': 'Bilah status',
+  'palette.minimap': 'Peta mini',
+  'palette.accent': 'Warna aksen: {color}',
+  'palette.canvas': 'Kanvas: {style}',
+  'help.sidebar': 'Tampilkan atau sembunyikan bilah samping viewport',
   'news.workspace':
-    'A more professional workspace: a viewports sidebar with a breakpoint map (press \\), a status bar and a minimap.', // TRANSLATE
+    'Ruang kerja yang lebih profesional: bilah samping viewport dengan peta breakpoint (tekan \\), bilah status, dan peta mini.',
   'news.appearance':
-    'Make it yours: six accent colours and three canvas styles in Settings → Appearance, and a new Stack layout.', // TRANSLATE
-  'audit.tab.meta': 'Meta', // TRANSLATE
-  'meta.heading': 'Meta tags and headings', // TRANSLATE
-  'meta.empty': 'No preview could be read. Allow the site, then reload the previews.', // TRANSLATE
-  'meta.allGood': 'Everything looks right', // TRANSLATE
-  'meta.summary': '{fix} to fix · {look} to check', // TRANSLATE
-  'meta.readFrom': 'Read from {name} · {width}', // TRANSLATE
-  'meta.preview': 'Preview to read', // TRANSLATE
-  'meta.searchResult': 'Search result', // TRANSLATE
-  'meta.approximate': 'approximate', // TRANSLATE
-  'meta.linkPreview': 'Link preview', // TRANSLATE
-  'meta.noTitle': 'No title', // TRANSLATE
-  'meta.noDescription': 'No description: search engines pick text from the page.', // TRANSLATE
-  'meta.noImage': 'No social image', // TRANSLATE
-  'meta.imageFailed': 'The social image couldn’t be loaded', // TRANSLATE
-  'meta.imageAlt': 'The page’s social image', // TRANSLATE
-  'meta.tags': 'Tags', // TRANSLATE
-  'meta.headings': 'Headings', // TRANSLATE
-  'meta.noHeadings': 'The page has no headings.', // TRANSLATE
-  'meta.noH1': 'No H1', // TRANSLATE
-  'meta.skips': '{count} skipped levels', // TRANSLATE
-  'meta.skip': 'Skips a level', // TRANSLATE
-  'meta.extraH1': 'Another H1', // TRANSLATE
-  'meta.hiddenHeading': 'hidden', // TRANSLATE
+    'Buat sesuai selera Anda: enam warna aksen dan tiga gaya kanvas di Pengaturan → Tampilan, serta tata letak Tumpuk yang baru.',
+  'audit.tab.meta': 'Meta',
+  'meta.heading': 'Tag meta dan heading',
+  'meta.empty': 'Tidak ada pratinjau yang bisa dibaca. Izinkan situs, lalu muat ulang pratinjau.',
+  'meta.allGood': 'Semuanya terlihat benar',
+  'meta.summary': '{fix} perlu diperbaiki · {look} perlu dicek',
+  'meta.readFrom': 'Dibaca dari {name} · {width}',
+  'meta.preview': 'Pratinjau yang dibaca',
+  'meta.searchResult': 'Hasil pencarian',
+  'meta.approximate': 'perkiraan',
+  'meta.linkPreview': 'Pratinjau tautan',
+  'meta.noTitle': 'Tanpa judul',
+  'meta.noDescription': 'Tanpa deskripsi: mesin pencari mengambil teks dari halaman.',
+  'meta.noImage': 'Tanpa gambar sosial',
+  'meta.imageFailed': 'Gambar sosial tidak dapat dimuat',
+  'meta.imageAlt': 'Gambar sosial halaman',
+  'meta.tags': 'Tag',
+  'meta.headings': 'Heading',
+  'meta.noHeadings': 'Halaman ini tidak memiliki heading.',
+  'meta.noH1': 'Tanpa H1',
+  'meta.skips': '{count} level terlewati',
+  'meta.skip': 'Melewati satu level',
+  'meta.extraH1': 'H1 tambahan',
+  'meta.hiddenHeading': 'tersembunyi',
   'meta.note':
-    'Previews are approximate: every search engine and app shows links its own way, and may keep an older copy. Hidden headings aren’t shown at this size.', // TRANSLATE
-  'meta.colTag': 'Tag', // TRANSLATE
-  'meta.colStatus': 'Status', // TRANSLATE
-  'meta.colValue': 'Value', // TRANSLATE
-  'meta.status.ok': 'OK', // TRANSLATE
-  'meta.status.warn': 'Check', // TRANSLATE
-  'meta.status.bad': 'Fix', // TRANSLATE
-  'meta.status.info': 'Note', // TRANSLATE
-  'meta.check.title': 'Title', // TRANSLATE
-  'meta.check.description': 'Description', // TRANSLATE
-  'meta.check.socialTitle': 'Social title', // TRANSLATE
-  'meta.check.socialImage': 'Social image', // TRANSLATE
-  'meta.check.xCard': 'X card', // TRANSLATE
-  'meta.check.canonical': 'Canonical address', // TRANSLATE
-  'meta.check.lang': 'Language', // TRANSLATE
-  'meta.check.viewport': 'Viewport', // TRANSLATE
-  'meta.check.robots': 'Robots', // TRANSLATE
-  'meta.check.icons': 'Icons', // TRANSLATE
-  'meta.missing': 'Missing', // TRANSLATE
-  'meta.tooLong': '{count} characters · results show about {max}', // TRANSLATE
-  'meta.short': 'Only {count} characters', // TRANSLATE
-  'meta.characters': '{count} characters', // TRANSLATE
-  'meta.descriptionMissing': 'Missing · search engines pick text from the page', // TRANSLATE
-  'meta.present': 'Set', // TRANSLATE
-  'meta.socialTitleMissing': 'Not set · link previews use the page title', // TRANSLATE
-  'meta.imageMissing': 'Missing · link previews show no image', // TRANSLATE
-  'meta.cardMissing': 'Not set · X may show a small card', // TRANSLATE
-  'meta.canonicalMissing': 'Not set · search engines choose the address', // TRANSLATE
-  'meta.canonicalOther': 'Points to another address', // TRANSLATE
-  'meta.canonicalSelf': 'This page', // TRANSLATE
-  'meta.langMissing': 'Missing · screen readers and translators guess the language', // TRANSLATE
-  'meta.viewportMissing': 'Missing · phones show the page zoomed out', // TRANSLATE
-  'meta.viewportZoom': 'Stops people from zooming in', // TRANSLATE
-  'meta.robotsMissing': 'Not set · the page can be indexed', // TRANSLATE
-  'meta.noindex': 'Search engines are asked not to index this page', // TRANSLATE
-  'meta.iconsBoth': 'Favicon and Apple touch icon', // TRANSLATE
-  'meta.iconOnly': 'Favicon · no Apple touch icon', // TRANSLATE
-  'meta.touchOnly': 'Apple touch icon only', // TRANSLATE
-  'meta.iconMissing': 'Missing · browsers look for /favicon.ico', // TRANSLATE
+    'Pratinjau hanya perkiraan: setiap mesin pencari dan aplikasi menampilkan tautan dengan caranya sendiri, dan mungkin menyimpan salinan lama. Heading tersembunyi tidak ditampilkan pada ukuran ini.',
+  'meta.colTag': 'Tag',
+  'meta.colStatus': 'Status',
+  'meta.colValue': 'Nilai',
+  'meta.status.ok': 'OK',
+  'meta.status.warn': 'Cek',
+  'meta.status.bad': 'Perbaiki',
+  'meta.status.info': 'Catatan',
+  'meta.check.title': 'Judul',
+  'meta.check.description': 'Deskripsi',
+  'meta.check.socialTitle': 'Judul sosial',
+  'meta.check.socialImage': 'Gambar sosial',
+  'meta.check.xCard': 'Kartu X',
+  'meta.check.canonical': 'Alamat kanonis',
+  'meta.check.lang': 'Bahasa',
+  'meta.check.viewport': 'Viewport',
+  'meta.check.robots': 'Robot',
+  'meta.check.icons': 'Ikon',
+  'meta.missing': 'Tidak ada',
+  'meta.tooLong': '{count} karakter · hasil menampilkan sekitar {max}',
+  'meta.short': 'Hanya {count} karakter',
+  'meta.characters': '{count} karakter',
+  'meta.descriptionMissing': 'Tidak ada · mesin pencari mengambil teks dari halaman',
+  'meta.present': 'Diatur',
+  'meta.socialTitleMissing': 'Belum diatur · pratinjau tautan memakai judul halaman',
+  'meta.imageMissing': 'Tidak ada · pratinjau tautan tanpa gambar',
+  'meta.cardMissing': 'Belum diatur · X mungkin menampilkan kartu kecil',
+  'meta.canonicalMissing': 'Belum diatur · mesin pencari memilih alamatnya',
+  'meta.canonicalOther': 'Mengarah ke alamat lain',
+  'meta.canonicalSelf': 'Halaman ini',
+  'meta.langMissing': 'Tidak ada · pembaca layar dan penerjemah menebak bahasanya',
+  'meta.viewportMissing': 'Tidak ada · ponsel menampilkan halaman dalam keadaan diperkecil',
+  'meta.viewportZoom': 'Mencegah pengguna memperbesar tampilan',
+  'meta.robotsMissing': 'Belum diatur · halaman dapat diindeks',
+  'meta.noindex': 'Mesin pencari diminta untuk tidak mengindeks halaman ini',
+  'meta.iconsBoth': 'Favicon dan ikon Apple touch',
+  'meta.iconOnly': 'Favicon · tanpa ikon Apple touch',
+  'meta.touchOnly': 'Hanya ikon Apple touch',
+  'meta.iconMissing': 'Tidak ada · browser mencari /favicon.ico',
   'news.meta':
-    'Meta & social in the audit: how the page shows in search results and link previews, its tags and its headings.', // TRANSLATE
-  'palette.auditMeta': 'Audit: meta & social previews', // TRANSLATE
+    'Meta & sosial di audit: bagaimana halaman tampil di hasil pencarian dan pratinjau tautan, beserta tag dan heading-nya.',
+  'palette.auditMeta': 'Audit: pratinjau meta & sosial',
   // end v0.9 keys
 };

@@ -199,7 +199,7 @@ export function metaChecks(meta: PageMeta, page: string | null): MetaCheck[] {
   return checks;
 }
 
-/** What's wrong with a heading in the outline: a level skipped before it, or a second h1. */
+/** What's wrong with a heading in the outline: a level skipped before it (the first heading may start anywhere), or a second h1. */
 export type HeadingIssue = 'skip' | 'extraH1' | null;
 
 /** The outline's headings, each with what's wrong with it (hidden headings don't count). */
@@ -212,7 +212,7 @@ export function headingOutline(headings: readonly HeadingSample[]): (HeadingSamp
     if (heading.level === 1) {
       h1s += 1;
       if (h1s > 1) issue = 'extraH1';
-    } else if (heading.level > previous + 1) issue = 'skip';
+    } else if (previous > 0 && heading.level > previous + 1) issue = 'skip';
     previous = heading.level;
     return { ...heading, issue };
   });
