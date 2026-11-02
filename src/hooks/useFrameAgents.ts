@@ -220,6 +220,7 @@ export function useFrameAgents(
         case 'typeScale':
         case 'images':
         case 'colors':
+        case 'meta':
         case 'elementRect':
         case 'rects':
         case 'links': {

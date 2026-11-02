@@ -1509,7 +1509,75 @@ export const de: Record<MessageKey, string> = {
   'palette.accent': 'Accent colour: {color}', // TRANSLATE
   'palette.canvas': 'Canvas: {style}', // TRANSLATE
   'help.sidebar': 'Show or hide the viewports sidebar', // TRANSLATE
-  'news.workspace': 'A more professional workspace: a viewports sidebar with a breakpoint map (press \\), a status bar and a minimap.', // TRANSLATE
-  'news.appearance': 'Make it yours: six accent colours and three canvas styles in Settings → Appearance, and a new Stack layout.', // TRANSLATE
+  'news.workspace':
+    'A more professional workspace: a viewports sidebar with a breakpoint map (press \\), a status bar and a minimap.', // TRANSLATE
+  'news.appearance':
+    'Make it yours: six accent colours and three canvas styles in Settings → Appearance, and a new Stack layout.', // TRANSLATE
+  'audit.tab.meta': 'Meta', // TRANSLATE
+  'meta.heading': 'Meta tags and headings', // TRANSLATE
+  'meta.empty': 'No preview could be read. Allow the site, then reload the previews.', // TRANSLATE
+  'meta.allGood': 'Everything looks right', // TRANSLATE
+  'meta.summary': '{fix} to fix · {look} to check', // TRANSLATE
+  'meta.readFrom': 'Read from {name} · {width}', // TRANSLATE
+  'meta.preview': 'Preview to read', // TRANSLATE
+  'meta.searchResult': 'Search result', // TRANSLATE
+  'meta.approximate': 'approximate', // TRANSLATE
+  'meta.linkPreview': 'Link preview', // TRANSLATE
+  'meta.noTitle': 'No title', // TRANSLATE
+  'meta.noDescription': 'No description: search engines pick text from the page.', // TRANSLATE
+  'meta.noImage': 'No social image', // TRANSLATE
+  'meta.imageFailed': 'The social image couldn’t be loaded', // TRANSLATE
+  'meta.imageAlt': 'The page’s social image', // TRANSLATE
+  'meta.tags': 'Tags', // TRANSLATE
+  'meta.headings': 'Headings', // TRANSLATE
+  'meta.noHeadings': 'The page has no headings.', // TRANSLATE
+  'meta.noH1': 'No H1', // TRANSLATE
+  'meta.skips': '{count} skipped levels', // TRANSLATE
+  'meta.skip': 'Skips a level', // TRANSLATE
+  'meta.extraH1': 'Another H1', // TRANSLATE
+  'meta.hiddenHeading': 'hidden', // TRANSLATE
+  'meta.note':
+    'Previews are approximate: every search engine and app shows links its own way, and may keep an older copy. Hidden headings aren’t shown at this size.', // TRANSLATE
+  'meta.colTag': 'Tag', // TRANSLATE
+  'meta.colStatus': 'Status', // TRANSLATE
+  'meta.colValue': 'Value', // TRANSLATE
+  'meta.status.ok': 'OK', // TRANSLATE
+  'meta.status.warn': 'Check', // TRANSLATE
+  'meta.status.bad': 'Fix', // TRANSLATE
+  'meta.status.info': 'Note', // TRANSLATE
+  'meta.check.title': 'Title', // TRANSLATE
+  'meta.check.description': 'Description', // TRANSLATE
+  'meta.check.socialTitle': 'Social title', // TRANSLATE
+  'meta.check.socialImage': 'Social image', // TRANSLATE
+  'meta.check.xCard': 'X card', // TRANSLATE
+  'meta.check.canonical': 'Canonical address', // TRANSLATE
+  'meta.check.lang': 'Language', // TRANSLATE
+  'meta.check.viewport': 'Viewport', // TRANSLATE
+  'meta.check.robots': 'Robots', // TRANSLATE
+  'meta.check.icons': 'Icons', // TRANSLATE
+  'meta.missing': 'Missing', // TRANSLATE
+  'meta.tooLong': '{count} characters · results show about {max}', // TRANSLATE
+  'meta.short': 'Only {count} characters', // TRANSLATE
+  'meta.characters': '{count} characters', // TRANSLATE
+  'meta.descriptionMissing': 'Missing · search engines pick text from the page', // TRANSLATE
+  'meta.present': 'Set', // TRANSLATE
+  'meta.socialTitleMissing': 'Not set · link previews use the page title', // TRANSLATE
+  'meta.imageMissing': 'Missing · link previews show no image', // TRANSLATE
+  'meta.cardMissing': 'Not set · X may show a small card', // TRANSLATE
+  'meta.canonicalMissing': 'Not set · search engines choose the address', // TRANSLATE
+  'meta.canonicalOther': 'Points to another address', // TRANSLATE
+  'meta.canonicalSelf': 'This page', // TRANSLATE
+  'meta.langMissing': 'Missing · screen readers and translators guess the language', // TRANSLATE
+  'meta.viewportMissing': 'Missing · phones show the page zoomed out', // TRANSLATE
+  'meta.viewportZoom': 'Stops people from zooming in', // TRANSLATE
+  'meta.robotsMissing': 'Not set · the page can be indexed', // TRANSLATE
+  'meta.noindex': 'Search engines are asked not to index this page', // TRANSLATE
+  'meta.iconsBoth': 'Favicon and Apple touch icon', // TRANSLATE
+  'meta.iconOnly': 'Favicon · no Apple touch icon', // TRANSLATE
+  'meta.touchOnly': 'Apple touch icon only', // TRANSLATE
+  'meta.iconMissing': 'Missing · browsers look for /favicon.ico', // TRANSLATE
+  'news.meta':
+    'Meta & social in the audit: how the page shows in search results and link previews, its tags and its headings.', // TRANSLATE
+  'palette.auditMeta': 'Audit: meta & social previews', // TRANSLATE
   // end v0.9 keys
 };

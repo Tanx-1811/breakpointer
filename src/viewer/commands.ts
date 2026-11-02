@@ -508,6 +508,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'typography font size line height headings scale',
       run: () => audit('type'),
     });
+    named('palette.auditMeta', {
+      id: 'audit-meta',
+      section: section.tools,
+      icon: 'share',
+      keywords:
+        'seo meta tags open graph og twitter social share preview search google title description canonical headings outline',
+      run: () => audit('meta'),
+    });
   }
   /** A switch; a Pro one is "off" with a Pro hint on the free plan (running it shows what Pro brings). */
   const toggle = (id: ToolToggle, key: MessageKey, checked: boolean, proFeature = false, keywords?: string) => {

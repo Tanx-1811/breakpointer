@@ -27,6 +27,7 @@ import {
   mirrorsClick,
 } from './a11y';
 import {
+  collectMeta,
   compressBox,
   cssPath,
   cumulativeLayoutShift,
@@ -2430,6 +2431,17 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         break;
       case 'getColors':
         send({ type: 'colors', id: command.id, colors: colorSample() });
+        break;
+      case 'getMeta':
+        send({
+          type: 'meta',
+          id: command.id,
+          meta: collectMeta(document, (element) =>
+            typeof element.checkVisibility === 'function'
+              ? !element.checkVisibility({ visibilityProperty: true })
+              : element.getClientRects().length === 0,
+          ),
+        });
         break;
       case 'getLinks': {
         // Addresses only, never the links' text: pages of this site, without fragments.

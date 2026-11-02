@@ -5,6 +5,7 @@
  */
 
 import { parseColor, type Rgb } from '../state/contrast';
+import type { MetaTag, PageMeta } from './protocol';
 
 /** Pixels per em/rem in media queries (they use the initial font size, not the page's). */
 const MEDIA_EM_PX = 16;
@@ -600,16 +601,26 @@ export function collectMeta(doc: Document, isHidden: (element: Element) => boole
     const key = (meta.getAttribute('property') || meta.getAttribute('name') || '').trim().toLowerCase();
     const content = meta.getAttribute('content');
     if (!key || content === null) continue;
-    const value = ADDRESS_TAGS.test(key) ? (absoluteAddress(content, base) ?? squash(content, MAX_META_VALUE)) : content;
+    const value = ADDRESS_TAGS.test(key)
+      ? (absoluteAddress(content, base) ?? squash(content, MAX_META_VALUE))
+      : content;
     tags.push({ key, value: squash(value, MAX_META_VALUE) });
   }
   const canonicalHref = doc.querySelector('link[rel~="canonical" i]')?.getAttribute('href');
-  const icons = [...doc.querySelectorAll('link[rel~="icon" i], link[rel~="apple-touch-icon" i], link[rel~="mask-icon" i]')]
+  const icons = [
+    ...doc.querySelectorAll('link[rel~="icon" i], link[rel~="apple-touch-icon" i], link[rel~="mask-icon" i]'),
+  ]
     .slice(0, 12)
     .flatMap((link) => {
       const href = absoluteAddress(link.getAttribute('href') ?? '', base);
       return href
-        ? [{ rel: (link.getAttribute('rel') ?? '').toLowerCase().trim(), href, sizes: link.getAttribute('sizes') ?? '' }]
+        ? [
+            {
+              rel: (link.getAttribute('rel') ?? '').toLowerCase().trim(),
+              href,
+              sizes: link.getAttribute('sizes') ?? '',
+            },
+          ]
         : [];
     });
   const headings = [...doc.querySelectorAll('h1, h2, h3, h4, h5, h6')].slice(0, MAX_HEADINGS).map((heading) => ({

@@ -1,4 +1,12 @@
-import type { CheckIssue, CheckReport, ColorSample, ImageSample, PageStats, TypeSample } from '../agent/protocol';
+import type {
+  CheckIssue,
+  CheckReport,
+  ColorSample,
+  ImageSample,
+  PageMeta,
+  PageStats,
+  TypeSample,
+} from '../agent/protocol';
 import type { Translate } from '../i18n/translate';
 import { type BatchCell, type BatchRun, failureText, pageScore } from './batch';
 import { CHECK_KIND_KEYS } from './checks';
@@ -213,6 +221,7 @@ export type AuditExportRow = {
   type?: TypeSample[] | null;
   images?: ImageSample[] | null;
   colors?: ColorSample | null;
+  meta?: PageMeta | null;
 };
 
 /** A row per preview and issue (a row per preview when it has none, or wasn't checked). */
@@ -260,6 +269,7 @@ export function auditJson(page: string | null, rows: AuditExportRow[], version: 
         typeScale: row.type ?? null,
         images: row.images ?? null,
         colors: row.colors ?? null,
+        meta: row.meta ?? null,
       })),
     },
     null,

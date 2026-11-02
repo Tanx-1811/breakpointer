@@ -120,6 +120,7 @@ import { widthRange } from '../state/breakpoint-map';
 import { responsiveScore } from '../state/score';
 import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors';
 import { imageRows, imagesMarkdown } from '../state/images';
+import { metaMarkdown } from '../state/meta';
 import { activeBranding, imageFooterName } from '../state/branding';
 import { MAX_NOTES, newNote, normalizeNoteText, notesMarkdown, type Note, type NoteCard } from '../state/notes';
 import { canSaveProject, createProject, projectViewports, type ProjectState } from '../state/projects';
@@ -400,6 +401,8 @@ function Workspace({
   const scrollToRestore = useRef<Record<string, { href: string; y: number }>>({});
   // The audit panel (issues, page stats and type of every preview); it shares the side with the inspector.
   const [audit, setAudit] = useState<{ open: boolean; tab: AuditTab }>({ open: false, tab: 'issues' });
+  /** The preview the audit's Meta tab reads (null: the first that answered). */
+  const [metaCard, setMetaCard] = useState<string | null>(null);
   const [busy, setBusy] = useState<null | 'report' | 'sheet'>(null);
   // One capture at a time: each one shows the previews one by one and captures the screen.
   const capturing = busy !== null || visualBusy || showcaseBusy;
@@ -3036,6 +3039,7 @@ function Workspace({
     type: auditData.typeOf(card.id),
     images: auditData.imagesOf(card.id),
     colors: auditData.colorsOf(card.id),
+    meta: auditData.metaOf(card.id),
   }));
   // Kinds of issue found in any preview (shown on the toolbar's Audit button).
   const issueKinds = groupIssues(auditRows).length;
@@ -3061,6 +3065,12 @@ function Workspace({
     if (vp?.hidden) dispatch({ type: 'updateViewport', id, patch: { hidden: false } });
     // Shown again: its card exists once React has rendered it.
     requestAnimationFrame(() => revealCard(id));
+  };
+
+  /** The Meta tab's preview (the one picked, or the first that answered), as Markdown. */
+  const metaMarkdownOf = (page: string) => {
+    const row = auditRows.find((item) => item.id === metaCard && item.meta) ?? auditRows.find((item) => item.meta);
+    return row?.meta ? metaMarkdown(page, row.meta, t) : `## ${t('meta.heading')}\n\n${t('meta.empty')}\n`;
   };
 
   /** What the audit's tab shows, as a Markdown table for a ticket or a pull request. */
@@ -3092,19 +3102,21 @@ function Workspace({
                 t('images.heading'),
                 [t('images.colImage'), t('images.colShown'), t('images.colSizes'), t('images.colSrcset')],
               )
-            : audit.tab === 'colors'
-              ? paletteMarkdown(
-                  page,
-                  mergePalettes(auditRows.map((row) => row.colors)),
-                  t('colorAudit.heading'),
-                  [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
-                  (role) => t(COLOR_ROLE_KEYS[role]),
-                )
-              : typeMarkdown(
-                  page,
-                  auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
-                  t,
-                );
+            : audit.tab === 'meta'
+              ? metaMarkdownOf(page)
+              : audit.tab === 'colors'
+                ? paletteMarkdown(
+                    page,
+                    mergePalettes(auditRows.map((row) => row.colors)),
+                    t('colorAudit.heading'),
+                    [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
+                    (role) => t(COLOR_ROLE_KEYS[role]),
+                  )
+                : typeMarkdown(
+                    page,
+                    auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
+                    t,
+                  );
     void copyText(markdown).then((copied) =>
       toast(
         copied
@@ -3137,6 +3149,7 @@ function Workspace({
       type: row.type ?? null,
       images: row.images ?? null,
       colors: row.colors ?? null,
+      meta: row.meta ?? null,
     }));
     saveExport(`audit_${fileNamePart(host ?? 'page')}`, format, () =>
       format === 'csv' ? auditCsv(rows, t) : auditJson(currentUrl?.href ?? null, rows, version),
@@ -3813,6 +3826,9 @@ function Workspace({
             onCopy={copyAudit}
             onCopyText={copyAuditText}
             onExport={exportAudit}
+            page={currentUrl?.href ?? null}
+            metaCard={metaCard}
+            onMetaCard={setMetaCard}
             budgets={pro ? settings.budgets : null}
             onTurnOnChecks={() => setChecks(true)}
             onAllowSite={() => void allowSite()}

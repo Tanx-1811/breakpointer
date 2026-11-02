@@ -21,13 +21,12 @@ const LABEL_GAP = 0.09;
 /**
  * A ruler of widths for the viewports sidebar: each breakpoint as a tick and
  * each viewport as a marker, so you see which side of a breakpoint every
- * viewport is on. The range covers 320–1920 at least, and every width shown,
- * rounded out to hundreds.
+ * viewport is on. The range covers 320–1920 at least, and every width shown.
  */
 export function breakpointMap<T>(items: { item: T; width: number }[], breakpoints: Breakpoint[]): BreakpointMap<T> {
   const widths = [...items.map((entry) => entry.width), ...breakpoints.map((breakpoint) => breakpoint.min)];
-  const start = Math.floor(Math.min(MIN_START, ...widths) / 100) * 100;
-  const end = Math.ceil(Math.max(MIN_END, ...widths) / 100) * 100;
+  const start = Math.min(MIN_START, ...widths);
+  const end = Math.max(MIN_END, ...widths);
   const at = (width: number) => (width - start) / (end - start);
 
   let lastLabel = -Infinity;

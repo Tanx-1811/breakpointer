@@ -5,6 +5,7 @@ import type {
   AgentReplyType,
   ColorSample,
   ImageSample,
+  PageMeta,
   PageStats,
   TypeSample,
 } from '../agent/protocol';
@@ -34,16 +35,17 @@ type Options = {
 };
 
 /** What each tab measures (the issues come with the checks). */
-type Measure = 'stats' | 'type' | 'images' | 'colors';
+type Measure = 'stats' | 'type' | 'images' | 'colors' | 'meta';
 const MEASURE_OF: Record<Exclude<AuditTab, 'issues'>, Measure> = {
   performance: 'stats',
   type: 'type',
   images: 'images',
   colors: 'colors',
+  meta: 'meta',
 };
 
 /**
- * The page stats, type samples, images and colours of every preview for the audit panel: asked
+ * The page stats, type samples, images, colours and meta tags of every preview for the audit panel: asked
  * for when their tab is shown, again a moment after previews connect, and on
  * request. Results are kept per frame, so a reloaded preview is never shown
  * with its previous page's numbers.
@@ -53,6 +55,7 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
   const [type, setType] = useState<Measured<TypeSample[]>>({});
   const [images, setImages] = useState<Measured<ImageSample[]>>({});
   const [colors, setColors] = useState<Measured<ColorSample>>({});
+  const [meta, setMeta] = useState<Measured<PageMeta>>({});
   const [pending, setPending] = useState(0);
   const latest = useRef({ cardIds, generations });
   useLayoutEffect(() => {
@@ -83,6 +86,11 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
                 .then((reply) => reply.images)
                 .catch(() => null);
               setImages((map) => ({ ...map, [cardId]: { generation, value } }));
+            } else if (which === 'meta') {
+              const value = await ask(cardId, { type: 'getMeta' }, 'meta', 3000)
+                .then((reply) => reply.meta)
+                .catch(() => null);
+              setMeta((map) => ({ ...map, [cardId]: { generation, value } }));
             } else {
               const value = await ask(cardId, { type: 'getColors' }, 'colors', 4000)
                 .then((reply) => reply.colors)
@@ -132,5 +140,10 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
     return entry && entry.generation === generations[cardId] ? entry.value : undefined;
   };
 
-  return { statsOf, typeOf, imagesOf, colorsOf, measuring: pending > 0, refresh };
+  const metaOf = (cardId: string): PageMeta | null | undefined => {
+    const entry = meta[cardId];
+    return entry && entry.generation === generations[cardId] ? entry.value : undefined;
+  };
+
+  return { statsOf, typeOf, imagesOf, colorsOf, metaOf, measuring: pending > 0, refresh };
 }

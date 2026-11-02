@@ -1,5 +1,13 @@
 import { useId, useRef, type KeyboardEvent } from 'react';
-import type { CheckKind, CheckReport, ColorSample, ImageSample, PageStats, TypeSample } from '../../agent/protocol';
+import type {
+  CheckKind,
+  CheckReport,
+  ColorSample,
+  ImageSample,
+  PageMeta,
+  PageStats,
+  TypeSample,
+} from '../../agent/protocol';
 import { budgetBreaches, budgetLimit, hasBudgets, overBudget, type PerformanceBudgets } from '../../state/budgets';
 import { COLOR_ROLE_KEYS, COLOR_ROLES, mergePalettes, paletteCss, paletteSize } from '../../state/colors';
 import {
@@ -34,11 +42,12 @@ import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
 import { ExportMenu } from '../Plan/ExportMenu';
 import { ProBadge, usePlan } from '../Plan/PlanContext';
+import { MetaTab } from './MetaTab';
 import styles from './AuditPanel.module.css';
 
-export type AuditTab = 'issues' | 'performance' | 'type' | 'images' | 'colors';
+export type AuditTab = 'issues' | 'performance' | 'type' | 'images' | 'colors' | 'meta';
 
-export const AUDIT_TABS: AuditTab[] = ['issues', 'performance', 'type', 'images', 'colors'];
+export const AUDIT_TABS: AuditTab[] = ['issues', 'performance', 'type', 'images', 'colors', 'meta'];
 
 /** One preview in the audit. `undefined` values: not known yet. */
 export type AuditRow = {
@@ -52,6 +61,7 @@ export type AuditRow = {
   type: TypeSample[] | null | undefined;
   images?: ImageSample[] | null | undefined;
   colors?: ColorSample | null | undefined;
+  meta?: PageMeta | null | undefined;
 };
 
 type Props = {
@@ -81,6 +91,11 @@ type Props = {
   budgets?: PerformanceBudgets | null;
   /** Copies a piece of text (a suggested `sizes`, the palette as CSS). */
   onCopyText?: (text: string) => void;
+  /** The page's address (the Meta tab compares the canonical address with it). */
+  page?: string | null;
+  /** The preview the Meta tab reads (its card id; default: the first that answered). */
+  metaCard?: string | null;
+  onMetaCard?: (cardId: string) => void;
 };
 
 const TAB_KEYS = {
@@ -89,9 +104,17 @@ const TAB_KEYS = {
   type: 'audit.tab.type',
   images: 'audit.tab.images',
   colors: 'audit.tab.colors',
+  meta: 'audit.tab.meta',
 } as const;
 
-const TAB_ICONS = { issues: 'alert', performance: 'clock', type: 'text', images: 'image', colors: 'palette' } as const;
+const TAB_ICONS = {
+  issues: 'alert',
+  performance: 'clock',
+  type: 'text',
+  images: 'image',
+  colors: 'palette',
+  meta: 'share',
+} as const;
 
 /** Issues, page stats and the type scale of every preview, side by side. */
 export function AuditPanel(props: Props) {
@@ -148,11 +171,14 @@ export function AuditPanel(props: Props) {
             aria-controls={`${id}-panel`}
             tabIndex={tab === item ? 0 : -1}
             className={styles.tab}
+            // Six tabs don't fit the panel: the others show their icon (and their name as a tooltip).
+            aria-label={t(TAB_KEYS[item])}
+            data-tooltip={tab === item ? undefined : t(TAB_KEYS[item])}
             onClick={() => props.onTab(item)}
             onKeyDown={(event) => onTabKey(event, index)}
           >
-            <Icon name={TAB_ICONS[item]} size={14} />
-            {t(TAB_KEYS[item])}
+            <Icon name={TAB_ICONS[item]} size={15} />
+            <span className={styles.tabLabel}>{t(TAB_KEYS[item])}</span>
           </button>
         ))}
       </div>
@@ -172,6 +198,15 @@ export function AuditPanel(props: Props) {
         {tab === 'type' && <TypeTab {...props} />}
         {tab === 'images' && <ImagesTab {...props} />}
         {tab === 'colors' && <ColorsTab {...props} />}
+        {tab === 'meta' && (
+          <MetaTab
+            rows={props.rows}
+            page={props.page ?? null}
+            measuring={props.measuring}
+            card={props.metaCard}
+            onCard={props.onMetaCard}
+          />
+        )}
       </div>
     </aside>
   );

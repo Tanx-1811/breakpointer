@@ -76,6 +76,14 @@
   color: var(--text);
 }
 
+.tab:not([aria-selected='true']) .tabLabel {
+  display: none;
+}
+
+.tab:not([aria-selected='true']) {
+  padding: 0 9px;
+}
+
 .tab[aria-selected='true'] {
   border-bottom-color: var(--accent);
   color: var(--accent);
