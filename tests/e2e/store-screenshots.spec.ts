@@ -13,13 +13,26 @@ const SIZE = { width: 1280, height: 800 };
 /** A reserved .example domain, served from the local demo page. */
 const DEMO_URL = 'https://brightside.example/';
 
+/** The demo's social image (1200 × 630) and icon, for the audit's Meta tab. */
+const DEMO_IMAGES: Record<string, string> = {
+  '/og.svg': `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<rect width="1200" height="630" fill="#1f1b2e"/><rect x="96" y="120" width="56" height="56" rx="14" fill="#f2613f"/>
+<text x="172" y="162" fill="#fff" font-family="Helvetica, Arial, sans-serif" font-size="40" font-weight="700">Brightside</text>
+<text x="96" y="330" fill="#fff" font-family="Helvetica, Arial, sans-serif" font-size="76" font-weight="800">Plan your week together,</text>
+<text x="96" y="420" fill="#fff" font-family="Helvetica, Arial, sans-serif" font-size="76" font-weight="800">not in twelve tabs.</text></svg>`,
+  '/favicon.svg': `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32"><rect width="32" height="32" rx="8" fill="#f2613f"/></svg>`,
+};
+
 /** `bug` adds a typical responsive bug: a board with a fixed minimum width. */
 async function serveDemo(context: BrowserContext, bug = false) {
   let body = await readFile(resolve(import.meta.dirname, 'fixtures/demo.html'), 'utf8');
   if (bug) body = body.replace('</head>', '<style>.board { min-width: 520px; }</style></head>');
-  await context.route('https://brightside.example/**', (route) =>
-    route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body }),
-  );
+  await context.route('https://brightside.example/**', (route) => {
+    const image = DEMO_IMAGES[new URL(route.request().url()).pathname];
+    return image
+      ? route.fulfill({ status: 200, contentType: 'image/svg+xml', body: image })
+      : route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body });
+  });
 }
 
 /** A small Brightside site for Check pages: a few pages, some with typical bugs, and one that is gone. */
@@ -279,6 +292,52 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.mouse.move(5, 795);
       await page.waitForTimeout(800);
       await page.screenshot({ path: resolve(OUT, lang, '10-audit.png') });
+    });
+
+    test('viewports sidebar', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        panels: { sidebar: true, statusBar: true, minimap: true },
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+          { id: 'd', name: 'Desktop', width: 1920, height: 1080, zoom: 0.25, hidden: true },
+        ],
+      });
+      await show(page, viewerUrl, 3, true);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await expect(page.getByTestId('sidebar-score')).toBeVisible();
+      await page.mouse.move(640, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '15-sidebar.png') });
+    });
+
+    test('meta and social', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('e');
+      await page.getByTestId('audit').getByRole('tab', { name: 'Meta' }).click();
+      await expect(page.getByTestId('meta-image-size')).toBeVisible();
+      await page.mouse.move(640, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '16-meta.png') });
     });
 
     test('visual check', async ({ context, viewerUrl }) => {

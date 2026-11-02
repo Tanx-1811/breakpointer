@@ -26,6 +26,9 @@ describe('i18n', () => {
     expect(resolveLanguage('auto', 'pt-PT')).toBe('pt-BR');
     expect(resolveLanguage('auto', 'in')).toBe('id');
     expect(resolveLanguage('auto', 'ja-JP')).toBe('ja');
+    expect(resolveLanguage('auto', 'ru-RU')).toBe('ru');
+    expect(resolveLanguage('auto', 'zh-CN')).toBe('zh-CN');
+    expect(resolveLanguage('auto', 'zh-TW')).toBe('zh-CN');
     expect(resolveLanguage('auto', 'ko')).toBe('en');
     expect(resolveLanguage('en', 'vi')).toBe('en');
   });
@@ -34,7 +37,7 @@ describe('i18n', () => {
     const read = (lang: string) =>
       JSON.parse(readFileSync(resolve(process.cwd(), `public/_locales/${lang}/messages.json`), 'utf8'));
     const enMessages = read('en');
-    const all = ['en', 'vi', 'es', 'pt_BR', 'fr', 'de', 'ja', 'id'].map(read);
+    const all = ['en', 'vi', 'es', 'pt_BR', 'fr', 'de', 'ru', 'ja', 'zh_CN', 'id'].map(read);
     for (const messages of all) expect(Object.keys(messages).sort()).toEqual(Object.keys(enMessages).sort());
     for (const messages of all) {
       expect(messages.omniboxDefault.message).toContain('<match>%s</match>');

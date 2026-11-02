@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — тестер адаптивных вьюпортов",
+    "description": "Название расширения в Chrome и Интернет-магазине Chrome."
+  },
+  "extDescription": {
+    "message": "Тест адаптивного дизайна: смотрите любой сайт в нескольких размерах экрана рядом и найдите ширину, где ломается вёрстка.",
+    "description": "Краткое описание (не более 132 символов)."
+  },
+  "actionTitle": {
+    "message": "Breakpointer — превью в нескольких размерах экрана",
+    "description": "Подсказка кнопки на панели инструментов."
+  },
+  "commandOpen": {
+    "message": "Открыть Breakpointer",
+    "description": "Команда клавиатуры, открывающая всплывающее окно."
+  },
+  "commandPreview": {
+    "message": "Открыть текущую страницу в Breakpointer",
+    "description": "Команда клавиатуры, открывающая превью активной вкладки."
+  },
+  "menuPreviewPage": {
+    "message": "Открыть эту страницу в Breakpointer",
+    "description": "Пункт контекстного меню на странице."
+  },
+  "menuPreviewLink": {
+    "message": "Открыть ссылку в Breakpointer",
+    "description": "Пункт контекстного меню на ссылке."
+  },
+  "omniboxDefault": {
+    "message": "Превью <match>%s</match> в нескольких размерах экрана",
+    "description": "Подсказка в адресной строке после ввода ключевого слова."
+  },
+  "menuSidePanelPage": {
+    "message": "Открыть эту страницу в боковой панели",
+    "description": "Пункт контекстного меню на странице: боковая панель Breakpointer."
+  },
+  "menuSidePanelLink": {
+    "message": "Открыть ссылку в боковой панели",
+    "description": "Пункт контекстного меню на ссылке: боковая панель Breakpointer."
+  }
+}

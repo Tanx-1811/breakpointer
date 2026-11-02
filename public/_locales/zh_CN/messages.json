@@ -1,0 +1,42 @@
+{
+  "extName": {
+    "message": "Breakpointer — 响应式视口测试工具",
+    "description": "在 Chrome 和 Chrome 网上应用店中显示的扩展名称。"
+  },
+  "extDescription": {
+    "message": "响应式设计测试工具：在多种屏幕尺寸下并排预览任意网站，找出布局出错的准确宽度。",
+    "description": "简短说明（最多 132 个字符）。"
+  },
+  "actionTitle": {
+    "message": "Breakpointer — 在多种屏幕尺寸下预览",
+    "description": "工具栏按钮的提示。"
+  },
+  "commandOpen": {
+    "message": "打开 Breakpointer",
+    "description": "打开弹出窗口的快捷键命令。"
+  },
+  "commandPreview": {
+    "message": "在 Breakpointer 中预览当前页面",
+    "description": "预览当前标签页的快捷键命令。"
+  },
+  "menuPreviewPage": {
+    "message": "在 Breakpointer 中预览此页面",
+    "description": "页面上的右键菜单项。"
+  },
+  "menuPreviewLink": {
+    "message": "在 Breakpointer 中预览链接",
+    "description": "链接上的右键菜单项。"
+  },
+  "omniboxDefault": {
+    "message": "在多种屏幕尺寸下预览 <match>%s</match>",
+    "description": "在地址栏输入关键字后显示的建议。"
+  },
+  "menuSidePanelPage": {
+    "message": "在侧边栏中预览此页面",
+    "description": "页面上的右键菜单项：Breakpointer 侧边栏。"
+  },
+  "menuSidePanelLink": {
+    "message": "在侧边栏中预览链接",
+    "description": "链接上的右键菜单项：Breakpointer 侧边栏。"
+  }
+}

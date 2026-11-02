@@ -6,15 +6,17 @@ import { fr } from './fr';
 import { id } from './id';
 import { ja } from './ja';
 import { pt } from './pt';
+import { ru } from './ru';
 import { vi } from './vi';
+import { zh } from './zh';
 
 export type { MessageKey };
 /** UI languages, as BCP 47 tags (also used to format dates and numbers). */
-export type Language = 'en' | 'vi' | 'es' | 'pt-BR' | 'fr' | 'de' | 'ja' | 'id';
+export type Language = 'en' | 'vi' | 'es' | 'pt-BR' | 'fr' | 'de' | 'ru' | 'ja' | 'zh-CN' | 'id';
 export type MessageParams = Record<string, string | number>;
 export type Translate = (key: MessageKey, params?: MessageParams) => string;
 
-export const LANGUAGES: Language[] = ['en', 'es', 'pt-BR', 'fr', 'de', 'ja', 'id', 'vi'];
+export const LANGUAGES: Language[] = ['en', 'es', 'pt-BR', 'fr', 'de', 'ru', 'ja', 'zh-CN', 'id', 'vi'];
 
 /** Each language in its own words, for the language picker. */
 export const LANGUAGE_NAMES: Record<Language, string> = {
@@ -23,12 +25,25 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   'pt-BR': 'Português (Brasil)',
   fr: 'Français',
   de: 'Deutsch',
+  ru: 'Русский',
   ja: '日本語',
+  'zh-CN': '简体中文',
   id: 'Bahasa Indonesia',
   vi: 'Tiếng Việt',
 };
 
-const DICTIONARIES: Record<Language, Record<MessageKey, string>> = { en, vi, es, 'pt-BR': pt, fr, de, ja, id };
+const DICTIONARIES: Record<Language, Record<MessageKey, string>> = {
+  en,
+  vi,
+  es,
+  'pt-BR': pt,
+  fr,
+  de,
+  ru,
+  ja,
+  'zh-CN': zh,
+  id,
+};
 
 function browserLanguage(): string {
   try {
@@ -41,9 +56,10 @@ function browserLanguage(): string {
 export function resolveLanguage(preference: LanguagePreference, uiLanguage = browserLanguage()): Language {
   if (preference !== 'auto') return preference;
   const tag = uiLanguage.toLowerCase();
-  // Chrome's "in" is an old code for Indonesian; any Portuguese gets the Brazilian UI.
+  // Chrome's "in" is an old code for Indonesian; any Portuguese gets the Brazilian UI, any Chinese the simplified one.
   const base = tag.split(/[-_]/)[0] === 'in' ? 'id' : tag.split(/[-_]/)[0];
   if (base === 'pt') return 'pt-BR';
+  if (base === 'zh') return 'zh-CN';
   return LANGUAGES.find((language) => language === base) ?? 'en';
 }
 

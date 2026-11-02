@@ -19,9 +19,11 @@ type Props = {
 
 const MAX_WIDTH = 184;
 const MAX_HEIGHT = 120;
+/** Pixels of the workspace out of sight before the minimap shows. */
+const MIN_HIDDEN = 120;
 
 /**
- * An overview of the workspace in a corner, shown only while it scrolls: every
+ * An overview of the workspace in a corner, shown only while a good part of it is out of sight: every
  * preview as a box in its size-class colour and the part on screen as a frame.
  * Press or drag on it to scroll there.
  */
@@ -36,7 +38,8 @@ export function Minimap({ workspaceRef, layoutKey }: Props) {
       const element = workspaceRef.current;
       if (!element) return setLayout(null);
       const { scrollWidth, scrollHeight, clientWidth, clientHeight, scrollLeft, scrollTop } = element;
-      if (scrollWidth <= clientWidth + 1 && scrollHeight <= clientHeight + 1) return setLayout(null);
+      // Only when a good part of the workspace is out of sight (not the room kept for the zoom dock).
+      if (scrollWidth - clientWidth < MIN_HIDDEN && scrollHeight - clientHeight < MIN_HIDDEN) return setLayout(null);
       const origin = element.getBoundingClientRect();
       const cards = [...element.querySelectorAll<HTMLElement>('[data-card-id]')].flatMap((card) => {
         const rect = card.getBoundingClientRect();

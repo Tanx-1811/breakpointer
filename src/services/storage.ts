@@ -57,7 +57,19 @@ import { toSafeHref } from '../utils/url';
 export const STORAGE_KEY = 'breakpointer.settings';
 
 const THEMES: readonly ThemePreference[] = ['light', 'dark', 'system'];
-const LANGUAGES: readonly LanguagePreference[] = ['auto', 'en', 'vi', 'es', 'pt-BR', 'fr', 'de', 'ja', 'id'];
+const LANGUAGES: readonly LanguagePreference[] = [
+  'auto',
+  'en',
+  'vi',
+  'es',
+  'pt-BR',
+  'fr',
+  'de',
+  'ru',
+  'ja',
+  'zh-CN',
+  'id',
+];
 const LAYOUTS: readonly WorkspaceLayout[] = ['wrap', 'row', 'stack'];
 export const ACCENTS: readonly AccentColor[] = ['indigo', 'blue', 'violet', 'teal', 'rose', 'graphite'];
 export const CANVASES: readonly CanvasStyle[] = ['dots', 'grid', 'plain'];
