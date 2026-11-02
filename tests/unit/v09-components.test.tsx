@@ -82,7 +82,7 @@ describe('ViewportSidebar', () => {
     sidebar();
     const rows = screen.getAllByTestId('sidebar-row');
     expect(rows).toHaveLength(3);
-    expect(rows[0]).toHaveAccessibleName('Phone 390 × 844');
+    expect(rows[0]).toHaveAccessibleName(/^Phone\s*390 × 844\s*base\s*2 kinds of issue$/);
     expect(rows[0]).toHaveTextContent('base');
     expect(rows[0]).toHaveTextContent('2');
     // Hidden viewports show no breakpoint or issues.

@@ -162,7 +162,6 @@ export function ViewportSidebar(props: Props) {
                   data-sidebar-id={vp.id}
                   data-size-class={sizeClass}
                   data-testid="sidebar-row"
-                  aria-label={t('workspace.chipLabel', { name: vp.name, size })}
                   aria-describedby="sidebar-hint"
                   draggable
                   onDragStart={(event) => {
@@ -189,9 +188,10 @@ export function ViewportSidebar(props: Props) {
                   </span>
                   {vp.breakpoint && !vp.hidden && <span className={styles.breakpoint}>{vp.breakpoint}</span>}
                   {!vp.hidden && vp.issues ? (
-                    <span className={styles.issues} title={t('sidebar.issues', { count: vp.issues })}>
+                    <span className={styles.issues}>
                       <Icon name="alert" size={10} />
-                      {vp.issues}
+                      <span aria-hidden="true">{vp.issues}</span>
+                      <span className="visually-hidden">{t('sidebar.issues', { count: vp.issues })}</span>
                     </span>
                   ) : null}
                 </button>

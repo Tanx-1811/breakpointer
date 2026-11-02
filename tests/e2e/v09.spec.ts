@@ -36,8 +36,7 @@ test.describe('v0.9', () => {
     expect(await seriousViolations(page)).toEqual([]);
 
     // Hide one from its row, then show it again by clicking the row.
-    const name = (await rows.first().getAttribute('aria-label'))!.split(' ')[0]!;
-    await sidebar.getByRole('button', { name: `Hide ${name}` }).click();
+    await sidebar.getByTestId('sidebar-visibility').first().click();
     await expect(page.getByTestId('preview-frame')).toHaveCount(2);
     await rows.first().click();
     await expect(page.getByTestId('preview-frame')).toHaveCount(3);
@@ -120,7 +119,7 @@ test.describe('v0.9', () => {
     await expect(page.locator('html')).toHaveAttribute('data-accent', 'teal');
     expect(
       await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()),
-    ).toBe('#0f766e');
+    ).toBe('#0b665f');
     await page.locator('label[data-canvas="grid"]').click();
     await expect(page.getByTestId('workspace')).toHaveAttribute('data-canvas', 'grid');
     expect(await seriousViolations(page)).toEqual([]);
@@ -133,6 +132,8 @@ test.describe('v0.9', () => {
       await page.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--accent').trim()),
     ).toBe('#2dd4bf');
     await page.keyboard.press('Backslash');
+    // Let the theme's colour transitions finish before checking contrast.
+    await page.waitForTimeout(400);
     expect(await seriousViolations(page)).toEqual([]);
     const stored = await storedSettings(page);
     expect([stored?.accent, stored?.canvas]).toEqual(['teal', 'grid']);

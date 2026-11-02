@@ -213,9 +213,9 @@
 }
 
 :root[data-accent='teal'] {
-  --accent: #0f766e;
-  --accent-hover: #115e59;
-  --accent-strong: #134e4a;
+  --accent: #0b665f;
+  --accent-hover: #0a5a54;
+  --accent-strong: #084a45;
   --accent-soft: #e6f5f3;
   --accent-soft-hover: #d5eeea;
   --accent-border: #a7dcd5;
