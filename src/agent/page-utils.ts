@@ -564,3 +564,66 @@ export function scheduler(task: () => void) {
   };
   return schedule;
 }
+
+const MAX_META_TAGS = 80;
+const MAX_META_VALUE = 400;
+const MAX_HEADINGS = 80;
+const MAX_HEADING_TEXT = 120;
+/** Meta tags whose content is an address (made absolute). */
+const ADDRESS_TAGS = /(^|:)(image|image:url|image:secure_url|url|video|audio)$/;
+
+const squash = (text: string, max: number) => {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat;
+};
+
+/** An absolute http(s) address for `value`, or null. */
+function absoluteAddress(value: string, base: string): string | null {
+  try {
+    const url = new URL(value.trim(), base);
+    return /^https?:$/.test(url.protocol) ? url.href : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * What the page tells search engines and link previews (the audit's Meta tab):
+ * its title, language, `<meta>` tags by name or property, canonical address,
+ * icons and headings. `isHidden` says whether a heading is shown at this size.
+ */
+export function collectMeta(doc: Document, isHidden: (element: Element) => boolean): PageMeta {
+  const base = doc.baseURI;
+  const tags: MetaTag[] = [];
+  for (const meta of doc.querySelectorAll('meta[name], meta[property]')) {
+    if (tags.length >= MAX_META_TAGS) break;
+    const key = (meta.getAttribute('property') || meta.getAttribute('name') || '').trim().toLowerCase();
+    const content = meta.getAttribute('content');
+    if (!key || content === null) continue;
+    const value = ADDRESS_TAGS.test(key) ? (absoluteAddress(content, base) ?? squash(content, MAX_META_VALUE)) : content;
+    tags.push({ key, value: squash(value, MAX_META_VALUE) });
+  }
+  const canonicalHref = doc.querySelector('link[rel~="canonical" i]')?.getAttribute('href');
+  const icons = [...doc.querySelectorAll('link[rel~="icon" i], link[rel~="apple-touch-icon" i], link[rel~="mask-icon" i]')]
+    .slice(0, 12)
+    .flatMap((link) => {
+      const href = absoluteAddress(link.getAttribute('href') ?? '', base);
+      return href
+        ? [{ rel: (link.getAttribute('rel') ?? '').toLowerCase().trim(), href, sizes: link.getAttribute('sizes') ?? '' }]
+        : [];
+    });
+  const headings = [...doc.querySelectorAll('h1, h2, h3, h4, h5, h6')].slice(0, MAX_HEADINGS).map((heading) => ({
+    level: Number(heading.tagName.slice(1)),
+    text: squash(heading.textContent ?? '', MAX_HEADING_TEXT),
+    hidden: isHidden(heading),
+  }));
+  return {
+    title: squash(doc.title, MAX_META_VALUE),
+    lang: doc.documentElement.getAttribute('lang')?.trim() ?? '',
+    tags,
+    canonical: canonicalHref ? absoluteAddress(canonicalHref, base) : null,
+    icons,
+    alternates: doc.querySelectorAll('link[rel~="alternate" i][hreflang]').length,
+    headings,
+  };
+}

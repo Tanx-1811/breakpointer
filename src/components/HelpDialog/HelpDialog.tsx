@@ -18,6 +18,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['−'], label: 'help.zoomOut' },
   { keys: ['0'], label: 'help.actualSize' },
   { keys: ['L'], label: 'help.layout' },
+  { keys: ['\\'], label: 'help.sidebar' },
   { keys: ['M'], label: 'help.rulers' },
   { keys: ['I'], label: 'help.inspect' },
   { keys: ['E'], label: 'help.audit' },
@@ -41,7 +42,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 ];
 
 /** What this version brings, shown at the top of Help. */
-const NEWS: MessageKey[] = ['news.images', 'news.colors', 'news.budgets', 'news.distance', 'news.tour'];
+const NEWS: MessageKey[] = ['news.workspace', 'news.appearance', 'news.meta'];
 
 type Props = {
   open: boolean;

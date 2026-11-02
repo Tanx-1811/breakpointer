@@ -144,6 +144,38 @@ export type ColorCount = { hex: string; count: number };
 /** The colours the page shows, for the audit's Colours tab. */
 export type ColorSample = { text: ColorCount[]; background: ColorCount[]; border: ColorCount[] };
 
+/** A `<meta>` tag: its `name` or `property` (lower case) and its content. */
+export type MetaTag = { key: string; value: string };
+
+/** A heading of the page, for the outline in the audit's Meta tab. */
+export type HeadingSample = {
+  /** 1–6. */
+  level: number;
+  /** Its text, cut to 120 characters. */
+  text: string;
+  /** Not shown at this size (display: none, hidden…). */
+  hidden: boolean;
+};
+
+/**
+ * What the page tells search engines and link previews, for the audit's Meta
+ * tab: its title, language, meta tags, canonical address, icons and headings.
+ * Addresses are absolute.
+ */
+export type PageMeta = {
+  title: string;
+  lang: string;
+  /** At most 80, values cut to 400 characters. */
+  tags: MetaTag[];
+  canonical: string | null;
+  /** `rel` (e.g. "icon", "apple-touch-icon"), the address and `sizes`. */
+  icons: { rel: string; href: string; sizes: string }[];
+  /** Alternate language versions (`hreflang`). */
+  alternates: number;
+  /** In document order, at most 80. */
+  headings: HeadingSample[];
+};
+
 /** Where an element is in the preview's window (CSS pixels), e.g. to crop a screenshot to it. */
 export type ElementRect = { x: number; y: number; width: number; height: number };
 
@@ -252,6 +284,8 @@ export type AgentEvent =
   | { type: 'images'; id?: number; images: ImageSample[] }
   /** Answer to `getColors`. */
   | { type: 'colors'; id?: number; colors: ColorSample }
+  /** Answer to `getMeta`. */
+  | { type: 'meta'; id?: number; meta: PageMeta }
   /** Answer to `getElementRect` (null when the element isn't shown). */
   | { type: 'elementRect'; id?: number; rect: ElementRect | null }
   /** Answer to `getRects`: each element's box in the viewport, measured together (null when not shown). */
@@ -264,7 +298,17 @@ export type AgentEvent =
 
 /** Events that answer a request from the workspace; they carry the `id` of the request. */
 export type AgentReplyType =
-  'metrics' | 'scrolled' | 'scanned' | 'stats' | 'typeScale' | 'images' | 'colors' | 'elementRect' | 'rects' | 'links';
+  | 'metrics'
+  | 'scrolled'
+  | 'scanned'
+  | 'stats'
+  | 'typeScale'
+  | 'images'
+  | 'colors'
+  | 'meta'
+  | 'elementRect'
+  | 'rects'
+  | 'links';
 export type AgentReply = Extract<AgentEvent, { type: AgentReplyType }>;
 
 export type AgentMessage = AgentEvent & { source: typeof AGENT_SOURCE; name: string };
@@ -330,6 +374,8 @@ type Command =
   | { type: 'getImages' }
   /** Answer `colors`: the colours of text, backgrounds and borders, with how often each is used. */
   | { type: 'getColors' }
+  /** Answers with `meta`: the page's title, meta tags, canonical address, icons and headings. */
+  | { type: 'getMeta' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
   | { type: 'getElementRect'; selector: string; reveal: boolean }
   /** Answer `rects` with where these elements are, at the same moment (the inspector's distance). */

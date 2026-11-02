@@ -17,16 +17,21 @@ import { CHECK_KIND_KEYS } from '../../state/checks';
 import { TRIAL_DAYS, type Entitlement } from '../../state/license';
 import { PRO_FEATURES, PRO_FEATURE_KEYS, isProCheck, type ProFeature } from '../../state/plan';
 import type { SnapshotPage } from '../../state/snapshots';
+import { ACCENTS, CANVASES } from '../../services/storage';
 import type {
+  AccentColor,
   Breakpoint,
   BreakpointSetId,
   BrandingSettings,
   BreakpointerSettings,
+  CanvasStyle,
   GridColumns,
   GridSettings,
   LanguagePreference,
+  PanelSettings,
   SyncSettings,
   ThemePreference,
+  WorkspaceLayout,
 } from '../../types';
 import {
   BASELINE_OPTIONS,
@@ -56,6 +61,11 @@ type Props = {
   siteBreakpoints: number[] | null;
   onTheme: (theme: ThemePreference) => void;
   onLanguage: (language: LanguagePreference) => void;
+  /** Appearance of the workspace (each control shows when its handler is given). */
+  onAccent?: (accent: AccentColor) => void;
+  onCanvas?: (canvas: CanvasStyle) => void;
+  onLayout?: (layout: WorkspaceLayout) => void;
+  onPanels?: (panels: Partial<PanelSettings>) => void;
   onBreakpoints: (set: BreakpointSetId) => void;
   onCustomBreakpoints: (breakpoints: Breakpoint[]) => void;
   onSync: (sync: Partial<SyncSettings>) => void;
@@ -235,6 +245,95 @@ function SettingsBody(props: Props) {
               ]}
             />
           </Row>
+          {props.onAccent && (
+            <Row label={t('settings.accent')} help={t('settings.accentHelp')}>
+              <div className={styles.swatches} role="radiogroup" aria-label={t('settings.accent')}>
+                {ACCENTS.map((accent) => (
+                  <label
+                    key={accent}
+                    className={styles.swatch}
+                    data-accent={accent}
+                    data-tooltip={t(`accent.${accent}`)}
+                  >
+                    <input
+                      type="radio"
+                      name={`${customId}-accent`}
+                      className="visually-hidden"
+                      checked={settings.accent === accent}
+                      onChange={() => props.onAccent?.(accent)}
+                    />
+                    <span className={styles.swatchDot} aria-hidden="true" />
+                    <span className="visually-hidden">{t(`accent.${accent}`)}</span>
+                  </label>
+                ))}
+              </div>
+            </Row>
+          )}
+          {props.onCanvas && (
+            <div className={styles.canvasBlock} role="radiogroup" aria-labelledby={`${customId}-canvas`}>
+              <div className={styles.rowText}>
+                <span id={`${customId}-canvas`} className={styles.rowLabel}>
+                  {t('settings.canvas')}
+                </span>
+                <span className={styles.rowHelp}>{t('settings.canvasHelp')}</span>
+              </div>
+              <div className={styles.canvases}>
+                {CANVASES.map((canvas) => (
+                  <label key={canvas} className={styles.canvasOption} data-canvas={canvas}>
+                    <input
+                      type="radio"
+                      name={`${customId}-canvas-style`}
+                      className="visually-hidden"
+                      checked={settings.canvas === canvas}
+                      onChange={() => props.onCanvas?.(canvas)}
+                    />
+                    <span className={styles.canvasPreview} aria-hidden="true">
+                      <span />
+                      <span />
+                    </span>
+                    <span className={styles.canvasName}>{t(`canvas.${canvas}`)}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+          {props.onLayout && (
+            <Row label={t('settings.layout')}>
+              <Segmented
+                label={t('settings.layout')}
+                value={settings.layout}
+                onChange={props.onLayout}
+                size="sm"
+                options={[
+                  { value: 'wrap', label: t('layout.wrap'), icon: 'wrap' },
+                  { value: 'row', label: t('layout.row'), icon: 'row' },
+                  { value: 'stack', label: t('layout.stack'), icon: 'stack' },
+                ]}
+              />
+            </Row>
+          )}
+          {props.onPanels && (
+            <>
+              <Switch
+                checked={settings.panels.sidebar}
+                onChange={(sidebar) => props.onPanels?.({ sidebar })}
+                label={t('settings.sidebar')}
+                description={t('settings.sidebarHelp')}
+              />
+              <Switch
+                checked={settings.panels.statusBar}
+                onChange={(statusBar) => props.onPanels?.({ statusBar })}
+                label={t('settings.statusBar')}
+                description={t('settings.statusBarHelp')}
+              />
+              <Switch
+                checked={settings.panels.minimap}
+                onChange={(minimap) => props.onPanels?.({ minimap })}
+                label={t('settings.minimap')}
+                description={t('settings.minimapHelp')}
+              />
+            </>
+          )}
           <Row label={t('settings.language')}>
             <Select
               size="sm"

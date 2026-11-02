@@ -1,0 +1,62 @@
+.minimap {
+  position: absolute;
+  right: 16px;
+  bottom: 18px;
+  z-index: 6;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-dock);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+
+:global(html[data-capturing]) .minimap {
+  visibility: hidden;
+}
+
+/* Below this the minimap would sit on the zoom dock. */
+@media (max-width: 1000px) {
+  .minimap {
+    display: none;
+  }
+}
+
+.canvas {
+  position: relative;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.card {
+  --class-color: var(--accent);
+  position: absolute;
+  border: 1px solid var(--class-color);
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--class-color) 28%, var(--surface));
+}
+
+.card[data-size-class='phone'] {
+  --class-color: var(--class-phone);
+}
+
+.card[data-size-class='tablet'] {
+  --class-color: var(--class-tablet);
+}
+
+.card[data-size-class='laptop'] {
+  --class-color: var(--class-laptop);
+}
+
+.card[data-size-class='desktop'] {
+  --class-color: var(--class-desktop);
+}
+
+.view {
+  position: absolute;
+  border: 1.5px solid var(--accent);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  pointer-events: none;
+}

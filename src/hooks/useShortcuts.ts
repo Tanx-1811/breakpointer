@@ -27,6 +27,7 @@ export type ShortcutAction =
   | 'actualSize'
   | 'floating'
   | 'notes'
+  | 'sidebar'
   | 'escape';
 
 export type ShortcutHandlers = Partial<Record<ShortcutAction, () => void>> & {
@@ -66,6 +67,8 @@ const LETTER_KEYS: Record<string, ShortcutAction> = {
   KeyO: 'outlines',
   KeyP: 'floating',
   KeyN: 'notes',
+  Backslash: 'sidebar',
+  IntlBackslash: 'sidebar',
   BracketLeft: 'prevViewport',
   BracketRight: 'nextViewport',
   Digit0: 'actualSize',

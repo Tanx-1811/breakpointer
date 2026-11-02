@@ -41,6 +41,9 @@ import {
   type ToolToggle,
 } from '../components/WorkspaceBar/WorkspaceBar';
 import { DockStatus, ZoomDock } from '../components/ZoomDock/ZoomDock';
+import { Minimap } from '../components/Minimap/Minimap';
+import { ViewportSidebar, type SidebarViewport } from '../components/Sidebar/ViewportSidebar';
+import { StatusBar } from '../components/StatusBar/StatusBar';
 import { useEntitlement } from '../hooks/useEntitlement';
 import { useFrameAgents } from '../hooks/useFrameAgents';
 import { useNavigationHistory } from '../hooks/useNavigationHistory';
@@ -113,6 +116,8 @@ import { finish, shouldNudge, snooze, type Usage } from '../state/nudge';
 import { DEFAULT_SHOWCASE, pickShowcaseViewports, type ShowcaseOptions } from '../state/showcase';
 import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
+import { widthRange } from '../state/breakpoint-map';
+import { responsiveScore } from '../state/score';
 import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors';
 import { imageRows, imagesMarkdown } from '../state/images';
 import { activeBranding, imageFooterName } from '../state/branding';
@@ -157,6 +162,7 @@ import type {
   BreakpointSetId,
   ColorScheme,
   CssSnippet,
+  PanelSettings,
   ViewportConfig,
   BreakpointerSettings,
   WorkspaceLayout,
@@ -185,6 +191,9 @@ import { useVisualCheck, type Capture } from './useVisualCheck';
 import { TopBar, type CaptureKind } from './TopBar';
 import { usePan, useWheelZoom } from './workspace-gestures';
 import styles from './Viewer.module.css';
+
+/** The layout the L key switches to. */
+const NEXT_LAYOUT: Record<WorkspaceLayout, WorkspaceLayout> = { wrap: 'row', row: 'stack', stack: 'wrap' };
 
 const WORKSPACE_GAP = 20;
 const WORKSPACE_PADDING = 24;
@@ -2780,7 +2789,8 @@ function Workspace({
     fit,
     zoomIn: () => zoomStep(1),
     zoomOut: () => zoomStep(-1),
-    layout: () => dispatch({ type: 'setLayout', layout: settings.layout === 'wrap' ? 'row' : 'wrap' }),
+    layout: () => dispatch({ type: 'setLayout', layout: NEXT_LAYOUT[settings.layout] }),
+    sidebar: () => togglePanel('sidebar'),
     rulers: () => dispatch({ type: 'setShowRulers', showRulers: !settings.showRulers }),
     capture: () => void capture(workspaceRef.current, ['workspace']),
     theme: toggleTheme,
@@ -2855,6 +2865,9 @@ function Workspace({
           fit,
           zoomTo,
           setLayout: (layout) => dispatch({ type: 'setLayout', layout }),
+          setAccent: (accent) => dispatch({ type: 'setAccent', accent }),
+          setCanvas: (canvas) => dispatch({ type: 'setCanvas', canvas }),
+          togglePanel,
           rotateAll,
           sortByWidth: sortViewports,
           edges: testEdges,
@@ -2944,6 +2957,11 @@ function Workspace({
     if (vp) dispatch({ type: 'updateViewport', id, patch: { hidden: !vp.hidden } });
   }
 
+  /** Shows or hides one of the optional parts of the workspace. */
+  function togglePanel(panel: keyof PanelSettings) {
+    dispatch({ type: 'setPanels', panels: { [panel]: !settings.panels[panel] } });
+  }
+
   // Chrome doesn't tell the page when a frame was refused, so the tip shows
   // for any site that isn't allowed yet (unless the site is simply unreachable).
   const showNotice = Boolean(
@@ -3021,6 +3039,29 @@ function Workspace({
   }));
   // Kinds of issue found in any preview (shown on the toolbar's Audit button).
   const issueKinds = groupIssues(auditRows).length;
+
+  // The viewports sidebar and the status bar.
+  const activeBreakpoints =
+    breakpointSet(settings.breakpoints, settings.customBreakpoints, siteBreakpoints ?? [])?.breakpoints ?? [];
+  const breakpointsName = settings.breakpoints === 'none' ? null : t(`breakpoints.${settings.breakpoints}`);
+  const firstFrame = cards[0] ? agents.frameOf(cards[0].id) : undefined;
+  const sidebarViewports: SidebarViewport[] = viewports.map((vp) => ({
+    id: vp.id,
+    name: vp.name,
+    width: vp.width,
+    height: vp.height,
+    hidden: vp.hidden,
+    colorScheme: vp.colorScheme,
+    breakpoint: breakpointFor(settings.breakpoints, vp.width, settings.customBreakpoints, siteBreakpoints ?? []),
+    issues: vp.hidden ? null : (checksOf(vp.id)?.issues.length ?? null),
+  }));
+  /** Scrolls to a viewport's preview from the sidebar, showing it first when it's hidden. */
+  const revealViewport = (id: string) => {
+    const vp = viewports.find((item) => item.id === id);
+    if (vp?.hidden) dispatch({ type: 'updateViewport', id, patch: { hidden: false } });
+    // Shown again: its card exists once React has rendered it.
+    requestAnimationFrame(() => revealCard(id));
+  };
 
   /** What the audit's tab shows, as a Markdown table for a ticket or a pull request. */
   const copyAudit = () => {
@@ -3460,6 +3501,8 @@ function Workspace({
         siteAllowed={siteAccess.site}
         host={host}
         focusedId={focused?.id ?? null}
+        sidebarOpen={settings.panels.sidebar}
+        onSidebar={() => togglePanel('sidebar')}
         onToggleVisible={toggleVisible}
         onMoveTo={(id, index) => dispatch({ type: 'moveViewportTo', id, index })}
         onApplyGroup={applyGroup}
@@ -3578,12 +3621,44 @@ function Workspace({
         />
       )}
       <div className={styles.body}>
+        {settings.panels.sidebar && (
+          <ViewportSidebar
+            viewports={sidebarViewports}
+            canAdd={canAddViewport(viewports)}
+            focusedId={focused?.id ?? null}
+            breakpoints={activeBreakpoints}
+            breakpointsName={breakpointsName}
+            page={
+              currentUrl && host
+                ? {
+                    title: firstFrame?.title || null,
+                    host,
+                    address: currentUrl.href.replace(/^https?:\/\//, ''),
+                    status: firstFrame?.status,
+                    allowed: siteAccess.site,
+                  }
+                : null
+            }
+            score={settings.checks ? responsiveScore(auditRows.map((row) => row.report)) : null}
+            issueKinds={issueKinds}
+            busy={requesting}
+            onAdd={() => setDialog('add')}
+            onReveal={revealViewport}
+            onToggleVisible={toggleVisible}
+            onMoveTo={(id, index) => dispatch({ type: 'moveViewportTo', id, index })}
+            onFocus={toggleFocus}
+            onAudit={() => toggleAudit('issues')}
+            onAllowSite={() => void allowSite()}
+            onClose={() => togglePanel('sidebar')}
+          />
+        )}
         <div ref={stageRef} className={styles.stage}>
           <main
             ref={workspaceRef}
             className={styles.workspace}
             aria-label={t('workspace.region')}
             data-testid="workspace"
+            data-canvas={settings.canvas}
           >
             {renderContent()}
           </main>
@@ -3672,6 +3747,19 @@ function Workspace({
               }
             />
           )}
+          {settings.panels.minimap && visible.length > 0 && (
+            <Minimap
+              workspaceRef={workspaceRef}
+              layoutKey={[
+                settings.layout,
+                settings.showRulers,
+                focused?.id ?? '',
+                ...cards.map(
+                  (card) => `${card.id}:${card.viewport.width}x${card.viewport.height}@${card.viewport.zoom}`,
+                ),
+              ].join(' ')}
+            />
+          )}
         </div>
         {inspector.open && (
           <InspectorPanel
@@ -3732,6 +3820,29 @@ function Workspace({
           />
         )}
       </div>
+      {settings.panels.statusBar && (
+        <StatusBar
+          shown={visible.length}
+          total={viewports.length}
+          hasUrl={Boolean(currentUrl)}
+          status={firstFrame?.status}
+          access={currentUrl && host ? { host, allowed: siteAccess.site, allSites: siteAccess.allSites } : null}
+          sync={settings.sync}
+          issueKinds={settings.checks ? issueKinds : null}
+          breakpointsName={breakpointsName}
+          widths={widthRange(visible.map((vp) => vp.width))}
+          zoom={focused ? focused.zoom : commonZoom}
+          layout={settings.layout}
+          sidebar={settings.panels.sidebar}
+          minimap={settings.panels.minimap}
+          onSidebar={() => togglePanel('sidebar')}
+          onSiteAccess={() => setDialog('access')}
+          onSync={() => setSyncAll(!(settings.sync.scroll || settings.sync.navigation))}
+          onAudit={() => toggleAudit('issues')}
+          onFit={fit}
+          onMinimap={() => togglePanel('minimap')}
+        />
+      )}
       {panLayer && (
         <div
           className={styles.panLayer}
@@ -3860,6 +3971,10 @@ function Workspace({
         siteBreakpoints={siteBreakpoints}
         onTheme={(theme) => dispatch({ type: 'setTheme', theme })}
         onLanguage={(lang) => dispatch({ type: 'setLanguage', language: lang })}
+        onAccent={(accent) => dispatch({ type: 'setAccent', accent })}
+        onCanvas={(canvas) => dispatch({ type: 'setCanvas', canvas })}
+        onLayout={(layout) => dispatch({ type: 'setLayout', layout })}
+        onPanels={(panels) => dispatch({ type: 'setPanels', panels })}
         onBreakpoints={setBreakpoints}
         onCustomBreakpoints={(breakpoints) => dispatch({ type: 'setCustomBreakpoints', breakpoints })}
         onSync={(sync) => dispatch({ type: 'setSync', sync })}

@@ -21,6 +21,44 @@
   flex: 1 1 380px;
 }
 
+/* The viewport chips, the count and Add: the sidebar lists them instead while it's open on a wide window. */
+.strip {
+  display: contents;
+}
+
+@media (min-width: 861px) {
+  .chipsArea[data-sidebar] .strip {
+    display: none;
+  }
+}
+
+.sidebarToggle {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  color: var(--text-muted);
+  transition:
+    background-color var(--duration-fast) ease,
+    color var(--duration-fast) ease;
+}
+
+.sidebarToggle:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+.sidebarToggle[aria-pressed='true'] {
+  border-color: var(--accent-border);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
 .divider {
   flex: none;
   width: 1px;

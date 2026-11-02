@@ -1440,4 +1440,74 @@ export const id: Record<MessageKey, string> = {
     'Anggaran performa (Pro): tetapkan batas bobot halaman, permintaan, LCP, dan CLS, lalu lihat pratinjau yang melampauinya.',
   'news.distance': 'Inspeksi kini mengukur jarak antara dua elemen di setiap ukuran.',
   'news.tour': 'Baru di sini? Ikuti tur dari Bantuan — dan simpan catatan bersama pratinjau sebagai satu gambar.',
+  // v0.9 keys
+  'layout.stack': 'Stack', // TRANSLATE
+  'palette.layoutStack': 'Layout: stack (one column)', // TRANSLATE
+  'sidebar.label': 'Viewports sidebar', // TRANSLATE
+  'sidebar.toggle': 'Viewports sidebar', // TRANSLATE
+  'sidebar.hide': 'Hide the sidebar', // TRANSLATE
+  'sidebar.show': 'Show {name}', // TRANSLATE
+  'sidebar.hideViewport': 'Hide {name}', // TRANSLATE
+  'sidebar.issues': '{count} kinds of issue', // TRANSLATE
+  'sidebar.rowHint': 'Click to go to a preview, double-click to focus it. Drag, or press Alt + ↑ ↓, to reorder.', // TRANSLATE
+  'sidebar.map': 'Breakpoint map', // TRANSLATE
+  'sidebar.mapBreakpoints': 'Breakpoints: {list}', // TRANSLATE
+  'sidebar.mapNoBreakpoints': 'No breakpoint labels', // TRANSLATE
+  'sidebar.mapViewports': 'Viewports: {list}', // TRANSLATE
+  'sidebar.mapHint': 'Pick a set of breakpoints on the toolbar to see which side of each one your viewports are on.', // TRANSLATE
+  'sidebar.page': 'Page', // TRANSLATE
+  'sidebar.allowed': 'Allowed', // TRANSLATE
+  'sidebar.score': 'Responsive score · {grade}', // TRANSLATE
+  'sidebar.noIssues': 'No issues found', // TRANSLATE
+  'sidebar.issueKindsOne': '1 kind of issue', // TRANSLATE
+  'sidebar.issueKinds': '{count} kinds of issue', // TRANSLATE
+  'status.label': 'Status', // TRANSLATE
+  'status.previewsOne': '1 preview', // TRANSLATE
+  'status.previews': '{count} previews', // TRANSLATE
+  'status.hidden': '{count} hidden', // TRANSLATE
+  'status.http': 'HTTP {status}', // TRANSLATE
+  'status.allSites': 'Allowed on all sites', // TRANSLATE
+  'status.allowed': 'Allowed on {host}', // TRANSLATE
+  'status.notAllowed': 'Not allowed on {host}', // TRANSLATE
+  'status.syncBoth': 'Sync: scrolling, links', // TRANSLATE
+  'status.syncScroll': 'Sync: scrolling', // TRANSLATE
+  'status.syncLinks': 'Sync: links', // TRANSLATE
+  'status.syncOff': 'Sync off', // TRANSLATE
+  'status.noIssues': 'No issues', // TRANSLATE
+  'status.issuesOne': '1 kind of issue', // TRANSLATE
+  'status.issues': '{count} kinds of issue', // TRANSLATE
+  'status.widths': '{range} px', // TRANSLATE
+  'status.fit': 'Fit to the window', // TRANSLATE
+  'minimap.toggle': 'Minimap', // TRANSLATE
+  'minimap.hint': 'Press or drag to scroll there', // TRANSLATE
+  'settings.accent': 'Accent colour', // TRANSLATE
+  'settings.accentHelp': 'Buttons, selections and focus rings.', // TRANSLATE
+  'accent.indigo': 'Indigo', // TRANSLATE
+  'accent.blue': 'Blue', // TRANSLATE
+  'accent.violet': 'Violet', // TRANSLATE
+  'accent.teal': 'Teal', // TRANSLATE
+  'accent.rose': 'Rose', // TRANSLATE
+  'accent.graphite': 'Graphite', // TRANSLATE
+  'settings.canvas': 'Canvas', // TRANSLATE
+  'settings.canvasHelp': 'The background behind the previews.', // TRANSLATE
+  'canvas.dots': 'Dots', // TRANSLATE
+  'canvas.grid': 'Grid', // TRANSLATE
+  'canvas.plain': 'Plain', // TRANSLATE
+  'settings.layout': 'Layout', // TRANSLATE
+  'settings.panels': 'Panels', // TRANSLATE
+  'settings.sidebar': 'Viewports sidebar', // TRANSLATE
+  'settings.sidebarHelp': 'Every viewport, a breakpoint map and the page at a glance. Shortcut: \\', // TRANSLATE
+  'settings.statusBar': 'Status bar', // TRANSLATE
+  'settings.statusBarHelp': 'Previews, site access, sync, issues and zoom along the bottom.', // TRANSLATE
+  'settings.minimap': 'Minimap', // TRANSLATE
+  'settings.minimapHelp': 'An overview of the workspace in a corner, shown while it scrolls.', // TRANSLATE
+  'palette.sidebar': 'Viewports sidebar', // TRANSLATE
+  'palette.statusBar': 'Status bar', // TRANSLATE
+  'palette.minimap': 'Minimap', // TRANSLATE
+  'palette.accent': 'Accent colour: {color}', // TRANSLATE
+  'palette.canvas': 'Canvas: {style}', // TRANSLATE
+  'help.sidebar': 'Show or hide the viewports sidebar', // TRANSLATE
+  'news.workspace': 'A more professional workspace: a viewports sidebar with a breakpoint map (press \\), a status bar and a minimap.', // TRANSLATE
+  'news.appearance': 'Make it yours: six accent colours and three canvas styles in Settings → Appearance, and a new Stack layout.', // TRANSLATE
+  // end v0.9 keys
 };

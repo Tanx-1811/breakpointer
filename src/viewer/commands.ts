@@ -13,9 +13,13 @@ import type { MessageKey } from '../i18n/en';
 import { LANGUAGES, LANGUAGE_NAMES, type Translate } from '../i18n/translate';
 import { builtInGroupName } from '../state/groups';
 import { VISION_MODES, type VisionMode } from '../state/vision';
+import { ACCENTS, CANVASES } from '../services/storage';
 import type {
+  AccentColor,
   BreakpointSetId,
   BreakpointerSettings,
+  CanvasStyle,
+  PanelSettings,
   LanguagePreference,
   ThemePreference,
   ViewportPreset,
@@ -80,6 +84,10 @@ export type CommandActions = {
   fit: () => void;
   zoomTo: (zoom: number) => void;
   setLayout: (layout: WorkspaceLayout) => void;
+  /** Appearance: the accent colour, the canvas and the optional panels (listed when given). */
+  setAccent?: (accent: AccentColor) => void;
+  setCanvas?: (canvas: CanvasStyle) => void;
+  togglePanel?: (panel: keyof PanelSettings) => void;
   rotateAll: () => void;
   sortByWidth: () => void;
   edges: () => void;
@@ -695,6 +703,70 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     current: settings.layout === 'row',
     run: () => actions.setLayout('row'),
   });
+  named('palette.layoutStack', {
+    id: 'layout-stack',
+    section: section.view,
+    icon: 'stack',
+    current: settings.layout === 'stack',
+    keywords: 'column vertical',
+    run: () => actions.setLayout('stack'),
+  });
+  const { togglePanel, setAccent, setCanvas } = actions;
+  if (togglePanel) {
+    named('palette.sidebar', {
+      id: 'panel-sidebar',
+      section: section.view,
+      icon: 'sidebar',
+      shortcut: '\\',
+      checked: settings.panels.sidebar,
+      keywords: 'layers list panel',
+      run: () => togglePanel('sidebar'),
+    });
+    named('palette.statusBar', {
+      id: 'panel-status',
+      section: section.view,
+      icon: 'statusBar',
+      checked: settings.panels.statusBar,
+      keywords: 'footer',
+      run: () => togglePanel('statusBar'),
+    });
+    named('palette.minimap', {
+      id: 'panel-minimap',
+      section: section.view,
+      icon: 'minimap',
+      checked: settings.panels.minimap,
+      keywords: 'overview navigator',
+      run: () => togglePanel('minimap'),
+    });
+  }
+  if (setAccent)
+    for (const accent of ACCENTS)
+      named(
+        'palette.accent',
+        {
+          id: `accent-${accent}`,
+          section: section.view,
+          icon: 'palette',
+          current: settings.accent === accent,
+          keywords: `${en(`accent.${accent}`)} theme colour color`,
+          run: () => setAccent(accent),
+        },
+        { color: t(`accent.${accent}`) },
+      );
+  if (setCanvas)
+    for (const canvas of CANVASES)
+      named(
+        'palette.canvas',
+        {
+          id: `canvas-${canvas}`,
+          section: section.view,
+          icon: canvas === 'grid' ? 'columns' : canvas === 'dots' ? 'more' : 'panel',
+          current: settings.canvas === canvas,
+          keywords: `${en(`canvas.${canvas}`)} background`,
+          run: () => setCanvas(canvas),
+        },
+        { style: t(`canvas.${canvas}`) },
+      );
   named('palette.themeLight', {
     id: 'theme-light',
     section: section.view,

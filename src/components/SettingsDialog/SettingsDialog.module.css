@@ -446,3 +446,165 @@
 .linkButton:hover {
   background: var(--surface-hover);
 }
+
+/* ---------- Appearance: accent colours and canvas styles ---------- */
+
+.swatches {
+  display: flex;
+  gap: 6px;
+}
+
+.swatch {
+  --swatch: #4f46e5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) ease;
+}
+
+.swatch:has(input:checked) {
+  border-color: var(--swatch);
+}
+
+.swatch:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.swatchDot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 12%);
+}
+
+/* The light theme's accent colours (see styles/global.css), then the dark theme's. */
+.swatch[data-accent='blue'] {
+  --swatch: #1d4ed8;
+}
+
+.swatch[data-accent='violet'] {
+  --swatch: #7c3aed;
+}
+
+.swatch[data-accent='teal'] {
+  --swatch: #0f766e;
+}
+
+.swatch[data-accent='rose'] {
+  --swatch: #be123c;
+}
+
+.swatch[data-accent='graphite'] {
+  --swatch: #27272a;
+}
+
+:global(:root[data-theme='dark']) .swatch[data-accent='indigo'] {
+  --swatch: #8b93ff;
+}
+
+:global(:root[data-theme='dark']) .swatch[data-accent='blue'] {
+  --swatch: #6ea8fe;
+}
+
+:global(:root[data-theme='dark']) .swatch[data-accent='violet'] {
+  --swatch: #b197fc;
+}
+
+:global(:root[data-theme='dark']) .swatch[data-accent='teal'] {
+  --swatch: #2dd4bf;
+}
+
+:global(:root[data-theme='dark']) .swatch[data-accent='rose'] {
+  --swatch: #fb7185;
+}
+
+:global(:root[data-theme='dark']) .swatch[data-accent='graphite'] {
+  --swatch: #e4e4e7;
+}
+
+.canvasBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.canvases {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.canvasOption {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) ease,
+    box-shadow var(--duration-fast) ease;
+}
+
+.canvasOption:hover {
+  border-color: var(--border-strong);
+}
+
+.canvasOption:has(input:checked) {
+  border-color: var(--accent);
+  box-shadow: var(--ring-accent);
+}
+
+.canvasOption:has(input:focus-visible) {
+  box-shadow: var(--focus-ring);
+}
+
+.canvasPreview {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 8px;
+  height: 64px;
+  padding-top: 12px;
+  border-radius: var(--radius);
+  background-color: var(--canvas);
+}
+
+.canvasPreview span {
+  width: 30%;
+  height: 60%;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.canvasPreview span + span {
+  width: 20%;
+  height: 74%;
+}
+
+.canvasOption[data-canvas='dots'] .canvasPreview {
+  background-image: radial-gradient(var(--canvas-dot) 1px, transparent 1.2px);
+  background-size: 10px 10px;
+}
+
+.canvasOption[data-canvas='grid'] .canvasPreview {
+  background-image:
+    linear-gradient(var(--canvas-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-line) 1px, transparent 1px);
+  background-size: 12px 12px;
+}
+
+.canvasName {
+  font-size: 13px;
+  font-weight: 600;
+}

@@ -95,6 +95,9 @@ type Props = {
   host: string | null;
   /** The viewport shown on its own (focus mode). */
   focusedId: string | null;
+  /** The viewports sidebar is open: it lists the viewports instead of the chips (on wide windows). */
+  sidebarOpen?: boolean;
+  onSidebar?: () => void;
   onToggleVisible: (id: string) => void;
   onMoveTo: (id: string, index: number) => void;
   onApplyGroup: (id: string) => void;
@@ -556,7 +559,24 @@ export function WorkspaceBar(props: Props) {
 
   return (
     <div className={styles.bar}>
-      <div className={styles.chipsArea}>
+      <div className={styles.chipsArea} data-sidebar={props.sidebarOpen || undefined}>
+        {props.onSidebar && (
+          <>
+            <button
+              type="button"
+              className={styles.sidebarToggle}
+              aria-pressed={Boolean(props.sidebarOpen)}
+              aria-label={t('sidebar.toggle')}
+              data-tooltip={t('sidebar.toggle')}
+              data-shortcut="\\"
+              data-testid="sidebar-toggle"
+              onClick={props.onSidebar}
+            >
+              <Icon name="sidebar" size={16} />
+            </button>
+            <span className={styles.divider} aria-hidden="true" />
+          </>
+        )}
         {props.onOpenProject && props.onSaveProject && props.onManageProjects && (
           <Menu
             label={t('projects.menu')}
@@ -588,73 +608,80 @@ export function WorkspaceBar(props: Props) {
             />
           )}
         />
-        <span className={styles.divider} aria-hidden="true" />
-        <span className={styles.count}>
-          <span aria-hidden="true">
-            {viewports.length}/{MAX_VIEWPORTS}
+        <span className={styles.strip}>
+          <span className={styles.divider} aria-hidden="true" />
+          <span className={styles.count}>
+            <span aria-hidden="true">
+              {viewports.length}/{MAX_VIEWPORTS}
+            </span>
+            <span className="visually-hidden">
+              {t('workspace.countLabel', { count: viewports.length, max: MAX_VIEWPORTS })}
+            </span>
           </span>
-          <span className="visually-hidden">
-            {t('workspace.countLabel', { count: viewports.length, max: MAX_VIEWPORTS })}
-          </span>
-        </span>
-        <ul className={styles.chips} aria-label={t('workspace.viewports')} data-tour="viewports">
-          {viewports.map((vp, index) => {
-            const sizeClass = sizeClassOf(vp.width, vp.height);
-            return (
-              <li
-                key={vp.id}
-                className={styles.chipItem}
-                data-drop={dropMarker(index)}
-                onDragOver={(event) => onDragOver(event, index)}
-                onDrop={onDrop}
-              >
-                <button
-                  type="button"
-                  className={styles.chip}
-                  aria-pressed={!vp.hidden}
-                  aria-label={t('workspace.chipLabel', { name: vp.name, size: `${vp.width} × ${vp.height}` })}
-                  data-tooltip={vp.hidden ? t('workspace.chipShow') : t('workspace.chipHint')}
-                  data-chip-id={vp.id}
-                  data-size-class={sizeClass}
-                  data-focused={props.focusedId === vp.id || undefined}
-                  data-testid="viewport-chip"
-                  draggable
-                  onDragStart={(event) => {
-                    setDragId(vp.id);
-                    event.dataTransfer.effectAllowed = 'move';
-                    event.dataTransfer.setData('text/plain', vp.id);
-                  }}
-                  onDragEnd={endDrag}
-                  onClick={() => props.onToggleVisible(vp.id)}
-                  onKeyDown={(event) => onChipKeyDown(event, vp, index)}
+          <ul
+            className={styles.chips}
+            aria-label={t('workspace.viewports')}
+            data-tour={props.sidebarOpen ? undefined : 'viewports'}
+          >
+            {viewports.map((vp, index) => {
+              const sizeClass = sizeClassOf(vp.width, vp.height);
+              return (
+                <li
+                  key={vp.id}
+                  className={styles.chipItem}
+                  data-drop={dropMarker(index)}
+                  onDragOver={(event) => onDragOver(event, index)}
+                  onDrop={onDrop}
                 >
-                  <Icon
-                    name={vp.hidden ? 'eyeOff' : SIZE_CLASS_ICONS[sizeClass]}
-                    size={14}
-                    className={styles.chipIcon}
-                  />
-                  <span className={styles.chipName}>{vp.name}</span> <span className={styles.chipSize}>{vp.width}</span>
-                  {vp.colorScheme && (
-                    <Icon name={vp.colorScheme === 'dark' ? 'moon' : 'sun'} size={12} className={styles.chipScheme} />
-                  )}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <button
-          type="button"
-          className={styles.addButton}
-          onClick={props.onAddViewport}
-          disabled={!props.canAddViewport}
-          aria-label={t('toolbar.addViewport')}
-          data-tooltip={props.canAddViewport ? t('toolbar.addViewport') : t('add.limit', { max: MAX_VIEWPORTS })}
-          data-shortcut="A"
-          data-add-viewport
-        >
-          <Icon name="plus" size={15} />
-          <span className={styles.addLabel}>{t('toolbar.addViewport')}</span>
-        </button>
+                  <button
+                    type="button"
+                    className={styles.chip}
+                    aria-pressed={!vp.hidden}
+                    aria-label={t('workspace.chipLabel', { name: vp.name, size: `${vp.width} × ${vp.height}` })}
+                    data-tooltip={vp.hidden ? t('workspace.chipShow') : t('workspace.chipHint')}
+                    data-chip-id={vp.id}
+                    data-size-class={sizeClass}
+                    data-focused={props.focusedId === vp.id || undefined}
+                    data-testid="viewport-chip"
+                    draggable
+                    onDragStart={(event) => {
+                      setDragId(vp.id);
+                      event.dataTransfer.effectAllowed = 'move';
+                      event.dataTransfer.setData('text/plain', vp.id);
+                    }}
+                    onDragEnd={endDrag}
+                    onClick={() => props.onToggleVisible(vp.id)}
+                    onKeyDown={(event) => onChipKeyDown(event, vp, index)}
+                  >
+                    <Icon
+                      name={vp.hidden ? 'eyeOff' : SIZE_CLASS_ICONS[sizeClass]}
+                      size={14}
+                      className={styles.chipIcon}
+                    />
+                    <span className={styles.chipName}>{vp.name}</span>{' '}
+                    <span className={styles.chipSize}>{vp.width}</span>
+                    {vp.colorScheme && (
+                      <Icon name={vp.colorScheme === 'dark' ? 'moon' : 'sun'} size={12} className={styles.chipScheme} />
+                    )}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          <button
+            type="button"
+            className={styles.addButton}
+            onClick={props.onAddViewport}
+            disabled={!props.canAddViewport}
+            aria-label={t('toolbar.addViewport')}
+            data-tooltip={props.canAddViewport ? t('toolbar.addViewport') : t('add.limit', { max: MAX_VIEWPORTS })}
+            data-shortcut="A"
+            data-add-viewport
+          >
+            <Icon name="plus" size={15} />
+            <span className={styles.addLabel}>{t('toolbar.addViewport')}</span>
+          </button>
+        </span>
       </div>
 
       <div className={styles.controls}>

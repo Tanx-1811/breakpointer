@@ -104,6 +104,7 @@ export function ZoomDock({ zoom, disabled, onZoom, onStep, onFit, layout, onLayo
         options={[
           { value: 'wrap', label: t('layout.wrap'), icon: 'wrap' },
           { value: 'row', label: t('layout.row'), icon: 'row' },
+          { value: 'stack', label: t('layout.stack'), icon: 'stack' },
         ]}
       />
     </div>
