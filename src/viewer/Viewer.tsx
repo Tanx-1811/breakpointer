@@ -17,7 +17,10 @@ import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
 import { ErrorState } from '../components/ErrorState/ErrorState';
 import { ManageGroupsDialog, SaveGroupDialog } from '../components/GroupDialogs/GroupDialogs';
 import { ManageProjectsDialog, SaveProjectDialog } from '../components/ProjectDialogs/ProjectDialogs';
-import { HelpDialog } from '../components/HelpDialog/HelpDialog';
+import { HelpDialog, type HelpSection } from '../components/HelpDialog/HelpDialog';
+import { ExplainLayer } from '../components/Explain/ExplainLayer';
+import { PresentBar } from '../components/PresentBar/PresentBar';
+import { QaPanel } from '../components/QaPanel/QaPanel';
 import { InspectorPanel, type InspectorRow } from '../components/Inspector/InspectorPanel';
 import { LiveCssDialog } from '../components/LiveCssDialog/LiveCssDialog';
 import { Nudge } from '../components/Nudge/Nudge';
@@ -78,6 +81,10 @@ import type { ShowcaseShot } from '../services/showcase';
 import { sitemapPages } from '../services/sitemap';
 import { hasSiteAccess, requestSiteAccess, requestSitesAccess, sitesWithoutAccess } from '../services/site-access';
 import { countToday, writeUsage } from '../services/usage';
+import { readLearnProgress, writeLearnProgress } from '../services/learn';
+import type { GuideAction, GuideId } from '../state/guides';
+import { completeTasks, learnSummary, tasksDone, type LearnProgress, type LearnTaskInfo } from '../state/learn';
+import { qaMarkdown, resolveQaItems, setQaResult, type QaResults } from '../state/qa';
 import {
   closeWindows,
   focusOwnWindow,
@@ -351,8 +358,20 @@ function Workspace({
   // Hosts whose blocked-site tip was dismissed, until Chrome closes.
   const [dismissedHosts, setDismissedHosts] = useState<string[]>([]);
   const [dialog, setDialog] = useState<DialogName | null>(null);
-  // The tour of the workspace's controls (started from the welcome screen, Help or the palette).
-  const [touring, setTouring] = useState(false);
+  // A guide (the tour of the workspace's controls is the first), started from the welcome screen, Help,
+  // the palette or “What's this?”.
+  const [guide, setGuide] = useState<GuideId | null>(null);
+  // “What's this?” mode and present mode, for this session.
+  const [explaining, setExplaining] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+  // The section Help opens on.
+  const [helpSection, setHelpSection] = useState<HelpSection>('start');
+  // The QA checklist: its panel and this session's results.
+  const [qaOpen, setQaOpen] = useState(false);
+  const [qaResults, setQaResults] = useState<QaResults>({});
+  // The getting-started checklist, kept on this device (null until read); a screenshot taken this session.
+  const [learn, setLearn] = useState<LearnProgress | null>(null);
+  const [captured, setCaptured] = useState(false);
   // Synced navigation: a card that led a navigation keeps its own frame (its
   // address is pinned), and cards whose page moved without the others following
   // are "strays" ("Navigated away · Back").
@@ -957,6 +976,7 @@ function Workspace({
     });
 
   const onCapture = (kind: CaptureKind) => {
+    if (kind !== 'showcase') setCaptured(true);
     if (kind === 'showcase') openShowcase();
     else if (kind === 'all') void captureAll();
     else if (kind === 'copy') void copyCapture(workspaceRef.current);
@@ -1035,18 +1055,29 @@ function Workspace({
 
   // News of this version, until Help is opened.
   const [news, setNews] = useState(Boolean(whatsNew));
-  const startTour = () => {
+  const startGuide = (id: GuideId) => {
     setDialog(null);
-    setTouring(true);
+    setExplaining(false);
+    setGuide(id);
+  };
+  const startTour = () => startGuide('basics');
+
+  const startExplain = () => {
+    setDialog(null);
+    setGuide(null);
+    setExplaining(true);
   };
 
-  const openHelp = () => {
+  /** Help, on a section (by default What's new after an update, else Get started). */
+  const openHelpAt = (section?: HelpSection) => {
+    setHelpSection(section ?? (news ? 'news' : 'start'));
     setDialog('help');
     if (news) {
       setNews(false);
       void markSeen(version);
     }
   };
+  const openHelp = () => openHelpAt();
 
   /** A link that opens this page with these viewports in Breakpointer, for a teammate. */
   const copyWorkspaceLink = () => {
@@ -1214,8 +1245,9 @@ function Workspace({
     // Measuring, notes and picking all take clicks in the previews: one at a time.
     setMeasuring(false);
     setAnnotating(false);
-    // The inspector and the audit share the side of the workspace.
+    // The inspector, the audit and the QA checklist share the side of the workspace.
     setAudit((state) => (state.open ? { ...state, open: false } : state));
+    setQaOpen(false);
     setInspector((state) => ({ ...state, open: true, picking: true, pickingTarget: false }));
     agents.broadcast({ type: 'inspect', on: true });
     hintAccess(t('tools.inspect'));
@@ -1252,6 +1284,7 @@ function Workspace({
       return;
     }
     if (inspector.open) closeInspector();
+    setQaOpen(false);
     setAudit((state) => ({ open: true, tab: tab ?? state.tab }));
     hintAccess(t('audit.title'));
   };
@@ -1262,14 +1295,67 @@ function Workspace({
   };
 
   const onEscape = () => {
-    if (inspector.picking) stopPicking();
+    if (presenting) exitPresent();
+    else if (inspector.picking) stopPicking();
     else if (measuring) setMeasuring(false);
     else if (annotating) setAnnotating(false);
     else if (focused) exitFocus();
     else if (inspector.open) closeInspector();
     else if (vision !== 'none') setVision('none');
     else if (audit.open) closeAudit();
+    else if (qaOpen) closeQa();
   };
+
+  /* ---------- QA checklist ---------- */
+
+  const qaItems = useMemo(() => resolveQaItems(settings.qaChecklist, t), [settings.qaChecklist, t]);
+
+  const closeQa = () => {
+    // Keyboard focus inside the panel would be lost with it: give it to the Tools menu, where it opens.
+    const inPanel = document.activeElement?.closest('[data-testid="qa-panel"]');
+    setQaOpen(false);
+    if (inPanel) requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-tools-trigger]')?.focus());
+  };
+
+  const openQa = () => {
+    if (inspector.open) closeInspector();
+    if (audit.open) closeAudit();
+    setQaOpen(true);
+  };
+
+  /** Q, the palette and Tools: the QA checklist panel. */
+  const toggleQa = () => (qaOpen ? closeQa() : openQa());
+
+  /** A new list of checks (a removed one can be put back). */
+  const setQaItems = (items: typeof qaItems) => {
+    const removed = qaItems.find((item) => !items.some((next) => next.id === item.id));
+    const before = settings.qaChecklist;
+    dispatch({ type: 'setQaChecklist', items });
+    if (removed && items.length < qaItems.length)
+      withUndo(t('qa.removed', { check: removed.text }), () => dispatch({ type: 'setQaChecklist', items: before }));
+  };
+
+  /* ---------- Present mode ---------- */
+
+  const startPresent = () => {
+    if (!currentUrl) return;
+    setDialog(null);
+    setGuide(null);
+    setExplaining(false);
+    setPresenting(true);
+    // Full screen where Chrome allows it (Esc then leaves both); else a reminder of the way out.
+    const remind = () => toast({ message: t('present.toast'), tone: 'info', key: 'present' });
+    const request = document.documentElement.requestFullscreen?.bind(document.documentElement);
+    if (request) void request().catch(remind);
+    else remind();
+  };
+
+  const exitPresent = () => {
+    setPresenting(false);
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+  };
+
+  const togglePresent = () => (presenting ? exitPresent() : startPresent());
 
   const agents = useFrameAgents(tabId, generations, {
     onHello: (cardId, href) => {
@@ -2043,6 +2129,95 @@ function Workspace({
     setAnnotating(!annotating);
   };
 
+  /* ---------- Getting started and guides ---------- */
+
+  useEffect(() => {
+    let cancelled = false;
+    void readLearnProgress().then((progress) => {
+      if (!cancelled) setLearn(progress);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // The checklist ticks off what the workspace shows was done (sizes compared with the session's first).
+  const sizesKey = viewports.map((vp) => `${vp.width}x${vp.height}`).join(',');
+  const firstSizes = useRef(sizesKey);
+  const learnedKey = tasksDone({
+    hasUrl: Boolean(currentUrl),
+    viewportsChanged: sizesKey !== firstSizes.current,
+    inspected: inspector.selector !== null,
+    auditing: audit.open,
+    scanning: dialog === 'scan',
+    notes: shownNotes.length,
+    captured,
+    explaining,
+  }).join(' ');
+  useEffect(() => {
+    if (!learn || !learnedKey) return;
+    const next = completeTasks(learn, learnedKey.split(' ') as LearnProgress['done']);
+    if (next === learn) return;
+    setLearn(next);
+    void writeLearnProgress(next);
+  }, [learn, learnedKey]);
+
+  const setLearnHidden = (hidden: boolean) => {
+    if (!learn) return;
+    const next = { ...learn, hidden };
+    setLearn(next);
+    void writeLearnProgress(next);
+  };
+
+  /** “Show me” on the checklist: its guide, or what it opens. */
+  const showLearnTask = (task: LearnTaskInfo) => {
+    if (task.guide) startGuide(task.guide);
+    else if (task.action) {
+      setDialog(null);
+      runGuideAction(task.action);
+    }
+  };
+
+  /** What a guide opens (it never closes what is open already). */
+  const runGuideAction = (action: GuideAction) => {
+    if (action === 'audit') {
+      if (!audit.open) toggleAudit('issues');
+    } else if (action === 'audit-media') {
+      if (!audit.open || audit.tab !== 'media') toggleAudit('media');
+    } else if (action === 'inspect') {
+      if (!inspector.open) startPicking();
+    } else if (action === 'notes') {
+      if (!annotating) toggleNotes();
+    } else if (action === 'qa') {
+      if (!qaOpen) openQa();
+    } else if (action === 'scan') openScan();
+    else if (action === 'batch') openBatch();
+    else if (action === 'visual') openVisual();
+    else if (action === 'showcase') openShowcase();
+    else if (action === 'present') startPresent();
+    else startExplain();
+  };
+
+  // Present mode: the page says so (cards drop their controls), full screen ends with it, and the
+  // previews are fitted to the space the toolbars leave or give back.
+  const presented = useRef(presenting);
+  useEffect(() => {
+    const root = document.documentElement;
+    if (presenting) root.dataset.presenting = '';
+    else delete root.dataset.presenting;
+    if (presented.current === presenting) return;
+    presented.current = presenting;
+    void nextFrame().then(() => fit());
+  }, [presenting, fit]);
+  useEffect(() => {
+    if (!presenting) return;
+    const onChange = () => {
+      if (!document.fullscreenElement) setPresenting(false);
+    };
+    document.addEventListener('fullscreenchange', onChange);
+    return () => document.removeEventListener('fullscreenchange', onChange);
+  }, [presenting]);
+
   const addNote = (cardId: string, point: { x: number; y: number }) => {
     if (notes.length >= MAX_NOTES) {
       toast({ message: t('notes.limit', { max: MAX_NOTES }), tone: 'info', key: 'notes' });
@@ -2795,7 +2970,10 @@ function Workspace({
     layout: () => dispatch({ type: 'setLayout', layout: NEXT_LAYOUT[settings.layout] }),
     sidebar: () => togglePanel('sidebar'),
     rulers: () => dispatch({ type: 'setShowRulers', showRulers: !settings.showRulers }),
-    capture: () => void capture(workspaceRef.current, ['workspace']),
+    capture: () => {
+      setCaptured(true);
+      void capture(workspaceRef.current, ['workspace']);
+    },
     theme: toggleTheme,
     help: openHelp,
     palette: () => (dialog === 'palette' ? setDialog(null) : openPalette()),
@@ -2812,6 +2990,9 @@ function Workspace({
     actualSize: () => visible.length > 0 && zoomTo(1),
     floating: () => void openFloating(),
     notes: toggleNotes,
+    explain: startExplain,
+    present: () => togglePresent(),
+    qa: () => toggleQa(),
     escape: onEscape,
     // 1–8 show that viewport on its own (again: all of them).
     viewportAt: (index) => {
@@ -2851,6 +3032,8 @@ function Workspace({
         cookieBanners: hideBanners,
         annotating,
         noteCount: shownNotes.length,
+        presenting,
+        qaOpen,
         actions: {
           reloadAll: reloadKeepingPlace,
           autoReload: setAutoReload,
@@ -2899,6 +3082,11 @@ function Workspace({
           siteAccess: () => setDialog('access'),
           help: openHelp,
           tour: startTour,
+          guide: startGuide,
+          explain: startExplain,
+          learn: () => openHelpAt('start'),
+          present: togglePresent,
+          qa: toggleQa,
           exportSettings,
           scrollBottom: scrollAllToBottom,
           copyAddress,

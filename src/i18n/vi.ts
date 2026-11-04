@@ -1793,6 +1793,8 @@ export const vi: Record<MessageKey, string> = {
   'media.note':
     'Khung của mỗi bản xem trước chính là viewport của nó, nên dấu ✓ cho biết chính xác query nào áp dụng ở kích thước đó. Cột Quy tắc là số quy tắc CSS bên trong mỗi query.',
   // v0.10 qa
+  'qa.removed': 'Đã xóa “{check}”',
+  'qa.copied': 'Đã chép báo cáo QA dạng Markdown',
   'qa.title': 'Checklist kiểm thử',
   'qa.copy': 'Chép dạng Markdown',
   'qa.more': 'Thao tác khác cho checklist',
