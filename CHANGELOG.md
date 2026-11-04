@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.10.0] — 2026-11-04
+
+Learn Breakpointer as you go, test by hand at every size, and find the widths your breakpoints miss.
+
+### Added
+
+- **Help centre** (`?`, the toolbar's Help button): Get started, Shortcuts, What's new and Support as sections of one dialog, with a search that finds guides and shortcuts. After an update it opens on What's new.
+- **Ten guides**, step by step, each card next to the control it talks about: workspace basics (the tour), find where a layout breaks, audit a page at every size, find gaps between breakpoints, compare one element at every size, report a bug with notes, run a QA checklist, catch visual changes, check a whole site and share screenshots. A step opens what it explains (the audit, the inspector, notes, the QA checklist) and the last one can start the task (Scan now, Open Check pages…). From Help, the palette (“Guide: …”) and “What's this?”.
+- **Getting-started checklist**: eight things worth doing once — preview a page, change a viewport, inspect an element, open the audit, scan every width, pin a note, take a screenshot, try “What's this?” — ticked off by themselves as you do them, each with **Show me**. The status bar shows **Get started 3/8** until it's done or hidden. Only which tasks are done is kept, on this device.
+- **“What's this?” mode** (`H`, Help or the palette): point at any control — or move the keyboard focus to it — to see what it does and its shortcut; click to keep the card open (the control isn't used) and open its guide. `Esc` or Done leaves it.
+- **Present mode** (`D`, the toolbar's Present button or the palette): only the previews, full screen where Chrome allows, with a small bar for the layout, Fit and Exit — for screen sharing and client demos. `Esc` leaves it.
+- **QA checklist** (`Q`, Tools or the palette): a side panel with a cell per check and visible viewport — click to mark it passed, failed or skipped (arrow keys move between cells) — eight default checks (the menu, nothing cut off, readable text, sharp images, easy taps, forms, embeds, pop-ups) you can edit, add to or remove (with undo), and **Copy as Markdown** with what failed. Your list of checks is kept (and exported with the settings); results are for the session.
+- **Media queries** in the audit (`E` → Media queries, or “Audit: media queries” in the palette): every media and container query in the page's own CSS, its number of rules and the previews it applies in (✓ / –), filtered to widths or showing every condition. Likely mistakes are flagged: a **gap** — e.g. `(max-width: 599px)` and `(min-width: 601px)` leave 600 px with neither — or an **overlap** where both sides apply, with **Add a viewport at 600 px** in one click. Copy the tab as Markdown.
+
+### Changed
+
+- The welcome screen has a **Guides** button next to the tour.
+- The command palette lists the guides, “What's this?” mode, present mode, the QA checklist and the getting-started checklist; Help's shortcuts list `H`, `D` and `Q`.
+- The audit has seven tabs.
+
 ## [0.9.0] — 2026-11-02
 
 A more professional workspace you can make your own, and a new audit for search and social.

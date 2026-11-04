@@ -24,6 +24,7 @@
 | v0.7 — Score, notes, projects   | A responsive score, notes and bug reports, projects (Pro beyond one), text at 200%, five framework breakpoint sets, two groups, six more languages                     | ✅ Done                         | [§3](#v07--score-notes-projects-and-languages--delivered), `v07.spec.ts`                 |
 | v0.8 — Images, colours, budgets | The audit's Images (suggested sizes and srcset) and Colours tabs, performance budgets (Pro), the distance between two elements, a tour, notes in images                | ✅ Done                         | [§3](#v08--images-colours-budgets-and-distance--delivered), `v08.spec.ts`                |
 | v0.9 — Professional workspace   | A viewports sidebar with a breakpoint map, a status bar, a minimap, the stack layout, six accent colours and three canvases, flat icons; the audit's Meta & social tab | ✅ Done                         | [§3](#v09--professional-workspace-and-meta--delivered), `v09.spec.ts`                    |
+| v0.10 — Guides and QA          | A help centre with ten guides, a getting-started checklist, “What's this?” mode, present mode, the QA checklist and the audit's Media queries tab                      | ✅ Done                         | [§3](#v010--guides-qa-and-media-queries--delivered), `v10.spec.ts`                       |
 | M4 — Feedback-driven iteration  | Small user group, privacy-respecting feedback, prioritise next features                                                                                                | ⏳ Next (in-app feedback done)  | [§8](#8-milestone-4--feedback-and-iteration)                                             |
 
 ---
@@ -107,6 +108,12 @@
 | D73 | **Flat icons**: no tinted squares or circles behind icons in titles, headers, cards, lists and toasts (Figma-like); colour only where it means something (size classes, warnings, success)                                                                                                                                                                                                                                                                                                                          | The owner asked to limit the bubble backgrounds under icons, citing Figma; fewer tinted shapes make the workspace calmer and denser                                                                                                                                                               |
 | D74 | **Meta & social** is a free audit tab: the agent reads head tags and headings of one page (`getMeta`); previews of the search result and the link are labelled approximate; the social image and icon are loaded by the workspace from the page's own addresses (no referrer); JSON export stays Pro (exports, D57)                                                                                                                                                                                                 | SEO and sharing checks are among the most requested responsive-adjacent tools; reading tags costs one message; a free tab attracts users while exports remain a Pro reason                                                                                                                        |
 | D75 | **Status bar** and **minimap** are on by default; the status bar sits outside the stage (the fit just has less height), the minimap shows only while the workspace scrolls and is `aria-hidden` (scrolling stays keyboard-accessible)                                                                                                                                                                                                                                                                               | They add information without taking room from the previews; hiding them is one switch each                                                                                                                                                                                                        |
+| D76 | **Guides** reuse the tour's card (D69) and never start on their own; a step may open a panel (never close one) and wait for its control, else its card sits in the middle; guides that end in a modal dialog only offer to open it, since a modal makes the rest of the page inert |
+| D77 | **Getting-started checklist**: eight tasks ticked off from what the workspace shows (a page previewed, sizes changed, an element inspected, the audit or scanner open, a note, a screenshot, “What's this?”); only the list of done tasks and whether it's hidden are kept, in `chrome.storage.local` (`breakpointer.learn`, parsed as untrusted), never exported |
+| D78 | **“What's this?” mode** intercepts pointer and click events in the capture phase (nothing is used while it's on), describes controls by selector (`state/explain.ts`), shows a card on hover or keyboard focus and pins it on click; its banner is a non-modal `<dialog>`, so the workspace's shortcuts pause |
+| D79 | **Present mode** hides the toolbars, panels, banners and status bar and asks for full screen (leaving full screen leaves the mode); previews keep their name and size; nothing is saved |
+| D80 | **QA checklist** is free: its list of checks is a setting (`qaChecklist`, at most 40, validated by `parseQaChecklist`; empty means the translated defaults), its results are for the session; it shares the side with the inspector and the audit |
+| D81 | **Media queries** are read in each preview by its agent (the page's own text of each media and container query, rule counts, and `matchMedia` at that size); gaps and overlaps pair a max-only and a min-only width query whose edges are 4 px apart or less |
 
 ---
 
@@ -225,6 +232,16 @@
 - [x] **Simplified Chinese and Russian**: the interface, Chrome's strings and the store listing (ten languages in all).
 - [x] **Flat icons** across the workspace; the audit's six tabs fit the panel (icons, the selected tab named). Designed first on a Claude Design canvas (four artboards: light and dark workspace, Appearance, Meta).
 
+### v0.10 — Guides, QA and media queries — delivered
+
+- [x] **Help centre** (`?`): sections for Get started, Shortcuts, What's new and Support, with a search over guides and shortcuts (it opens on What's new after an update).
+- [x] **Ten guides**: step-by-step cards next to the controls involved (the v0.8 tour is the first); a step may open what it talks about (the audit, the inspector, notes, the QA checklist), the last one may start the task (scan, Check pages, visual check, showcase).
+- [x] **Getting-started checklist**: eight tasks that tick themselves off as the workspace shows them done, with “Show me” for each; a “Get started 3/8” button in the status bar until it's done or put away.
+- [x] **“What's this?” mode** (`H`): point at — or tab to — any control to see what it does and its shortcut; clicking explains instead of acting, and links to the guide.
+- [x] **Present mode** (`D`): only the previews (full screen where Chrome allows), with a small bar for the layout, Fit and Exit.
+- [x] **QA checklist** (`Q`, Tools, the palette): a matrix of manual checks × visible viewports (passed, failed, skipped), eight default checks you can edit (kept in the settings), a Markdown report.
+- [x] **Media queries** in the audit: the page's own media and container queries, which previews each applies in, and likely mistakes — a **gap** (a width where neither side of a breakpoint applies) or an **overlap** (both apply) — with a viewport added there in one click.
+
 ### Non-goals (unchanged)
 
 No accounts or cloud, no AI, no collaboration, no hosted dashboard, no promise that every site embeds, no claim of real-device emulation. Breakpointer Pro doesn't change this: licences are checked offline (D51).
@@ -317,6 +334,8 @@ Success signals (only from opt-in feedback): successful preview starts, how ofte
 **Delivered in v0.7:** a responsive score, notes and bug reports, projects, text at 200%, more framework breakpoints and groups, six more languages.
 
 **Delivered in v0.9:** a professional workspace — the viewports sidebar with a breakpoint map, the status bar, the minimap, the stack layout, accent colours and canvas styles, flat icons — and the audit's Meta & social tab.
+
+**Delivered in v0.10:** a help centre with ten guides, a getting-started checklist, “What's this?” mode, present mode, the QA checklist and the audit's Media queries tab (gaps and overlaps between breakpoints).
 
 **Delivered in v0.8:** the audit's Images (suggested `sizes` and `srcset`) and Colours tabs, performance budgets (Pro), the distance between two elements in the inspector, a tour, notes saved in images.
 
