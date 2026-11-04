@@ -1604,7 +1604,6 @@ export const fr: Record<MessageKey, string> = {
   'help.section.news': 'Nouveautés',
   'help.section.support': 'Assistance',
   'help.search': 'Rechercher dans l’aide',
-  'help.searchPlaceholder': 'Rechercher des guides et des raccourcis',
   'help.results': 'Résultats pour « {query} »',
   'help.noResults':
     'Rien dans l’aide ne correspond à « {query} ». Essayez la palette de commandes : elle trouve toutes les commandes.',

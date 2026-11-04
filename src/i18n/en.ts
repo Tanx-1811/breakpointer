@@ -1554,7 +1554,6 @@ export const en = {
   'help.section.news': 'What’s new',
   'help.section.support': 'Support',
   'help.search': 'Search help',
-  'help.searchPlaceholder': 'Search guides and shortcuts',
   'help.results': 'Results for “{query}”',
   'help.noResults': 'Nothing in Help matches “{query}”. Try the command palette: it finds every command.',
   'help.startLead': 'Learn Breakpointer by doing: each guide points at the controls involved, one step at a time.',

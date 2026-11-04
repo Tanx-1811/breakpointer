@@ -1578,7 +1578,6 @@ export const ja: Record<MessageKey, string> = {
   'help.section.news': '新機能',
   'help.section.support': 'サポート',
   'help.search': 'ヘルプを検索',
-  'help.searchPlaceholder': 'ガイドとショートカットを検索',
   'help.results': '「{query}」の検索結果',
   'help.noResults':
     'ヘルプに「{query}」に一致するものはありません。コマンドパレットなら、すべてのコマンドを検索できます。',

@@ -1562,7 +1562,6 @@ export const vi: Record<MessageKey, string> = {
   'help.section.news': 'Có gì mới',
   'help.section.support': 'Hỗ trợ',
   'help.search': 'Tìm trong trợ giúp',
-  'help.searchPlaceholder': 'Tìm hướng dẫn và phím tắt',
   'help.results': 'Kết quả cho “{query}”',
   'help.noResults': 'Không có mục trợ giúp nào khớp “{query}”. Hãy thử bảng lệnh: nó tìm được mọi lệnh.',
   'help.startLead': 'Học Breakpointer bằng cách làm: mỗi hướng dẫn chỉ vào đúng nút cần dùng, từng bước một.',

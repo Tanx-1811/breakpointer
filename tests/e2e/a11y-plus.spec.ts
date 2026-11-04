@@ -54,6 +54,11 @@ test.describe('accessibility of the v0.4 tools (axe, WCAG 2.1 AA)', () => {
       await scan.getByRole('combobox', { name: 'Step' }).selectOption('32');
       await scan.getByTestId('scan-start').click();
       await expect(scan.getByTestId('scan-status')).toContainText('widths checked', { timeout: 30_000 });
+      // The button comes back under the pointer: measure its colours once its hover transition is over.
+      await page.mouse.move(0, 0);
+      await scan
+        .getByTestId('scan-start')
+        .evaluate((button) => Promise.all(button.getAnimations({ subtree: true }).map((item) => item.finished)));
       expect(await seriousViolations(page)).toEqual([]);
       await page.keyboard.press('Escape');
 

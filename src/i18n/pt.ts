@@ -1590,7 +1590,6 @@ export const pt: Record<MessageKey, string> = {
   'help.section.news': 'Novidades',
   'help.section.support': 'Suporte',
   'help.search': 'Buscar na ajuda',
-  'help.searchPlaceholder': 'Busque guias e atalhos',
   'help.results': 'Resultados para “{query}”',
   'help.noResults':
     'Nada na Ajuda corresponde a “{query}”. Tente a paleta de comandos: ela encontra todos os comandos.',

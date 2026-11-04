@@ -144,7 +144,7 @@ function HelpCenter(props: Props) {
           <input
             type="search"
             value={query}
-            placeholder={t('help.searchPlaceholder')}
+            placeholder={t('help.search')}
             onChange={(event) => setQuery(event.target.value)}
             data-autofocus
             data-testid="help-search"

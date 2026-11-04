@@ -1587,7 +1587,6 @@ export const id: Record<MessageKey, string> = {
   'help.section.news': 'Yang baru',
   'help.section.support': 'Dukungan',
   'help.search': 'Cari bantuan',
-  'help.searchPlaceholder': 'Cari panduan dan pintasan',
   'help.results': 'Hasil untuk “{query}”',
   'help.noResults':
     'Tidak ada yang cocok dengan “{query}” di Bantuan. Coba palet perintah: semua perintah bisa ditemukan di sana.',

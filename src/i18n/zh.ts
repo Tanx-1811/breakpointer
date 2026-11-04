@@ -1474,7 +1474,6 @@ export const zh: Record<MessageKey, string> = {
   'help.section.news': '新功能',
   'help.section.support': '支持',
   'help.search': '搜索帮助',
-  'help.searchPlaceholder': '搜索指南和快捷键',
   'help.results': '“{query}”的搜索结果',
   'help.noResults': '帮助中没有与“{query}”匹配的内容。试试命令面板：它能找到所有命令。',
   'help.startLead': '边做边学 Breakpointer：每个指南都会一步步指出相关的控件。',

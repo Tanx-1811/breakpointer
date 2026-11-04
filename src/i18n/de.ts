@@ -1589,7 +1589,6 @@ export const de: Record<MessageKey, string> = {
   'help.section.news': 'Neuerungen',
   'help.section.support': 'Feedback & Support',
   'help.search': 'Hilfe durchsuchen',
-  'help.searchPlaceholder': 'Anleitungen und Tastenkürzel durchsuchen',
   'help.results': 'Ergebnisse für „{query}“',
   'help.noResults':
     'Nichts in der Hilfe passt zu „{query}“. Versuche es mit der Befehlspalette: Sie findet jeden Befehl.',

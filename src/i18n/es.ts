@@ -1594,7 +1594,6 @@ export const es: Record<MessageKey, string> = {
   'help.section.news': 'Novedades',
   'help.section.support': 'Soporte',
   'help.search': 'Buscar en la ayuda',
-  'help.searchPlaceholder': 'Busca guías y atajos',
   'help.results': 'Resultados para «{query}»',
   'help.noResults':
     'Nada en la Ayuda coincide con «{query}». Prueba la paleta de comandos: encuentra todos los comandos.',

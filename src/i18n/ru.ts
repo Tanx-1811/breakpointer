@@ -1556,7 +1556,6 @@ export const ru: Record<MessageKey, string> = {
   'help.section.news': 'Что нового',
   'help.section.support': 'Поддержка',
   'help.search': 'Поиск по справке',
-  'help.searchPlaceholder': 'Поиск руководств и сочетаний клавиш',
   'help.results': 'Результаты по запросу «{query}»',
   'help.noResults':
     'В справке ничего не найдено по запросу «{query}». Попробуйте палитру команд — она находит любую команду.',
