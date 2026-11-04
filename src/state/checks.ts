@@ -12,6 +12,7 @@ export const CHECK_KIND_KEYS: Record<CheckKind, MessageKey> = {
   'clipped-text': 'checks.kind.clippedText',
   'low-contrast': 'checks.kind.lowContrast',
   'layout-shift': 'checks.kind.layoutShift',
+  'long-lines': 'checks.kind.longLines',
   'missing-alt': 'checks.kind.missingAlt',
   'unnamed-control': 'checks.kind.unnamedControl',
   'unlabeled-field': 'checks.kind.unlabeledField',
@@ -30,6 +31,7 @@ export const CHECK_HINT_KEYS: Record<CheckKind, MessageKey> = {
   'clipped-text': 'checks.hint.clippedText',
   'low-contrast': 'checks.hint.lowContrast',
   'layout-shift': 'checks.hint.layoutShift',
+  'long-lines': 'checks.hint.longLines',
   'missing-alt': 'checks.hint.missingAlt',
   'unnamed-control': 'checks.hint.unnamedControl',
   'unlabeled-field': 'checks.hint.unlabeledField',
@@ -61,6 +63,8 @@ export function issueValue(issue: CheckIssue, t: Translate): string {
       return `CLS ${localNumbers(issue.detail ?? '', t)}`.trim();
     case 'low-contrast':
       return issue.detail ? `${count} · ${localNumbers(issue.detail, t)}:1` : count;
+    case 'long-lines':
+      return issue.detail ? t('checks.value.longLines', { count, chars: issue.detail }) : count;
     case 'missing-lang':
       return t('checks.value.missingLang');
     default:
@@ -103,6 +107,12 @@ export function issueDetail(issue: CheckIssue, t: Translate): string {
           ? t('checks.detail.lowContrastOne', { ratio })
           : t('checks.detail.lowContrast', { count: issue.count, ratio });
       }
+      break;
+    case 'long-lines':
+      if (issue.detail)
+        return issue.count === 1
+          ? t('checks.detail.longLinesOne', { chars: issue.detail })
+          : t('checks.detail.longLines', { count: issue.count, chars: issue.detail });
       break;
   }
   return issue.count === 1 ? t('checks.detail.countOne') : t('checks.detail.count', { count: issue.count });

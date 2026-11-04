@@ -11,6 +11,7 @@ import { CompareDialog } from '../components/CompareDialog/CompareDialog';
 import { ScanDialog, type ScanResult } from '../components/ScanDialog/ScanDialog';
 import { VisualDialog, type VisualRow } from '../components/VisualDialog/VisualDialog';
 import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
+import { ToolkitDialog, type ToolkitBreakpointSet } from '../components/ToolkitDialog/ToolkitDialog';
 import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
 import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/FloatingPreview/FloatingPreview';
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
@@ -97,7 +98,7 @@ import {
 } from '../services/windows';
 import { createSettingsExport, defaultViewports, normalizeSnippetName, parseSettingsFile } from '../services/storage';
 import { viewerUrl } from '../shared/viewer-url';
-import { breakpointEdges, breakpointFor, breakpointSet } from '../data/breakpoints';
+import { breakpointEdges, breakpointFor, breakpointSet, FRAMEWORK_BREAKPOINTS, FRAMEWORK_SET_IDS } from '../data/breakpoints';
 import {
   compareCardId,
   compareLabel,
@@ -124,7 +125,9 @@ import { DEFAULT_SHOWCASE, pickShowcaseViewports, type ShowcaseOptions } from '.
 import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
 import { widthRange } from '../state/breakpoint-map';
-import { responsiveScore } from '../state/score';
+import { badgeFileName, scoreBadgeSvg } from '../state/badge';
+import { responsiveScore, type ResponsiveScore } from '../state/score';
+import { DEFAULT_TOOLKIT, type ToolkitState, type ToolkitTab } from '../state/toolkit';
 import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors';
 import { imageRows, imagesMarkdown } from '../state/images';
 import { metaMarkdown } from '../state/meta';
@@ -230,7 +233,8 @@ type DialogName =
   | 'showcase'
   | 'upgrade'
   | 'saveProject'
-  | 'manageProjects';
+  | 'manageProjects'
+  | 'toolkit';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -248,6 +252,7 @@ const SIMULATE_LABELS: Record<SimulateToggle, MessageKey> = {
   reduceMotion: 'motion.reduce',
   moreContrast: 'prefs.moreContrast',
   print: 'prefs.print',
+  touch: 'prefs.touch',
   pauseAnimations: 'animations.pause',
 };
 
@@ -431,11 +436,22 @@ function Workspace({
   const [vision, setVision] = useState<VisionMode>('none');
   const [stress, setStress] = useState({ pseudo: false, rtl: false, spacing: false, textZoom: false });
   // The page's styles for preferences the browser doesn't have.
-  const [preferences, setPreferences] = useState({ reducedMotion: false, moreContrast: false, print: false });
+  const [preferences, setPreferences] = useState({
+    reducedMotion: false,
+    moreContrast: false,
+    print: false,
+    touch: false,
+  });
   const [pauseAnimations, setPauseAnimations] = useState(false);
   // Labels drawn over the previews.
   const [annotate, setAnnotate] = useState({ images: false, tabOrder: false, layout: false });
   const [contrastColors, setContrastColors] = useState<ContrastColors>({ text: '#1f2430', background: '#ffffff' });
+  // The CSS toolkit's tool and fields, for the session.
+  const [toolkitTab, setToolkitTab] = useState<ToolkitTab>('fluid');
+  const [toolkit, setToolkit] = useState<ToolkitState>(DEFAULT_TOOLKIT);
+  // Every preview scrolling from top to bottom by itself (for demos), until the timer says it's done.
+  const [autoScrolling, setAutoScrolling] = useState(false);
+  const autoScrollTimer = useRef(0);
   // Comparing two addresses: every visible viewport also shows a B preview.
   const [compare, setCompare] = useState<CompareTarget | null>(null);
   // Design mockups laid over previews (object URLs of local files), by card.
@@ -503,6 +519,7 @@ function Workspace({
     reduceMotion: preferences.reducedMotion,
     moreContrast: preferences.moreContrast,
     print: preferences.print,
+    touch: preferences.touch,
     pauseAnimations,
     pseudo: stress.pseudo,
     rtl: stress.rtl,
@@ -1370,6 +1387,7 @@ function Workspace({
 
   const exitPresent = () => {
     setPresenting(false);
+    if (autoScrolling) autoScroll(null);
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
   };
 
@@ -1387,7 +1405,7 @@ function Workspace({
       if (scheme) agents.send(cardId, { type: 'colorScheme', scheme });
       if (stress.pseudo || stress.rtl || stress.spacing || stress.textZoom)
         agents.send(cardId, { type: 'stress', ...stress });
-      if (preferences.reducedMotion || preferences.moreContrast || preferences.print)
+      if (preferences.reducedMotion || preferences.moreContrast || preferences.print || preferences.touch)
         agents.send(cardId, { type: 'preferences', ...preferences });
       if (annotate.images || annotate.tabOrder || annotate.layout)
         agents.send(cardId, { type: 'annotate', ...annotate });
@@ -1560,6 +1578,19 @@ function Workspace({
     return null;
   })();
   const siteBreakpoints = siteMedia?.breakpoints ?? null;
+  // The sets the CSS toolkit writes as code: every framework's, your own and this site's (once known).
+  const toolkitBreakpointSets: ToolkitBreakpointSet[] = [
+    ...FRAMEWORK_SET_IDS.map((id) => ({ id, label: t(`breakpoints.${id}`), ...FRAMEWORK_BREAKPOINTS[id] })),
+    {
+      id: 'custom' as const,
+      label: t('breakpoints.custom'),
+      base: 'base',
+      breakpoints: [...settings.customBreakpoints].sort((a, b) => a.min - b.min),
+    },
+    ...(siteBreakpoints?.length
+      ? [{ id: 'site' as const, label: t('breakpoints.site'), ...breakpointSet('site', [], siteBreakpoints)! }]
+      : []),
+  ];
   // Dragged edges snap to the breakpoints in use.
   const snapWidths =
     breakpointSet(settings.breakpoints, settings.customBreakpoints, siteBreakpoints ?? [])?.breakpoints.map(
@@ -1800,6 +1831,59 @@ function Workspace({
   const scrollAllToBottom = () => {
     hintAccess(t('palette.scrollBottom'));
     broadcast({ type: 'scrollTo', ratio: 1 });
+  };
+
+  /** Every preview scrolls itself from top to bottom in `seconds` (null stops); a preview scrolled by hand stops. */
+  const autoScroll = (seconds: number | null) => {
+    window.clearTimeout(autoScrollTimer.current);
+    if (seconds === null) {
+      broadcast({ type: 'autoScroll', duration: null });
+      setAutoScrolling(false);
+      return;
+    }
+    if (!currentUrl) return;
+    if (siteAccess.site === false) {
+      hintAccess(t('autoScroll.start'));
+      return;
+    }
+    broadcast({ type: 'autoScroll', duration: seconds * 1000 });
+    setAutoScrolling(true);
+    toast({ message: t('autoScroll.toast', { seconds }), tone: 'info', key: 'auto-scroll' });
+    autoScrollTimer.current = window.setTimeout(() => setAutoScrolling(false), seconds * 1000);
+  };
+  useEffect(() => () => window.clearTimeout(autoScrollTimer.current), []);
+
+  /** Opens the CSS toolkit on a tool (U opens it where it was left). */
+  const openToolkit = (tab?: ToolkitTab) => {
+    if (tab) setToolkitTab(tab);
+    setDialog('toolkit');
+  };
+
+  const copyToolkitText = (text: string) =>
+    void copyText(text).then((copied) =>
+      toast(
+        copied
+          ? { message: t('toolkit.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+
+  /** The responsive score as an SVG badge, copied or saved. */
+  const scoreBadge = (score: ResponsiveScore, action: 'copy' | 'download') => {
+    const svg = scoreBadgeSvg(score);
+    if (action === 'download') {
+      const file = badgeFileName(currentUrl?.href ?? null);
+      downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), file);
+      toast({ message: t('badge.saved', { file }), tone: 'success', key: 'badge' });
+      return;
+    }
+    void copyText(svg).then((copied) =>
+      toast(
+        copied
+          ? { message: t('badge.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
   };
 
   const copyAddress = () => {
@@ -2217,6 +2301,7 @@ function Workspace({
     else if (action === 'visual') openVisual();
     else if (action === 'showcase') openShowcase();
     else if (action === 'present') startPresent();
+    else if (action === 'toolkit') openToolkit();
     else startExplain();
   };
 
@@ -2323,7 +2408,8 @@ function Workspace({
     if (toggle === 'pseudo' || toggle === 'rtl' || toggle === 'spacing' || toggle === 'textZoom')
       setStress({ ...stress, [toggle]: on });
     else if (toggle === 'reduceMotion') setPreferences({ ...preferences, reducedMotion: on });
-    else if (toggle === 'moreContrast' || toggle === 'print') setPreferences({ ...preferences, [toggle]: on });
+    else if (toggle === 'moreContrast' || toggle === 'print' || toggle === 'touch')
+      setPreferences({ ...preferences, [toggle]: on });
     else setPauseAnimations(on);
     if (on) hintAccess(t(SIMULATE_LABELS[toggle]));
   };
@@ -3015,6 +3101,7 @@ function Workspace({
     explain: startExplain,
     present: () => togglePresent(),
     qa: () => toggleQa(),
+    toolkit: () => openToolkit(),
     escape: onEscape,
     // 1–8 show that viewport on its own (again: all of them).
     viewportAt: (index) => {
@@ -3056,6 +3143,7 @@ function Workspace({
         noteCount: shownNotes.length,
         presenting,
         qaOpen,
+        autoScrolling,
         actions: {
           reloadAll: reloadKeepingPlace,
           autoReload: setAutoReload,
@@ -3109,6 +3197,8 @@ function Workspace({
           learn: () => openHelpAt('start'),
           present: togglePresent,
           qa: toggleQa,
+          toolkit: openToolkit,
+          autoScroll,
           exportSettings,
           scrollBottom: scrollAllToBottom,
           copyAddress,
@@ -3695,6 +3785,7 @@ function Workspace({
           onBatch={openBatch}
           onVisual={openVisual}
           onQa={toggleQa}
+          onToolkit={() => openToolkit()}
           qaOpen={qaOpen}
           measuring={measuring}
           comparing={compare !== null}
@@ -3903,6 +3994,8 @@ function Workspace({
               onLayout={(layout) => dispatch({ type: 'setLayout', layout })}
               onFit={fit}
               onExit={exitPresent}
+              autoScrolling={autoScrolling}
+              onAutoScroll={() => autoScroll(autoScrolling ? null : 20)}
             />
           )}
           {visible.length > 0 && !presenting && (
@@ -4055,6 +4148,7 @@ function Workspace({
             onRefresh={auditData.refresh}
             onCopy={copyAudit}
             onCopyText={copyAuditText}
+            onBadge={scoreBadge}
             onExport={exportAudit}
             page={currentUrl?.href ?? null}
             metaCard={metaCard}
@@ -4333,6 +4427,18 @@ function Workspace({
         open={dialog === 'contrast'}
         colors={contrastColors}
         onChange={setContrastColors}
+        onClose={() => setDialog(null)}
+      />
+      <ToolkitDialog
+        open={dialog === 'toolkit'}
+        tab={toolkitTab}
+        onTab={setToolkitTab}
+        state={toolkit}
+        onChange={setToolkit}
+        viewports={visible.map(({ id, name, width, height }) => ({ id, name, width, height }))}
+        breakpointSets={toolkitBreakpointSets}
+        currentSet={settings.breakpoints}
+        onCopy={copyToolkitText}
         onClose={() => setDialog(null)}
       />
       <VisualDialog

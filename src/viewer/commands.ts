@@ -13,6 +13,7 @@ import type { MessageKey } from '../i18n/en';
 import { LANGUAGES, LANGUAGE_NAMES, type Translate } from '../i18n/translate';
 import { builtInGroupName } from '../state/groups';
 import { GUIDES, type GuideId } from '../state/guides';
+import { TOOLKIT_TABS, type ToolkitTab } from '../state/toolkit';
 import { VISION_MODES, type VisionMode } from '../state/vision';
 import { ACCENTS, CANVASES } from '../services/storage';
 import type {
@@ -114,6 +115,10 @@ export type CommandActions = {
   present?: () => void;
   /** The QA checklist panel (listed when given). */
   qa?: () => void;
+  /** The CSS toolkit, on one of its tools (listed when given). */
+  toolkit?: (tab: ToolkitTab) => void;
+  /** Every preview scrolls from top to bottom in this many seconds; null stops (listed when given). */
+  autoScroll?: (seconds: number | null) => void;
   exportSettings: () => void;
   /** What Breakpointer Pro brings, the trial and buying it (listed when given). */
   pro?: () => void;
@@ -159,7 +164,36 @@ export type CommandContext = {
   presenting?: boolean;
   /** The QA checklist panel is open. */
   qaOpen?: boolean;
+  /** Previews are scrolling by themselves. */
+  autoScrolling?: boolean;
   actions: CommandActions;
+};
+
+/** Auto-scroll durations offered in the palette (seconds from top to bottom). */
+export const AUTO_SCROLL_SECONDS = [10, 20, 40] as const;
+
+const TOOLKIT_TAB_KEYS: Record<ToolkitTab, MessageKey> = {
+  fluid: 'toolkit.tab.fluid',
+  units: 'toolkit.tab.units',
+  code: 'toolkit.tab.code',
+  colors: 'toolkit.tab.colors',
+  aspect: 'toolkit.tab.aspect',
+};
+
+const TOOLKIT_ICONS: Record<ToolkitTab, PaletteCommand['icon']> = {
+  fluid: 'text',
+  units: 'ruler',
+  code: 'code',
+  colors: 'palette',
+  aspect: 'fit',
+};
+
+const TOOLKIT_KEYWORDS: Record<ToolkitTab, string> = {
+  fluid: 'clamp fluid typography type scale responsive font size utopia',
+  units: 'px rem em vw vh vmin vmax pt convert converter units calculator',
+  code: 'breakpoints media queries scss sass mixin tailwind screens custom-media javascript matchmedia export code',
+  colors: 'colour color picker eyedropper hex rgb hsl oklch convert',
+  aspect: 'aspect ratio 16:9 4:3 calculator padding video image height',
 };
 
 const shortUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -289,6 +323,30 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'present presentation full screen fullscreen demo client screen share hide interface zen',
       run: actions.present,
     });
+  const { autoScroll } = actions;
+  if (autoScroll) {
+    if (ctx.autoScrolling)
+      named('palette.autoScrollStop', {
+        id: 'auto-scroll-stop',
+        section: section.page,
+        icon: 'pause',
+        keywords: 'stop auto scroll',
+        run: () => autoScroll(null),
+      });
+    for (const seconds of AUTO_SCROLL_SECONDS)
+      named(
+        'palette.autoScroll',
+        {
+          id: `auto-scroll-${seconds}`,
+          section: section.page,
+          icon: 'chevronDown',
+          keywords: 'auto scroll demo recording video present slow scroll through page',
+          disabled: !ctx.hasUrl,
+          run: () => autoScroll(seconds),
+        },
+        { seconds },
+      );
+  }
   if (ctx.comparing && actions.swapCompare && actions.compare && actions.stopCompare) {
     named('compare.swap', { id: 'compare-swap', section: section.page, icon: 'swap', run: actions.swapCompare });
     named('compare.change', { id: 'compare-change', section: section.page, icon: 'split', run: actions.compare });
@@ -640,6 +698,21 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'qa checklist test manual pass fail matrix quality assurance testing',
       run: actions.qa,
     });
+  const { toolkit } = actions;
+  if (toolkit)
+    for (const tab of TOOLKIT_TABS)
+      named(
+        'palette.toolkit',
+        {
+          id: `toolkit-${tab}`,
+          section: section.tools,
+          icon: TOOLKIT_ICONS[tab],
+          shortcut: tab === 'fluid' ? 'U' : undefined,
+          keywords: `css toolkit ${TOOLKIT_KEYWORDS[tab]}`,
+          run: () => toolkit(tab),
+        },
+        { tool: t(TOOLKIT_TAB_KEYS[tab]) },
+      );
   if (actions.copyNotes)
     named('notes.copy', {
       id: 'notes-copy',
@@ -722,6 +795,7 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
   simulate('reduceMotion', 'motion.reduce', 'pause', 'prefers-reduced-motion accessibility');
   simulate('moreContrast', 'prefs.moreContrast', 'contrast', 'prefers-contrast high contrast accessibility');
   simulate('print', 'prefs.print', 'report', 'print media printer');
+  simulate('touch', 'prefs.touch', 'pointer', 'touch screen hover none pointer coarse mobile tap any-hover');
   simulate('pauseAnimations', 'animations.pause', 'pause', 'freeze transition');
   simulate('pseudo', 'stress.pseudo', 'text', 'pseudo localization translation i18n');
   simulate('rtl', 'stress.rtl', 'arrowLeft', 'rtl arabic hebrew direction');

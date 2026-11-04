@@ -41,20 +41,26 @@ import {
   imageDensity,
   isLargeText,
   isVectorImage,
+  LONG_LINE_MIN_TEXT,
+  longLineLength,
   parseCssColor,
   mediaQueryEdges,
   mentionsColorScheme,
   mentionsMediaType,
+  mentionsPointer,
   mentionsPrefersContrast,
   mentionsReducedMotion,
   printMedia,
   pseudoLocalize,
   scheduler,
   swapColorScheme,
+  swapPointerMedia,
   swapPrefersContrast,
   swapReducedMotion,
   tabOrder,
   TEXT_SPACING_CSS,
+  turnsText,
+  type LineRect,
   type ShiftEntry,
 } from './page-utils';
 import {
@@ -90,6 +96,11 @@ const MIN_CONTRAST_LARGE = 3;
 /** Text elements whose contrast is checked per pass, and text nodes looked at for clipped text. */
 const MAX_CONTRAST_CHECKS = 1500;
 const MAX_CLIP_TEXT_NODES = 3000;
+/** Blocks of running text measured for long lines per pass, and their text nodes. */
+const MAX_LONG_LINE_BLOCKS = 300;
+const MAX_LONG_LINE_TEXT_NODES = 3000;
+/** Blocks of running text, checked for long lines (the innermost: a <li> holding a <p> leaves it to the <p>). */
+const LINE_BLOCKS = 'p, li, blockquote, dd, figcaption';
 /** Core Web Vitals: a cumulative layout shift above 0.1 needs improvement. */
 const MAX_LAYOUT_SHIFT = 0.1;
 /** Layout shifts this soon after the workspace changed the page (a resize, live CSS…) aren't the page's. */
@@ -169,8 +180,12 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   hello();
   // Single-page apps change the address without loading a new document; the
   // agent runs in an isolated world and can't hook their history calls, so poll.
+  const withoutFragment = (href: string) => href.split('#')[0];
   window.setInterval(() => {
     if (location.href === lastHref) return;
+    // Another page of a single-page app stops an auto-scroll; a new #fragment doesn't
+    // (scroll-spy pages change it while scrolling).
+    if (withoutFragment(location.href) !== withoutFragment(lastHref)) stopAutoScroll();
     lastHref = location.href;
     send({ type: 'location', href: location.href, title: document.title });
   }, 500);
@@ -335,6 +350,45 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     { passive: true },
   );
 
+  /* ---------- Auto-scroll (demos and screen recordings) ---------- */
+
+  // The page scrolls itself down, steadily. Each preview does it on its own, so its
+  // scrolls count as the workspace's (like synced ones): the others don't follow them,
+  // but a design overlay or a note pinned to the page still does (trackScroll).
+  let autoScrollFrame = 0;
+  const stopAutoScroll = () => {
+    cancelAnimationFrame(autoScrollFrame);
+    autoScrollFrame = 0;
+  };
+  const autoScroll = (duration: number | null) => {
+    stopAutoScroll();
+    if (duration === null || !(duration > 0) || maxScroll() <= 0) return;
+    stopRestoring();
+    const scroll = (top: number) => {
+      ignoreScrollUntil = performance.now() + 150;
+      window.scrollTo({ top, behavior: 'instant' });
+    };
+    // At the bottom already: start again from the top.
+    if (maxScroll() - window.scrollY < 4) scroll(0);
+    const from = window.scrollY;
+    const started = performance.now();
+    const step = () => {
+      const progress = Math.min(1, (performance.now() - started) / duration);
+      // Towards the bottom as it is now: the page may grow while it scrolls (lazy loading).
+      scroll(from + Math.max(0, maxScroll() - from) * progress);
+      autoScrollFrame = progress < 1 ? requestAnimationFrame(step) : 0;
+    };
+    autoScrollFrame = requestAnimationFrame(step);
+  };
+  // The user takes over: a wheel (not a zoom), a touch, a key or a click in the page.
+  const userStopsAutoScroll = (event: Event) => {
+    if (!autoScrollFrame || !event.isTrusted || (event instanceof WheelEvent && event.ctrlKey)) return;
+    stopAutoScroll();
+  };
+  for (const type of ['wheel', 'touchstart', 'keydown', 'pointerdown'])
+    window.addEventListener(type, userStopsAutoScroll, { capture: true, passive: true });
+  window.addEventListener('pagehide', stopAutoScroll);
+
   /* ---------- Changes the workspace makes ---------- */
 
   // Layout shifts right after the workspace resized the preview or changed the
@@ -385,6 +439,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   /** Scrolls this page only (scrollIntoView could also scroll the workspace); other previews don't follow. */
   const reveal = (element: Element) => {
     stopRestoring();
+    stopAutoScroll();
     const rect = element.getBoundingClientRect();
     ignoreScrollUntil = performance.now() + 300;
     window.scrollTo({
@@ -980,7 +1035,104 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 10. Images without a text alternative (WCAG 1.1.1): no alt attribute (an
+    // 10. Long lines of text: blocks of running text with more than about 100
+    //     characters a line (50 in Chinese, Japanese or Korean), at every width.
+    //     Lines are counted from the client rects of the block's own text, so
+    //     code, text hidden from assistive tech, invisible or positioned text
+    //     (screen-reader-only) count neither as lines nor as characters. Skipped:
+    //     preformatted and editable text, vertical writing, and turned or skewed
+    //     text (its lines don't stack).
+    if (wants('long-lines')) {
+      const long: Element[] = [];
+      const longSamples: CheckSample[] = [];
+      let longest = 0;
+      const turned = new Map<Element, boolean>();
+      const isTurned = (element: Element | null): boolean => {
+        if (!element || element === document.documentElement) return false;
+        let known = turned.get(element);
+        if (known === undefined) {
+          const style = getComputedStyle(element);
+          known = turnsText(style.transform, style.rotate) || isTurned(element.parentElement);
+          turned.set(element, known);
+        }
+        return known;
+      };
+      const SKIPPED_TEXT = `pre, code, kbd, samp, [aria-hidden="true"], [${OVERLAY_ATTRIBUTE}]`;
+      const lineText: NodeFilter = (node) => {
+        if (node instanceof Text) return NodeFilter.FILTER_ACCEPT;
+        const element = node as Element;
+        if (element.matches(SKIPPED_TEXT)) return NodeFilter.FILTER_REJECT;
+        const style = getComputedStyle(element);
+        return style.display === 'none' ||
+          style.visibility !== 'visible' ||
+          Number(style.opacity) === 0 ||
+          style.position === 'absolute' ||
+          style.position === 'fixed'
+          ? NodeFilter.FILTER_REJECT
+          : NodeFilter.FILTER_SKIP;
+      };
+      const range = document.createRange();
+      let blocks = MAX_LONG_LINE_BLOCKS;
+      let budget = MAX_LONG_LINE_TEXT_NODES;
+      const candidates = Array.from(document.body?.querySelectorAll(LINE_BLOCKS) ?? []).slice(0, MAX_SCAN);
+      for (const element of candidates) {
+        if (blocks <= 0 || budget <= 0) break;
+        // Cheap tests first: most list items and paragraphs are short.
+        if ((element.textContent ?? '').length < LONG_LINE_MIN_TEXT) continue;
+        if (element.querySelector(LINE_BLOCKS) || element.closest(SKIPPED_TEXT)) continue;
+        if (element instanceof HTMLElement && element.isContentEditable) continue;
+        const style = getComputedStyle(element);
+        const rect = element.getBoundingClientRect();
+        if (!visible(rect, style)) continue;
+        // Preformatted text keeps the lines its author wrote.
+        if (
+          /^pre|break-spaces/.test(style.whiteSpace) ||
+          /^(preserve|break-spaces)/.test(style.getPropertyValue('white-space-collapse'))
+        )
+          continue;
+        if (style.writingMode.startsWith('vertical') || style.writingMode.startsWith('sideways')) continue;
+        if (
+          typeof element.checkVisibility === 'function' &&
+          !element.checkVisibility({ opacityProperty: true, visibilityProperty: true })
+        )
+          continue;
+        if (isTurned(element)) continue;
+        blocks--;
+        let text = '';
+        const rects: LineRect[] = [];
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT, lineText);
+        for (let node = walker.nextNode(); node && budget > 0; node = walker.nextNode()) {
+          budget--;
+          range.selectNodeContents(node);
+          const own = Array.from(range.getClientRects()).filter((line) => line.width > 0 && line.height > 0);
+          // Text that isn't drawn (in an unrendered <svg> title, a collapsed space) has no line.
+          if (!own.length) continue;
+          text += (node as Text).data;
+          for (const line of own) rects.push({ top: line.top, width: line.width, height: line.height });
+        }
+        const chars = longLineLength(text, rects);
+        if (chars === null) continue;
+        long.push(element);
+        longest = Math.max(longest, chars);
+        if (longSamples.length < MAX_SAMPLES)
+          longSamples.push({
+            selector: describeElement(element),
+            detail: `~${Math.round(chars)} ch · ${Math.round(rect.width)}px`,
+          });
+      }
+      range.detach();
+      if (long.length) {
+        nextFlagged.set('long-lines', long);
+        issues.push({
+          kind: 'long-lines',
+          count: long.length,
+          detail: String(Math.round(longest)),
+          samples: longSamples,
+        });
+      }
+    }
+
+    // 11. Images without a text alternative (WCAG 1.1.1): no alt attribute (an
     //     empty one marks a decorative image), or role="img" without a name.
     //     Tracking pixels and images hidden from assistive technology are skipped.
     if (wants('missing-alt')) {
@@ -1003,7 +1155,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 11. Buttons and links without a name (WCAG 4.1.2, 2.4.4): often icon-only
+    // 12. Buttons and links without a name (WCAG 4.1.2, 2.4.4): often icon-only
     //     buttons, such as the menu button that only shows on small screens.
     if (wants('unnamed-control')) {
       const unnamed: Element[] = [];
@@ -1025,7 +1177,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 12. Form fields without a label (WCAG 1.3.1, 4.1.2). A placeholder counts
+    // 13. Form fields without a label (WCAG 1.3.1, 4.1.2). A placeholder counts
     //     as a name here (it is one, if a weak one).
     if (wants('unlabeled-field')) {
       const unlabeled: Element[] = [];
@@ -1047,7 +1199,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 13. Focus that lands on something the user can't see (WCAG 2.4.7, 4.1.2):
+    // 14. Focus that lands on something the user can't see (WCAG 2.4.7, 4.1.2):
     //     elements in the tab order inside aria-hidden, or entirely off the page
     //     (an off-canvas menu that is closed but still focusable), or inside a
     //     transparent box. Links to the same page (skip links appear when focused)
@@ -1094,7 +1246,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 14. The page's language isn't set (WCAG 3.1.1): screen readers then read it in the wrong voice.
+    // 15. The page's language isn't set (WCAG 3.1.1): screen readers then read it in the wrong voice.
     if (
       wants('missing-lang') &&
       document.documentElement instanceof HTMLElement &&
@@ -1211,16 +1363,20 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   let reduceMotion = false;
   let moreContrast = false;
   let printing = false;
+  let touch = false;
   const systemDark = window.matchMedia('(prefers-color-scheme: dark)');
   const systemReduce = window.matchMedia('(prefers-reduced-motion: reduce)');
   const systemContrast = window.matchMedia('(prefers-contrast: more)');
+  // A mouse or trackpad: touch-screen styles need swapping (on a touch screen they apply already).
+  const systemFinePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
   const originalMedia = new WeakMap<object, string>();
   const overridden = (text: string) =>
     mentionsColorScheme(text) ||
     mentionsReducedMotion(text) ||
     mentionsPrefersContrast(text) ||
-    mentionsMediaType(text);
-  const overriding = () => colorScheme !== null || reduceMotion || moreContrast || printing;
+    mentionsMediaType(text) ||
+    mentionsPointer(text);
+  const overriding = () => colorScheme !== null || reduceMotion || moreContrast || printing || touch;
 
   const mediaReport = (): MediaReport => {
     const counts = new Map<number, number>();
@@ -1270,21 +1426,24 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   };
 
   /**
-   * Shows the page's light or dark styles (and its reduced-motion styles)
-   * whatever the browser prefers: when the wanted value differs from the
-   * browser's, `prefers-color-scheme: dark` and `light` (or the reduced-motion
-   * values) are swapped in the page's media queries, and restored afterwards.
-   * Only styles chosen by CSS follow; a page that decides in script doesn't.
+   * Shows the page's light or dark styles (and its reduced-motion, more
+   * contrast, print or touch-screen styles) whatever the browser prefers: when
+   * the wanted value differs from the browser's, `prefers-color-scheme: dark`
+   * and `light` (or the other features' values) are swapped in the page's media
+   * queries, and restored afterwards. Only styles chosen by CSS follow; a page
+   * that decides in script doesn't.
    */
   const applyMediaOverrides = () => {
     const swapScheme = colorScheme !== null && (colorScheme === 'dark') !== systemDark.matches;
     const swapMotion = reduceMotion && !systemReduce.matches;
     const swapContrast = moreContrast && !systemContrast.matches;
+    const swapPointer = touch && systemFinePointer.matches;
     const rewrite = (original: string) => {
       let text = original;
       if (swapScheme) text = swapColorScheme(text);
       if (swapMotion) text = swapReducedMotion(text);
       if (swapContrast) text = swapPrefersContrast(text);
+      if (swapPointer) text = swapPointerMedia(text);
       if (printing) text = printMedia(text);
       return text;
     };
@@ -1298,7 +1457,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       originalMedia.set(list, original);
       update(original, list.mediaText, (text) => (list.mediaText = text));
     });
-    // Images with a dark variant (<picture><source media="(prefers-color-scheme: dark)">).
+    // Images with a dark (or touch, or print…) variant (<picture><source media="(prefers-color-scheme: dark)">).
     document.querySelectorAll('source[media]').forEach((source) => {
       const original = originalMedia.get(source) ?? source.getAttribute('media') ?? '';
       if (!overridden(original)) return;
@@ -1319,6 +1478,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
   systemDark.addEventListener('change', applyMediaOverrides);
   systemReduce.addEventListener('change', applyMediaOverrides);
   systemContrast.addEventListener('change', applyMediaOverrides);
+  systemFinePointer.addEventListener('change', applyMediaOverrides);
 
   let lastMedia = '';
   /** Re-reads the stylesheets soon (they load and change after the first paint). */
@@ -2299,6 +2459,8 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         scheduleMedia(50);
         break;
       case 'scrollTo': {
+        // Another preview's scroll (or Scroll to top) takes over from an auto-scroll.
+        stopAutoScroll();
         ignoreScrollUntil = performance.now() + 150;
         if (command.y !== undefined) {
           restoreScroll(command.y);
@@ -2350,12 +2512,14 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         if (
           command.reducedMotion === reduceMotion &&
           command.moreContrast === moreContrast &&
-          command.print === printing
+          command.print === printing &&
+          (command.touch === true) === touch
         )
           break;
         reduceMotion = command.reducedMotion;
         moreContrast = command.moreContrast;
         printing = command.print;
+        touch = command.touch === true;
         quiet();
         applyMediaOverrides();
         break;
@@ -2389,6 +2553,9 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         trackScroll = command.on;
         if (trackScroll) reportScroll(true);
         break;
+      case 'autoScroll':
+        autoScroll(command.duration);
+        break;
       case 'pageMetrics':
         send({
           type: 'metrics',
@@ -2400,6 +2567,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         break;
       case 'captureScroll':
         stopRestoring();
+        stopAutoScroll();
         setFixedHidden(command.hideFixed);
         // Not a scroll other previews should follow.
         ignoreScrollUntil = performance.now() + 500;

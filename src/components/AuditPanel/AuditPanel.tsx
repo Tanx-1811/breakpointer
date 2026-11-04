@@ -94,6 +94,8 @@ type Props = {
   budgets?: PerformanceBudgets | null;
   /** Copies a piece of text (a suggested `sizes`, the palette as CSS). */
   onCopyText?: (text: string) => void;
+  /** Copies or downloads the responsive score as an SVG badge (the buttons show when given). */
+  onBadge?: (score: ResponsiveScore, action: 'copy' | 'download') => void;
   /** The page's address (the Meta tab compares the canonical address with it). */
   page?: string | null;
   /** The preview the Meta tab reads (its card id; default: the first that answered). */
@@ -247,7 +249,7 @@ function IssuesTab(props: Props) {
   const score = responsiveScore(checked.map((row) => row.report));
   return (
     <>
-      {score && <ScoreCard score={score} />}
+      {score && <ScoreCard score={score} onBadge={props.onBadge} />}
       <p className={styles.summary} data-testid="audit-summary" data-issues={groups.length}>
         <Icon name={groups.length ? 'alert' : 'check'} size={15} className={groups.length ? styles.warn : styles.ok} />
         {groups.length === 0
@@ -522,7 +524,13 @@ function TypeTab(props: Props) {
 }
 
 /** The responsive score of the previews, with what it lost the most points for. */
-function ScoreCard({ score }: { score: ResponsiveScore }) {
+function ScoreCard({
+  score,
+  onBadge,
+}: {
+  score: ResponsiveScore;
+  onBadge?: (score: ResponsiveScore, action: 'copy' | 'download') => void;
+}) {
   const { t } = useI18n();
   return (
     <section
@@ -547,6 +555,14 @@ function ScoreCard({ score }: { score: ResponsiveScore }) {
               </li>
             ))}
           </ul>
+        )}
+        {onBadge && (
+          <span className={styles.scoreBadge}>
+            <Button size="sm" variant="ghost" icon="copy" onClick={() => onBadge(score, 'copy')} data-testid="badge-copy">
+              {t('badge.copy')}
+            </Button>
+            <IconButton icon="download" size="sm" label={t('badge.download')} onClick={() => onBadge(score, 'download')} />
+          </span>
         )}
       </div>
     </section>

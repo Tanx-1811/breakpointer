@@ -23,6 +23,7 @@ export const SCORE_WEIGHTS: Record<CheckKind, number> = {
   'missing-alt': 6,
   'hidden-focus': 6,
   'upscaled-images': 5,
+  'long-lines': 4,
   'missing-lang': 3,
 };
 

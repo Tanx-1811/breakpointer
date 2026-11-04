@@ -4,6 +4,10 @@ export const REPO_URL = 'https://github.com/Tanx-1811/breakpointer';
 /** Breakpointer's id on the Chrome Web Store, where it is published (as "Breakpointer — Responsive Viewport Tester"). */
 export const CHROME_WEB_STORE_ID = 'naoadcallefanlcneemohjepkficejjh';
 
+/** The user guide: every feature step by step (English; Vietnamese for the Vietnamese UI). */
+export const userGuideUrl = (language: string) =>
+  `${REPO_URL}/blob/main/docs/${language === 'vi' ? 'USER_GUIDE.vi.md' : 'USER_GUIDE.md'}`;
+
 /** "Send feedback": GitHub's choice of issue forms (a problem, an idea, a site that won't show). */
 export const FEEDBACK_URL = `${REPO_URL}/issues/new/choose`;
 

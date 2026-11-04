@@ -5,6 +5,7 @@ import { searchCommands } from '../../state/commands';
 import { GUIDES, type Guide, type GuideId } from '../../state/guides';
 import { LEARN_TASKS, learnSummary, type LearnProgress, type LearnTaskInfo } from '../../state/learn';
 import { OMNIBOX_KEYWORD } from '../../utils/constants';
+import { userGuideUrl } from '../../utils/links';
 import { Button } from '../Button/Button';
 import { Dialog } from '../Dialog/Dialog';
 import { Icon, type IconName } from '../Icon/Icon';
@@ -30,6 +31,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['B'], label: 'help.batch' },
   { keys: ['V'], label: 'help.visual' },
   { keys: ['Q'], label: 'help.qa' },
+  { keys: ['U'], label: 'help.toolkit' },
   { keys: ['X'], label: 'help.measure' },
   { keys: ['N'], label: 'help.notes' },
   { keys: ['C'], label: 'help.contrast' },
@@ -50,11 +52,12 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 
 /** What this version brings, shown in Help's “What's new”. */
 const NEWS: { icon: IconName; text: MessageKey }[] = [
-  { icon: 'book', text: 'news.guides' },
-  { icon: 'explain', text: 'news.explain' },
-  { icon: 'checklist', text: 'news.qa' },
-  { icon: 'ruler', text: 'news.media' },
-  { icon: 'present', text: 'news.present' },
+  { icon: 'code', text: 'news.toolkit' },
+  { icon: 'pointer', text: 'news.touch' },
+  { icon: 'text', text: 'news.longLines' },
+  { icon: 'chevronDown', text: 'news.autoScroll' },
+  { icon: 'report', text: 'news.badge' },
+  { icon: 'book', text: 'news.userGuide' },
 ];
 
 export type HelpSection = 'start' | 'shortcuts' | 'news' | 'support';
@@ -399,9 +402,23 @@ function NewsSection({ version }: { version?: string }) {
 }
 
 function SupportSection({ support }: Props) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   return (
     <>
+      <a
+        className={styles.guideLink}
+        href={userGuideUrl(language)}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid="help-user-guide"
+      >
+        <Icon name="book" size={18} />
+        <span>
+          <strong>{t('help.userGuide')}</strong>
+          <span>{t('help.userGuideText')}</span>
+        </span>
+        <Icon name="external" size={14} />
+      </a>
       {support && (
         <div className={styles.support} data-testid="help-support">
           <h3 className={styles.heading}>{t('help.support')}</h3>

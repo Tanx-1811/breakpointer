@@ -35,7 +35,15 @@ export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 /** Simulations that run inside the previews (sites the user allowed). */
 export type SimulateToggle =
-  'reduceMotion' | 'moreContrast' | 'print' | 'pauseAnimations' | 'pseudo' | 'rtl' | 'spacing' | 'textZoom';
+  | 'reduceMotion'
+  | 'moreContrast'
+  | 'print'
+  | 'touch'
+  | 'pauseAnimations'
+  | 'pseudo'
+  | 'rtl'
+  | 'spacing'
+  | 'textZoom';
 export type SimulateState = Record<SimulateToggle, boolean> & { vision: VisionMode };
 
 export const VISION_KEYS: Record<VisionMode, MessageKey> = {
@@ -77,6 +85,8 @@ type Props = {
   onVisual?: () => void;
   /** The QA checklist panel (in Tools when given). */
   onQa?: () => void;
+  /** The CSS toolkit (in Tools when given). */
+  onToolkit?: () => void;
   qaOpen?: boolean;
   /** The page colours every visible preview shows ('mixed' when they differ); the options show with the handler. */
   pageColors?: ColorScheme | null | 'mixed';
@@ -389,6 +399,15 @@ export function WorkspaceBar(props: Props) {
     if (props.noteCount)
       utilityEntries.push({ id: 'notes-clear', label: t('notes.clear'), icon: 'trash', onSelect: props.onClearNotes });
   }
+  if (props.onToolkit)
+    utilityEntries.push({
+      id: 'toolkit',
+      label: t('tools.toolkit'),
+      description: t('tools.toolkitHint'),
+      icon: 'code',
+      shortcut: 'U',
+      onSelect: props.onToolkit,
+    });
   if (props.onContrast)
     utilityEntries.push({
       id: 'contrast',
@@ -547,6 +566,7 @@ export function WorkspaceBar(props: Props) {
     simulateToggle('reduceMotion', 'motion.reduce', 'motion.reduceHint'),
     simulateToggle('moreContrast', 'prefs.moreContrast', 'prefs.moreContrastHint'),
     simulateToggle('print', 'prefs.print', 'prefs.printHint'),
+    simulateToggle('touch', 'prefs.touch', 'prefs.touchHint'),
     simulateToggle('pauseAnimations', 'animations.pause', 'animations.pauseHint'),
     { kind: 'separator', id: 'simulate-sep2' },
     { kind: 'heading', id: 'stress', label: t('simulate.stress') },
@@ -561,6 +581,7 @@ export function WorkspaceBar(props: Props) {
       simulate.reduceMotion ||
       simulate.moreContrast ||
       simulate.print ||
+      simulate.touch ||
       simulate.pauseAnimations ||
       simulate.pseudo ||
       simulate.rtl ||

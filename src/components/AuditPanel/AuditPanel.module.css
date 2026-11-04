@@ -175,6 +175,13 @@
   --score-ring: var(--danger);
 }
 
+.scoreBadge {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 4px 0 0 -8px;
+}
+
 .scoreNumber {
   font-size: 20px;
   font-weight: 750;

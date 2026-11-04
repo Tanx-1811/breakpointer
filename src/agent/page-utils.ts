@@ -135,6 +135,30 @@ export function mentionsPrefersContrast(text: string): boolean {
   return /prefers-contrast/i.test(text);
 }
 
+/**
+ * Makes a desktop page (a mouse or trackpad: it hovers, its pointer is fine)
+ * show its touch-screen styles: `hover: hover` and `none` swap, the bare
+ * `(hover)` (true only with hover) becomes `(hover: none)`, and `pointer: fine`
+ * and `coarse` swap — the same for `any-hover` and `any-pointer`. The bare
+ * `(pointer)` and `pointer: none` stay: a touch screen has a pointer too.
+ */
+export function swapPointerMedia(text: string): string {
+  return text
+    .replace(
+      /(?<![\w-])(any-hover|hover)(\s*:\s*(hover|none))?(?=\s*\))/gi,
+      (_, feature: string, _value: string | undefined, keyword: string | undefined) =>
+        `${feature}: ${keyword?.toLowerCase() === 'none' ? 'hover' : 'none'}`,
+    )
+    .replace(
+      /(?<![\w-])(any-pointer|pointer)\s*:\s*(fine|coarse)(?=\s*\))/gi,
+      (_, feature: string, keyword: string) => `${feature}: ${keyword.toLowerCase() === 'fine' ? 'coarse' : 'fine'}`,
+    );
+}
+
+export function mentionsPointer(text: string): boolean {
+  return /(?<![\w-])(any-)?(hover|pointer)(?![\w-])/i.test(text);
+}
+
 const MEDIA_TYPE = /^(not\s+)?(only\s+)?(all|print|screen|speech|tv|projection|handheld|braille|embossed|aural|tty)\b/i;
 
 /**
@@ -534,6 +558,89 @@ export function cutOff(line: Edges, box: Edges): { x: number; y: number } | null
   if (x <= 0 && y <= 0) return null;
   if (x >= width || y >= height) return null;
   return { x, y };
+}
+
+/* ---------- Long lines of text ---------- */
+
+/** Blocks with less text than this aren't measured (a short paragraph can't have many long lines). */
+export const LONG_LINE_MIN_TEXT = 160;
+/** Lines a block needs to be measured (the last one is usually short). */
+export const LONG_LINE_MIN_LINES = 3;
+/** Characters a line may hold before it is reported, and for Chinese, Japanese or Korean text. */
+export const MAX_LINE_CHARS = 100;
+export const MAX_LINE_CHARS_CJK = 50;
+
+/** A piece of a line of text on screen (a client rect of a text node). */
+export type LineRect = { top: number; width: number; height: number };
+
+/**
+ * The number of lines of text, from the client rects of a block's text nodes in
+ * document order: a rect starts a new line when its top is more than a few
+ * pixels (2, up to a quarter of its height but at most 6) from the top of the
+ * line's first rect — so a link, `<code>` or a superscript on the line doesn't
+ * count as a line of its own. In document order, the columns of a multi-column
+ * layout don't merge. Empty rects are left out.
+ */
+export function countLines(rects: readonly LineRect[]): number {
+  let lines = 0;
+  let lineTop = Number.NaN;
+  for (const rect of rects) {
+    if (!(rect.width > 0 && rect.height > 0)) continue;
+    const tolerance = Math.min(6, Math.max(2, rect.height / 4));
+    if (lines > 0 && Math.abs(rect.top - lineTop) <= tolerance) continue;
+    lines++;
+    lineTop = rect.top;
+  }
+  return lines;
+}
+
+/** About how many characters a line holds: the last line is usually short, so it counts as half. */
+export const charsPerLine = (length: number, lines: number) => (lines > 0.5 ? length / (lines - 0.5) : 0);
+
+const LETTER = /\p{L}/gu;
+const CJK = /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]/gu;
+
+/** The share of a text's letters that are Chinese, Japanese or Korean (0 when it has no letters). */
+export function cjkShare(text: string): number {
+  const letters = text.match(LETTER)?.length ?? 0;
+  return letters ? (text.match(CJK)?.length ?? 0) / letters : 0;
+}
+
+/** Characters a line of this text may hold: fewer for Chinese, Japanese or Korean (each character is wider). */
+export const lineCharLimit = (text: string) => (cjkShare(text) >= 0.5 ? MAX_LINE_CHARS_CJK : MAX_LINE_CHARS);
+
+/**
+ * About how many characters a line of this block holds, when that is too many
+ * to read comfortably: its text (whitespace collapsed) has at least 160
+ * characters on 3 lines or more, and more than 100 characters a line (50 for
+ * Chinese, Japanese or Korean). Null otherwise.
+ */
+export function longLineLength(text: string, rects: readonly LineRect[]): number | null {
+  const collapsed = text.replace(/\s+/g, ' ').trim();
+  const length = Array.from(collapsed).length;
+  if (length < LONG_LINE_MIN_TEXT) return null;
+  const lines = countLines(rects);
+  if (lines < LONG_LINE_MIN_LINES) return null;
+  const chars = charsPerLine(length, lines);
+  return chars > lineCharLimit(collapsed) ? chars : null;
+}
+
+/**
+ * True when a computed `transform` (or `rotate`) turns or skews text, so its
+ * lines no longer stack from top to bottom. Moving and scaling don't; anything
+ * that can't be read counts as turning.
+ */
+export function turnsText(transform: string, rotate = 'none'): boolean {
+  if (rotate && rotate !== 'none') return true;
+  const value = transform.trim();
+  if (!value || value === 'none') return false;
+  const match = /^matrix(3d)?\(([^)]*)\)$/.exec(value);
+  if (!match) return true;
+  const values = match[2]!.split(',').map(Number);
+  if (values.length !== (match[1] ? 16 : 6) || values.some((number) => !Number.isFinite(number))) return true;
+  // Everything but the scale and the move: 2D b and c; in 3D, all but m11, m22, m33, m41–m44.
+  const others = match[1] ? [1, 2, 3, 4, 6, 7, 8, 9, 11] : [1, 2];
+  return others.some((index) => Math.abs(values[index]!) > 1e-6);
 }
 
 /**

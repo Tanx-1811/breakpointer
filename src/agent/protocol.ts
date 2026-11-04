@@ -23,6 +23,12 @@ export type CheckKind =
   | 'low-contrast'
   /** The layout moved while the page loaded: a cumulative layout shift of 0.1 or more. */
   | 'layout-shift'
+  /**
+   * Paragraphs and other blocks of running text whose lines hold more than about
+   * 100 characters (50 for Chinese, Japanese or Korean): tiring to read. `detail`
+   * is the most characters a line found, rounded ("118").
+   */
+  | 'long-lines'
   /** Images without a text alternative (no `alt`, and not hidden from assistive technology). Pro. */
   | 'missing-alt'
   /** Buttons and links with no accessible name (icon-only, no label). Pro. */
@@ -45,6 +51,7 @@ export const CHECK_KINDS: readonly CheckKind[] = [
   'upscaled-images',
   'fixed-cover',
   'layout-shift',
+  'long-lines',
   'missing-alt',
   'unnamed-control',
   'unlabeled-field',
@@ -366,9 +373,12 @@ type Command =
   | { type: 'stress'; pseudo: boolean; rtl: boolean; spacing: boolean; textZoom?: boolean }
   /**
    * The page's styles for preferences the browser doesn't have:
-   * `prefers-reduced-motion: reduce`, `prefers-contrast: more`, and `@media print`.
+   * `prefers-reduced-motion: reduce`, `prefers-contrast: more`, `@media print`,
+   * and with `touch` its touch-screen styles (`hover: none`, `pointer: coarse`,
+   * on a browser with a mouse or trackpad). Only CSS media queries change: no
+   * touch events, no other user agent. A missing `touch` is false.
    */
-  | { type: 'preferences'; reducedMotion: boolean; moreContrast: boolean; print: boolean }
+  | { type: 'preferences'; reducedMotion: boolean; moreContrast: boolean; print: boolean; touch?: boolean }
   /**
    * Labels drawn over the page: each image's sizes, the keyboard (Tab) order,
    * and the columns and rows of grid containers and the direction of flex ones.
@@ -407,6 +417,14 @@ type Command =
   | { type: 'getLinks' }
   /** Hide cookie and consent banners of the common consent tools (nothing is accepted or refused). */
   | { type: 'cookieBanners'; hidden: boolean }
+  /**
+   * Scroll this page from where it is to the bottom over `duration` ms, steadily
+   * (from the top when it is at the bottom already), for demos and screen
+   * recordings; null stops. Each preview scrolls itself: these scrolls don't
+   * lead synced scrolling. It stops when the user wheels, touches, presses a
+   * key or clicks in the page, or the page navigates.
+   */
+  | { type: 'autoScroll'; duration: number | null }
   /** Report the user's clicks and field changes as `interaction` events. */
   | { type: 'mirror'; on: boolean }
   /** Do what the user did in another preview (skipped when the element isn't shown here). */

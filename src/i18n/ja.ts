@@ -1865,4 +1865,13 @@ export const ja: Record<MessageKey, string> = {
     'QAチェックリスト（Q）: 手動チェックをすべてのサイズで記録し、結果をMarkdownレポートとしてコピーできます。',
   'help.qa': 'QAチェックリスト',
   // end v0.10 keys
+  // v0.11 keys
+  'checks.kind.longLines': 'Long lines of text',
+  'checks.hint.longLines':
+    'Paragraphs whose lines run past 100 characters are tiring to read on wide screens (WCAG 1.4.8 suggests 80 at most).',
+  'checks.detail.longLines': '{count} text blocks with lines of about {chars} characters',
+  'checks.detail.longLinesOne': '1 text block with lines of about {chars} characters',
+  'checks.value.longLines': '{count} · ~{chars} characters a line',
+  'prefs.touch': 'Touch-screen styles',
+  // end v0.11 keys
 };

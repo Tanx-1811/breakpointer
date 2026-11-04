@@ -45,6 +45,9 @@ export const EXPLAIN_TOPICS: readonly ExplainTopic[] = [
   { selector: '[data-testid="resize-size"]', body: 'explain.size' },
   { selector: '[data-testid="resize-width"], [data-testid="resize-height"]', body: 'explain.resize', guide: 'breaks' },
   { selector: '[data-testid="viewport-card"]', body: 'explain.card' },
+  // Controls inside panels (before the panels themselves).
+  { selector: '[data-testid="badge-copy"]', body: 'explain.scoreBadge' },
+  { selector: '[data-testid="present-autoscroll"]', body: 'explain.autoScroll', guide: 'demo' },
   // Around the workspace.
   { selector: '[data-testid="learn-button"]', body: 'explain.learn' },
   { selector: '[data-testid="zoom-dock"]', body: 'explain.zoom' },

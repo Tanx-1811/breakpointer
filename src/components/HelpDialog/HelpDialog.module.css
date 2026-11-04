@@ -483,6 +483,43 @@
   box-shadow: var(--focus-ring);
 }
 
+.guideLink {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.guideLink > span {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+}
+
+.guideLink strong {
+  color: var(--text);
+  font-size: 13.5px;
+}
+
+.guideLink:hover {
+  border-color: var(--accent-border);
+}
+
+.guideLink:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .empty {
   margin: 24px 0;
   color: var(--text-muted);

@@ -19,7 +19,8 @@ export type GuideAction =
   | 'visual'
   | 'showcase'
   | 'present'
-  | 'explain';
+  | 'explain'
+  | 'toolkit';
 
 export type GuideStep = {
   /**
@@ -34,7 +35,20 @@ export type GuideStep = {
 };
 
 export type GuideId =
-  'basics' | 'breaks' | 'audit' | 'media' | 'inspect' | 'notes' | 'qa' | 'visual' | 'site' | 'share';
+  | 'basics'
+  | 'breaks'
+  | 'audit'
+  | 'media'
+  | 'inspect'
+  | 'notes'
+  | 'qa'
+  | 'visual'
+  | 'site'
+  | 'share'
+  | 'toolkit'
+  | 'touch'
+  | 'readable'
+  | 'demo';
 
 export type Guide = {
   id: GuideId;
@@ -192,6 +206,62 @@ export const GUIDES: readonly Guide[] = [
       { target: '[data-help="present"]', title: 'guide.share.presentTitle', body: 'guide.share.presentBody' },
     ],
     finish: { label: 'guide.share.finish', action: 'showcase' },
+  },
+  {
+    id: 'toolkit',
+    icon: 'code',
+    title: 'guide.toolkit.title',
+    summary: 'guide.toolkit.summary',
+    // The toolkit is a modal dialog: the guide explains it, then offers to open it.
+    steps: [
+      { target: '[data-tools-trigger]', title: 'guide.toolkit.openTitle', body: 'guide.toolkit.openBody' },
+      { title: 'guide.toolkit.fluidTitle', body: 'guide.toolkit.fluidBody' },
+      { title: 'guide.toolkit.unitsTitle', body: 'guide.toolkit.unitsBody' },
+      { title: 'guide.toolkit.codeTitle', body: 'guide.toolkit.codeBody' },
+      { title: 'guide.toolkit.colorsTitle', body: 'guide.toolkit.colorsBody' },
+    ],
+    finish: { label: 'guide.toolkit.finish', action: 'toolkit' },
+  },
+  {
+    id: 'touch',
+    icon: 'pointer',
+    title: 'guide.touch.title',
+    summary: 'guide.touch.summary',
+    steps: [
+      { target: '[data-simulate-trigger]', title: 'guide.touch.onTitle', body: 'guide.touch.onBody' },
+      { target: '[data-testid="viewport-card"]', title: 'guide.touch.lookTitle', body: 'guide.touch.lookBody' },
+      { target: '[data-testid="qa-panel"]', title: 'guide.touch.qaTitle', body: 'guide.touch.qaBody', action: 'qa' },
+    ],
+  },
+  {
+    id: 'readable',
+    icon: 'text',
+    title: 'guide.readable.title',
+    summary: 'guide.readable.summary',
+    steps: [
+      { target: '[data-testid="audit-toggle"]', title: 'guide.readable.checksTitle', body: 'guide.readable.checksBody' },
+      {
+        target: `${AUDIT} [role="tabpanel"]`,
+        title: 'guide.readable.auditTitle',
+        body: 'guide.readable.auditBody',
+        action: 'audit',
+      },
+      { target: '[data-simulate-trigger]', title: 'guide.readable.zoomTitle', body: 'guide.readable.zoomBody' },
+      { title: 'guide.readable.fixTitle', body: 'guide.readable.fixBody' },
+    ],
+    finish: { label: 'guide.toolkit.finish', action: 'toolkit' },
+  },
+  {
+    id: 'demo',
+    icon: 'present',
+    title: 'guide.demo.title',
+    summary: 'guide.demo.summary',
+    steps: [
+      { target: '[data-help="present"]', title: 'guide.demo.presentTitle', body: 'guide.demo.presentBody' },
+      { title: 'guide.demo.scrollTitle', body: 'guide.demo.scrollBody' },
+      { target: '[data-help="capture"]', title: 'guide.demo.shareTitle', body: 'guide.demo.shareBody' },
+    ],
+    finish: { label: 'guide.demo.finish', action: 'present' },
   },
 ];
 

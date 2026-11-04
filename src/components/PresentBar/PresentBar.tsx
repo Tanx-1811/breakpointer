@@ -12,13 +12,16 @@ type Props = {
   onLayout: (layout: WorkspaceLayout) => void;
   onFit: () => void;
   onExit: () => void;
+  /** Every preview scrolling from top to bottom by itself (the button shows with its handler). */
+  autoScrolling?: boolean;
+  onAutoScroll?: () => void;
 };
 
 /**
  * The one control left in present mode: what is shown, the layout, Fit and
  * the way out. It fades while the pointer is elsewhere (see the CSS).
  */
-export function PresentBar({ host, layout, onLayout, onFit, onExit }: Props) {
+export function PresentBar({ host, layout, onLayout, onFit, onExit, autoScrolling, onAutoScroll }: Props) {
   const { t } = useI18n();
   return (
     <div className={styles.bar} role="group" aria-label={t('present.label')} data-testid="present-bar">
@@ -42,6 +45,19 @@ export function PresentBar({ host, layout, onLayout, onFit, onExit }: Props) {
       <Button size="sm" variant="ghost" icon="fit" onClick={onFit} shortcut="F">
         {t('workspace.fit')}
       </Button>
+      {onAutoScroll && (
+        <Button
+          size="sm"
+          variant="ghost"
+          icon={autoScrolling ? 'pause' : 'chevronDown'}
+          aria-pressed={Boolean(autoScrolling)}
+          tooltip={t('autoScroll.hint')}
+          onClick={onAutoScroll}
+          data-testid="present-autoscroll"
+        >
+          {autoScrolling ? t('autoScroll.stop') : t('autoScroll.start')}
+        </Button>
+      )}
       <span className={styles.divider} aria-hidden="true" />
       <Button size="sm" variant="primary" icon="close" onClick={onExit} shortcut="Esc" data-testid="present-exit">
         {t('present.exit')}
