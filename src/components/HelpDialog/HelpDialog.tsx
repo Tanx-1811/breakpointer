@@ -122,8 +122,7 @@ export function HelpDialog(props: Props) {
   const sections = SECTIONS.filter((item) => item.id !== 'support' || props.support);
   const onTabKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
     const delta = event.key === 'ArrowDown' ? 1 : event.key === 'ArrowUp' ? -1 : 0;
-    const target =
-      event.key === 'Home' ? 0 : event.key === 'End' ? sections.length - 1 : delta ? index + delta : null;
+    const target = event.key === 'Home' ? 0 : event.key === 'End' ? sections.length - 1 : delta ? index + delta : null;
     if (target === null) return;
     event.preventDefault();
     const next = sections[(target + sections.length) % sections.length]!.id;

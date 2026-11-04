@@ -75,6 +75,9 @@ type Props = {
   onBatch?: () => void;
   /** Opens the visual check. */
   onVisual?: () => void;
+  /** The QA checklist panel (in Tools when given). */
+  onQa?: () => void;
+  qaOpen?: boolean;
   /** The page colours every visible preview shows ('mixed' when they differ); the options show with the handler. */
   pageColors?: ColorScheme | null | 'mixed';
   onPageColors?: (scheme: ColorScheme | null) => void;
@@ -363,6 +366,16 @@ export function WorkspaceBar(props: Props) {
       shortcut: 'V',
       disabled: !props.hasUrl,
       onSelect: props.onVisual,
+    });
+  if (props.onQa)
+    utilityEntries.push({
+      id: 'qa',
+      label: t('palette.qa'),
+      description: t('tools.qaHint'),
+      icon: 'checklist',
+      shortcut: 'Q',
+      checked: props.qaOpen,
+      onSelect: props.onQa,
     });
   if (props.onCopyNotes && props.onClearNotes) {
     utilityEntries.push({

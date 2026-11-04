@@ -254,6 +254,7 @@ describe('AuditPanel tabs', () => {
       'Images',
       'Colours',
       'Meta',
+      'Media queries',
     ]);
     expect(screen.getByRole('tab', { name: 'Meta' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('meta-tab')).toBeVisible();

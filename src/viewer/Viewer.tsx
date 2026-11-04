@@ -3690,6 +3690,8 @@ function Workspace({
           onScan={openScan}
           onBatch={openBatch}
           onVisual={openVisual}
+          onQa={toggleQa}
+          qaOpen={qaOpen}
           measuring={measuring}
           comparing={compare !== null}
           simulate={simulateState}

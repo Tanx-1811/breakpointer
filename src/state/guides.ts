@@ -34,16 +34,7 @@ export type GuideStep = {
 };
 
 export type GuideId =
-  | 'basics'
-  | 'breaks'
-  | 'audit'
-  | 'media'
-  | 'inspect'
-  | 'notes'
-  | 'qa'
-  | 'visual'
-  | 'site'
-  | 'share';
+  'basics' | 'breaks' | 'audit' | 'media' | 'inspect' | 'notes' | 'qa' | 'visual' | 'site' | 'share';
 
 export type Guide = {
   id: GuideId;
@@ -134,7 +125,11 @@ export const GUIDES: readonly Guide[] = [
         title: 'guide.inspect.distanceTitle',
         body: 'guide.inspect.distanceBody',
       },
-      { target: '[data-testid="inspector-capture"]', title: 'guide.inspect.captureTitle', body: 'guide.inspect.captureBody' },
+      {
+        target: '[data-testid="inspector-capture"]',
+        title: 'guide.inspect.captureTitle',
+        body: 'guide.inspect.captureBody',
+      },
     ],
   },
   {

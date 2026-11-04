@@ -77,10 +77,10 @@ export function explainTarget(node: EventTarget | null): { element: Element; nam
     owner = node.closest(topic.selector)!;
   }
   const name = (
-    (owner instanceof HTMLElement ? owner.dataset.tooltip : undefined) ||
-    owner.getAttribute('aria-label') ||
-    owner.getAttribute('title') ||
-    owner.getAttribute('title') ??
+    ((owner instanceof HTMLElement ? owner.dataset.tooltip : undefined) ||
+      owner.getAttribute('aria-label') ||
+      owner.getAttribute('title') ||
+      owner.getAttribute('title')) ??
     owner.textContent ??
     ''
   )
