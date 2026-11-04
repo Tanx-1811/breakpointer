@@ -4,6 +4,8 @@ Copy-ready text and the answers the store asks for. Assets live in `brand/` (see
 
 **Live listing:** [https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh) — “Breakpointer — Responsive Viewport Tester”, id `naoadcallefanlcneemohjepkficejjh`, publisher Tanix; public since 0.4.0 (17 Oct 2026). Link to it directly, adding `?utm_source=…&utm_medium=…&utm_campaign=…` so the dashboard counts each channel: another extension on the store is also named “Breakpointer”.
 
+**Updating to 0.10.0:** no permission changed. Upload `release/breakpointer-0.10.0.zip` (packaged with `npm run package`), then replace both descriptions with the ones below — four lines are new (Media queries, QA checklist, Present mode, guides). The eight translated descriptions in [store-listing/](store-listing/) don't have these lines yet: add them before uploading, or keep the 0.9 text for those languages. Paste the updated `scripting` justification if the store asks (the audit now also reads the text of the page's media queries).
+
 **Updating to 0.9.0:** no permission changed. Upload `release/breakpointer-0.9.0.zip`, then replace both descriptions with the ones below and the six translated ones from [store-listing/](store-listing/) — two lines are new (the workspace, Meta & social) — and in the Store listing tab **add two languages**, Chinese (Simplified) and Russian, from `zh-CN.md` and `ru.md` (the extension's name and summary in Chrome come from `public/_locales/zh_CN` and `ru`). Paste the updated `scripting` justification (the audit now also reads the page's title, meta tags and headings). Upload the regenerated screenshots (the workspace now has a status bar); consider `15-sidebar` or `16-meta` in place of `9-scan`.
 
 **Updating to 0.8.0:** no permission changed. Upload `release/breakpointer-0.8.0.zip` (0.7.0 and 0.6.0 if not uploaded yet: the notes below still apply), then replace both descriptions with the ones below and the six translated ones from [store-listing/](store-listing/) — the Audit, Inspector and Notes lines and the Pro list changed. Paste the updated `scripting` justification (the audit now also reads image sizes and file names and border colours).
@@ -53,6 +55,8 @@ Breakpointer shows any website at several viewport sizes side by side, right in 
 • Responsive images: every image against the width it is shown at in each viewport — too large, too small or right — with a suggested sizes attribute and srcset widths to copy.
 • Page colours audit: the colours used for text, backgrounds and borders across sizes, copied as CSS variables.
 • Meta & social: how the page shows in search results and link previews (approximately), with its title, description, social image, canonical address, robots and icons checked, and the outline of its headings.
+• Media queries: every media query in the page's CSS and the sizes it applies at — with gaps and overlaps between breakpoints flagged (a width where neither side applies, or both do), and a viewport added there in one click.
+• QA checklist: tick off manual checks — the menu, forms, images, pop-ups — for every viewport, edit the list to fit your project, and copy the results as a Markdown report.
 • Visual check: save a baseline of every viewport, compare after a change and see what moved, pixel by pixel — side by side, with a slider, or the differences boxed.
 • Inspector: click an element in one preview and compare its size, display, font, spacing and layout at every size — what changes is highlighted — and measure the distance to a second element at every size.
 • Breakpoints read from the page's own CSS, plus Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation or your own — label every viewport and test both sides of each breakpoint.
@@ -68,6 +72,7 @@ Breakpointer shows any website at several viewport sizes side by side, right in 
 
 **Share what you see**
 • Showcase image: your page at several sizes in simple device frames on a backdrop, ready for a portfolio, a client or a post.
+• Present mode: only the previews, full screen, for screen sharing and client demos.
 • Screenshots of one preview or the workspace, every viewport in one labelled image, copy to the clipboard, and an HTML report of every size with its issues.
 • Open any preview in a real window of the exact size.
 
@@ -77,6 +82,7 @@ Breakpointer shows any website at several viewport sizes side by side, right in 
 • Reloads keep every preview where it was scrolled, and can run automatically; share a workspace link that opens the page with your viewports.
 • Export and import your setup to share it with your team.
 • A clean light and dark design, keyboard shortcuts for everything, in English, Spanish, Portuguese, French, German, Japanese, Indonesian and Vietnamese.
+• New here? Ten step-by-step guides, a getting-started checklist that ticks itself off, and “What's this?” mode (H): point at any control to see what it does.
 
 **Breakpointer Pro** (free 7-day trial; everything above stays free)
 • Accessibility checks at every size: images without alt text, unnamed buttons and links (often the icon-only menu button that only shows on phones), unlabeled fields, keyboard focus on hidden elements such as a closed off-canvas menu, and a missing page language.
@@ -116,6 +122,8 @@ Breakpointer hiển thị bất kỳ website nào ở nhiều kích thước vie
 • Ảnh responsive: mỗi ảnh so với chiều rộng hiển thị ở từng viewport — quá lớn, quá nhỏ hay vừa — kèm gợi ý thuộc tính sizes và các chiều rộng srcset để chép.
 • Rà soát màu sắc: màu chữ, nền và viền của trang ở mọi kích thước, chép thành biến CSS.
 • Meta & chia sẻ: trang hiện ra sao trên kết quả tìm kiếm và khi chia sẻ liên kết (gần đúng), kèm kiểm tra tiêu đề, mô tả, ảnh chia sẻ, địa chỉ chuẩn, robots, biểu tượng và cây heading.
+• Media query: mọi media query trong CSS của trang và những kích thước nó áp dụng — đánh dấu khoảng hở và chồng lấn giữa các breakpoint (chiều rộng mà không bên nào áp dụng, hoặc cả hai cùng áp dụng), thêm viewport ở đó chỉ với một lần bấm.
+• Danh sách QA: đánh dấu các mục kiểm tra thủ công — menu, biểu mẫu, hình ảnh, cửa sổ bật lên — cho từng viewport, sửa danh sách cho hợp dự án và chép kết quả thành báo cáo Markdown.
 • Kiểm tra hình ảnh: lưu ảnh mốc của mọi viewport, so sánh sau khi thay đổi và thấy phần nào xê dịch, đến từng pixel — cạnh nhau, thanh trượt, hoặc khoanh vùng khác biệt.
 • Soi phần tử: bấm một phần tử ở một bản xem trước để so sánh kích thước, display, font, khoảng cách và bố cục ở mọi kích thước — chỗ thay đổi được đánh dấu — và đo khoảng cách đến phần tử thứ hai ở mọi kích thước.
 • Breakpoint đọc từ chính CSS của trang, cùng Tailwind, Bootstrap hoặc của riêng bạn — gắn nhãn mọi viewport và thử hai bên mỗi breakpoint.
@@ -131,6 +139,7 @@ Breakpointer hiển thị bất kỳ website nào ở nhiều kích thước vie
 
 **Chia sẻ điều bạn thấy**
 • Ảnh trình diễn: trang của bạn ở nhiều kích thước trong khung thiết bị đơn giản trên nền đẹp, sẵn sàng cho portfolio, khách hàng hoặc bài đăng.
+• Chế độ trình chiếu: chỉ còn các bản xem trước, toàn màn hình, để chia sẻ màn hình và demo cho khách.
 • Chụp một bản xem trước hoặc cả vùng làm việc, ghép mọi viewport thành một ảnh có nhãn, chép vào bộ nhớ tạm, và xuất báo cáo HTML cho mọi kích thước kèm các vấn đề.
 • Mở bất kỳ bản xem trước nào trong một cửa sổ thật đúng kích thước.
 
@@ -140,6 +149,7 @@ Breakpointer hiển thị bất kỳ website nào ở nhiều kích thước vie
 • Tải lại mà mọi bản xem trước vẫn giữ nguyên chỗ đang xem, có thể tự động; chia sẻ liên kết workspace mở trang với đúng các viewport của bạn.
 • Xuất và nhập cấu hình để chia sẻ với nhóm của bạn.
 • Thiết kế sáng và tối gọn gàng, phím tắt cho mọi thứ, tiếng Anh và tiếng Việt.
+• Mới dùng? Mười hướng dẫn từng bước, danh sách bắt đầu tự đánh dấu và chế độ “Đây là gì?” (H): trỏ vào bất kỳ nút nào để xem nó làm gì.
 
 **Breakpointer Pro** (dùng thử miễn phí 7 ngày; mọi tính năng ở trên vẫn miễn phí)
 • Kiểm tra trợ năng ở mọi kích thước: ảnh thiếu văn bản thay thế, nút và liên kết không có tên (thường là nút menu chỉ có biểu tượng chỉ hiện trên điện thoại), trường nhập không có nhãn, tiêu điểm bàn phím rơi vào phần tử bị ẩn như menu trượt đã đóng, và trang thiếu khai báo ngôn ngữ.

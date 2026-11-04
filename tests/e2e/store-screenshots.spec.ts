@@ -340,6 +340,83 @@ for (const lang of ['en', 'vi'] as const satisfies Lang[]) {
       await page.screenshot({ path: resolve(OUT, lang, '16-meta.png') });
     });
 
+    test('help centre', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+        ],
+      });
+      await page.evaluate(() =>
+        chrome.storage.local.set({ 'breakpointer.learn': { done: ['preview', 'viewport', 'audit'], hidden: false } }),
+      );
+      await show(page, viewerUrl, 3);
+      await page.keyboard.press('?');
+      await expect(page.getByTestId('learn-checklist')).toBeVisible();
+      await page.waitForTimeout(600);
+      await page.screenshot({ path: resolve(OUT, lang, '17-help.png') });
+    });
+
+    test('QA checklist', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3);
+      await page.keyboard.press('q');
+      const cells = page.getByTestId('qa-panel').locator('td button');
+      // A morning of testing: most passed, the phone's menu failed, one skipped.
+      for (const index of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14]) await cells.nth(index).click();
+      await cells.nth(0).click();
+      await cells.nth(0).click();
+      await cells.nth(12).click();
+      await cells.nth(12).click();
+      await cells.nth(12).click();
+      await page.mouse.move(640, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '18-qa.png') });
+    });
+
+    test('media queries', async ({ context, viewerUrl }) => {
+      const page = context.pages()[0]!;
+      await seed(page, viewerUrl, {
+        version: 1,
+        language: lang,
+        theme: 'light',
+        breakpoints: 'tailwind',
+        viewports: [
+          { id: 'p', name: lang === 'vi' ? 'Điện thoại' : 'Phone', width: 390, height: 844, zoom: 0.5 },
+          { id: 't', name: lang === 'vi' ? 'Máy tính bảng' : 'Tablet', width: 768, height: 1024, zoom: 0.4 },
+          { id: 'l', name: 'Laptop', width: 1280, height: 800, zoom: 0.33 },
+        ],
+      });
+      await show(page, viewerUrl, 3);
+      await expect(page.getByTestId('checks-badge')).toHaveCount(3);
+      await page.keyboard.press('e');
+      await page
+        .getByTestId('audit')
+        .getByRole('tab', { name: lang === 'vi' ? 'Media query' : 'Media queries' })
+        .click();
+      await expect(page.getByTestId('media-table')).toBeVisible();
+      await page.mouse.move(640, 795);
+      await page.waitForTimeout(800);
+      await page.screenshot({ path: resolve(OUT, lang, '19-media.png') });
+    });
+
     test('visual check', async ({ context, viewerUrl }) => {
       const page = context.pages()[0]!;
       await seed(page, viewerUrl, { version: 1, language: lang, theme: 'light', breakpoints: 'tailwind' });
