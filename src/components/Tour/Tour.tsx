@@ -196,7 +196,7 @@ function TourCard({
           {t(step.body)}
         </p>
         <div className={styles.progress} aria-hidden="true">
-          {steps.map((item, position) => (
+          {steps.map((_, position) => (
             <span key={position} className={styles.dot} data-done={position <= index || undefined} />
           ))}
         </div>

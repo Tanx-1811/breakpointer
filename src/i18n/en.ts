@@ -1656,8 +1656,7 @@ export const en = {
   'guide.breaks.resizeBody':
     'Drag a preview’s right or bottom edge, or click its size to type one. The badge shows the breakpoint at that width.',
   'guide.breaks.labelsTitle': 'Know your breakpoints',
-  'guide.breaks.labelsBody':
-    'Pick your framework, or “This site’s” to read the breakpoints from the page’s own CSS.',
+  'guide.breaks.labelsBody': 'Pick your framework, or “This site” to read the breakpoints from the page’s own CSS.',
   'guide.breaks.scanTitle': 'Scan every width',
   'guide.breaks.scanBody':
     'The scanner (W, in Tools) resizes the page one width at a time and finds the exact widths where it overflows or gets cut off.',
@@ -1677,7 +1676,8 @@ export const en = {
   'guide.media.title': 'Find gaps between breakpoints',
   'guide.media.summary': 'The page’s media queries, and the widths that fall between them.',
   'guide.media.listTitle': 'Every media query',
-  'guide.media.listBody': 'The audit’s Media queries tab lists the page’s own queries and the previews each one applies in.',
+  'guide.media.listBody':
+    'The audit’s Media queries tab lists the page’s own queries and the previews each one applies in.',
   'guide.media.gapsTitle': 'Gaps and overlaps',
   'guide.media.gapsBody':
     'A width where neither side of a breakpoint applies — or both do — is flagged. Add a viewport there to see it.',
@@ -1689,7 +1689,8 @@ export const en = {
   'guide.inspect.compareBody':
     'Its size, font, spacing and whether it shows, at every viewport side by side — what changes is marked.',
   'guide.inspect.distanceTitle': 'Distance between two elements',
-  'guide.inspect.distanceBody': 'Choose “Distance to…” and pick a second element to see the space between them at every size.',
+  'guide.inspect.distanceBody':
+    'Choose “Distance to…” and pick a second element to see the space between them at every size.',
   'guide.inspect.captureTitle': 'Capture at every size',
   'guide.inspect.captureBody': 'Save the element cut out of every preview, side by side at the same scale.',
   'guide.notes.title': 'Report a bug with notes',

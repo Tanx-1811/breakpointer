@@ -145,6 +145,8 @@ export function QaPanel(props: Props) {
   };
 
   const onEditKey = (event: KeyboardEvent<HTMLInputElement>) => {
+    // Enter also confirms a word of an input method (Vietnamese Telex, Japanese…); that isn't a save.
+    if (event.nativeEvent.isComposing) return;
     if (event.key === 'Enter') {
       event.preventDefault();
       finishEdit(true, true);
