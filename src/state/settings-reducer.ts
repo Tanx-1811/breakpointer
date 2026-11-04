@@ -9,6 +9,7 @@ import type {
   CanvasStyle,
   CssSnippet,
   Project,
+  QaItem,
   GridSettings,
   SyncSettings,
   LanguagePreference,
@@ -91,6 +92,8 @@ export type SettingsAction =
     }
   /** Changes performance budgets (values already validated, see state/budgets.ts). */
   | { type: 'setBudgets'; budgets: Partial<PerformanceBudgets> }
+  /** Replaces the QA checklist's checks (an empty list restores the built-in ones). */
+  | { type: 'setQaChecklist'; items: QaItem[] }
   /** Changes the brand on reports and images (values already validated, see state/branding.ts). */
   | { type: 'setBranding'; branding: Partial<BrandingSettings> }
   | { type: 'replaceSettings'; settings: BreakpointerSettings };
@@ -111,6 +114,8 @@ export function settingsReducer(state: BreakpointerSettings, action: SettingsAct
       return { ...state, ...action.workspace };
     case 'setBudgets':
       return { ...state, budgets: { ...state.budgets, ...action.budgets } };
+    case 'setQaChecklist':
+      return { ...state, qaChecklist: action.items };
     case 'setBranding':
       return { ...state, branding: { ...state.branding, ...action.branding } };
     case 'setLanguage':

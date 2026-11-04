@@ -4,6 +4,7 @@ import type {
   CheckReport,
   ColorSample,
   ImageSample,
+  MediaQueryReport,
   PageMeta,
   PageStats,
   TypeSample,
@@ -37,17 +38,18 @@ import {
 } from '../../state/audit';
 import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue, localNumbers } from '../../state/checks';
 import { responsiveScore, type ResponsiveScore } from '../../state/score';
-import { SIZE_CLASS_ICONS, sizeClassOf } from '../../state/size-class';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
 import { ExportMenu } from '../Plan/ExportMenu';
 import { ProBadge, usePlan } from '../Plan/PlanContext';
+import { MediaTab } from './MediaTab';
 import { MetaTab } from './MetaTab';
+import { ViewportName } from './ViewportName';
 import styles from './AuditPanel.module.css';
 
-export type AuditTab = 'issues' | 'performance' | 'type' | 'images' | 'colors' | 'meta';
+export type AuditTab = 'issues' | 'performance' | 'type' | 'images' | 'colors' | 'meta' | 'media';
 
-export const AUDIT_TABS: AuditTab[] = ['issues', 'performance', 'type', 'images', 'colors', 'meta'];
+export const AUDIT_TABS: AuditTab[] = ['issues', 'performance', 'type', 'images', 'colors', 'meta', 'media'];
 
 /** One preview in the audit. `undefined` values: not known yet. */
 export type AuditRow = {
@@ -62,6 +64,7 @@ export type AuditRow = {
   images?: ImageSample[] | null | undefined;
   colors?: ColorSample | null | undefined;
   meta?: PageMeta | null | undefined;
+  media?: MediaQueryReport | null | undefined;
 };
 
 type Props = {
@@ -96,6 +99,8 @@ type Props = {
   /** The preview the Meta tab reads (its card id; default: the first that answered). */
   metaCard?: string | null;
   onMetaCard?: (cardId: string) => void;
+  /** Adds a viewport of this width (the Media queries tab, at a gap or an overlap). */
+  onAddViewport?: (width: number) => void;
 };
 
 const TAB_KEYS = {
@@ -105,6 +110,7 @@ const TAB_KEYS = {
   images: 'audit.tab.images',
   colors: 'audit.tab.colors',
   meta: 'audit.tab.meta',
+  media: 'audit.tab.media',
 } as const;
 
 const TAB_ICONS = {
@@ -114,6 +120,7 @@ const TAB_ICONS = {
   images: 'image',
   colors: 'palette',
   meta: 'share',
+  media: 'ruler',
 } as const;
 
 /** Issues, page stats and the type scale of every preview, side by side. */
@@ -171,7 +178,7 @@ export function AuditPanel(props: Props) {
             aria-controls={`${id}-panel`}
             tabIndex={tab === item ? 0 : -1}
             className={styles.tab}
-            // Six tabs don't fit the panel: the others show their icon (and their name as a tooltip).
+            // Seven tabs don't fit the panel: the others show their icon (and their name as a tooltip).
             aria-label={t(TAB_KEYS[item])}
             data-tooltip={tab === item ? undefined : t(TAB_KEYS[item])}
             onClick={() => props.onTab(item)}
@@ -207,19 +214,11 @@ export function AuditPanel(props: Props) {
             onCard={props.onMetaCard}
           />
         )}
+        {tab === 'media' && (
+          <MediaTab rows={props.rows} measuring={props.measuring} onAddViewport={props.onAddViewport} />
+        )}
       </div>
     </aside>
-  );
-}
-
-function ViewportName({ row }: { row: Pick<AuditRow, 'name' | 'width' | 'height'> }) {
-  const sizeClass = sizeClassOf(row.width, row.height);
-  return (
-    <span className={styles.viewport} data-size-class={sizeClass}>
-      <Icon name={SIZE_CLASS_ICONS[sizeClass]} size={13} className={styles.viewportIcon} />
-      <span className={styles.viewportName}>{row.name}</span>
-      <span className={styles.viewportWidth}>{row.width}</span>
-    </span>
   );
 }
 

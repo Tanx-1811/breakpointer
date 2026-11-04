@@ -4,6 +4,7 @@ import { DEFAULT_PRESET_IDS, findPreset } from '../data/presets';
 import { en, type MessageKey } from '../i18n/en';
 import { EMPTY_BRANDING, parseBranding } from '../state/branding';
 import { EMPTY_BUDGETS, parseBudgets } from '../state/budgets';
+import { parseQaChecklist } from '../state/qa';
 import type { CompareTarget } from '../state/compare';
 import { MAX_PROJECTS, normalizeProjectName } from '../state/projects';
 import { normalizeGroupName } from '../state/groups';
@@ -126,6 +127,7 @@ export function defaultSettings(name?: PresetNamer): BreakpointerSettings {
     branding: { ...EMPTY_BRANDING },
     projects: [],
     budgets: { ...EMPTY_BUDGETS },
+    qaChecklist: [],
   };
 }
 
@@ -399,6 +401,7 @@ export function parseSettings(raw: unknown, name?: PresetNamer): BreakpointerSet
     branding: parseBranding(raw.branding),
     projects: parseProjects(raw.projects),
     budgets: parseBudgets(raw.budgets),
+    qaChecklist: parseQaChecklist(raw.qaChecklist),
   };
   const activeUrl = toSafeHref(raw.activeUrl);
   if (activeUrl) settings.activeUrl = activeUrl;

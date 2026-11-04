@@ -110,6 +110,14 @@ const PATHS = {
   pointer: 'M5 3l14 7-6 2-2 6zM13 13l6 6',
   /** Accessibility checks. */
   accessibility: 'M12 4.5h.01M5 8l7 1.2L19 8M12 9.2V14M8.5 21l3.5-7 3.5 7',
+  /** Guides. */
+  book: 'M2.5 4.5H8a4 4 0 0 1 4 4V20a3 3 0 0 0-3-3H2.5zM21.5 4.5H16a4 4 0 0 0-4 4V20a3 3 0 0 1 3-3h6.5z',
+  /** Present mode: a screen on a stand. */
+  present: 'M2 3.5h20M3.5 3.5V14a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V3.5M12 16v2.5M8 21.5l4-3 4 3',
+  /** “What's this?” mode: a pointer with a question mark. */
+  explain: 'M4 4l6.2 15.5 2.3-6.5 6.5-2.3zM15 3.6a2.3 2.3 0 1 1 3.2 2.1c-.5.2-.9.7-.9 1.3v.3',
+  /** QA checklist. */
+  checklist: 'M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5',
 } as const;
 
 /** Icons made of dots need a wider stroke to read as dots. */
@@ -118,6 +126,7 @@ const DOT_ICONS = new Set<IconName>(['more', 'grip']);
 /** Icons that mix lines with dots: the dots get a second, wider stroke. */
 const DOTS: Partial<Record<IconName, string>> = {
   palette: 'M7.5 11.5h.01M10 7.5h.01M15 7.5h.01',
+  explain: 'M17.3 10.4h.01',
 };
 
 /** Solid shapes drawn on top of the stroke (e.g. the dark half of "contrast"). */

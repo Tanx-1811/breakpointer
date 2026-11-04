@@ -30,6 +30,9 @@ type Props = {
   onAudit: () => void;
   onFit: () => void;
   onMinimap: () => void;
+  /** The getting-started checklist, until it is done or put away (opens Help). */
+  learn?: { done: number; total: number } | null;
+  onLearn?: () => void;
 };
 
 const LAYOUT_ICONS: Record<WorkspaceLayout, IconName> = { wrap: 'wrap', row: 'row', stack: 'stack' };
@@ -101,6 +104,21 @@ export function StatusBar(props: Props) {
         <Icon name="link" size={13} />
         <span className={styles.label}>{syncText}</span>
       </button>
+      {props.learn && props.onLearn && (
+        <button
+          type="button"
+          className={`${styles.item} ${styles.learn}`}
+          onClick={props.onLearn}
+          aria-label={t('learn.statusLabel', { done: props.learn.done, total: props.learn.total })}
+          data-testid="learn-button"
+        >
+          <Icon name="book" size={13} />
+          <span className={styles.label}>{t('learn.status')}</span>
+          <span className={styles.learnCount} aria-hidden="true">
+            {props.learn.done}/{props.learn.total}
+          </span>
+        </button>
+      )}
 
       <span className={styles.spacer} />
 

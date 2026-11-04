@@ -136,6 +136,9 @@ export type ViewportGroup = {
   viewports: ViewportTemplate[];
 };
 
+/** A manual check of the QA checklist ("the menu opens and closes"), see state/qa.ts. */
+export type QaItem = { id: string; text: string };
+
 export type BreakpointerSettings = {
   version: 1;
   theme: ThemePreference;
@@ -174,6 +177,8 @@ export type BreakpointerSettings = {
   projects: Project[];
   /** Performance budgets the audit marks previews against (Pro); null limits are off. */
   budgets: PerformanceBudgets;
+  /** The QA checklist's checks; empty: the built-in ones, in the UI's language. */
+  qaChecklist: QaItem[];
   activeUrl?: string;
 };
 

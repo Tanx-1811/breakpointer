@@ -71,6 +71,8 @@ import {
   type ElementRect,
   type ImageSample,
   type Interaction,
+  type MediaQueryEntry,
+  type MediaQueryReport,
   type MediaReport,
   type PageStats,
   type ScrollAnchor,
@@ -118,6 +120,8 @@ const MAX_IMAGES = 40;
 const MAX_COLORS = 24;
 /** Addresses of links reported at most (Check pages keeps fewer). */
 const MAX_LINKS = 300;
+/** Media and container queries reported at most to the audit (those with the most rules). */
+const MAX_MEDIA_QUERIES = 200;
 const OVERLAY_ATTRIBUTE = 'data-breakpointer-overlay';
 
 type AgentWindow = Window & { __breakpointerAgent?: boolean };
@@ -1146,21 +1150,30 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
 
   /* ---------- Stylesheets: breakpoints and color scheme ---------- */
 
-  type Visit = (list: MediaList) => void;
+  /** A media list and the rules it applies to (null: in a sheet that can't be read). */
+  type Visit = (list: MediaList, rules: CSSRuleList | null) => void;
+  /** Container queries need Chrome 105; older browsers have no such rule. */
+  const ContainerRule = (globalThis as { CSSContainerRule?: typeof CSSContainerRule }).CSSContainerRule;
 
-  /** Calls `visit` for every media list in the page's readable stylesheets; returns how many couldn't be read. */
-  const forEachMediaList = (visit: Visit): number => {
+  /**
+   * Calls `visit` for every media list in the page's readable stylesheets (and
+   * `container` for every container query); returns how many couldn't be read.
+   */
+  const forEachMediaList = (visit: Visit, container?: (rule: CSSContainerRule) => void): number => {
     let unreadable = 0;
     const walk = (rules: CSSRuleList, depth: number) => {
       for (const rule of Array.from(rules)) {
-        if (rule instanceof CSSMediaRule) visit(rule.media);
+        if (rule instanceof CSSMediaRule) visit(rule.media, rule.cssRules);
+        if (container && ContainerRule && rule instanceof ContainerRule) container(rule);
         if (rule instanceof CSSImportRule) {
-          visit(rule.media);
+          let imported: CSSRuleList | null = null;
           try {
-            if (rule.styleSheet) walk(rule.styleSheet.cssRules, depth + 1);
+            imported = rule.styleSheet?.cssRules ?? null;
           } catch {
             unreadable++;
           }
+          visit(rule.media, imported);
+          if (imported) walk(imported, depth + 1);
         }
         const nested = (rule as Partial<CSSGroupingRule>).cssRules;
         if (nested && depth < 8) walk(nested, depth + 1);
@@ -1170,17 +1183,27 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     for (const sheet of sheets) {
       // Breakpointer's own styles (live CSS, outlines…) aren't the page's.
       if (sheet.ownerNode instanceof Element && sheet.ownerNode.id.startsWith('bp-')) continue;
-      visit(sheet.media);
-      let rules: CSSRuleList;
+      let rules: CSSRuleList | null = null;
       try {
         rules = sheet.cssRules;
       } catch {
         unreadable++;
-        continue;
       }
-      walk(rules, 0);
+      visit(sheet.media, rules);
+      if (rules) walk(rules, 0);
     }
     return unreadable;
+  };
+
+  /** Style rules in a list, nested ones included (CSS nesting, rules inside @supports or @layer). */
+  const countStyleRules = (rules: CSSRuleList | null, depth = 0): number => {
+    let count = 0;
+    for (const rule of Array.from(rules ?? [])) {
+      if (rule instanceof CSSStyleRule) count++;
+      const nested = (rule as Partial<CSSGroupingRule>).cssRules;
+      if (nested && depth < 8) count += countStyleRules(nested, depth + 1);
+    }
+    return count;
   };
 
   let colorScheme: ColorSchemeOverride = null;
@@ -1213,6 +1236,33 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       .map(([width]) => width)
       .sort((a, b) => a - b);
     return { breakpoints, unreadable, colorScheme: schemeStyles };
+  };
+
+  /**
+   * The page's media and container queries as it wrote them, with the style
+   * rules each holds and whether it applies here. The frame is the viewport, so
+   * `matchMedia` answers exactly for this preview's size — with the overrides
+   * Breakpointer applied (a forced colour scheme, print), as the page shows now.
+   */
+  const mediaQueryReport = (): MediaQueryReport => {
+    const entries = new Map<string, MediaQueryEntry>();
+    const add = (kind: MediaQueryEntry['kind'], original: string, rules: number, matches: () => boolean | null) => {
+      const text = original.replace(/\s+/g, ' ').trim();
+      if (!text || text.toLowerCase() === 'all') return;
+      const key = `${kind} ${text}`;
+      const entry = entries.get(key);
+      if (entry) entry.rules += rules;
+      else entries.set(key, { text, kind, rules, matches: matches() });
+    };
+    const unreadable = forEachMediaList(
+      (list, rules) =>
+        add('media', originalMedia.get(list) ?? list.mediaText, countStyleRules(rules), () =>
+          window.matchMedia(list.mediaText).matches,
+        ),
+      (rule) => add('container', rule.conditionText, countStyleRules(rule.cssRules), () => null),
+    );
+    const queries = [...entries.values()].sort((a, b) => b.rules - a.rules).slice(0, MAX_MEDIA_QUERIES);
+    return { queries, unreadable };
   };
 
   /**
@@ -2442,6 +2492,9 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
               : element.getClientRects().length === 0,
           ),
         });
+        break;
+      case 'getMediaQueries':
+        send({ type: 'mediaQueries', id: command.id, report: mediaQueryReport() });
         break;
       case 'getLinks': {
         // Addresses only, never the links' text: pages of this site, without fragments.

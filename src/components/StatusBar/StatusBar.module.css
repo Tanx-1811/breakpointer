@@ -93,6 +93,20 @@
   flex: 1;
 }
 
+.learn {
+  color: var(--accent-strong);
+  font-weight: 600;
+}
+
+.learnCount {
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 16px;
+}
+
 @media (max-width: 1100px) {
   .optional {
     display: none;

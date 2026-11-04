@@ -1,0 +1,62 @@
+.bar {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: calc(100% - 32px);
+  padding: 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface-glass);
+  box-shadow: var(--shadow-dock);
+  transform: translateX(-50%);
+  backdrop-filter: blur(14px) saturate(1.4);
+  transition: opacity var(--duration-slow) var(--ease-out);
+}
+
+/* Out of the way while the audience looks at the previews; back on hover or focus. */
+.bar:not(:hover, :focus-within) {
+  opacity: 0.35;
+}
+
+:global(html[data-capturing]) .bar {
+  visibility: hidden;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 0 6px 0 8px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.icon {
+  flex: none;
+  color: var(--accent);
+}
+
+.text {
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.divider {
+  flex: none;
+  width: 1px;
+  height: 18px;
+  margin: 0 3px;
+  background: var(--border);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}

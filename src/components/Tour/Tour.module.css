@@ -25,11 +25,50 @@
   box-shadow: var(--shadow-pop);
 }
 
+.card[data-placement='center'] {
+  width: min(360px, calc(100vw - 24px));
+}
+
 .count {
-  margin: 0 0 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0 0 6px;
   color: var(--text-subtle);
   font-size: 11.5px;
   font-weight: 600;
+}
+
+.guideIcon {
+  flex: none;
+  color: var(--accent);
+}
+
+.guideName {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-muted);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.progress {
+  display: flex;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.dot {
+  flex: 1;
+  max-width: 28px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--border);
+  transition: background var(--duration-fast) var(--ease-out);
+}
+
+.dot[data-done] {
+  background: var(--accent);
 }
 
 .title {

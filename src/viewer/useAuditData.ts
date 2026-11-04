@@ -5,6 +5,7 @@ import type {
   AgentReplyType,
   ColorSample,
   ImageSample,
+  MediaQueryReport,
   PageMeta,
   PageStats,
   TypeSample,
@@ -35,17 +36,18 @@ type Options = {
 };
 
 /** What each tab measures (the issues come with the checks). */
-type Measure = 'stats' | 'type' | 'images' | 'colors' | 'meta';
+type Measure = 'stats' | 'type' | 'images' | 'colors' | 'meta' | 'media';
 const MEASURE_OF: Record<Exclude<AuditTab, 'issues'>, Measure> = {
   performance: 'stats',
   type: 'type',
   images: 'images',
   colors: 'colors',
   meta: 'meta',
+  media: 'media',
 };
 
 /**
- * The page stats, type samples, images, colours and meta tags of every preview for the audit panel: asked
+ * The page stats, type samples, images, colours, meta tags and media queries of every preview for the audit panel: asked
  * for when their tab is shown, again a moment after previews connect, and on
  * request. Results are kept per frame, so a reloaded preview is never shown
  * with its previous page's numbers.
@@ -56,6 +58,7 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
   const [images, setImages] = useState<Measured<ImageSample[]>>({});
   const [colors, setColors] = useState<Measured<ColorSample>>({});
   const [meta, setMeta] = useState<Measured<PageMeta>>({});
+  const [media, setMedia] = useState<Measured<MediaQueryReport>>({});
   const [pending, setPending] = useState(0);
   const latest = useRef({ cardIds, generations });
   useLayoutEffect(() => {
@@ -91,6 +94,11 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
                 .then((reply) => reply.meta)
                 .catch(() => null);
               setMeta((map) => ({ ...map, [cardId]: { generation, value } }));
+            } else if (which === 'media') {
+              const value = await ask(cardId, { type: 'getMediaQueries' }, 'mediaQueries', 3000)
+                .then((reply) => reply.report)
+                .catch(() => null);
+              setMedia((map) => ({ ...map, [cardId]: { generation, value } }));
             } else {
               const value = await ask(cardId, { type: 'getColors' }, 'colors', 4000)
                 .then((reply) => reply.colors)
@@ -145,5 +153,10 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
     return entry && entry.generation === generations[cardId] ? entry.value : undefined;
   };
 
-  return { statsOf, typeOf, imagesOf, colorsOf, metaOf, measuring: pending > 0, refresh };
+  const mediaOf = (cardId: string): MediaQueryReport | null | undefined => {
+    const entry = media[cardId];
+    return entry && entry.generation === generations[cardId] ? entry.value : undefined;
+  };
+
+  return { statsOf, typeOf, imagesOf, colorsOf, metaOf, mediaOf, measuring: pending > 0, refresh };
 }

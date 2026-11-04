@@ -1,73 +1,106 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
-import type { MessageKey } from '../../i18n/en';
+import { guideById, visibleSteps, type Guide, type GuideAction, type GuideId } from '../../state/guides';
 import { placeTourCard, type Box, type Size } from '../../state/tour';
 import { Button } from '../Button/Button';
+import { Icon } from '../Icon/Icon';
 import styles from './Tour.module.css';
 
-type TourStep = { target: string; title: MessageKey; body: MessageKey };
+/** The controls the workspace tour points at, in order; a step whose control isn't shown is left out. */
+export const TOUR_STEPS = guideById('basics').steps;
 
-/** The controls the tour points at, in order; a step whose control isn't shown is left out. */
-export const TOUR_STEPS: readonly TourStep[] = [
-  { target: '[data-testid="address-input"]', title: 'tour.addressTitle', body: 'tour.addressBody' },
-  { target: '[data-tour="viewports"]', title: 'tour.viewportsTitle', body: 'tour.viewportsBody' },
-  { target: '[data-tour="breakpoints"]', title: 'tour.breakpointsTitle', body: 'tour.breakpointsBody' },
-  { target: '[data-testid="sync-toggle"]', title: 'tour.syncTitle', body: 'tour.syncBody' },
-  { target: '[data-testid="inspect-toggle"]', title: 'tour.inspectTitle', body: 'tour.inspectBody' },
-  { target: '[data-testid="audit-toggle"]', title: 'tour.auditTitle', body: 'tour.auditBody' },
-  { target: '[data-testid="notes-toggle"]', title: 'tour.notesTitle', body: 'tour.notesBody' },
-  { target: '[data-tools-trigger]', title: 'tour.toolsTitle', body: 'tour.toolsBody' },
-  { target: '[data-testid="help-button"]', title: 'tour.helpTitle', body: 'tour.helpBody' },
-];
+/** How long a step waits for its control to appear after opening something (a panel sliding in). */
+const LOCATE_TRIES = 20;
+const LOCATE_EVERY_MS = 100;
 
 const shown = (selector: string) => {
   const rect = document.querySelector(selector)?.getBoundingClientRect();
   return rect && rect.width > 0 && rect.height > 0 ? rect : null;
 };
 
-/** A short walk through the workspace's main controls (started from the welcome screen, Help or the palette). */
-export function Tour({ open, onClose }: { open: boolean; onClose: () => void }) {
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  /** The guide to walk through (default: the workspace tour). */
+  guide?: GuideId;
+  /** Opens what a step talks about (the audit, the inspector…), or what the last step offers to start. */
+  onAction?: (action: GuideAction) => void;
+};
+
+/**
+ * A guide: a card next to each control it talks about, one step at a time
+ * (started from the welcome screen, Help, the palette or “What's this?”).
+ */
+export function Tour({ open, onClose, guide = 'basics', onAction }: Props) {
   if (!open) return null;
-  return <TourCard onClose={onClose} />;
+  return <TourCard key={guide} guide={guideById(guide)} onClose={onClose} onAction={onAction} />;
 }
 
-function TourCard({ onClose }: { onClose: () => void }) {
+type Layout = { box: Box | null; card: Size; window: Size };
+
+function TourCard({
+  guide,
+  onClose,
+  onAction,
+}: {
+  guide: Guide;
+  onClose: () => void;
+  onAction?: (action: GuideAction) => void;
+}) {
   const { t } = useI18n();
   const titleId = useId();
   const bodyId = useId();
-  const [steps] = useState(() => TOUR_STEPS.filter((step) => shown(step.target)));
+  const [steps] = useState(() => visibleSteps(guide, (selector) => Boolean(shown(selector))));
   const [index, setIndex] = useState(0);
-  const [layout, setLayout] = useState<{ box: Box; card: Size; window: Size } | null>(null);
+  const [layout, setLayout] = useState<Layout | null>(null);
   const cardRef = useRef<HTMLDialogElement>(null);
   const step = steps[index];
   const last = index === steps.length - 1;
 
-  // Where the step's control is (again when the window changes size).
+  const action = useRef(onAction);
+  useLayoutEffect(() => {
+    action.current = onAction;
+  });
+
+  // Open what the step talks about, then find its control (again when the window changes size). A
+  // control that doesn't show up leaves the card in the middle of the window.
   useLayoutEffect(() => {
     if (!step) return;
-    let frame = 0;
-    const measure = () => {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(() => {
-        const rect = shown(step.target);
-        const card = cardRef.current;
-        if (!rect || !card) return;
-        setLayout({
-          box: { x: rect.left, y: rect.top, width: rect.width, height: rect.height },
-          card: { width: card.offsetWidth, height: card.offsetHeight },
-          window: { width: window.innerWidth, height: window.innerHeight },
-        });
+    if (step.action) action.current?.(step.action);
+    let timer = 0;
+    let tries = 0;
+    let previous = '';
+    const place = (rect: DOMRect | null) => {
+      const card = cardRef.current;
+      if (!card) return;
+      setLayout({
+        box: rect ? { x: rect.left, y: rect.top, width: rect.width, height: rect.height } : null,
+        card: { width: card.offsetWidth, height: card.offsetHeight },
+        window: { width: window.innerWidth, height: window.innerHeight },
       });
     };
-    measure();
-    window.addEventListener('resize', measure);
+    const locate = () => {
+      window.clearTimeout(timer);
+      const rect = step.target ? shown(step.target) : null;
+      const key = rect ? `${rect.left},${rect.top},${rect.width},${rect.height}` : '';
+      if (key !== previous || tries === 0) place(rect);
+      // Keep looking while the control is missing or still moving (a panel sliding in).
+      if (step.target && tries < LOCATE_TRIES && (!rect || key !== previous)) {
+        tries++;
+        previous = key;
+        timer = window.setTimeout(locate, LOCATE_EVERY_MS);
+      }
+    };
+    locate();
+    const onResize = () => place(step.target ? shown(step.target) : null);
+    window.addEventListener('resize', onResize);
     return () => {
-      cancelAnimationFrame(frame);
-      window.removeEventListener('resize', measure);
+      window.clearTimeout(timer);
+      window.removeEventListener('resize', onResize);
     };
   }, [step]);
 
-  // Each step starts on its main button (once the card is placed and shown); when the tour ends,
+  // Each step starts on its main button (once the card is placed and shown); when the guide ends,
   // focus goes back to what started it.
   const placed = layout !== null;
   useEffect(() => {
@@ -80,7 +113,7 @@ function TourCard({ onClose }: { onClose: () => void }) {
     };
   }, []);
 
-  // Escape ends the tour wherever the focus is.
+  // Escape ends the guide wherever the focus is.
   const close = useRef(onClose);
   useLayoutEffect(() => {
     close.current = onClose;
@@ -101,13 +134,26 @@ function TourCard({ onClose }: { onClose: () => void }) {
   }, [step]);
   if (!step) return null;
 
-  const next = () => (last ? onClose() : setIndex(index + 1));
+  const finish = last ? guide.finish : undefined;
+  const next = () => {
+    if (!last) return setIndex(index + 1);
+    onClose();
+    if (finish) onAction?.(finish.action);
+  };
   const back = () => setIndex(Math.max(0, index - 1));
-  const place = layout ? placeTourCard(layout.box, layout.card, layout.window) : null;
+  const place = layout
+    ? layout.box
+      ? placeTourCard(layout.box, layout.card, layout.window)
+      : {
+          top: Math.max(12, Math.round((layout.window.height - layout.card.height) / 2)),
+          left: Math.max(12, Math.round((layout.window.width - layout.card.width) / 2)),
+          placement: 'center' as const,
+        }
+    : null;
 
   return (
     <>
-      {layout && (
+      {layout?.box && (
         <div
           className={styles.spotlight}
           style={{
@@ -127,6 +173,7 @@ function TourCard({ onClose }: { onClose: () => void }) {
         aria-labelledby={titleId}
         aria-describedby={bodyId}
         data-testid="tour"
+        data-guide={guide.id}
         data-step={index + 1}
         data-placement={place?.placement}
         onKeyDown={(event) => {
@@ -136,13 +183,23 @@ function TourCard({ onClose }: { onClose: () => void }) {
           event.preventDefault();
         }}
       >
-        <p className={styles.count}>{t('tour.count', { current: index + 1, total: steps.length })}</p>
+        <p className={styles.count}>
+          <Icon name={guide.icon} size={13} className={styles.guideIcon} />
+          <span className={styles.guideName}>{t(guide.title)}</span>
+          <span aria-hidden="true">·</span>
+          <span>{t('tour.count', { current: index + 1, total: steps.length })}</span>
+        </p>
         <h2 id={titleId} className={styles.title}>
           {t(step.title)}
         </h2>
         <p id={bodyId} className={styles.body}>
           {t(step.body)}
         </p>
+        <div className={styles.progress} aria-hidden="true">
+          {steps.map((item, position) => (
+            <span key={position} className={styles.dot} data-done={position <= index || undefined} />
+          ))}
+        </div>
         <div className={styles.actions}>
           <Button size="sm" variant="ghost" onClick={onClose}>
             {t('tour.skip')}
@@ -154,7 +211,7 @@ function TourCard({ onClose }: { onClose: () => void }) {
             </Button>
           )}
           <Button size="sm" variant="primary" onClick={next} data-tour-next>
-            {last ? t('tour.done') : t('tour.next')}
+            {finish ? t(finish.label) : last ? t('tour.done') : t('tour.next')}
           </Button>
         </div>
       </dialog>

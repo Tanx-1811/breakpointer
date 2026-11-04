@@ -83,6 +83,24 @@ export type MediaReport = {
   colorScheme: boolean;
 };
 
+/** One of the page's own media (or container) queries, for the audit's Media queries tab. */
+export type MediaQueryEntry = {
+  /** The query as the page wrote it (before Breakpointer overrides colour scheme, print…), e.g. "(min-width: 768px)". */
+  text: string;
+  kind: 'media' | 'container';
+  /** Style rules it holds (nested ones included), summed over every place it is used. */
+  rules: number;
+  /** It applies in this preview (`matchMedia`); null for container queries, which depend on their container. */
+  matches: boolean | null;
+};
+
+/** The page's media and container queries, most rules first (at most 200). */
+export type MediaQueryReport = {
+  queries: MediaQueryEntry[];
+  /** Stylesheets the page loads from another origin without CORS, which can't be read. */
+  unreadable: number;
+};
+
 /** A forced `prefers-color-scheme` for one preview; null follows the browser. */
 export type ColorSchemeOverride = 'light' | 'dark' | null;
 
@@ -286,6 +304,8 @@ export type AgentEvent =
   | { type: 'colors'; id?: number; colors: ColorSample }
   /** Answer to `getMeta`. */
   | { type: 'meta'; id?: number; meta: PageMeta }
+  /** Answer to `getMediaQueries`. */
+  | { type: 'mediaQueries'; id?: number; report: MediaQueryReport }
   /** Answer to `getElementRect` (null when the element isn't shown). */
   | { type: 'elementRect'; id?: number; rect: ElementRect | null }
   /** Answer to `getRects`: each element's box in the viewport, measured together (null when not shown). */
@@ -306,6 +326,7 @@ export type AgentReplyType =
   | 'images'
   | 'colors'
   | 'meta'
+  | 'mediaQueries'
   | 'elementRect'
   | 'rects'
   | 'links';
@@ -376,6 +397,8 @@ type Command =
   | { type: 'getColors' }
   /** Answers with `meta`: the page's title, meta tags, canonical address, icons and headings. */
   | { type: 'getMeta' }
+  /** Answers with `mediaQueries`: the page's media and container queries and whether each applies here. */
+  | { type: 'getMediaQueries' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
   | { type: 'getElementRect'; selector: string; reveal: boolean }
   /** Answer `rects` with where these elements are, at the same moment (the inspector's distance). */

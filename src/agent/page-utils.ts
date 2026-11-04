@@ -10,10 +10,11 @@ import type { MetaTag, PageMeta } from './protocol';
 /** Pixels per em/rem in media queries (they use the initial font size, not the page's). */
 const MEDIA_EM_PX = 16;
 
-type Comparison = '<' | '<=' | '>' | '>=';
+export type Comparison = '<' | '<=' | '>' | '>=';
 
-const UNIT = '(px|em|rem)';
-const NUMBER = '(\\d+(?:\\.\\d+)?|\\.\\d+)';
+/** A width's unit and number in media queries (regex sources, each one capturing group). */
+export const UNIT = '(px|em|rem)';
+export const NUMBER = '(\\d+(?:\\.\\d+)?|\\.\\d+)';
 const LEGACY = new RegExp(`\\(\\s*(min|max)-width\\s*:\\s*${NUMBER}${UNIT}\\s*\\)`, 'gi');
 // `width >= 768px`, `768px <= width`, `640px <= width < 1024px` (Media Queries level 4 ranges).
 const RANGE = new RegExp(
@@ -21,7 +22,8 @@ const RANGE = new RegExp(
   'gi',
 );
 
-function toPx(value: string, unit: string): number {
+/** A media query length in CSS pixels (em and rem are 16 px there). */
+export function toPx(value: string, unit: string): number {
   const number = Number(value);
   return unit.toLowerCase() === 'px' ? number : number * MEDIA_EM_PX;
 }
@@ -38,10 +40,11 @@ function edgeOf(op: Comparison, value: number): number {
   }
 }
 
-const FLIP: Record<Comparison, Comparison> = { '<': '>', '<=': '>=', '>': '<', '>=': '<=' };
+/** The same comparison read from the other side ("768px <= width" is "width >= 768px"). */
+export const FLIP: Record<Comparison, Comparison> = { '<': '>', '<=': '>=', '>': '<', '>=': '<=' };
 
 /** Splits a media query list on its top-level commas. */
-function splitQueries(text: string): string[] {
+export function splitQueries(text: string): string[] {
   const queries: string[] = [];
   let depth = 0;
   let start = 0;
