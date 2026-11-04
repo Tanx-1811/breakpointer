@@ -153,7 +153,7 @@
 
 .table th,
 .table td {
-  padding: 6px 8px;
+  padding: 6px;
   border-bottom: 1px solid var(--border-subtle);
   vertical-align: middle;
 }
@@ -169,14 +169,16 @@
   white-space: nowrap;
 }
 
+/* Long queries wrap; with many previews the others scroll under this column. */
 .queryHead,
 .query {
   position: sticky;
   left: 0;
   z-index: 1;
   min-width: 132px;
-  max-width: 180px;
+  padding-left: 10px;
   background: var(--surface);
+  box-shadow: inset -1px 0 0 var(--border-subtle);
   text-align: left;
 }
 
@@ -208,7 +210,7 @@
 }
 
 .previewHead {
-  min-width: 40px;
+  min-width: 36px;
   text-align: center;
 }
 

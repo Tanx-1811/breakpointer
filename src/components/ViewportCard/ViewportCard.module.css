@@ -511,3 +511,10 @@
 :global(html[data-capturing]) .dragSize {
   visibility: hidden;
 }
+
+/* Present mode: the previews with their names and sizes, without the controls around them. */
+:global(html[data-presenting]) .actions,
+:global(html[data-presenting]) .handle,
+:global(html[data-presenting]) .guide {
+  display: none;
+}

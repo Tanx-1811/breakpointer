@@ -12,6 +12,7 @@ import { PRESETS } from '../data/presets';
 import type { MessageKey } from '../i18n/en';
 import { LANGUAGES, LANGUAGE_NAMES, type Translate } from '../i18n/translate';
 import { builtInGroupName } from '../state/groups';
+import { GUIDES, type GuideId } from '../state/guides';
 import { VISION_MODES, type VisionMode } from '../state/vision';
 import { ACCENTS, CANVASES } from '../services/storage';
 import type {
@@ -105,6 +106,14 @@ export type CommandActions = {
   help: () => void;
   /** The tour of the workspace (listed when given). */
   tour?: () => void;
+  /** The other guides, “What's this?” mode and the getting-started checklist (listed when given). */
+  guide?: (id: GuideId) => void;
+  explain?: () => void;
+  learn?: () => void;
+  /** Present mode: only the previews (listed when given). */
+  present?: () => void;
+  /** The QA checklist panel (listed when given). */
+  qa?: () => void;
   exportSettings: () => void;
   /** What Breakpointer Pro brings, the trial and buying it (listed when given). */
   pro?: () => void;
@@ -146,6 +155,10 @@ export type CommandContext = {
   /** Pinning notes, and how many the previews show. */
   annotating?: boolean;
   noteCount?: number;
+  /** Present mode is on. */
+  presenting?: boolean;
+  /** The QA checklist panel is open. */
+  qaOpen?: boolean;
   actions: CommandActions;
 };
 
@@ -266,6 +279,15 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       shortcut: 'P',
       keywords: 'picture in picture always on top float pip',
       run: actions.floating,
+    });
+  if (actions.present)
+    named(ctx.presenting ? 'palette.presentExit' : 'palette.present', {
+      id: 'present',
+      section: section.page,
+      icon: 'present',
+      shortcut: 'D',
+      keywords: 'present presentation full screen fullscreen demo client screen share hide interface zen',
+      run: actions.present,
     });
   if (ctx.comparing && actions.swapCompare && actions.compare && actions.stopCompare) {
     named('compare.swap', { id: 'compare-swap', section: section.page, icon: 'swap', run: actions.swapCompare });
@@ -516,6 +538,13 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
         'seo meta tags open graph og twitter social share preview search google title description canonical headings outline',
       run: () => audit('meta'),
     });
+    named('palette.auditMedia', {
+      id: 'audit-media',
+      section: section.tools,
+      icon: 'ruler',
+      keywords: 'media queries css breakpoints gaps overlaps min-width max-width container responsive',
+      run: () => audit('media'),
+    });
   }
   /** A switch; a Pro one is "off" with a Pro hint on the free plan (running it shows what Pro brings). */
   const toggle = (id: ToolToggle, key: MessageKey, checked: boolean, proFeature = false, keywords?: string) => {
@@ -600,6 +629,16 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       checked: ctx.annotating,
       keywords: 'annotate pin comment bug report qa feedback note marker',
       run: actions.notes,
+    });
+  if (actions.qa)
+    named('palette.qa', {
+      id: 'qa',
+      section: section.tools,
+      icon: 'checklist',
+      shortcut: 'Q',
+      checked: ctx.qaOpen,
+      keywords: 'qa checklist test manual pass fail matrix quality assurance testing',
+      run: actions.qa,
     });
   if (actions.copyNotes)
     named('notes.copy', {
@@ -891,6 +930,36 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'tour guide walkthrough onboarding introduction tutorial',
       run: actions.tour,
     });
+  if (actions.explain)
+    named('palette.explain', {
+      id: 'explain',
+      section: section.preferences,
+      icon: 'explain',
+      shortcut: 'H',
+      keywords: 'what is this help hover explain controls buttons tooltip learn',
+      run: actions.explain,
+    });
+  if (actions.learn)
+    named('palette.learn', {
+      id: 'learn',
+      section: section.preferences,
+      icon: 'book',
+      keywords: 'get started checklist onboarding learn tutorial progress',
+      run: actions.learn,
+    });
+  if (actions.guide) {
+    const openGuide = actions.guide;
+    for (const guide of GUIDES)
+      if (guide.id !== 'basics')
+        add({
+          id: `guide-${guide.id}`,
+          section: section.preferences,
+          icon: guide.icon,
+          title: t('palette.guide', { name: t(guide.title) }),
+          keywords: `${en('palette.guide', { name: en(guide.title) })} ${t(guide.summary)} guide tutorial how`,
+          run: () => openGuide(guide.id),
+        });
+  }
   if (actions.pro)
     named('palette.pro', {
       id: 'pro',

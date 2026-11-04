@@ -70,10 +70,12 @@ export type LearnSnapshot = {
   auditing: boolean;
   scanning: boolean;
   notes: number;
+  /** A screenshot was taken this session. */
+  captured: boolean;
   explaining: boolean;
 };
 
-/** The tasks the workspace shows are done (screenshots are counted where they are taken). */
+/** The tasks the workspace shows are done. */
 export function tasksDone(snapshot: LearnSnapshot): LearnTask[] {
   const tasks: LearnTask[] = [];
   if (snapshot.hasUrl) tasks.push('preview');
@@ -82,6 +84,7 @@ export function tasksDone(snapshot: LearnSnapshot): LearnTask[] {
   if (snapshot.auditing) tasks.push('audit');
   if (snapshot.scanning) tasks.push('scan');
   if (snapshot.notes > 0) tasks.push('notes');
+  if (snapshot.captured) tasks.push('capture');
   if (snapshot.explaining) tasks.push('explain');
   return tasks;
 }
