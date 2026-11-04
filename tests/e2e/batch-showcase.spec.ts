@@ -154,6 +154,7 @@ test.describe('feedback', () => {
       });
     });
     await page.keyboard.press('?');
+    await page.getByTestId('help-tab-support').click();
     const support = page.getByRole('dialog', { name: 'Help & keyboard shortcuts' }).getByTestId('help-support');
     await expect(support.getByRole('link', { name: 'Send feedback' })).toHaveAttribute(
       'href',

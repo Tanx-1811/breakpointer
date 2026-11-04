@@ -452,6 +452,7 @@ test.describe('tools', () => {
     await page.keyboard.press('?');
     const help = page.getByRole('dialog', { name: 'Help & keyboard shortcuts' });
     await expect(help).toBeVisible();
+    await help.getByTestId('help-tab-shortcuts').click();
     await expect(help).toContainText('Preview the current page');
     await page.keyboard.press('Escape');
     await expect(help).toBeHidden();

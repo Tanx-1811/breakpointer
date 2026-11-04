@@ -2159,32 +2159,36 @@ function Workspace({
     };
   }, []);
 
-  // The checklist ticks off what the workspace shows was done (sizes compared with the session's first).
+  // The checklist ticks off what the workspace shows was done (sizes compared with the session's first),
+  // as it renders; each change is stored.
   const sizesKey = viewports.map((vp) => `${vp.width}x${vp.height}`).join(',');
-  const firstSizes = useRef(sizesKey);
-  const learnedKey = tasksDone({
-    hasUrl: Boolean(currentUrl),
-    viewportsChanged: sizesKey !== firstSizes.current,
-    inspected: inspector.selector !== null,
-    auditing: audit.open,
-    scanning: dialog === 'scan',
-    notes: shownNotes.length,
-    captured,
-    explaining,
-  }).join(' ');
+  const [firstSizes] = useState(sizesKey);
+  if (learn) {
+    const next = completeTasks(
+      learn,
+      tasksDone({
+        hasUrl: Boolean(currentUrl),
+        viewportsChanged: sizesKey !== firstSizes,
+        inspected: inspector.selector !== null,
+        auditing: audit.open,
+        scanning: dialog === 'scan',
+        notes: shownNotes.length,
+        captured,
+        explaining,
+      }),
+    );
+    if (next !== learn) setLearn(next);
+  }
+  const storedLearn = useRef<LearnProgress | null>(null);
   useEffect(() => {
-    if (!learn || !learnedKey) return;
-    const next = completeTasks(learn, learnedKey.split(' ') as LearnProgress['done']);
-    if (next === learn) return;
-    setLearn(next);
-    void writeLearnProgress(next);
-  }, [learn, learnedKey]);
+    // The first value is the one just read.
+    if (!learn || storedLearn.current === learn) return;
+    if (storedLearn.current) void writeLearnProgress(learn);
+    storedLearn.current = learn;
+  }, [learn]);
 
   const setLearnHidden = (hidden: boolean) => {
-    if (!learn) return;
-    const next = { ...learn, hidden };
-    setLearn(next);
-    void writeLearnProgress(next);
+    if (learn) setLearn({ ...learn, hidden });
   };
 
   /** “Show me” on the checklist: its guide, or what it opens. */

@@ -221,6 +221,7 @@ export function useFrameAgents(
         case 'images':
         case 'colors':
         case 'meta':
+        case 'mediaQueries':
         case 'elementRect':
         case 'rects':
         case 'links': {

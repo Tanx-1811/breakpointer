@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useId, useRef, useState, type KeyboardEvent } from 'react';
 import { useI18n } from '../../i18n/I18nProvider';
 import type { MessageKey } from '../../i18n/en';
 import { searchCommands } from '../../state/commands';
@@ -105,19 +105,21 @@ type Props = {
  * support, as sections of one dialog with a search over guides and shortcuts.
  */
 export function HelpDialog(props: Props) {
-  const { open, section: initial = 'start', onClose } = props;
+  const { t } = useI18n();
+  return (
+    <Dialog open={props.open} title={t('help.title')} icon="help" onClose={props.onClose} width={880} flush>
+      {/* Mounted each time Help opens: the section asked for, and no search left from last time. */}
+      <HelpCenter {...props} />
+    </Dialog>
+  );
+}
+
+function HelpCenter(props: Props) {
   const { t } = useI18n();
   const id = useId();
-  const [section, setSection] = useState<HelpSection>(initial);
+  const [section, setSection] = useState<HelpSection>(props.section ?? 'start');
   const [query, setQuery] = useState('');
   const tabRefs = useRef<Partial<Record<HelpSection, HTMLButtonElement | null>>>({});
-
-  // Each time Help opens: the section asked for, and no search left from last time.
-  useEffect(() => {
-    if (!open) return;
-    setSection(initial);
-    setQuery('');
-  }, [open, initial]);
 
   const sections = SECTIONS.filter((item) => item.id !== 'support' || props.support);
   const onTabKey = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -134,71 +136,69 @@ export function HelpDialog(props: Props) {
   const searching = query.trim().length > 0;
 
   return (
-    <Dialog open={open} title={t('help.title')} icon="help" onClose={onClose} width={880} flush>
-      <div className={styles.layout}>
-        <nav className={styles.nav} aria-label={t('help.sections')}>
-          <label className={styles.search}>
-            <Icon name="search" size={14} className={styles.searchIcon} />
-            <span className="visually-hidden">{t('help.search')}</span>
-            <input
-              type="search"
-              value={query}
-              placeholder={t('help.searchPlaceholder')}
-              onChange={(event) => setQuery(event.target.value)}
-              data-autofocus
-              data-testid="help-search"
-            />
-          </label>
-          <div role="tablist" aria-orientation="vertical" aria-label={t('help.sections')} className={styles.tabs}>
-            {sections.map((item, index) => (
-              <button
-                key={item.id}
-                ref={(element) => {
-                  tabRefs.current[item.id] = element;
-                }}
-                type="button"
-                role="tab"
-                id={`${id}-tab-${item.id}`}
-                aria-selected={!searching && section === item.id}
-                aria-controls={`${id}-panel`}
-                tabIndex={section === item.id ? 0 : -1}
-                className={styles.tab}
-                onClick={() => {
-                  setSection(item.id);
-                  setQuery('');
-                }}
-                onKeyDown={(event) => onTabKey(event, index)}
-                data-testid={`help-tab-${item.id}`}
-              >
-                <Icon name={item.icon} size={15} />
-                <span>{t(item.label)}</span>
-                {item.id === 'start' && props.learn && <LearnBadge progress={props.learn.progress} />}
-              </button>
-            ))}
-          </div>
-        </nav>
-        <div
-          className={styles.content}
-          role="tabpanel"
-          id={`${id}-panel`}
-          aria-labelledby={searching ? undefined : `${id}-tab-${section}`}
-          aria-label={searching ? t('help.results', { query: query.trim() }) : undefined}
-          tabIndex={0}
-        >
-          {searching ? (
-            <SearchResults query={query.trim()} {...props} />
-          ) : section === 'start' ? (
-            <StartSection {...props} />
-          ) : section === 'shortcuts' ? (
-            <ShortcutsSection {...props} />
-          ) : section === 'news' ? (
-            <NewsSection version={props.version} />
-          ) : (
-            <SupportSection {...props} />
-          )}
+    <div className={styles.layout}>
+      <nav className={styles.nav} aria-label={t('help.sections')}>
+        <label className={styles.search}>
+          <Icon name="search" size={14} className={styles.searchIcon} />
+          <span className="visually-hidden">{t('help.search')}</span>
+          <input
+            type="search"
+            value={query}
+            placeholder={t('help.searchPlaceholder')}
+            onChange={(event) => setQuery(event.target.value)}
+            data-autofocus
+            data-testid="help-search"
+          />
+        </label>
+        <div role="tablist" aria-orientation="vertical" aria-label={t('help.sections')} className={styles.tabs}>
+          {sections.map((item, index) => (
+            <button
+              key={item.id}
+              ref={(element) => {
+                tabRefs.current[item.id] = element;
+              }}
+              type="button"
+              role="tab"
+              id={`${id}-tab-${item.id}`}
+              aria-selected={!searching && section === item.id}
+              aria-controls={`${id}-panel`}
+              tabIndex={section === item.id ? 0 : -1}
+              className={styles.tab}
+              onClick={() => {
+                setSection(item.id);
+                setQuery('');
+              }}
+              onKeyDown={(event) => onTabKey(event, index)}
+              data-testid={`help-tab-${item.id}`}
+            >
+              <Icon name={item.icon} size={15} />
+              <span>{t(item.label)}</span>
+              {item.id === 'start' && props.learn && <LearnBadge progress={props.learn.progress} />}
+            </button>
+          ))}
         </div>
+      </nav>
+      <div
+        className={styles.content}
+        role="tabpanel"
+        id={`${id}-panel`}
+        aria-labelledby={searching ? undefined : `${id}-tab-${section}`}
+        aria-label={searching ? t('help.results', { query: query.trim() }) : undefined}
+        tabIndex={0}
+      >
+        {searching ? (
+          <SearchResults query={query.trim()} {...props} />
+        ) : section === 'start' ? (
+          <StartSection {...props} />
+        ) : section === 'shortcuts' ? (
+          <ShortcutsSection {...props} />
+        ) : section === 'news' ? (
+          <NewsSection version={props.version} />
+        ) : (
+          <SupportSection {...props} />
+        )}
       </div>
-    </Dialog>
+    </div>
   );
 }
 

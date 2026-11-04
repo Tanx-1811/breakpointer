@@ -125,6 +125,7 @@ test.describe('accessibility of the v0.5 tools (axe, WCAG 2.1 AA)', () => {
 
       // Help, with feedback and sharing.
       await page.keyboard.press('?');
+      await page.getByTestId('help-tab-support').click();
       await expect(page.getByTestId('help-support')).toBeVisible();
       expect(await seriousViolations(page)).toEqual([]);
     });
