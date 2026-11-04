@@ -384,13 +384,13 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   '/demo': { body: DEMO_PAGE },
   '/pro': { body: PRO_PAGE },
   '/responsive': { body: page('Responsive page') },
-  // Its own rules leave 768 px between "below" and "above" (a gap), next to the shared page's queries.
+  // Its own rules leave 600 px between "below" and "above" (a gap), next to the shared page's queries.
   '/media-gap': {
     body: page(
       'Media gap page',
       `<style>
-  @media (max-width: 767px) { h1 { color: rgb(160, 0, 0); } }
-  @media (min-width: 769px) { h1 { color: rgb(0, 0, 160); } }
+  @media (max-width: 599px) { h1 { color: rgb(160, 0, 0); } }
+  @media (min-width: 601px) { h1 { color: rgb(0, 0, 160); } }
   @media (hover: hover) { p { text-decoration: underline; } }</style>`,
     ),
   },

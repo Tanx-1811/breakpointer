@@ -145,10 +145,10 @@ test.describe('v0.10', () => {
     await page.keyboard.press('e');
     await page.getByRole('tab', { name: 'Media queries' }).click();
     const tab = page.getByTestId('media-tab');
-    await expect(tab.getByTestId('media-problem').first()).toContainText('768');
-    await expect(tab.getByTestId('media-table')).toContainText('(min-width: 769px)');
+    await expect(tab.getByTestId('media-problem').first()).toContainText('600');
+    await expect(tab.getByTestId('media-table')).toContainText('(min-width: 601px)');
     expect(await seriousViolations(page)).toEqual([]);
-    await tab.getByRole('button', { name: 'Add a viewport at 768 px' }).click();
+    await tab.getByRole('button', { name: 'Add a viewport at 600 px' }).click();
     await expect(page.getByTestId('preview-frame')).toHaveCount(4);
   });
 });
