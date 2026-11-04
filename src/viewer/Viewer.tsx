@@ -128,6 +128,7 @@ import { responsiveScore } from '../state/score';
 import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors';
 import { imageRows, imagesMarkdown } from '../state/images';
 import { metaMarkdown } from '../state/meta';
+import { mediaMarkdown } from '../state/media-queries';
 import { activeBranding, imageFooterName } from '../state/branding';
 import { MAX_NOTES, newNote, normalizeNoteText, notesMarkdown, type Note, type NoteCard } from '../state/notes';
 import { canSaveProject, createProject, projectViewports, type ProjectState } from '../state/projects';
@@ -1334,6 +1335,23 @@ function Workspace({
     if (removed && items.length < qaItems.length)
       withUndo(t('qa.removed', { check: removed.text }), () => dispatch({ type: 'setQaChecklist', items: before }));
   };
+
+  const copyQa = () =>
+    void copyText(
+      qaMarkdown({
+        page: currentUrl?.href ?? '',
+        items: qaItems,
+        viewports: visible.map(({ id, name, width, height }) => ({ id, name, width, height })),
+        results: qaResults,
+        t,
+      }),
+    ).then((copied) =>
+      toast(
+        copied
+          ? { message: t('qa.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
 
   /* ---------- Present mode ---------- */
 
@@ -3228,6 +3246,7 @@ function Workspace({
     images: auditData.imagesOf(card.id),
     colors: auditData.colorsOf(card.id),
     meta: auditData.metaOf(card.id),
+    media: auditData.mediaOf(card.id),
   }));
   // Kinds of issue found in any preview (shown on the toolbar's Audit button).
   const issueKinds = groupIssues(auditRows).length;
@@ -3292,19 +3311,21 @@ function Workspace({
               )
             : audit.tab === 'meta'
               ? metaMarkdownOf(page)
-              : audit.tab === 'colors'
-                ? paletteMarkdown(
-                    page,
-                    mergePalettes(auditRows.map((row) => row.colors)),
-                    t('colorAudit.heading'),
-                    [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
-                    (role) => t(COLOR_ROLE_KEYS[role]),
-                  )
-                : typeMarkdown(
-                    page,
-                    auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
-                    t,
-                  );
+              : audit.tab === 'media'
+                ? mediaMarkdown(page, auditRows, t)
+                : audit.tab === 'colors'
+                  ? paletteMarkdown(
+                      page,
+                      mergePalettes(auditRows.map((row) => row.colors)),
+                      t('colorAudit.heading'),
+                      [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
+                      (role) => t(COLOR_ROLE_KEYS[role]),
+                    )
+                  : typeMarkdown(
+                      page,
+                      auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
+                      t,
+                    );
     void copyText(markdown).then((copied) =>
       toast(
         copied
@@ -3532,6 +3553,7 @@ function Workspace({
       onOpen={navigate}
       onTryExample={() => navigate('https://example.com')}
       onTour={startTour}
+      onGuides={() => openHelpAt('start')}
     />
   );
 
@@ -3606,125 +3628,130 @@ function Workspace({
   const content = (
     <div className={styles.app}>
       <VisionFilters />
-      <TopBar
-        address={address}
-        addressError={addressError ? t(addressError) : null}
-        addressRef={addressRef}
-        recentUrls={settings.recentUrls}
-        hasUrl={Boolean(currentUrl)}
-        secure={currentUrl ? currentUrl.protocol === 'https:' : null}
-        siteAllowed={siteAccess.site}
-        canGoBack={navigation.canGoBack}
-        canGoForward={navigation.canGoForward}
-        onBack={navigation.back}
-        onForward={navigation.forward}
-        onAddressChange={(value) => {
-          setAddress(value);
-          if (addressError) setAddressError(null);
-        }}
-        onSubmit={(value) => navigate(value ?? address)}
-        onReloadAll={reloadKeepingPlace}
-        autoReload={autoReload}
-        onAutoReload={setAutoReload}
-        onOpenInTab={() => currentUrl && void adapter.openInTab(currentUrl.href)}
-        onOpenWindows={() => void openRealWindows()}
-        onFloating={() => void openFloating()}
-        onPalette={openPalette}
-        paletteShortcut={paletteShortcut}
-        onCapture={onCapture}
-        onSiteAccess={() => setDialog('access')}
-        onToggleTheme={toggleTheme}
-        resolvedTheme={resolvedTheme}
-        onSettings={() => openSettings()}
-        onHelp={openHelp}
-        helpNews={news}
-        entitlement={plan.ready ? entitlement : undefined}
-        onPro={() => upgrade()}
-        savedPages={settings.savedPages}
-        saved={Boolean(currentUrl && settings.savedPages.includes(currentUrl.href))}
-        onToggleSaved={toggleSaved}
-      />
-      <WorkspaceBar
-        viewports={viewports}
-        groups={settings.groups}
-        projects={settings.projects}
-        onOpenProject={openProject}
-        onSaveProject={openSaveProject}
-        onManageProjects={() => setDialog('manageProjects')}
-        canAddViewport={canAddViewport(viewports)}
-        breakpoints={settings.breakpoints}
-        siteBreakpoints={siteBreakpoints}
-        showRulers={settings.showRulers}
-        sync={settings.sync.scroll || settings.sync.navigation}
-        showGrid={settings.grid.show}
-        inspecting={inspector.open}
-        auditing={audit.open}
-        issueKinds={issueKinds}
-        onAudit={() => toggleAudit()}
-        onScan={openScan}
-        onBatch={openBatch}
-        onVisual={openVisual}
-        measuring={measuring}
-        comparing={compare !== null}
-        simulate={simulateState}
-        notesOn={annotating}
-        noteCount={shownNotes.length}
-        onNotes={toggleNotes}
-        onCopyNotes={copyNotes}
-        onClearNotes={clearNotes}
-        onMeasure={toggleMeasure}
-        onContrast={() => setDialog('contrast')}
-        onCompare={() => setDialog('compare')}
-        onStopCompare={stopCompare}
-        onVision={setVision}
-        onSimulate={toggleSimulate}
-        pageColors={pageColors}
-        onPageColors={setAllColorSchemes}
-        windowsOpen={realWindows.length > 0}
-        onOpenWindows={() => void openRealWindows()}
-        onCloseWindows={closeRealWindows}
-        onFloating={() => void openFloating()}
-        tools={{
-          syncScroll: settings.sync.scroll,
-          syncNavigation: settings.sync.navigation,
-          checks: settings.checks,
-          outlines,
-          scrollbars: hideScrollbars,
-          grid: settings.grid.show,
-          imageSizes: annotate.images,
-          tabOrder: annotate.tabOrder,
-          gridFlex: annotate.layout,
-          liveCss: Boolean(liveCss),
-          syncInteractions: mirroring,
-          cookieBanners: hideBanners,
-        }}
-        hasUrl={Boolean(currentUrl)}
-        siteAllowed={siteAccess.site}
-        host={host}
-        focusedId={focused?.id ?? null}
-        sidebarOpen={settings.panels.sidebar}
-        onSidebar={() => togglePanel('sidebar')}
-        onToggleVisible={toggleVisible}
-        onMoveTo={(id, index) => dispatch({ type: 'moveViewportTo', id, index })}
-        onApplyGroup={applyGroup}
-        onSaveGroup={() => setDialog('saveGroup')}
-        onManageGroups={() => setDialog('manageGroups')}
-        onAddViewport={() => setDialog('add')}
-        onBreakpoints={setBreakpoints}
-        onRulers={(showRulers) => dispatch({ type: 'setShowRulers', showRulers })}
-        onSync={setSyncAll}
-        onGrid={(show) => dispatch({ type: 'setGrid', grid: { show } })}
-        onInspect={toggleInspector}
-        onTool={toggleTool}
-        onLiveCss={() => setDialog('css')}
-        onEdges={testEdges}
-        onRotateAll={rotateAll}
-        onSortByWidth={sortViewports}
-        onReport={exportReport}
-        onCopyLink={copyWorkspaceLink}
-        onAllowSite={() => void allowSite()}
-      />
-      {compare && currentUrl && (
+      {!presenting && (
+        <TopBar
+          address={address}
+          addressError={addressError ? t(addressError) : null}
+          addressRef={addressRef}
+          recentUrls={settings.recentUrls}
+          hasUrl={Boolean(currentUrl)}
+          secure={currentUrl ? currentUrl.protocol === 'https:' : null}
+          siteAllowed={siteAccess.site}
+          canGoBack={navigation.canGoBack}
+          canGoForward={navigation.canGoForward}
+          onBack={navigation.back}
+          onForward={navigation.forward}
+          onAddressChange={(value) => {
+            setAddress(value);
+            if (addressError) setAddressError(null);
+          }}
+          onSubmit={(value) => navigate(value ?? address)}
+          onReloadAll={reloadKeepingPlace}
+          autoReload={autoReload}
+          onAutoReload={setAutoReload}
+          onOpenInTab={() => currentUrl && void adapter.openInTab(currentUrl.href)}
+          onOpenWindows={() => void openRealWindows()}
+          onFloating={() => void openFloating()}
+          onPalette={openPalette}
+          paletteShortcut={paletteShortcut}
+          onCapture={onCapture}
+          onSiteAccess={() => setDialog('access')}
+          onToggleTheme={toggleTheme}
+          resolvedTheme={resolvedTheme}
+          onSettings={() => openSettings()}
+          onHelp={openHelp}
+          helpNews={news}
+          entitlement={plan.ready ? entitlement : undefined}
+          onPro={() => upgrade()}
+          savedPages={settings.savedPages}
+          saved={Boolean(currentUrl && settings.savedPages.includes(currentUrl.href))}
+          onToggleSaved={toggleSaved}
+          onPresent={startPresent}
+        />
+      )}
+      {!presenting && (
+        <WorkspaceBar
+          viewports={viewports}
+          groups={settings.groups}
+          projects={settings.projects}
+          onOpenProject={openProject}
+          onSaveProject={openSaveProject}
+          onManageProjects={() => setDialog('manageProjects')}
+          canAddViewport={canAddViewport(viewports)}
+          breakpoints={settings.breakpoints}
+          siteBreakpoints={siteBreakpoints}
+          showRulers={settings.showRulers}
+          sync={settings.sync.scroll || settings.sync.navigation}
+          showGrid={settings.grid.show}
+          inspecting={inspector.open}
+          auditing={audit.open}
+          issueKinds={issueKinds}
+          onAudit={() => toggleAudit()}
+          onScan={openScan}
+          onBatch={openBatch}
+          onVisual={openVisual}
+          measuring={measuring}
+          comparing={compare !== null}
+          simulate={simulateState}
+          notesOn={annotating}
+          noteCount={shownNotes.length}
+          onNotes={toggleNotes}
+          onCopyNotes={copyNotes}
+          onClearNotes={clearNotes}
+          onMeasure={toggleMeasure}
+          onContrast={() => setDialog('contrast')}
+          onCompare={() => setDialog('compare')}
+          onStopCompare={stopCompare}
+          onVision={setVision}
+          onSimulate={toggleSimulate}
+          pageColors={pageColors}
+          onPageColors={setAllColorSchemes}
+          windowsOpen={realWindows.length > 0}
+          onOpenWindows={() => void openRealWindows()}
+          onCloseWindows={closeRealWindows}
+          onFloating={() => void openFloating()}
+          tools={{
+            syncScroll: settings.sync.scroll,
+            syncNavigation: settings.sync.navigation,
+            checks: settings.checks,
+            outlines,
+            scrollbars: hideScrollbars,
+            grid: settings.grid.show,
+            imageSizes: annotate.images,
+            tabOrder: annotate.tabOrder,
+            gridFlex: annotate.layout,
+            liveCss: Boolean(liveCss),
+            syncInteractions: mirroring,
+            cookieBanners: hideBanners,
+          }}
+          hasUrl={Boolean(currentUrl)}
+          siteAllowed={siteAccess.site}
+          host={host}
+          focusedId={focused?.id ?? null}
+          sidebarOpen={settings.panels.sidebar}
+          onSidebar={() => togglePanel('sidebar')}
+          onToggleVisible={toggleVisible}
+          onMoveTo={(id, index) => dispatch({ type: 'moveViewportTo', id, index })}
+          onApplyGroup={applyGroup}
+          onSaveGroup={() => setDialog('saveGroup')}
+          onManageGroups={() => setDialog('manageGroups')}
+          onAddViewport={() => setDialog('add')}
+          onBreakpoints={setBreakpoints}
+          onRulers={(showRulers) => dispatch({ type: 'setShowRulers', showRulers })}
+          onSync={setSyncAll}
+          onGrid={(show) => dispatch({ type: 'setGrid', grid: { show } })}
+          onInspect={toggleInspector}
+          onTool={toggleTool}
+          onLiveCss={() => setDialog('css')}
+          onEdges={testEdges}
+          onRotateAll={rotateAll}
+          onSortByWidth={sortViewports}
+          onReport={exportReport}
+          onCopyLink={copyWorkspaceLink}
+          onAllowSite={() => void allowSite()}
+        />
+      )}
+      {compare && currentUrl && !presenting && (
         <Banner
           tone="info"
           icon="split"
@@ -3748,7 +3775,7 @@ function Workspace({
             : t('compare.bannerFixed', { target: compareLabel(compare) })}
         </Banner>
       )}
-      {realWindows.length > 0 && (
+      {realWindows.length > 0 && !presenting && (
         <Banner
           tone="info"
           icon="window"
@@ -3774,7 +3801,7 @@ function Workspace({
           {realWindows.length === 1 ? t('windows.bannerOne') : t('windows.banner', { count: realWindows.length })}
         </Banner>
       )}
-      {probe === 'unreachable' && host && currentUrl && (
+      {probe === 'unreachable' && host && currentUrl && !presenting && (
         // The previews stay: each frame shows Chrome's own error page too.
         <Banner
           tone="danger"
@@ -3802,7 +3829,7 @@ function Workspace({
           <strong>{t('error.unreachableTitle', { host })}</strong> {t('error.unreachableBody')}
         </Banner>
       )}
-      {showNotice && host && currentUrl && (
+      {showNotice && host && currentUrl && !presenting && (
         <EmbedNotice
           host={host}
           busy={requesting}
@@ -3822,7 +3849,7 @@ function Workspace({
         />
       )}
       <div className={styles.body}>
-        {settings.panels.sidebar && (
+        {settings.panels.sidebar && !presenting && (
           <ViewportSidebar
             viewports={sidebarViewports}
             canAdd={canAddViewport(viewports)}
@@ -3863,7 +3890,16 @@ function Workspace({
           >
             {renderContent()}
           </main>
-          {visible.length > 0 && (
+          {presenting && (
+            <PresentBar
+              host={host}
+              layout={settings.layout}
+              onLayout={(layout) => dispatch({ type: 'setLayout', layout })}
+              onFit={fit}
+              onExit={exitPresent}
+            />
+          )}
+          {visible.length > 0 && !presenting && (
             <ZoomDock
               zoom={focused ? focused.zoom : commonZoom}
               disabled={visible.length === 0}
@@ -3948,7 +3984,7 @@ function Workspace({
               }
             />
           )}
-          {settings.panels.minimap && visible.length > 0 && (
+          {settings.panels.minimap && visible.length > 0 && !presenting && (
             <Minimap
               workspaceRef={workspaceRef}
               layoutKey={[
@@ -3962,7 +3998,7 @@ function Workspace({
             />
           )}
         </div>
-        {inspector.open && (
+        {inspector.open && !presenting && (
           <InspectorPanel
             picking={inspector.picking && !inspector.pickingTarget}
             selector={inspector.selector}
@@ -3993,7 +4029,7 @@ function Workspace({
             onAllowSite={() => void allowSite()}
           />
         )}
-        {audit.open && (
+        {audit.open && !presenting && (
           <AuditPanel
             tab={audit.tab}
             onTab={(tab) => setAudit((state) => ({ ...state, tab }))}
@@ -4018,13 +4054,42 @@ function Workspace({
             metaCard={metaCard}
             onMetaCard={setMetaCard}
             budgets={pro ? settings.budgets : null}
+            onAddViewport={(width) =>
+              // As tall as the preview nearest that width.
+              addViewport({
+                name: `${width}px`,
+                width,
+                height:
+                  [...visible].sort((a, b) => Math.abs(a.width - width) - Math.abs(b.width - width))[0]?.height ?? 900,
+              })
+            }
             onTurnOnChecks={() => setChecks(true)}
             onAllowSite={() => void allowSite()}
             onClose={closeAudit}
           />
         )}
+        {qaOpen && !presenting && (
+          <QaPanel
+            items={qaItems}
+            viewports={visible.map(({ id, name, width, height }) => ({ id, name, width, height }))}
+            results={qaResults}
+            onResult={(itemId, viewportId, result) =>
+              setQaResults((results) => setQaResult(results, itemId, viewportId, result))
+            }
+            onItems={setQaItems}
+            onResetResults={() => {
+              const before = qaResults;
+              setQaResults({});
+              withUndo(t('qa.resetDone'), () => setQaResults(before));
+            }}
+            onRestoreDefaults={() => setQaItems([])}
+            onCopy={copyQa}
+            onReveal={revealCard}
+            onClose={closeQa}
+          />
+        )}
       </div>
-      {settings.panels.statusBar && (
+      {settings.panels.statusBar && !presenting && (
         <StatusBar
           shown={visible.length}
           total={viewports.length}
@@ -4045,6 +4110,8 @@ function Workspace({
           onAudit={() => toggleAudit('issues')}
           onFit={fit}
           onMinimap={() => togglePanel('minimap')}
+          learn={learn && !learn.hidden && !learnSummary(learn).complete ? learnSummary(learn) : null}
+          onLearn={() => openHelpAt('start')}
         />
       )}
       {panLayer && (
@@ -4315,14 +4382,18 @@ function Workspace({
         onStop={stopCompare}
         onClose={() => setDialog(null)}
       />
-      <Tour open={touring} onClose={() => setTouring(false)} />
+      <Tour open={guide !== null} guide={guide ?? undefined} onClose={() => setGuide(null)} onAction={runGuideAction} />
+      <ExplainLayer open={explaining} onClose={() => setExplaining(false)} onGuide={startGuide} />
       <HelpDialog
         open={dialog === 'help'}
         version={version}
+        section={helpSection}
         onClose={() => setDialog(null)}
         commandShortcuts={commandShortcuts}
         paletteShortcut={paletteShortcut}
-        onTour={startTour}
+        onGuide={startGuide}
+        onExplain={startExplain}
+        learn={learn ? { progress: learn, onTask: showLearnTask, onHidden: setLearnHidden } : undefined}
         support={{
           feedbackUrl: FEEDBACK_URL,
           rateUrl,

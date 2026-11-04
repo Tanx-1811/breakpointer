@@ -1831,6 +1831,7 @@ export const fr: Record<MessageKey, string> = {
   'media.note':
     'Each preview’s frame is its viewport, so ✓ shows exactly where a query applies at that size. Rules counts the style rules inside each query.',
   // v0.10 qa
+  'qa.resetDone': 'QA results cleared',
   'qa.removed': 'Removed “{check}”',
   'qa.copied': 'QA report copied as Markdown',
   'qa.title': 'QA checklist',
