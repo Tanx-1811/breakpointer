@@ -1256,8 +1256,11 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     };
     const unreadable = forEachMediaList(
       (list, rules) =>
-        add('media', originalMedia.get(list) ?? list.mediaText, countStyleRules(rules), () =>
-          window.matchMedia(list.mediaText).matches,
+        add(
+          'media',
+          originalMedia.get(list) ?? list.mediaText,
+          countStyleRules(rules),
+          () => window.matchMedia(list.mediaText).matches,
         ),
       (rule) => add('container', rule.conditionText, countStyleRules(rule.cssRules), () => null),
     );

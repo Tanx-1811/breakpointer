@@ -109,11 +109,16 @@ export function StatusBar(props: Props) {
           type="button"
           className={`${styles.item} ${styles.learn}`}
           onClick={props.onLearn}
-          aria-label={t('learn.statusLabel', { done: props.learn.done, total: props.learn.total })}
           data-testid="learn-button"
         >
           <Icon name="book" size={13} />
-          <span className={styles.label}>{t('learn.status')}</span>
+          <span className={styles.label}>
+            {t('learn.status')}
+            <span className="visually-hidden">
+              {' · '}
+              {t('learn.count', { done: props.learn.done, total: props.learn.total })}
+            </span>
+          </span>
           <span className={styles.learnCount} aria-hidden="true">
             {props.learn.done}/{props.learn.total}
           </span>

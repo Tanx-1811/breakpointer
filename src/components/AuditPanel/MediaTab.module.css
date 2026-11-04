@@ -1,0 +1,239 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.waiting {
+  margin: 24px 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+  text-align: center;
+}
+
+.summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.summary > svg {
+  margin-top: 1px;
+}
+
+.warn {
+  flex: none;
+  color: var(--warning-text);
+}
+
+.ok {
+  flex: none;
+  color: var(--success);
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heading {
+  margin: 0;
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ---------- Gaps and overlaps ---------- */
+
+.problems {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  list-style: none;
+}
+
+.problem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 12px;
+}
+
+.problem + .problem {
+  border-top: 1px solid var(--border-subtle);
+}
+
+.problem > .warn {
+  margin-top: 2px;
+}
+
+.problemText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+}
+
+.problemTitle {
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.problemHint {
+  color: var(--text-subtle);
+  font-size: 11.5px;
+}
+
+.pair {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 100%;
+  margin: 2px 0;
+}
+
+.pair code {
+  min-width: 0;
+  padding: 1px 6px;
+  border-radius: var(--radius-xs);
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
+}
+
+/* The button lines up with the text above it. */
+.problemText > span:last-child > button {
+  margin-left: -8px;
+}
+
+/* ---------- The table ---------- */
+
+.tableHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 8px;
+}
+
+/* Many previews scroll sideways here; the query column stays put. */
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.tableWrap:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.table thead th {
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.queryHead,
+.query {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 132px;
+  max-width: 180px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.query {
+  font-weight: 400;
+}
+
+.query code {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.atRule {
+  color: var(--text-subtle);
+}
+
+.rulesHead,
+.rules {
+  text-align: right;
+}
+
+.rules {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.previewHead {
+  min-width: 40px;
+  text-align: center;
+}
+
+.previewHead > span {
+  justify-content: center;
+}
+
+.match {
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  text-align: center;
+}
+
+.match svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.match[data-match='yes'] {
+  color: var(--accent);
+}
+
+.note {
+  margin: 0 2px;
+  color: var(--text-subtle);
+  font-size: 12px;
+  line-height: 1.45;
+}

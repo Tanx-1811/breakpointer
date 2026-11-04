@@ -12,7 +12,10 @@ type Props = {
 export function ViewportName({ row, compact }: Props) {
   const sizeClass = sizeClassOf(row.width, row.height);
   return (
-    <span className={compact ? `${styles.viewport} ${styles.viewportCompact}` : styles.viewport} data-size-class={sizeClass}>
+    <span
+      className={compact ? `${styles.viewport} ${styles.viewportCompact}` : styles.viewport}
+      data-size-class={sizeClass}
+    >
       <Icon name={SIZE_CLASS_ICONS[sizeClass]} size={13} className={styles.viewportIcon} />
       <span className={compact ? 'visually-hidden' : styles.viewportName}>{row.name}</span>
       <span className={styles.viewportWidth}>{row.width}</span>

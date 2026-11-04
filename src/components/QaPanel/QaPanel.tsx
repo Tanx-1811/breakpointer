@@ -407,7 +407,7 @@ function ViewportName({ viewport }: { viewport: QaViewport }) {
   return (
     <span className={styles.viewport} data-size-class={sizeClass}>
       <Icon name={SIZE_CLASS_ICONS[sizeClass]} size={13} className={styles.viewportIcon} />
-      <span className={styles.viewportName}>{viewport.name}</span>
+      <span className={styles.viewportName}>{viewport.name}</span>{' '}
       <span className={styles.viewportWidth}>{viewport.width}</span>
     </span>
   );

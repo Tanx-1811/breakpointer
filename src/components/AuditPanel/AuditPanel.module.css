@@ -726,3 +726,9 @@
   font-family: var(--font-mono);
   font-size: 11px;
 }
+
+/* In a table column: the icon over the width. */
+.viewportCompact {
+  flex-direction: column;
+  gap: 2px;
+}

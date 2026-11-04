@@ -716,6 +716,7 @@ export function WorkspaceBar(props: Props) {
             tooltip={t('workspace.rulersHint')}
             shortcut="M"
             onClick={() => props.onRulers(!showRulers)}
+            testId="rulers-toggle"
           />
           <Toggle
             pressed={showGrid}

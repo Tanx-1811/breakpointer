@@ -47,6 +47,8 @@ type Props = {
   resolvedTheme: 'light' | 'dark';
   onSettings: () => void;
   onHelp: () => void;
+  /** Present mode: only the previews, for screen sharing (the button shows when given). */
+  onPresent?: () => void;
   /** This version has news the user hasn't seen: the Help button shows a dot. */
   helpNews?: boolean;
   /** The plan: on the free plan a "Get Pro" button shows, during the trial the days left (shown when given). */
@@ -122,6 +124,7 @@ export function TopBar(props: Props) {
           shortcut="R"
           onClick={props.onReloadAll}
           disabled={!props.hasUrl}
+          data-help="reload"
         />
         {props.onAutoReload && (
           <Menu
@@ -176,6 +179,7 @@ export function TopBar(props: Props) {
           label={t('address.openInTab')}
           onClick={props.onOpenInTab}
           disabled={!props.hasUrl}
+          data-help="open-tab"
         />
         {props.onOpenWindows && (
           <IconButton
@@ -231,12 +235,24 @@ export function TopBar(props: Props) {
               aria-label={t('capture.menu')}
               data-tooltip={t('capture.menu')}
               disabled={!props.hasUrl}
+              data-help="capture"
             >
               <Icon name="camera" size={17} />
               <Icon name="chevronDown" size={12} className={styles.splitChevron} />
             </button>
           )}
         />
+        {props.onPresent && (
+          <IconButton
+            icon="present"
+            label={t('present.start')}
+            shortcut="D"
+            onClick={props.onPresent}
+            disabled={!props.hasUrl}
+            data-help="present"
+            data-testid="present-button"
+          />
+        )}
         <span className={styles.separator} aria-hidden="true" />
         <IconButton
           icon={props.siteAllowed ? 'shieldCheck' : 'shield'}
@@ -249,14 +265,16 @@ export function TopBar(props: Props) {
           }
           onClick={props.onSiteAccess}
           className={props.siteAllowed ? styles.accessOn : undefined}
+          data-help="access"
         />
         <IconButton
           icon={props.resolvedTheme === 'dark' ? 'sun' : 'moon'}
           label={themeLabel}
           shortcut="T"
           onClick={props.onToggleTheme}
+          data-help="theme"
         />
-        <IconButton icon="settings" label={t('toolbar.settings')} onClick={props.onSettings} />
+        <IconButton icon="settings" label={t('toolbar.settings')} onClick={props.onSettings} data-help="settings" />
         <IconButton
           icon="help"
           label={props.helpNews ? t('toolbar.helpNews') : t('toolbar.help')}

@@ -67,7 +67,12 @@ describe('QA checklist: checks', () => {
 
 describe('QA checklist: parsing stored checks', () => {
   it('keeps valid checks and trims their text', () => {
-    expect(parseQaChecklist([{ id: 'a', text: '  Menu opens  ' }, { id: 'b', text: 'Forms send' }])).toEqual([
+    expect(
+      parseQaChecklist([
+        { id: 'a', text: '  Menu opens  ' },
+        { id: 'b', text: 'Forms send' },
+      ]),
+    ).toEqual([
       { id: 'a', text: 'Menu opens' },
       { id: 'b', text: 'Forms send' },
     ]);
@@ -192,7 +197,13 @@ describe('QA checklist: Markdown', () => {
   });
 
   it('leaves out the failures section when nothing failed', () => {
-    const markdown = qaMarkdown({ page: 'https://example.com/', items: [{ id: 'a', text: 'A' }], viewports, results: {}, t });
+    const markdown = qaMarkdown({
+      page: 'https://example.com/',
+      items: [{ id: 'a', text: 'A' }],
+      viewports,
+      results: {},
+      t,
+    });
     expect(markdown).toContain('0 of 2 checked\n');
     expect(markdown).toContain('| A |  |  |');
     expect(markdown).not.toContain('### Failed');
