@@ -673,7 +673,7 @@ function CodeTab({ state, onChange, breakpointSets, currentSet, onCopy }: Props)
 
   return (
     <div className={styles.stack}>
-      <div className={styles.grid}>
+      <div className={styles.codeGrid}>
         <SelectField label={t('code.source')}>
           {(id) => (
             <Select
@@ -710,7 +710,7 @@ function CodeTab({ state, onChange, breakpointSets, currentSet, onCopy }: Props)
           )}
         </SelectField>
         {unitApplies && (
-          <div className={styles.field}>
+          <div className={`${styles.field} ${styles.fitField}`}>
             <span className={styles.label} aria-hidden="true">
               {t('code.unit')}
             </span>

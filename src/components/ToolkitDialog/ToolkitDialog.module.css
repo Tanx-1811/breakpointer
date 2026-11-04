@@ -43,8 +43,9 @@
 
 .tab:focus-visible {
   outline: none;
-  box-shadow: inset var(--focus-ring);
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  /* Inside the tab: the tab row scrolls sideways, so a ring outside it would be clipped. */
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 75%, transparent);
+  border-radius: var(--radius-sm);
 }
 
 .panel {
@@ -69,6 +70,17 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   gap: 12px;
+}
+
+.codeGrid {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) minmax(220px, 1.5fr) auto;
+  gap: 12px;
+}
+
+/* A segmented control keeps its own width. */
+.fitField {
+  align-items: flex-start;
 }
 
 .field {
@@ -488,7 +500,8 @@
 }
 
 @media (max-width: 560px) {
-  .contrast {
+  .contrast,
+  .codeGrid {
     grid-template-columns: 1fr;
   }
 
