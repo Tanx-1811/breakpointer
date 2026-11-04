@@ -41,14 +41,14 @@ No permission shows a warning at install. Breakpointer asks for access to a site
 
 Pick whichever way is closest to where you are:
 
-| Where you are                  | What to do                                                                                                                      |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
-| On the page you want to check  | Click the Breakpointer button (or press `Alt+Shift+V`) and choose **Preview this page**.                                        |
-| Anywhere in Chrome             | Press `Alt+Shift+P` to preview the current tab.                                                                                 |
-| On a page or a link            | Right-click → **Preview this page in Breakpointer** or **Preview link in Breakpointer**.                                        |
-| In Chrome's address bar        | Type `bpt`, a space, then an address, and press Enter.                                                                          |
-| Already in the workspace       | Type or paste an address in the workspace's address bar (press `/` to jump there) and press Enter, or click **Try example.com**. |
-| In the toolbar popup           | Type an address under **Preview another address**, or click a page under **Saved pages** or **Recent**.                         |
+| Where you are                 | What to do                                                                                                                       |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| On the page you want to check | Click the Breakpointer button (or press `Alt+Shift+V`) and choose **Preview this page**.                                         |
+| Anywhere in Chrome            | Press `Alt+Shift+P` to preview the current tab.                                                                                  |
+| On a page or a link           | Right-click → **Preview this page in Breakpointer** or **Preview link in Breakpointer**.                                         |
+| In Chrome's address bar       | Type `bpt`, a space, then an address, and press Enter.                                                                           |
+| Already in the workspace      | Type or paste an address in the workspace's address bar (press `/` to jump there) and press Enter, or click **Try example.com**. |
+| In the toolbar popup          | Type an address under **Preview another address**, or click a page under **Saved pages** or **Recent**.                          |
 
 The toolbar popup also lets you choose which **Viewports** the page opens with — the **Current workspace** or a group — and has **Open workspace**, **Preview in the side panel** and the current **Shortcut**.
 
@@ -93,28 +93,28 @@ On first use, Breakpointer starts with three viewports — **Phone** 375 × 667,
 
 ### Learn as you go
 
-**Help centre** (`?`, or the **?** button in the top bar) has four sections — **Get started**, **Shortcuts**, **What's new** and **Support** — and a search over guides and shortcuts. After an update it opens on **What's new**, and the Help button shows a dot until you do.
+**Help centre** (`?`, or the **?** button in the top bar) has four sections — **Get started**, **Shortcuts**, **What's new** and **Support** (feedback, rating, sharing and, from 0.11, a link to this **User guide**) — and a search over guides and shortcuts. After an update it opens on **What's new**, and the Help button shows a dot until you do.
 
 **Getting-started checklist.** Eight things worth doing once, ticked off by themselves as you do them: preview a page, add or resize a viewport, inspect an element at every size, open the audit, scan every width, pin a note on a preview, take a screenshot and try “What's this?” mode. Each has **Show me**. The status bar shows **Get started 3/8** until the list is done or you choose **Hide from the status bar**. Open it from Help → **Get started**, the status bar, or “Get started checklist” in the command palette. Only which tasks are done is kept, on this device.
 
 **Guides.** Step-by-step walks, each card pointing at the control it talks about. A step can open what it explains (the audit, the inspector, notes, the QA checklist) and the last step can start the task (**Scan now**, **Open Check pages**…). Open them from Help → **Get started** → **Guides**, from the welcome screen, from “What's this?” mode, or by typing “Guide” in the command palette.
 
-| Guide                                    | What it walks through                                       |
-| ---------------------------------------- | ----------------------------------------------------------- |
-| Workspace basics                         | The main controls, in one short walk (the tour)             |
-| Find where a layout breaks               | Pick sizes, drag between them and scan every width          |
-| Audit a page at every size               | Issues, performance, type and more, side by side            |
-| Find gaps between breakpoints            | The page's media queries and the widths that fall between   |
-| Compare one element at every size        | Its size, type and spacing in every preview                 |
-| Report a bug with notes                  | Pin what's wrong and copy a ready-made bug report           |
-| Run a QA checklist                       | Tick off manual checks at every size                        |
-| Catch visual changes                     | Save a baseline, change the site, see what moved            |
-| Check a whole site                       | Many pages at every size, in one table                      |
-| Share screenshots                        | Images of the workspace, showcases and present mode         |
-| Fluid type with the CSS toolkit          | **New in 0.11**                                             |
-| Test touch-screen styles                 | **New in 0.11**                                             |
-| Readable text at every size              | **New in 0.11**                                             |
-| Present a responsive demo                | **New in 0.11**                                             |
+| Guide                             | What it walks through                                                             |
+| --------------------------------- | --------------------------------------------------------------------------------- |
+| Workspace basics                  | The main controls, in one short walk (the tour)                                   |
+| Find where a layout breaks        | Pick sizes, drag between them and scan every width                                |
+| Audit a page at every size        | Issues, performance, type and more, side by side                                  |
+| Find gaps between breakpoints     | The page's media queries and the widths that fall between                         |
+| Compare one element at every size | Its size, type and spacing in every preview                                       |
+| Report a bug with notes           | Pin what's wrong and copy a ready-made bug report                                 |
+| Run a QA checklist                | Tick off manual checks at every size                                              |
+| Catch visual changes              | Save a baseline, change the site, see what moved                                  |
+| Check a whole site                | Many pages at every size, in one table                                            |
+| Share screenshots                 | Images of the workspace, showcases and present mode                               |
+| Fluid type with the CSS toolkit   | **New in 0.11** — `clamp()`, units and breakpoints as code, at your preview sizes |
+| Test touch-screen styles          | **New in 0.11** — the menus and buttons a page shows on phones and tablets        |
+| Readable text at every size       | **New in 0.11** — line length, small text, zoom and spacing                       |
+| Present a responsive demo         | **New in 0.11** — full-screen previews that scroll by themselves                  |
 
 Throughout this guide, “In the app:” names the guide that covers the same task.
 
@@ -276,25 +276,27 @@ Redirects a page makes by itself (to a mobile site, say), in-page `#anchors` and
 
 With **Tools → Responsive checks** on (the default), every card checks its page at its own size and shows **✓** or **⚠ n** in its header. Click the badge to see each issue with the elements involved (for example `div.hero > img`) and **Highlight** them in the page. Switch any check off in **Settings → Preview tools → Checks to run**.
 
-| Check                                       | What it finds                                                                                                                                                                                                              |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Content wider than the screen               | The page scrolls sideways; lists the outermost elements causing it and by how much.                                                                                                                                        |
-| No mobile viewport tag                      | No `<meta name="viewport" content="width=device-width, initial-scale=1">`, so phones lay the page out about 980 px wide and shrink it.                                                                                       |
-| Text smaller than 12px                      | Hard to read on phones and tablets.                                                                                                                                                                                        |
-| Touch targets smaller than 24×24px          | Hard to tap without hitting a neighbour (WCAG 2.5.8).                                                                                                                                                                      |
-| Text cut off by its box                     | A line partly hidden by a box that hides its overflow — often a fixed width or height. Ellipses, line clamps, fading masks, carousel slides and animated text are left alone.                                               |
-| Low-contrast text                           | Below WCAG AA — 4.5:1, or 3:1 for large text — where the colour behind the text is known (solid backgrounds, any CSS colour space). Text over images, gradients or other content is skipped rather than guessed.              |
-| Images shown larger than their real size    | Stretched beyond their file's pixels, so they look blurry.                                                                                                                                                                 |
-| Fixed elements cover much of the screen     | Fixed or sticky elements cover more than a third of a phone or tablet screen (cookie walls, tall headers).                                                                                                                 |
-| The layout shifts while loading             | Cumulative layout shift above 0.1, with the elements that moved. Reserve space for images, embeds and late content.                                                                                                        |
-| Long lines of text — **New in 0.11**        | Paragraphs whose lines run past about 100 characters (50 for Chinese, Japanese and Korean) are tiring to read on wide screens; WCAG 1.4.8 suggests 80 at most.                                                              |
-| Images without alt text **(Pro)**           | Screen readers can't describe them (WCAG 1.1.1). Decorative images need an empty `alt=""`.                                                                                                                                  |
-| Buttons and links without a name **(Pro)** | Screen readers only say “button” or “link” — often the icon-only menu button that only shows on phones (WCAG 4.1.2).                                                                                                       |
-| Form fields without a label **(Pro)**       | People can't tell what to enter (WCAG 1.3.1).                                                                                                                                                                              |
-| Keyboard focus on hidden elements **(Pro)** | The Tab key reaches elements that are off screen or hidden, such as a closed off-canvas menu or focusable elements inside `aria-hidden` (WCAG 2.4.7).                                                                       |
-| No page language **(Pro)**                  | `<html>` has no `lang`, so screen readers may use the wrong voice (WCAG 3.1.1).                                                                                                                                             |
+| Check                                       | What it finds                                                                                                                                                                                                    |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Content wider than the screen               | The page scrolls sideways; lists the outermost elements causing it and by how much.                                                                                                                              |
+| No mobile viewport tag                      | No `<meta name="viewport" content="width=device-width, initial-scale=1">`, so phones lay the page out about 980 px wide and shrink it.                                                                           |
+| Text smaller than 12px                      | Hard to read on phones and tablets.                                                                                                                                                                              |
+| Touch targets smaller than 24×24px          | Hard to tap without hitting a neighbour (WCAG 2.5.8).                                                                                                                                                            |
+| Text cut off by its box                     | A line partly hidden by a box that hides its overflow — often a fixed width or height. Ellipses, line clamps, fading masks, carousel slides and animated text are left alone.                                    |
+| Low-contrast text                           | Below WCAG AA — 4.5:1, or 3:1 for large text — where the colour behind the text is known (solid backgrounds, any CSS colour space). Text over images, gradients or other content is skipped rather than guessed. |
+| Images shown larger than their real size    | Stretched beyond their file's pixels, so they look blurry.                                                                                                                                                       |
+| Fixed elements cover much of the screen     | Fixed or sticky elements cover more than a third of a phone or tablet screen (cookie walls, tall headers).                                                                                                       |
+| The layout shifts while loading             | Cumulative layout shift above 0.1, with the elements that moved. Reserve space for images, embeds and late content.                                                                                              |
+| Long lines of text — **New in 0.11**        | Paragraphs whose lines run past about 100 characters (50 for Chinese, Japanese and Korean) are tiring to read on wide screens; WCAG 1.4.8 suggests 80 at most.                                                   |
+| Images without alt text **(Pro)**           | Screen readers can't describe them (WCAG 1.1.1). Decorative images need an empty `alt=""`.                                                                                                                       |
+| Buttons and links without a name **(Pro)**  | Screen readers only say “button” or “link” — often the icon-only menu button that only shows on phones (WCAG 4.1.2).                                                                                             |
+| Form fields without a label **(Pro)**       | People can't tell what to enter (WCAG 1.3.1).                                                                                                                                                                    |
+| Keyboard focus on hidden elements **(Pro)** | The Tab key reaches elements that are off screen or hidden, such as a closed off-canvas menu or focusable elements inside `aria-hidden` (WCAG 2.4.7).                                                            |
+| No page language **(Pro)**                  | `<html>` has no `lang`, so screen readers may use the wrong voice (WCAG 3.1.1).                                                                                                                                  |
 
-The same checks run in the audit, the width scanner and Check pages. The accessibility checks are not run on the free plan; the audit mentions them.
+The same checks run in the audit, the width scanner and Check pages, and count toward the [responsive score](#score). The accessibility checks are not run on the free plan; the audit mentions them.
+
+For long lines, cap paragraphs at about `70ch` with `max-width`, and let the [CSS toolkit](#fluid-type) write a `clamp()` that grows text smoothly between your smallest and largest viewport.
 
 In the app: **Readable text at every size** (New in 0.11).
 
@@ -345,7 +347,7 @@ Instead of guessing widths, let Breakpointer resize the page one width at a time
 2. Set **From** and **To** (320–1920 px by default), the **Height**, and the **Step** of the first pass: **Quick · 32px**, **Normal · 16px** or **Thorough · 8px**.
 3. Click **Scan**. The page loads in a preview of its own and is checked at every step; wherever the issues change between two widths, the gap is halved until the edge is found.
 4. Read the chart: each issue's ranges, the page's height, this site's breakpoints and your viewports. Hover it or use the slider to see any width.
-5. Click a range to jump to its worst width, then **Add a viewport at _width_px** to keep it. **Copy as Markdown** or **Export** (Pro) the findings.
+5. Click a range to jump to its worst width, then **Add a viewport at \_width_px** to keep it. **Copy as Markdown** or **Export** (Pro) the findings.
 
 A scan checks at most 600 widths. If you stop it — or it reaches the limit — it says how far it got and how exact its edges are. It waits while the tab is hidden. The last scan of the page is included in HTML reports.
 
@@ -450,7 +452,7 @@ The **Simulate** menu (workspace bar) changes how previews look or what the page
 - **Prefer more contrast** — its `prefers-contrast: more` styles.
 - **Print styles** — the page as it would print (`@media print`), at each width.
 - **Pause animations** — freezes CSS animations and transitions, for steady screenshots.
-- **Touch-screen styles** — **New in 0.11**. Previews use the page's CSS for touch screens — `(hover: none)` and `(pointer: coarse)` — so you see, for example, menus that open on a tap instead of on hover, or larger touch-friendly controls. Only these CSS media features change: no touch events are sent, and it isn't a device emulation.
+- **Touch-screen styles** — **New in 0.11**. Previews use the page's CSS for touch screens — `(hover: none)` and `(pointer: coarse)` — so you see, for example, menus that open on a tap instead of on hover, or larger touch-friendly controls. Look for menus, buttons or tooltips that only appear on hover: on a touch screen they have no way in. Only these CSS media features change: no touch events are sent, and it isn't a device emulation. Tip: add “Menus work without hover” to the [QA checklist](#qa-checklist) and mark it at every size.
 
 In the app: **Test touch-screen styles** (New in 0.11).
 
@@ -580,19 +582,27 @@ In the app: **Share screenshots**.
 
 ### Score badge — New in 0.11
 
-In the audit's **Issues** tab, the responsive score card can copy or download an SVG badge — “responsive | 92 A” — for a README, a pull request or a client report.
+Show off a page's responsive score as a badge — “responsive | 92 A” — in a README, a pull request or a client report.
+
+1. Open the audit (`E`) on the **Issues** tab.
+2. On the responsive score card, click **Copy badge** (the SVG goes on the clipboard: paste it into a file or a README) or **Download the badge (SVG)**.
 
 ### Present mode
 
 Only the previews, full screen where Chrome allows — for screen sharing and client demos.
 
 1. Press `D`, click **Present** in the top bar, or “Present mode” in the palette.
-2. A small bar offers the layout, **Fit** and **Exit**.
+2. A small bar offers the layout, **Fit**, **Auto-scroll** (New in 0.11) and **Exit**.
 3. `Esc` or **Exit** leaves.
 
 ### Auto-scroll — New in 0.11
 
-Every preview scrolls slowly from top to bottom, for demos and screen recordings. Start it from present mode's bar or the command palette, at 10, 20 or 40 seconds from top to bottom. Scrolling a preview yourself stops it there.
+Every preview scrolls slowly from top to bottom by itself, together — for demos and screen recordings.
+
+- In present mode, click **Auto-scroll** in the bar (20 seconds to the bottom); it becomes **Stop** while it runs.
+- Or, in the command palette, choose “Auto-scroll every preview” at 10, 20 or 40 seconds, and “Stop auto-scrolling” to stop.
+
+Scrolling a preview yourself stops it there.
 
 In the app: **Present a responsive demo** (New in 0.11).
 
@@ -620,45 +630,52 @@ Preview the page you're browsing in Chrome's side panel, at a phone (or any pres
 
 ## 8. CSS toolkit — New in 0.11
 
-Small calculators for responsive CSS, each showing its result at every visible viewport so you can see what the numbers mean on your page.
+Fluid sizes, units, breakpoints, colours and ratios — worked out at the sizes you preview. Each tool shows its result at every visible viewport, so you see what the numbers mean on your page, and **Copy** puts the CSS on the clipboard.
 
-Open it with `U`, **Tools → CSS toolkit**, or the command palette. It has five tabs.
+Open it with `U`, **Tools → CSS toolkit**, or “CSS toolkit: …” in the command palette (which opens that tab). It has five tabs: **Fluid type**, **Units**, **Breakpoints**, **Colours** and **Aspect ratio**. Show at least one viewport to see the values at its size.
 
 In the app: **Fluid type with the CSS toolkit**.
 
+<a id="fluid-type"></a>
+
 ### Fluid type
 
-Turn a minimum and a maximum size into a CSS `clamp()` that grows smoothly between two viewport widths.
+Turn a size for your smallest viewport and one for your largest into a CSS `clamp()` that grows smoothly in between.
 
-1. Enter the **minimum** and **maximum** size, and the **minimum** and **maximum** viewport width they apply at.
-2. Choose **px** or **rem** (with the root font size, usually 16 px).
-3. Read the `clamp()` and the value it computes at every visible viewport.
+1. Under **What to make**, choose **One size**.
+2. Set the **Smallest viewport** and **Largest viewport** — or click **Use my previews' widths** to take them from your narrowest and widest preview.
+3. Set the **Size at the smallest** and **Size at the largest**, choose **Write sizes in** px or rem (with the **Root font size**, 16 by default) and the CSS **Property** (`font-size` by default).
+4. Read the declaration — for example `font-size: clamp(…);` — and the size it gives **At your viewports**. **Copy** it.
 
-**Fluid type scale:** pick a ratio for the small viewport and one for the large viewport, and the number of steps from small text to large headings. Every step becomes a `clamp()`, computed at each visible viewport, and the whole scale is copied as CSS custom properties.
+Below the smallest viewport the size stays at its minimum; above the largest, at its maximum. The `rem` part of the middle value keeps text zoomable. If the largest size is more than 2.5 times the smallest, the toolkit warns that text zoomed to 200% may not double (WCAG 1.4.4).
+
+**Type scale.** Choose **Type scale** under **What to make** for a whole set of sizes: **Body text at the smallest** and **at the largest**, a **Scale at the smallest** and **at the largest** (Minor second, Major second, Minor third, Major third, Perfect fourth, Augmented fourth, Perfect fifth or Golden ratio), and the **Steps below body text** and **Steps above body text** (up to 8 each). Step 0 is body text; each step up multiplies it by the scale. Every step becomes a `clamp()`, shown at each viewport, and the scale is copied as CSS custom properties — use them as `font-size: var(--step-2)`.
 
 Tip: paste the result into [Live CSS](#live-css) to try it on the page at every size before you change your code.
 
 ### Units
 
-Convert a value between `px`, `rem`, `em`, `vw`, `vh` and `%`. Set the root font size (for `rem`) and the parent size (for `em` and `%`). Viewport units are shown at every visible viewport — for example what `5vw` is on your phone, tablet and laptop previews.
+Type a **Value** — a number with a unit if you like (`24px`, `1.5rem`, `4vw`) — or pick its **Unit**, and set the **Root font size** and the **Parent font size**. A table shows the value in every unit — `px`, `rem`, `em`, `pt`, `vw`, `vh`, `vmin` and `vmax` — at each viewport, marking the ones that change with the viewport; **Copy as Markdown** copies it. `vw`, `vh`, `vmin` and `vmax` are worked out at each viewport's size; `em` uses the parent font size; 1pt is 4/3 px. Handy when a design says px and your CSS says rem.
 
 ### Breakpoints
 
-The breakpoints in use — the toolbar's set, your own or this site's — written as code, copied in one click:
+The breakpoints in use — a framework's, your own or this site's (choose under **Breakpoints**; the toolbar's set is marked **in use**) — written as code. Choose **Write as**:
 
-- CSS media queries, mobile-first (`min-width`) or desktop-first (`max-width`);
-- an SCSS map and mixin;
-- Tailwind `screens`;
-- CSS `@custom-media`;
-- JavaScript `matchMedia`.
+- **CSS · mobile first (min-width)**, **CSS · desktop first (max-width)** or **CSS · range syntax**;
+- **Sass map and mixins**;
+- **Tailwind CSS v4 (@theme)** or **Tailwind CSS v3 (config)**;
+- **CSS @custom-media**;
+- **JavaScript** — the breakpoints as an object, with media query strings for `window.matchMedia`.
+
+Pick the **Query unit** (px or em) and **Copy**. `em` values are at 16 px, as browsers read `em` in media queries; `max-width` queries stop 0.02 px short, so no width falls in two ranges. This site's breakpoints are read from its CSS once a preview of an allowed site has loaded.
 
 ### Colours
 
-Pick a colour from any preview with the eyedropper (or type one) and copy it as HEX, RGB, HSL or OKLCH, with its contrast on white and on black. Recent picks are kept for the session. For a full text-on-background check, use the [colour contrast checker](#colour-contrast-checker) (`C`).
+Type a **Colour** — `#4f46e5`, `rgb(79 70 229)`, `hsl(243 75% 59%)`, `oklch(51% 0.23 277)` or a name — choose one, or **Pick from screen** with the eyedropper (from any preview). The **Formats** list shows it as HEX, RGB, HSL and OKLCH: **Copy** one, or **Copy all formats**. Its contrast as text **On white** and **On black** is graded **Passes AA**, **AA for large text only** or **Fails AA**. **Recent colours** keeps your picks during the session. For a full text-on-background check, use the [colour contrast checker](#colour-contrast-checker) (`C`).
 
 ### Aspect ratio
 
-Enter a width and a height to get the ratio (for example 16:9) and an `aspect-ratio` declaration, with the height an element that spans the full width gets at every visible viewport.
+Enter a **Width** and a **Height** — or choose one of the **Common ratios** (1:1, 4:3, 16:9, 21:9, 9:16…), or **From a viewport…** — to get the simplest **Ratio** (and the common one it's **Close to**, such as 1366 × 768 ≈ 16:9) and the CSS: an `aspect-ratio` declaration with a `padding-top` fallback. Set the **Box width** as a share of the viewport (100% by default) to see the box's width and height **At your viewports**, with a note where the box is **Taller than the viewport**.
 
 ---
 
@@ -668,16 +685,16 @@ Enter a width and a height to get the ratio (for example 16:9) and an `aspect-ra
 
 Open **Settings** from the gear in the top bar. Sections are listed on the left; settings are saved as you change them, on this device.
 
-| Section                | What's in it                                                                                                                                                                                                                                                                                                                                         |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Appearance**         | **Theme** (System, Light, Dark; `T` switches light ↔ dark). **Accent colour**: Indigo, Blue, Violet, Teal, Rose, Graphite — each readable in both themes. **Canvas** behind the previews: Dots, Grid, Plain. **Layout**: Wrap, Row, Stack. **Panels**: Viewports sidebar, Status bar, Minimap. **Language**: Same as Chrome, or one of ten languages. |
-| **Workspace**          | **Breakpoint labels**; **Custom breakpoints** (Name, From (px), **Add breakpoint**, **Use this site's**); **Show rulers**; **Tips for blocked sites**; **Remember recent addresses** and **Clear recent addresses**.                                                                                                                                       |
-| **Preview tools**      | **Sync scrolling**, **Sync navigation**, **Sync clicks & typing** (Pro); **Responsive checks** and **Checks to run** (switch each check off or on); **Column grid** (Columns: Auto (4 · 8 · 12) or 4–16, Gutter, Margin, Baseline); **Performance budgets** (Pro): Transferred (kB), Requests, LCP (ms), CLS — empty means no limit.                       |
-| **Your brand** (Pro)   | **Name**, **Website**, **Logo** (PNG, JPEG or WebP up to 150 KB) and **Mention Breakpointer** — shown on reports, Check pages reports and images instead of Breakpointer.                                                                                                                                                                              |
-| **Saved pages**        | Your starred pages: **Open** or remove them.                                                                                                                                                                                                                                                                                                          |
-| **Backup & reset**     | **Export settings** / **Import settings** (JSON); **Visual baselines** (delete per page or **Delete all baselines**); **Reset workspace** (restores the default viewports, keeps saved groups).                                                                                                                                                           |
-| **Plan**               | Free plan, Pro trial or licence: **Try Pro free for 7 days**, **Get Pro**, a **Licence key** field with **Activate**, who it's licensed to and until when, **Remove licence**, and **What's in Pro**.                                                                                                                                                    |
-| **Privacy & access**   | **Manage site access**, **Customize Chrome shortcuts** and the version.                                                                                                                                                                                                                                                                              |
+| Section              | What's in it                                                                                                                                                                                                                                                                                                                                          |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Appearance**       | **Theme** (System, Light, Dark; `T` switches light ↔ dark). **Accent colour**: Indigo, Blue, Violet, Teal, Rose, Graphite — each readable in both themes. **Canvas** behind the previews: Dots, Grid, Plain. **Layout**: Wrap, Row, Stack. **Panels**: Viewports sidebar, Status bar, Minimap. **Language**: Same as Chrome, or one of ten languages. |
+| **Workspace**        | **Breakpoint labels**; **Custom breakpoints** (Name, From (px), **Add breakpoint**, **Use this site's**); **Show rulers**; **Tips for blocked sites**; **Remember recent addresses** and **Clear recent addresses**.                                                                                                                                  |
+| **Preview tools**    | **Sync scrolling**, **Sync navigation**, **Sync clicks & typing** (Pro); **Responsive checks** and **Checks to run** (switch each check off or on); **Column grid** (Columns: Auto (4 · 8 · 12) or 4–16, Gutter, Margin, Baseline); **Performance budgets** (Pro): Transferred (kB), Requests, LCP (ms), CLS — empty means no limit.                  |
+| **Your brand** (Pro) | **Name**, **Website**, **Logo** (PNG, JPEG or WebP up to 150 KB) and **Mention Breakpointer** — shown on reports, Check pages reports and images instead of Breakpointer.                                                                                                                                                                             |
+| **Saved pages**      | Your starred pages: **Open** or remove them.                                                                                                                                                                                                                                                                                                          |
+| **Backup & reset**   | **Export settings** / **Import settings** (JSON); **Visual baselines** (delete per page or **Delete all baselines**); **Reset workspace** (restores the default viewports, keeps saved groups).                                                                                                                                                       |
+| **Plan**             | Free plan, Pro trial or licence: **Try Pro free for 7 days**, **Get Pro**, a **Licence key** field with **Activate**, who it's licensed to and until when, **Remove licence**, and **What's in Pro**.                                                                                                                                                 |
+| **Privacy & access** | **Manage site access**, **Customize Chrome shortcuts** and the version.                                                                                                                                                                                                                                                                               |
 
 The ten languages are English, Tiếng Việt, Español, Português (Brasil), Français, Deutsch, 日本語, Bahasa Indonesia, 简体中文 and Русский. They cover the interface, Chrome's menus and the store listing.
 
@@ -691,15 +708,15 @@ The ten languages are English, Tiếng Việt, Español, Português (Brasil), Fr
 
 Everything Breakpointer did before Pro is free and stays free. Pro adds tools for people who test websites for a living:
 
-| Pro feature                         | What it does                                                                                                      | Where                                                         |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
-| Accessibility checks                | Images without alt text, unnamed buttons and links, unlabeled fields, focus on hidden elements, no page language | Cards, audit, width scanner, Check pages                      |
-| Sync clicks & typing                | Clicks and typing in one preview repeated in every preview of the page                                           | Tools, Settings → Preview tools                               |
-| Hide cookie banners                 | Consent banners of 25+ common tools out of sight (nothing accepted)                                              | Tools                                                         |
-| Unlimited projects                  | Up to 50 projects instead of one                                                                                  | Projects                                                      |
-| Performance budgets                 | Limits for page weight, requests, LCP and CLS; previews over a limit marked                                     | Settings → Preview tools; the audit's Performance tab         |
-| Your brand on reports               | Your name, website and logo on reports and images you send                                                        | Settings → Your brand                                         |
-| CSV & JSON exports                  | Results of Check pages, width scans and audits for spreadsheets and scripts                                      | **Export** in those three places                              |
+| Pro feature           | What it does                                                                                                     | Where                                                 |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Accessibility checks  | Images without alt text, unnamed buttons and links, unlabeled fields, focus on hidden elements, no page language | Cards, audit, width scanner, Check pages              |
+| Sync clicks & typing  | Clicks and typing in one preview repeated in every preview of the page                                           | Tools, Settings → Preview tools                       |
+| Hide cookie banners   | Consent banners of 25+ common tools out of sight (nothing accepted)                                              | Tools                                                 |
+| Unlimited projects    | Up to 50 projects instead of one                                                                                 | Projects                                              |
+| Performance budgets   | Limits for page weight, requests, LCP and CLS; previews over a limit marked                                      | Settings → Preview tools; the audit's Performance tab |
+| Your brand on reports | Your name, website and logo on reports and images you send                                                       | Settings → Your brand                                 |
+| CSV & JSON exports    | Results of Check pages, width scans and audits for spreadsheets and scripts                                      | **Export** in those three places                      |
 
 On the free plan, Pro features are marked **Pro**; selecting one shows what Pro brings.
 
@@ -722,54 +739,54 @@ The key is checked in your browser with a public key built into Breakpointer —
 
 Single-key shortcuts work in the workspace, not while you type in a field or while a dialog or menu is open. They also pause while a preview has the focus: click the workspace background to use them again. They follow the physical key, so they work with Vietnamese input methods and other keyboard layouts.
 
-| Key                       | Action                                                                           |
-| ------------------------- | -------------------------------------------------------------------------------- |
-| `Ctrl/⌘ + K` or `K`       | Command palette                                                                  |
-| `/`                       | Focus the address bar                                                            |
-| `R`                       | Reload all previews                                                              |
-| `A`                       | Add viewport                                                                     |
-| `G`                       | Groups                                                                           |
-| `F`                       | Fit viewports to the screen                                                      |
-| `+` / `−`                 | Zoom in / out                                                                    |
-| `0`                       | Zoom to 100%                                                                     |
-| `L`                       | Switch layout (wrap → row → stack)                                               |
-| `\`                       | Show or hide the viewports sidebar                                               |
-| `M`                       | Rulers                                                                           |
-| `I`                       | Inspect an element                                                               |
-| `E`                       | Audit                                                                            |
-| `W`                       | Scan every width                                                                 |
-| `B`                       | Check pages                                                                      |
-| `V`                       | Visual check                                                                     |
-| `Q`                       | QA checklist                                                                     |
-| `U`                       | CSS toolkit — **New in 0.11**                                                    |
-| `X`                       | Measure                                                                          |
-| `N`                       | Notes                                                                            |
-| `C`                       | Colour contrast                                                                  |
-| `O`                       | Layout outlines                                                                  |
-| `P`                       | Floating preview                                                                 |
-| `D`                       | Present mode                                                                     |
-| `H`                       | “What's this?” mode                                                              |
-| `S`                       | Capture the visible workspace                                                    |
-| `T`                       | Switch theme                                                                     |
-| `[` / `]`                 | Focus the previous / next viewport                                               |
-| `1` … `8`                 | Focus that viewport (again: show all)                                            |
-| `Esc`                     | Leave present mode, picking, measuring, notes, focus, the inspector, a vision simulation, the audit or the QA checklist |
-| `Alt + ←` / `Alt + →`     | Previous / next previewed page (on a focused chip: move it)                      |
-| `?`                       | Help                                                                             |
-| `Space` + drag            | Pan the workspace                                                                |
-| `Ctrl/⌘` + wheel          | Zoom all viewports                                                               |
-| Drag a preview's edge     | Resize (`Shift`: 10 px steps, `Alt`: no snapping)                                |
-| `Alt + ↑` / `Alt + ↓`     | Reorder a viewport in the sidebar                                                |
-| `Ctrl/⌘ + Enter`          | Apply live CSS (in the Live CSS dialog)                                          |
-| Arrow keys                | Move between cells of the QA checklist; resize a focused preview edge            |
+| Key                   | Action                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `Ctrl/⌘ + K` or `K`   | Command palette                                                                                                         |
+| `/`                   | Focus the address bar                                                                                                   |
+| `R`                   | Reload all previews                                                                                                     |
+| `A`                   | Add viewport                                                                                                            |
+| `G`                   | Groups                                                                                                                  |
+| `F`                   | Fit viewports to the screen                                                                                             |
+| `+` / `−`             | Zoom in / out                                                                                                           |
+| `0`                   | Zoom to 100%                                                                                                            |
+| `L`                   | Switch layout (wrap → row → stack)                                                                                      |
+| `\`                   | Show or hide the viewports sidebar                                                                                      |
+| `M`                   | Rulers                                                                                                                  |
+| `I`                   | Inspect an element                                                                                                      |
+| `E`                   | Audit                                                                                                                   |
+| `W`                   | Scan every width                                                                                                        |
+| `B`                   | Check pages                                                                                                             |
+| `V`                   | Visual check                                                                                                            |
+| `Q`                   | QA checklist                                                                                                            |
+| `U`                   | CSS toolkit — **New in 0.11**                                                                                           |
+| `X`                   | Measure                                                                                                                 |
+| `N`                   | Notes                                                                                                                   |
+| `C`                   | Colour contrast                                                                                                         |
+| `O`                   | Layout outlines                                                                                                         |
+| `P`                   | Floating preview                                                                                                        |
+| `D`                   | Present mode                                                                                                            |
+| `H`                   | “What's this?” mode                                                                                                     |
+| `S`                   | Capture the visible workspace                                                                                           |
+| `T`                   | Switch theme                                                                                                            |
+| `[` / `]`             | Focus the previous / next viewport                                                                                      |
+| `1` … `8`             | Focus that viewport (again: show all)                                                                                   |
+| `Esc`                 | Leave present mode, picking, measuring, notes, focus, the inspector, a vision simulation, the audit or the QA checklist |
+| `Alt + ←` / `Alt + →` | Previous / next previewed page (on a focused chip: move it)                                                             |
+| `?`                   | Help                                                                                                                    |
+| `Space` + drag        | Pan the workspace                                                                                                       |
+| `Ctrl/⌘` + wheel      | Zoom all viewports                                                                                                      |
+| Drag a preview's edge | Resize (`Shift`: 10 px steps, `Alt`: no snapping)                                                                       |
+| `Alt + ↑` / `Alt + ↓` | Reorder a viewport in the sidebar                                                                                       |
+| `Ctrl/⌘ + Enter`      | Apply live CSS (in the Live CSS dialog)                                                                                 |
+| Arrow keys            | Move between cells of the QA checklist; resize a focused preview edge                                                   |
 
 **Anywhere in Chrome:**
 
-| Key                 | Action                                     |
-| ------------------- | ------------------------------------------ |
-| `Alt+Shift+V`       | Open Breakpointer (the popup)              |
-| `Alt+Shift+P`       | Preview the current page                   |
-| `bpt` + space       | Address-bar keyword: then type an address |
+| Key           | Action                                    |
+| ------------- | ----------------------------------------- |
+| `Alt+Shift+V` | Open Breakpointer (the popup)             |
+| `Alt+Shift+P` | Preview the current page                  |
+| `bpt` + space | Address-bar keyword: then type an address |
 
 Change the Chrome shortcuts at `chrome://extensions/shortcuts`.
 
@@ -785,15 +802,15 @@ Change the Chrome shortcuts at `chrome://extensions/shortcuts`.
 - On sites you allowed, a small script packaged with Breakpointer runs inside the previews while a workspace is open, to measure the layout for its tools. It never sends page text; what it finds stays in the Breakpointer tab.
 - Breakpointer Pro adds no permission and no request: licence keys are checked in your browser.
 
-| Permission                            | Used for                                                                                     |
-| ------------------------------------- | -------------------------------------------------------------------------------------------- |
-| `storage`                             | Your viewports, groups and preferences, stored locally                                       |
-| `activeTab`                           | Reading the current tab's address when you invoke Breakpointer                               |
-| `contextMenus`                        | “Preview in Breakpointer” on pages and links                                                 |
-| `declarativeNetRequestWithHostAccess` | Letting previews of sites **you allowed** ignore frame-blocking, only inside Breakpointer   |
-| `scripting`                           | Running Breakpointer's own script in previews of sites **you allowed**                      |
-| `sidePanel`                           | The side panel preview                                                                       |
-| Host access (optional)                | Asked at runtime, per site or for all sites — never at install                               |
+| Permission                            | Used for                                                                                  |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `storage`                             | Your viewports, groups and preferences, stored locally                                    |
+| `activeTab`                           | Reading the current tab's address when you invoke Breakpointer                            |
+| `contextMenus`                        | “Preview in Breakpointer” on pages and links                                              |
+| `declarativeNetRequestWithHostAccess` | Letting previews of sites **you allowed** ignore frame-blocking, only inside Breakpointer |
+| `scripting`                           | Running Breakpointer's own script in previews of sites **you allowed**                    |
+| `sidePanel`                           | The side panel preview                                                                    |
+| Host access (optional)                | Asked at runtime, per site or for all sites — never at install                            |
 
 Read the full [privacy policy](PRIVACY.md).
 
@@ -846,4 +863,4 @@ Both rely on features of recent Chrome. If yours lacks them, Breakpointer says s
 **Settings → Backup & reset → Export settings**, then **Import settings** on the other side. For one page and its viewports, a **workspace link** is enough.
 
 **Where do I report a problem or a site that won't show?**
-**Help → Support → Send feedback** opens GitHub's issue forms. This user guide is also linked from **Help → Support** (from 0.11).
+**Help → Support → Send feedback** opens GitHub's issue forms. This guide is **Help → Support → User guide** (from 0.11); it opens on GitHub, in Vietnamese when Breakpointer is set to Vietnamese.

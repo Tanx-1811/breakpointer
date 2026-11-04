@@ -2,6 +2,29 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.11.0] — 2026-11-04
+
+A CSS toolkit worked out at the sizes you preview, touch-screen styles, a check for lines too long to read, and a full user guide.
+
+### Added
+
+- **CSS toolkit** (`U`, **Tools → CSS toolkit** or “CSS toolkit: …” in the palette): five tools that use the viewports you preview.
+  - **Fluid type**: a `clamp()` from a size at your smallest viewport to a size at your largest (rem or px, with the root font size; **Use my previews’ widths** fills both in), the size it gives at every visible viewport, and a warning when zooming to 200% may not double the text (WCAG 1.4.4). **Type scale** makes a whole fluid scale — body size and a musical ratio at each end, steps below and above — as `--step-…` custom properties, each step at every viewport.
+  - **Units**: type `24px`, `1.5rem` or `4vw` and see it in px, rem, em, pt, vw, vh, vmin and vmax at each viewport (root and parent font sizes are yours to set); copy the table as Markdown.
+  - **Breakpoints**: the breakpoints in use — a framework’s, your own or this site’s — written as CSS media queries (mobile first, desktop first or range syntax, in px or em), a Sass map with `up()`/`down()` mixins, Tailwind CSS v4 `@theme` or v3 `screens`, `@custom-media` or JavaScript, ready to copy.
+  - **Colours**: pick a colour from any preview with the eyedropper (or type HEX, `rgb()`, `hsl()`, `oklch()` or a name) and copy it as HEX, RGB, HSL or OKLCH, with its contrast on white and on black; the last twelve picks stay for the session.
+  - **Aspect ratio**: a width and a height become the simplest ratio (and the common one it is close to, e.g. 1366 × 768 ≈ 16:9), its `aspect-ratio` and padding fallback, and the height a box of any share of the viewport gets at every viewport — taller than the screen is marked. Start from a common ratio or from one of your viewports.
+- **Touch-screen styles** (Simulate, sites you allow): previews use the page’s CSS for touch screens — `(hover: none)`, `(pointer: coarse)` and their `any-` forms — to find menus and buttons that only work with a mouse. Only CSS media features change: no touch events, no device emulation.
+- **Long lines of text**: a new free check — paragraphs, list items, quotes and captions of three lines or more whose lines run past about 100 characters (50 for Chinese, Japanese and Korean) are hard to read on wide screens (WCAG 1.4.8 suggests 80). On the cards, in the audit, the width scanner and Check pages; it counts in the responsive score (weight 4) and can be switched off like every check.
+- **Auto-scroll**: every preview scrolls from top to bottom by itself — for client demos and screen recordings. **Auto-scroll** in present mode’s bar (20 s), or 10, 20 or 40 s from the palette; scrolling a preview yourself stops it there.
+- **Score badge**: the audit’s responsive score card copies or downloads the score as an SVG badge (“responsive | 92 · A”) for a README or a client report.
+- **Four new guides**: Fluid type with the CSS toolkit, Test touch-screen styles, Readable text at every size and Present a responsive demo (fourteen in all).
+- **User guide**: every feature step by step, in English and Vietnamese ([docs/USER_GUIDE.md](docs/USER_GUIDE.md), [docs/USER_GUIDE.vi.md](docs/USER_GUIDE.vi.md)), linked from **Help → Support**.
+
+### Changed
+
+- Help’s “What’s new” shows this release and its shortcuts list `U`; “What’s this?” explains the score badge and Auto-scroll.
+
 ## [0.10.0] — 2026-11-04
 
 Learn Breakpointer as you go, test by hand at every size, and find the widths your breakpoints miss.

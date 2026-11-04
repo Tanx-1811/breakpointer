@@ -83,7 +83,7 @@ export function formatUnit(value: number, unit: CssUnit): string {
 export function parseLength(text: string): { value: number; unit: CssUnit | null } | null {
   const match = /^\s*(-?(?:\d+(?:[.,]\d*)?|[.,]\d+))\s*([a-z]*)\s*$/i.exec(text);
   if (!match) return null;
-  const value = Number.parseFloat(match[1].replace(',', '.'));
+  const value = Number.parseFloat(match[1]!.replace(',', '.'));
   if (!Number.isFinite(value)) return null;
   const unit = match[2]!.toLowerCase();
   if (!unit) return { value, unit: null };
@@ -105,5 +105,11 @@ export function unitMarkdown(
     (row) =>
       `| ${row.unit} | ${row.values.map((item) => (item === null ? '—' : formatUnit(item, row.unit))).join(' | ')} |`,
   );
-  return [`**${formatUnit(value, from)}** · root ${cssNumber(context.root, 2)}px · parent ${cssNumber(context.parent, 2)}px`, '', header, rule, ...body].join('\n');
+  return [
+    `**${formatUnit(value, from)}** · root ${cssNumber(context.root, 2)}px · parent ${cssNumber(context.parent, 2)}px`,
+    '',
+    header,
+    rule,
+    ...body,
+  ].join('\n');
 }

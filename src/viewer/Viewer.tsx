@@ -98,7 +98,13 @@ import {
 } from '../services/windows';
 import { createSettingsExport, defaultViewports, normalizeSnippetName, parseSettingsFile } from '../services/storage';
 import { viewerUrl } from '../shared/viewer-url';
-import { breakpointEdges, breakpointFor, breakpointSet, FRAMEWORK_BREAKPOINTS, FRAMEWORK_SET_IDS } from '../data/breakpoints';
+import {
+  breakpointEdges,
+  breakpointFor,
+  breakpointSet,
+  FRAMEWORK_BREAKPOINTS,
+  FRAMEWORK_SET_IDS,
+} from '../data/breakpoints';
 import {
   compareCardId,
   compareLabel,

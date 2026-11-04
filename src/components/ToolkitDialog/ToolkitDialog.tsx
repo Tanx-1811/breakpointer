@@ -24,13 +24,7 @@ import {
   type FluidSpec,
   type TypeScaleSpec,
 } from '../../state/fluid';
-import {
-  addRecentColor,
-  readNumber,
-  TOOLKIT_TABS,
-  type ToolkitState,
-  type ToolkitTab,
-} from '../../state/toolkit';
+import { addRecentColor, readNumber, TOOLKIT_TABS, type ToolkitState, type ToolkitTab } from '../../state/toolkit';
 import { CSS_UNITS, formatUnit, parseLength, unitMarkdown, unitTable, type CssUnit } from '../../state/units';
 import type { Breakpoint, BreakpointSetId } from '../../types';
 import { Button, IconButton } from '../Button/Button';
@@ -524,7 +518,9 @@ function FluidTab({ state, onChange, viewports, onCopy }: Props) {
                     <th scope="row" className={styles.mono}>
                       {step.name}
                     </th>
-                    <td className={styles.num}>{t('fluid.range', { min: cssNumber(step.min, 1), max: cssNumber(step.max, 1) })}</td>
+                    <td className={styles.num}>
+                      {t('fluid.range', { min: cssNumber(step.min, 1), max: cssNumber(step.max, 1) })}
+                    </td>
                     {viewports.map((viewport) => (
                       <td key={viewport.id} className={styles.num}>
                         {px(fluidAt(step.spec, viewport.width))}
@@ -559,7 +555,7 @@ function UnitsTab({ state, onChange, viewports, onCopy }: Props) {
   const root = readNumber(units.root);
   const parent = readNumber(units.parent);
   const context = root !== null && root > 0 && parent !== null && parent > 0 ? { root, parent } : null;
-  const columns = viewports.length ? viewports : [];
+  const columns = viewports;
   const rows = parsed && context ? unitTable(parsed.value, from, context, columns) : [];
 
   const typed = (value: string) => {
@@ -570,13 +566,7 @@ function UnitsTab({ state, onChange, viewports, onCopy }: Props) {
   return (
     <div className={styles.stack}>
       <div className={styles.grid}>
-        <Field
-          label={t('units.value')}
-          value={units.value}
-          invalid={!parsed}
-          onChange={typed}
-          testId="units-value"
-        />
+        <Field label={t('units.value')} value={units.value} invalid={!parsed} onChange={typed} testId="units-value" />
         <SelectField label={t('units.from')}>
           {(id) => (
             <Select
@@ -656,9 +646,7 @@ function UnitsTab({ state, onChange, viewports, onCopy }: Props) {
               size="sm"
               variant="secondary"
               icon="clipboard"
-              onClick={() =>
-                onCopy(unitMarkdown(parsed.value, from, context, columns, { unit: t('units.unit') }))
-              }
+              onClick={() => onCopy(unitMarkdown(parsed.value, from, context, columns, { unit: t('units.unit') }))}
             >
               {t('units.copyTable')}
             </Button>
@@ -788,10 +776,13 @@ function ColorsTab({ state, onChange, onCopy, onPicking }: Props & { onPicking: 
   const color = parseAnyColor(colors.value, resolveNamed);
   const contrast = color ? contrastOnWhiteAndBlack(color) : null;
 
-  const use = (value: string, remember: boolean) =>
+  const choose = (value: string, remember: boolean) =>
     onChange({
       ...state,
-      colors: { value, recent: remember && parseAnyColor(value, resolveNamed) ? addRecentColor(colors.recent, value) : colors.recent },
+      colors: {
+        value,
+        recent: remember && parseAnyColor(value, resolveNamed) ? addRecentColor(colors.recent, value) : colors.recent,
+      },
     });
 
   const pick = async () => {
@@ -802,7 +793,7 @@ function ColorsTab({ state, onChange, onCopy, onPicking }: Props & { onPicking: 
     try {
       await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
       const result = await new EyeDropper().open();
-      use(result.sRGBHex, true);
+      choose(result.sRGBHex, true);
     } catch {
       // Cancelled with Escape.
     } finally {
@@ -827,8 +818,8 @@ function ColorsTab({ state, onChange, onCopy, onPicking }: Props & { onPicking: 
               className={styles.swatchInput}
               value={color ? toHex(color) : '#000000'}
               aria-label={t('colors.swatch')}
-              onChange={(event) => use(event.target.value, false)}
-              onBlur={() => color && use(colors.value, true)}
+              onChange={(event) => choose(event.target.value, false)}
+              onBlur={() => color && choose(colors.value, true)}
             />
             <input
               id={inputId}
@@ -838,9 +829,9 @@ function ColorsTab({ state, onChange, onCopy, onPicking }: Props & { onPicking: 
               autoComplete="off"
               aria-invalid={color ? undefined : true}
               data-testid="color-input"
-              onChange={(event) => use(event.target.value, false)}
-              onBlur={() => color && use(colors.value, true)}
-              onKeyDown={(event) => event.key === 'Enter' && color && use(colors.value, true)}
+              onChange={(event) => choose(event.target.value, false)}
+              onBlur={() => color && choose(colors.value, true)}
+              onKeyDown={(event) => event.key === 'Enter' && color && choose(colors.value, true)}
             />
             {eyeDropper() && (
               <Button size="sm" variant="secondary" icon="eyedropper" onClick={() => void pick()}>
@@ -922,7 +913,7 @@ function ColorsTab({ state, onChange, onCopy, onPicking }: Props & { onPicking: 
                     style={parsed ? { background: formatColor(parsed, 'rgb') } : undefined}
                     aria-label={t('colors.useRecent', { color: item })}
                     data-tooltip={item}
-                    onClick={() => use(item, false)}
+                    onClick={() => choose(item, false)}
                   />
                 </li>
               );

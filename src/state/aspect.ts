@@ -43,7 +43,9 @@ export function aspectRatio(width: number, height: number): AspectRatio | null {
   const isCommon = COMMON_RATIOS.some(([a, b]) => a === simple.width && b === simple.height);
   let near: AspectRatio['near'] = null;
   if (!isCommon) {
-    const closest = [...COMMON_RATIOS].sort((a, b) => Math.abs(a[0] / a[1] - value) - Math.abs(b[0] / b[1] - value))[0]!;
+    const closest = [...COMMON_RATIOS].sort(
+      (a, b) => Math.abs(a[0] / a[1] - value) - Math.abs(b[0] / b[1] - value),
+    )[0]!;
     if (Math.abs(closest[0] / closest[1] - value) / value <= 0.01) near = { width: closest[0], height: closest[1] };
   }
   return { ...simple, value, near };

@@ -558,10 +558,21 @@ function ScoreCard({
         )}
         {onBadge && (
           <span className={styles.scoreBadge}>
-            <Button size="sm" variant="ghost" icon="copy" onClick={() => onBadge(score, 'copy')} data-testid="badge-copy">
+            <Button
+              size="sm"
+              variant="ghost"
+              icon="copy"
+              onClick={() => onBadge(score, 'copy')}
+              data-testid="badge-copy"
+            >
               {t('badge.copy')}
             </Button>
-            <IconButton icon="download" size="sm" label={t('badge.download')} onClick={() => onBadge(score, 'download')} />
+            <IconButton
+              icon="download"
+              size="sm"
+              label={t('badge.download')}
+              onClick={() => onBadge(score, 'download')}
+            />
           </span>
         )}
       </div>

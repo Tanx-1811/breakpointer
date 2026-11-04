@@ -67,12 +67,10 @@ export function breakpointCode(format: CodeFormat, list: readonly NamedBreakpoin
     case 'css-max':
       return [
         `/* Desktop first: styles outside any query are for ${list[list.length - 1]!.name} and up. */`,
-        ...[...list]
-          .reverse()
-          .map((bp, index, reversed) => {
-            const name = reversed[index + 1]?.name ?? base;
-            return `@media (max-width: ${below(bp.min, unit)}) {\n  /* ${name} and down */\n}`;
-          }),
+        ...[...list].reverse().map((bp, index, reversed) => {
+          const name = reversed[index + 1]?.name ?? base;
+          return `@media (max-width: ${below(bp.min, unit)}) {\n  /* ${name} and down */\n}`;
+        }),
       ].join('\n\n');
     case 'css-range':
       return [
@@ -118,7 +116,7 @@ export function breakpointCode(format: CodeFormat, list: readonly NamedBreakpoin
       ].join('\n');
     case 'tailwind3':
       return [
-        '/** @type {import(\'tailwindcss\').Config} */',
+        "/** @type {import('tailwindcss').Config} */",
         'module.exports = {',
         '  theme: {',
         '    screens: {',

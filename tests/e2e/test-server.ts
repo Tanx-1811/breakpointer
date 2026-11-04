@@ -395,6 +395,23 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
     ),
   },
   '/long': { body: LONG_PAGE },
+  // v0.11: touch-screen styles, a paragraph whose lines are too long on wide screens, room to auto-scroll.
+  '/v11': {
+    body: page(
+      'Version 0.11 page',
+      `<style>
+  #touch { color: rgb(200, 0, 0); }
+  @media (hover: none) and (pointer: coarse) { #touch { color: rgb(0, 128, 0); } }
+  #essay { font-size: 20px; line-height: 1.5; }
+  #room { height: 3000px; }</style>`,
+    ).replace(
+      '</h1>',
+      `</h1>
+  <p id="touch">Hover me</p>
+  <p id="essay">${'Responsive layouts need text that stays comfortable to read at every width. '.repeat(10)}</p>
+  <div id="room"></div>`,
+    ),
+  },
   '/linked': { body: page('Linked page') },
   '/issues': { body: ISSUES_PAGE },
   '/scheme': { body: SCHEME_PAGE },

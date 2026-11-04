@@ -51,7 +51,7 @@ export function scoreBadgeSvg(score: Pick<ResponsiveScore, 'score' | 'grade'>, l
 
 /** A file name for the badge of a page: `responsive-score-example.com.svg`. */
 export function badgeFileName(page: string | null): string {
-  let host = '';
+  let host: string;
   try {
     host = page ? new URL(page).hostname.replace(/^www\./, '') : '';
   } catch {

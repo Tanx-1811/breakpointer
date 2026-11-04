@@ -427,6 +427,7 @@ describe('WorkspaceBar utilities', () => {
           reduceMotion: false,
           moreContrast: false,
           print: false,
+          touch: false,
           pauseAnimations: false,
           pseudo: true,
           rtl: false,

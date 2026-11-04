@@ -80,7 +80,12 @@ export function formatColor(color: Rgb, format: ColorFormat): string {
   switch (format) {
     case 'hex': {
       const hex = [rgb.r, rgb.g, rgb.b].map((value) => clamp(value, 0, 255).toString(16).padStart(2, '0')).join('');
-      const alpha = rgb.a < 1 ? Math.round(clamp(rgb.a, 0, 1) * 255).toString(16).padStart(2, '0') : '';
+      const alpha =
+        rgb.a < 1
+          ? Math.round(clamp(rgb.a, 0, 1) * 255)
+              .toString(16)
+              .padStart(2, '0')
+          : '';
       return `#${hex}${alpha}`;
     }
     case 'rgb':

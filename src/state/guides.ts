@@ -239,7 +239,11 @@ export const GUIDES: readonly Guide[] = [
     title: 'guide.readable.title',
     summary: 'guide.readable.summary',
     steps: [
-      { target: '[data-testid="audit-toggle"]', title: 'guide.readable.checksTitle', body: 'guide.readable.checksBody' },
+      {
+        target: '[data-testid="audit-toggle"]',
+        title: 'guide.readable.checksTitle',
+        body: 'guide.readable.checksBody',
+      },
       {
         target: `${AUDIT} [role="tabpanel"]`,
         title: 'guide.readable.auditTitle',

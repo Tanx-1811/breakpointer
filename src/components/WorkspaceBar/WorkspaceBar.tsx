@@ -35,15 +35,7 @@ export type ToolState = Record<ToolToggle, boolean> & { liveCss: boolean };
 
 /** Simulations that run inside the previews (sites the user allowed). */
 export type SimulateToggle =
-  | 'reduceMotion'
-  | 'moreContrast'
-  | 'print'
-  | 'touch'
-  | 'pauseAnimations'
-  | 'pseudo'
-  | 'rtl'
-  | 'spacing'
-  | 'textZoom';
+  'reduceMotion' | 'moreContrast' | 'print' | 'touch' | 'pauseAnimations' | 'pseudo' | 'rtl' | 'spacing' | 'textZoom';
 export type SimulateState = Record<SimulateToggle, boolean> & { vision: VisionMode };
 
 export const VISION_KEYS: Record<VisionMode, MessageKey> = {

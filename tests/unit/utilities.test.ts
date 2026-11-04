@@ -471,6 +471,7 @@ describe('command palette', () => {
       reduceMotion: true,
       moreContrast: false,
       print: false,
+      touch: false,
       spacing: false,
       textZoom: false,
       pauseAnimations: false,
