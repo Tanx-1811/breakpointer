@@ -23,6 +23,9 @@ const getMessage = (name: string, substitution?: string) =>
 beforeEach(() => {
   Object.assign(chrome, { action, tabs, runtime, i18n: { ...chrome.i18n, getMessage } });
   vi.spyOn(window, 'close').mockImplementation(() => {});
+  // jsdom has no matchMedia (the popup follows the system theme).
+  window.matchMedia ??= (query: string) =>
+    ({ matches: false, media: query, addEventListener() {}, removeEventListener() {} }) as unknown as MediaQueryList;
 });
 
 afterEach(() => vi.clearAllMocks());

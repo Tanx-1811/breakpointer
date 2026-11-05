@@ -93,7 +93,7 @@ On first use, Breakpointer starts with three viewports — **Phone** 375 × 667,
 
 ### Learn as you go
 
-**Help centre** (`?`, or the **?** button in the top bar) has four sections — **Get started**, **Shortcuts**, **What's new** and **Support** (feedback, rating, sharing and, from 0.11, a link to this **User guide**) — and a search over guides and shortcuts. After an update it opens on **What's new**, and the Help button shows a dot until you do.
+**Help centre** (`?`, or the **?** button in the top bar) has four sections — **Get started**, **Shortcuts**, **What's new** and **Support** (feedback, rating, sharing and, from 0.11, a link to this **User guide**) — and a search over guides and shortcuts. After an update it opens on **What's new**, and the Help button shows a dot until you do. Chrome installs updates by itself without a word, so Breakpointer says so: the toolbar icon shows **NEW**, the popup names the new version with **See what's new**, and the workspace shows a message once.
 
 **Getting-started checklist.** Eight things worth doing once, ticked off by themselves as you do them: preview a page, add or resize a viewport, inspect an element at every size, open the audit, scan every width, pin a note on a preview, take a screenshot and try “What's this?” mode. Each has **Show me**. The status bar shows **Get started 3/8** until the list is done or you choose **Hide from the status bar**. Open it from Help → **Get started**, the status bar, or “Get started checklist” in the command palette. Only which tasks are done is kept, on this device.
 

@@ -15,6 +15,7 @@ Every tag and every rule: the page's HTML and CSS, like the browser's developer 
   - **Box**: margin, border, padding and content size as a box model.
   - **Summary**: an audit of the page's HTML and CSS — the number of elements and the deepest level (flagged past Lighthouse's 1,500 and 32), duplicate ids, obsolete tags (`center`, `font`, `marquee`…), images without `alt`, `style` attributes and `!important` declarations, the most used tags and the stylesheets — copied as Markdown.
 - A new guide, **Read a page's HTML and CSS** (eighteen in all).
+- **Update notice.** Chrome installs updates silently, so after one the toolbar button now shows **NEW** (and its tooltip says so), the popup says which version arrived with **See what's new** (it opens the workspace on Help's What's new) or Dismiss, and the workspace shows the same once as a toast. All of it goes when the news are seen. No new permission.
 
 ### Notes
 

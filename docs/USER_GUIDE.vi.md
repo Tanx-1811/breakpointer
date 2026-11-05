@@ -93,7 +93,7 @@ Lần đầu dùng, Breakpointer có sẵn ba viewport — **Điện thoại** 3
 
 ### Vừa dùng vừa học
 
-**Trung tâm trợ giúp** (`?`, hoặc nút **?** trên thanh trên cùng) có bốn mục — **Bắt đầu**, **Phím tắt**, **Có gì mới** và **Hỗ trợ** (góp ý, đánh giá, chia sẻ và, từ 0.11, liên kết tới **Hướng dẫn sử dụng** này) — cùng ô tìm kiếm hướng dẫn và phím tắt. Sau mỗi lần cập nhật, nó mở ở **Có gì mới**, và nút Trợ giúp có một chấm nhỏ cho đến khi bạn mở.
+**Trung tâm trợ giúp** (`?`, hoặc nút **?** trên thanh trên cùng) có bốn mục — **Bắt đầu**, **Phím tắt**, **Có gì mới** và **Hỗ trợ** (góp ý, đánh giá, chia sẻ và, từ 0.11, liên kết tới **Hướng dẫn sử dụng** này) — cùng ô tìm kiếm hướng dẫn và phím tắt. Sau mỗi lần cập nhật, nó mở ở **Có gì mới**, và nút Trợ giúp có một chấm nhỏ cho đến khi bạn mở. Chrome tự cài bản cập nhật mà không báo gì, nên Breakpointer tự báo: biểu tượng trên thanh công cụ hiện **MỚI**, popup ghi phiên bản mới kèm nút **Xem có gì mới**, và workspace hiện một thông báo một lần.
 
 **Danh sách bắt đầu.** Tám việc nên làm thử một lần, tự đánh dấu khi bạn làm xong: xem trước một trang, thêm hoặc đổi kích thước một viewport, soi một phần tử ở mọi kích thước, mở bảng rà soát, quét mọi chiều rộng, ghim một ghi chú lên bản xem trước, chụp màn hình và thử chế độ “Đây là gì?”. Mỗi việc có nút **Chỉ cho tôi**. Thanh trạng thái hiện **Bắt đầu 3/8** cho đến khi bạn làm xong hoặc chọn **Ẩn khỏi thanh trạng thái**. Mở danh sách từ Trợ giúp → **Bắt đầu**, từ thanh trạng thái, hoặc lệnh “Danh sách bắt đầu” trong bảng lệnh. Chỉ lưu việc nào đã xong, trên thiết bị này.
 
