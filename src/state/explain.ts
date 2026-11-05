@@ -58,6 +58,7 @@ export const EXPLAIN_TOPICS: readonly ExplainTopic[] = [
   { selector: '[data-testid="audit"]', body: 'explain.auditPanel', guide: 'audit' },
   { selector: '[data-testid="inspector"]', body: 'explain.inspector', guide: 'inspect' },
   { selector: '[data-testid="qa-panel"]', body: 'explain.qa', guide: 'qa' },
+  { selector: '[data-testid="elements-panel"]', body: 'explain.elements', guide: 'elements' },
 ];
 
 /** What a control or one of its containers is about, if anything. */

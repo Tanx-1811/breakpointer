@@ -32,6 +32,7 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
   { keys: ['V'], label: 'help.visual' },
   { keys: ['Q'], label: 'help.qa' },
   { keys: ['U'], label: 'help.toolkit' },
+  { keys: ['J'], label: 'help.elements' },
   { keys: ['X'], label: 'help.measure' },
   { keys: ['N'], label: 'help.notes' },
   { keys: ['C'], label: 'help.contrast' },
@@ -52,6 +53,8 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 
 /** What this version brings, shown in Help's “What's new”. */
 const NEWS: { icon: IconName; text: MessageKey }[] = [
+  { icon: 'code', text: 'news.elements' },
+  { icon: 'report', text: 'news.elementsSummary' },
   { icon: 'pencil', text: 'news.markup' },
   { icon: 'report', text: 'news.scoreHistory' },
   { icon: 'code', text: 'news.toolkit12' },

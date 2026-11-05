@@ -10,7 +10,7 @@ Hướng dẫn này áp dụng cho Breakpointer 0.11. Tính năng có nhãn **M�
 
 1. [Bắt đầu](#getting-started) — cài đặt, mở trang, quyền truy cập trang, màn hình chào, vừa dùng vừa học
 2. [Vùng làm việc](#the-workspace) — viewport, kích thước có sẵn, nhóm, đổi kích thước, thu phóng, bố cục, chế độ tập trung, thanh bên, thanh trạng thái, breakpoint, dự án
-3. [Tìm lỗi bố cục](#finding-layout-problems) — đồng bộ, kiểm tra, điểm, rà soát, quét chiều rộng, soi phần tử, đo, lớp phủ, so sánh A/B
+3. [Tìm lỗi bố cục](#finding-layout-problems) — đồng bộ, kiểm tra, điểm, rà soát, quét chiều rộng, soi phần tử, Elements (HTML & CSS, Mới ở 0.13), đo, lớp phủ, so sánh A/B
 4. [Mô phỏng và thử độ bền](#simulations-and-stress-tests) — thị lực, tùy chọn của trang, kiểu cho màn hình cảm ứng, chữ dài hơn, phải sang trái
 5. [Kiểm thử thủ công](#manual-testing) — checklist kiểm thử, ghi chú và báo cáo lỗi
 6. [Cả website và lỗi hồi quy](#whole-sites-and-regressions) — Kiểm tra nhiều trang, Kiểm tra hình ảnh
@@ -118,6 +118,7 @@ Lần đầu dùng, Breakpointer có sẵn ba viewport — **Điện thoại** 3
 | Chú thích ảnh chụp                | **Mới ở 0.12** — mũi tên, khung, bước đánh số — và che thông tin riêng tư                 |
 | Đưa ảnh responsive lên trang      | **Mới ở 0.12** — đúng kích thước, định dạng hiện đại và tải lười                          |
 | Theo dõi điểm của trang           | **Mới ở 0.12** — xem điểm responsive tăng lên qua từng ngày                               |
+| Đọc HTML và CSS của trang         | **Mới ở 0.13** — cây thẻ, CSS của từng phần tử và bản tổng quan                           |
 
 Trong tài liệu này, dòng “Trong ứng dụng:” cho biết hướng dẫn nào đi qua cùng việc đó.
 
@@ -383,6 +384,26 @@ Sau đó:
 - **Đến _viewport_** cuộn tới bản xem trước đó; **Bỏ chọn** để quên phần tử.
 
 Phần tử đang soi được đưa vào báo cáo HTML. Trong ứng dụng: **So một phần tử ở mọi kích thước**.
+
+<a id="elements"></a>
+
+### Elements (HTML & CSS) — Mới ở 0.13
+
+Mọi thẻ của trang và CSS của từng thẻ, như công cụ nhà phát triển (F12) của trình duyệt — nhưng cho bản xem trước bạn chọn, ở đúng kích thước của nó.
+
+1. Nhấn `J`, hoặc **Công cụ → Elements (HTML & CSS)**, hoặc “Elements” trong bảng lệnh. Bảng mở ở bên cạnh (thay chỗ soi phần tử, rà soát hoặc checklist kiểm thử).
+2. Chọn **Bản xem trước** cần đọc khi có nhiều bản — cùng một trang ở 375 px và 1440 px có thể có style khác nhau.
+3. Duyệt cây: bấm mũi tên, hoặc dùng `↑` `↓` để di chuyển, `→` để mở, `←` để đóng, `Enter` để chọn. Thẻ in nghiêng có biểu tượng mắt gạch không hiển thị ở kích thước đó. Hoặc bấm nút **Chọn** trên đầu bảng rồi bấm một phần tử trong bất kỳ bản xem trước nào: cây mở tới phần tử đó và chuyển sang bản xem trước đó.
+4. Phần tử đang chọn được viền trong bản xem trước. Xem chi tiết:
+   - **Styles** — `element.style` (thuộc tính `style`), rồi mọi quy tắc khớp, quy tắc thắng ở trên, kèm `@media`, `@supports`, `@container` hoặc `@layer` bao quanh và tệp nguồn. Khai báo thua quy tắc khác được gạch ngang; rê chuột lên selector để xem độ ưu tiên (specificity). Quy tắc nằm trong media query chỉ hiện ở bản xem trước mà query đó áp dụng.
+   - **Computed** — giá trị cuối cùng của từng thuộc tính; các thuộc tính bố cục trước, **Hiện tất cả** cho phần còn lại, và ô lọc.
+   - **Box** — margin, border, padding và kích thước nội dung.
+   - **Tổng quan** — HTML và CSS của trang trong nháy mắt (xem bên dưới).
+5. **Chép CSS** chép các quy tắc dạng văn bản; **Thử trong CSS trực tiếp** mở [CSS trực tiếp](#live-css) với một quy tắc cho phần tử này, để đổi nó ở mọi bản xem trước cùng lúc; **So sánh ở mọi kích thước** mở [soi phần tử](#inspector) với cùng phần tử.
+
+**Tổng quan** rà soát trang: **Số phần tử** và **Độ sâu lớn nhất** (được đánh dấu khi vượt 1.500 và 32, ngưỡng của Lighthouse), **id bị trùng**, **Thẻ lỗi thời** (`center`, `font`, `marquee`…), **Ảnh thiếu alt**, **Style inline** và **Khai báo !important**, cùng các thẻ dùng nhiều nhất và các stylesheet. **Chép dạng Markdown** để dán vào ticket.
+
+Lưu ý: Elements chạy trong bản xem trước của các trang bạn cho phép. Stylesheet từ trang khác không cho phép đọc thì không đọc được (bảng có báo số lượng), nên quy tắc của chúng không được liệt kê. Quy tắc `@container` có áp dụng hay không thì không biết được từ bên ngoài: chúng được liệt kê kèm điều kiện. Trong ứng dụng: **Đọc HTML và CSS của trang**.
 
 ### Đo khoảng cách
 
@@ -834,6 +855,7 @@ Phím tắt một phím chạy trong vùng làm việc, không chạy khi bạn 
 | `V`                    | Kiểm tra hình ảnh                                                                                                                |
 | `Q`                    | Checklist kiểm thử                                                                                                               |
 | `U`                    | Bộ công cụ CSS — **Mới ở 0.11**                                                                                                  |
+| `J`                    | Elements: HTML và CSS — **Mới ở 0.13**                                                                                           |
 | `X`                    | Đo khoảng cách                                                                                                                   |
 | `N`                    | Ghi chú                                                                                                                          |
 | `C`                    | Độ tương phản màu                                                                                                                |

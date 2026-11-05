@@ -222,6 +222,9 @@ export function useFrameAgents(
         case 'colors':
         case 'meta':
         case 'mediaQueries':
+        case 'dom':
+        case 'styles':
+        case 'domSummary':
         case 'elementRect':
         case 'rects':
         case 'links': {

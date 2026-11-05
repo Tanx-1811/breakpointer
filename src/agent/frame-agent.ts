@@ -29,8 +29,16 @@ import {
 } from './a11y';
 import {
   collectMeta,
+  compareSpecificity,
   compressBox,
   cssPath,
+  OBSOLETE_TAGS,
+  overriddenDeclarations,
+  selectorSpecificity,
+  splitDeclarations,
+  splitTopLevel,
+  type CascadeGroup,
+  type Specificity,
   cumulativeLayoutShift,
   cutOff,
   describeElement,
@@ -76,7 +84,12 @@ import {
   type ElementInfo,
   type ColorCount,
   type ColorSample,
+  type DomNode,
+  type DomSummary,
   type ElementRect,
+  type ElementStyles,
+  type MatchedRule,
+  type StyleDeclaration,
   type ImageSample,
   type Interaction,
   type MediaQueryEntry,
@@ -1995,6 +2008,297 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       .map(({ area: _area, index: _index, ...sample }) => sample);
   };
 
+  /* ---------- v0.13: the Elements panel ---------- */
+
+  const MAX_DOM_CHILDREN = 300;
+  const MAX_MATCHED_RULES = 200;
+  /** Elements whose text isn't worth showing in the tree. */
+  const NO_TEXT = new Set(['script', 'style', 'noscript', 'template']);
+  /** Breakpointer's own elements: its overlay and its injected styles (live CSS aside, which is the user's). */
+  const ownElement = (element: Element) =>
+    element.hasAttribute(OVERLAY_ATTRIBUTE) ||
+    (element.localName === 'style' && element.id.startsWith('bp-') && element.id !== 'bp-live-css');
+  const elementChildren = (element: Element) => Array.from(element.children).filter((child) => !ownElement(child));
+
+  /** The element and its children `depth` levels down, with the ancestors of `reveal` opened. */
+  const domNode = (element: Element, depth: number, reveal: Element | null): DomNode => {
+    const children = elementChildren(element);
+    const tag = element.localName;
+    const inHead = tag === 'html' || tag === 'head' || element.closest('head') !== null;
+    let hidden = false;
+    if (!inHead) {
+      const style = getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      hidden =
+        style.display === 'none' ||
+        style.visibility === 'hidden' ||
+        (rect.width === 0 && rect.height === 0 && style.display !== 'contents');
+    }
+    const node: DomNode = {
+      selector: cssPath(element),
+      tag,
+      attributes: Array.from(element.attributes)
+        .slice(0, 24)
+        .map((attribute): [string, string] => [attribute.name, attribute.value.slice(0, 200)]),
+      childCount: children.length,
+      text:
+        children.length || NO_TEXT.has(tag)
+          ? ''
+          : (element.textContent ?? '').replace(/\s+/g, ' ').trim().slice(0, 120),
+      hidden,
+    };
+    const onPath = reveal !== null && reveal !== element && element.contains(reveal);
+    if ((depth > 0 || onPath) && children.length) {
+      node.children = children
+        .slice(0, MAX_DOM_CHILDREN)
+        .map((child) => domNode(child, depth - 1, onPath && child.contains(reveal) ? reveal : null));
+      if (children.length > MAX_DOM_CHILDREN) node.truncated = true;
+    }
+    return node;
+  };
+
+  /** The longhand properties a declaration sets (`margin` → margin-top…), read by the browser itself. */
+  const longhandCache = new Map<string, string[]>();
+  const longhandsOf = (name: string): string[] => {
+    if (name.startsWith('--')) return [name];
+    const cached = longhandCache.get(name);
+    if (cached) return cached;
+    const probe = document.createElement('div').style;
+    probe.cssText = `${name}: initial`;
+    const list: string[] = [];
+    for (let index = 0; index < probe.length; index++) list.push(probe.item(index));
+    const result = list.length ? list : [name];
+    longhandCache.set(name, result);
+    return result;
+  };
+
+  /** Where a stylesheet comes from: its file's name, `<style>`, or Breakpointer's live CSS. */
+  const sheetSource = (sheet: CSSStyleSheet): string | null => {
+    const owner = sheet.ownerNode;
+    if (owner instanceof Element && owner.id.startsWith('bp-')) return owner.id === 'bp-live-css' ? 'Live CSS' : null;
+    if (sheet.href) {
+      try {
+        return decodeURIComponent(new URL(sheet.href).pathname.split('/').pop() || sheet.href).slice(0, 80);
+      } catch {
+        return sheet.href.slice(0, 80);
+      }
+    }
+    return owner ? '<style>' : 'adopted';
+  };
+
+  /** The element's matching style rules (in document order), and how many sheets couldn't be read. */
+  const matchingRules = (element: Element) => {
+    type Found = { rule: CSSStyleRule; conditions: string[]; source: string; specificity: Specificity; order: number };
+    const found: Found[] = [];
+    let unreadable = 0;
+    let order = 0;
+    const walk = (rules: CSSRuleList, conditions: string[], source: string, depth: number) => {
+      for (const rule of Array.from(rules)) {
+        order++;
+        if (rule instanceof CSSStyleRule) {
+          let best: Specificity | null = null;
+          for (const part of splitTopLevel(rule.selectorText)) {
+            try {
+              if (!element.matches(part)) continue;
+            } catch {
+              // Pseudo-elements and selectors the browser can't test.
+              continue;
+            }
+            const specificity = selectorSpecificity(part);
+            if (!best || compareSpecificity(specificity, best) > 0) best = specificity;
+          }
+          if (best && found.length < MAX_MATCHED_RULES)
+            found.push({ rule, conditions, source, specificity: best, order });
+          continue;
+        }
+        if (depth >= 8) continue;
+        if (rule instanceof CSSMediaRule) {
+          if (window.matchMedia(rule.media.mediaText).matches)
+            walk(
+              rule.cssRules,
+              [...conditions, `@media ${originalMedia.get(rule.media) ?? rule.media.mediaText}`],
+              source,
+              depth + 1,
+            );
+        } else if (rule instanceof CSSSupportsRule) {
+          if (CSS.supports(rule.conditionText))
+            walk(rule.cssRules, [...conditions, `@supports ${rule.conditionText}`], source, depth + 1);
+        } else if (ContainerRule && rule instanceof ContainerRule) {
+          // Whether a container query applies can't be told from here: its rules are listed with it.
+          walk(rule.cssRules, [...conditions, `@container ${rule.conditionText}`], source, depth + 1);
+        } else if (rule instanceof CSSImportRule) {
+          if (!window.matchMedia(rule.media.mediaText || 'all').matches) continue;
+          try {
+            const imported = rule.styleSheet;
+            if (imported) walk(imported.cssRules, conditions, sheetSource(imported) ?? source, depth + 1);
+          } catch {
+            unreadable++;
+          }
+        } else if (typeof CSSLayerBlockRule !== 'undefined' && rule instanceof CSSLayerBlockRule) {
+          walk(rule.cssRules, [...conditions, `@layer ${rule.name}`.trim()], source, depth + 1);
+        }
+      }
+    };
+    for (const sheet of [...Array.from(document.styleSheets), ...(document.adoptedStyleSheets ?? [])]) {
+      const source = sheetSource(sheet);
+      if (source === null) continue;
+      let rules: CSSRuleList;
+      try {
+        rules = sheet.cssRules;
+      } catch {
+        unreadable++;
+        continue;
+      }
+      if (sheet.disabled || (sheet.media.mediaText && !window.matchMedia(sheet.media.mediaText).matches)) continue;
+      walk(rules, [], source, 0);
+    }
+    return { found, unreadable };
+  };
+
+  const pixels = (value: string) => Math.round((Number.parseFloat(value) || 0) * 100) / 100;
+
+  /** What styles an element: its matching rules with the cascade worked out, its computed style and its box. */
+  const elementStyles = (selector: string): ElementStyles | null => {
+    let element: Element | null;
+    try {
+      element = document.querySelector(selector);
+    } catch {
+      element = null;
+    }
+    if (!element) return null;
+    const { found, unreadable } = matchingRules(element);
+    const inlineText = element instanceof HTMLElement || element instanceof SVGElement ? element.style.cssText : '';
+    const inline = splitDeclarations(inlineText);
+    const blocks = found.map(({ rule }) => splitDeclarations(rule.style.cssText));
+    const groups: CascadeGroup[] = [
+      {
+        inline: true,
+        specificity: [0, 0, 0],
+        order: Number.MAX_SAFE_INTEGER,
+        declarations: inline.map((item) => ({ important: item.important, longhands: longhandsOf(item.name) })),
+      },
+      ...found.map((item, index) => ({
+        inline: false,
+        specificity: item.specificity,
+        order: item.order,
+        declarations: blocks[index]!.map((declaration) => ({
+          important: declaration.important,
+          longhands: longhandsOf(declaration.name),
+        })),
+      })),
+    ];
+    const overridden = overriddenDeclarations(groups);
+    const declarations = (list: typeof inline, flags: boolean[]): StyleDeclaration[] =>
+      list
+        .slice(0, 120)
+        .map((item, index) => ({ ...item, value: item.value.slice(0, 500), overridden: flags[index] ?? false }));
+    const rules: MatchedRule[] = found
+      .map((item, index) => ({
+        selector: item.rule.selectorText.slice(0, 300),
+        conditions: item.conditions,
+        source: item.source,
+        specificity: item.specificity,
+        order: item.order,
+        declarations: declarations(blocks[index]!, overridden[index + 1]!),
+      }))
+      // The ones that win first, as browsers' developer tools list them.
+      .sort((a, b) => compareSpecificity(b.specificity, a.specificity) || b.order - a.order)
+      .map(({ order: _order, ...rule }) => rule);
+    const style = getComputedStyle(element);
+    const computed: [string, string][] = [];
+    for (let index = 0; index < style.length; index++) {
+      const name = style.item(index);
+      if (!name.startsWith('--')) computed.push([name, style.getPropertyValue(name).slice(0, 300)]);
+    }
+    computed.sort((a, b) => a[0].localeCompare(b[0]));
+    const sides = (prefix: string, suffix = '') =>
+      ['top', 'right', 'bottom', 'left'].map((side) => pixels(style.getPropertyValue(`${prefix}-${side}${suffix}`)));
+    const padding = sides('padding');
+    const border = sides('border', '-width');
+    const rect = element.getBoundingClientRect();
+    return {
+      selector,
+      inline: declarations(inline, overridden[0]!),
+      rules,
+      computed,
+      box: {
+        margin: sides('margin'),
+        border,
+        padding,
+        width: Math.max(0, pixels(String(rect.width)) - padding[1]! - padding[3]! - border[1]! - border[3]!),
+        height: Math.max(0, pixels(String(rect.height)) - padding[0]! - padding[2]! - border[0]! - border[2]!),
+      },
+      unreadable,
+    };
+  };
+
+  /** Counts about the page's HTML and CSS, for the Elements panel's summary. */
+  const domSummary = (): DomSummary => {
+    const tags = new Map<string, number>();
+    const ids = new Map<string, number>();
+    const obsolete = new Map<string, number>();
+    const OBSOLETE = new Set<string>(OBSOLETE_TAGS);
+    let elements = 0;
+    let depth = 0;
+    let inlineStyles = 0;
+    let imagesWithoutAlt = 0;
+    const visit = (element: Element, level: number) => {
+      if (elements >= 50_000 || ownElement(element)) return;
+      elements++;
+      depth = Math.max(depth, level);
+      const tag = element.localName;
+      tags.set(tag, (tags.get(tag) ?? 0) + 1);
+      if (OBSOLETE.has(tag)) obsolete.set(tag, (obsolete.get(tag) ?? 0) + 1);
+      if (element.id) ids.set(element.id, (ids.get(element.id) ?? 0) + 1);
+      if (element.hasAttribute('style')) inlineStyles++;
+      if (tag === 'img' && !element.hasAttribute('alt')) imagesWithoutAlt++;
+      for (const child of Array.from(element.children)) visit(child, level + 1);
+    };
+    visit(document.documentElement, 0);
+    let stylesheets = 0;
+    let unreadable = 0;
+    let rules = 0;
+    let important = 0;
+    const count = (list: CSSRuleList, level: number) => {
+      for (const rule of Array.from(list)) {
+        if (rule instanceof CSSStyleRule) {
+          rules++;
+          for (let index = 0; index < rule.style.length; index++)
+            if (rule.style.getPropertyPriority(rule.style.item(index)) === 'important') important++;
+        }
+        const nested = (rule as Partial<CSSGroupingRule>).cssRules;
+        if (nested && level < 8) count(nested, level + 1);
+      }
+    };
+    for (const sheet of [...Array.from(document.styleSheets), ...(document.adoptedStyleSheets ?? [])]) {
+      if (sheet.ownerNode instanceof Element && sheet.ownerNode.id.startsWith('bp-')) continue;
+      stylesheets++;
+      try {
+        count(sheet.cssRules, 0);
+      } catch {
+        unreadable++;
+      }
+    }
+    const top = (map: Map<string, number>, limit: number, min = 1) =>
+      [...map.entries()]
+        .filter(([, value]) => value >= min)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, limit);
+    return {
+      elements,
+      depth,
+      tags: top(tags, 24),
+      duplicateIds: top(ids, 20, 2),
+      obsolete: top(obsolete, 20),
+      inlineStyles,
+      imagesWithoutAlt,
+      stylesheets,
+      unreadable,
+      rules,
+      important,
+    };
+  };
+
   /** The colours of text, backgrounds and borders of the elements shown, and how many use each. */
   const colorSample = (): ColorSample => {
     const text = new Map<string, number>();
@@ -2669,6 +2973,28 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
               : element.getClientRects().length === 0,
           ),
         });
+        break;
+      case 'getDom': {
+        let root: Element | null = document.documentElement;
+        let reveal: Element | null = null;
+        try {
+          if (command.selector) root = document.querySelector(command.selector);
+          if (command.reveal) reveal = document.querySelector(command.reveal);
+        } catch {
+          root = null;
+        }
+        send({
+          type: 'dom',
+          id: command.id,
+          root: root ? domNode(root, Math.max(0, Math.min(4, command.depth)), reveal) : null,
+        });
+        break;
+      }
+      case 'getStyles':
+        send({ type: 'styles', id: command.id, styles: elementStyles(command.selector) });
+        break;
+      case 'getDomSummary':
+        send({ type: 'domSummary', id: command.id, summary: domSummary() });
         break;
       case 'getMediaQueries':
         send({ type: 'mediaQueries', id: command.id, report: mediaQueryReport() });

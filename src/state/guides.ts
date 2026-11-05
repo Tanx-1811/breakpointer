@@ -23,7 +23,8 @@ export type GuideAction =
   | 'toolkit'
   | 'toolkit-images'
   | 'audit-images'
-  | 'markup';
+  | 'markup'
+  | 'elements';
 
 export type GuideStep = {
   /**
@@ -54,7 +55,8 @@ export type GuideId =
   | 'demo'
   | 'markup'
   | 'images'
-  | 'progress';
+  | 'progress'
+  | 'elements';
 
 export type Guide = {
   id: GuideId;
@@ -315,6 +317,31 @@ export const GUIDES: readonly Guide[] = [
         target: '[data-testid="responsive-score"]',
         title: 'guide.progress.shareTitle',
         body: 'guide.progress.shareBody',
+      },
+    ],
+  },
+  {
+    id: 'elements',
+    icon: 'code',
+    title: 'guide.elements.title',
+    summary: 'guide.elements.summary',
+    steps: [
+      { target: '[data-tools-trigger]', title: 'guide.elements.openTitle', body: 'guide.elements.openBody' },
+      {
+        target: '[data-testid="elements-panel"]',
+        title: 'guide.elements.treeTitle',
+        body: 'guide.elements.treeBody',
+        action: 'elements',
+      },
+      {
+        target: '[data-testid="elements-panel"] [role="tablist"]',
+        title: 'guide.elements.stylesTitle',
+        body: 'guide.elements.stylesBody',
+      },
+      {
+        target: '[data-testid="elements-tab-summary"]',
+        title: 'guide.elements.summaryTitle',
+        body: 'guide.elements.summaryBody',
       },
     ],
   },

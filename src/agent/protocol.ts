@@ -171,6 +171,77 @@ export type ImageSample = {
   dimensions?: boolean;
 };
 
+/** v0.13, the Elements panel: an element of the page's tree. */
+export type DomNode = {
+  /** Structural selector, as the inspector's, to ask about it again. */
+  selector: string;
+  /** Lower-case tag name. */
+  tag: string;
+  /** Attributes in source order (at most 24; values cut to 200 characters). */
+  attributes: [string, string][];
+  /** How many element children it has. */
+  childCount: number;
+  /** Its own text, collapsed and cut to 120 characters, when it has no element children ('' for scripts and styles). */
+  text: string;
+  /** Not shown at this size (display: none, hidden, no box). */
+  hidden: boolean;
+  /** Its element children, when they were asked for (at most 300; `truncated` when there are more). */
+  children?: DomNode[];
+  truncated?: boolean;
+};
+
+/** A CSS declaration as written (shorthands kept), and whether others win over every property it sets. */
+export type StyleDeclaration = { name: string; value: string; important: boolean; overridden: boolean };
+
+/** A style rule that matches the element. */
+export type MatchedRule = {
+  selector: string;
+  /** The @media, @supports, @container and @layer rules around it, outermost first. */
+  conditions: string[];
+  /** The stylesheet's file name, `<style>` (in the page) or `Live CSS` (Breakpointer's). */
+  source: string;
+  /** Of the matching part of the selector: [ids, classes, types]. */
+  specificity: [number, number, number];
+  declarations: StyleDeclaration[];
+};
+
+/** v0.13: what styles an element, as the Elements panel shows it. */
+export type ElementStyles = {
+  selector: string;
+  /** Its `style` attribute's declarations. */
+  inline: StyleDeclaration[];
+  /** Matching rules, the ones that win first (inline style aside). */
+  rules: MatchedRule[];
+  /** Every computed property and its value (custom properties left out). */
+  computed: [string, string][];
+  /** The box: margin, border and padding as [top, right, bottom, left], and the content size, in CSS px. */
+  box: { margin: number[]; border: number[]; padding: number[]; width: number; height: number };
+  /** Stylesheets from other sites that can't be read (their rules aren't listed). */
+  unreadable: number;
+};
+
+/** v0.13: the page's HTML and CSS at a glance. */
+export type DomSummary = {
+  elements: number;
+  /** The deepest element's depth below <html>. */
+  depth: number;
+  /** The most used tags, most first (at most 24). */
+  tags: [string, number][];
+  /** ids used by more than one element (at most 20). */
+  duplicateIds: [string, number][];
+  /** Obsolete HTML elements found (center, font, marquee…). */
+  obsolete: [string, number][];
+  /** Elements with a `style` attribute. */
+  inlineStyles: number;
+  /** Images without an `alt` attribute. */
+  imagesWithoutAlt: number;
+  stylesheets: number;
+  unreadable: number;
+  /** Style rules and `!important` declarations in the readable stylesheets. */
+  rules: number;
+  important: number;
+};
+
 /** A colour and how many elements use it. */
 export type ColorCount = { hex: string; count: number };
 
@@ -321,6 +392,12 @@ export type AgentEvent =
   | { type: 'meta'; id?: number; meta: PageMeta }
   /** Answer to `getMediaQueries`. */
   | { type: 'mediaQueries'; id?: number; report: MediaQueryReport }
+  /** Answer to `getDom` (null: no such element). */
+  | { type: 'dom'; id?: number; root: DomNode | null }
+  /** Answer to `getStyles` (null: no such element). */
+  | { type: 'styles'; id?: number; styles: ElementStyles | null }
+  /** Answer to `getDomSummary`. */
+  | { type: 'domSummary'; id?: number; summary: DomSummary }
   /** Answer to `getElementRect` (null when the element isn't shown). */
   | { type: 'elementRect'; id?: number; rect: ElementRect | null }
   /** Answer to `getRects`: each element's box in the viewport, measured together (null when not shown). */
@@ -342,6 +419,9 @@ export type AgentReplyType =
   | 'colors'
   | 'meta'
   | 'mediaQueries'
+  | 'dom'
+  | 'styles'
+  | 'domSummary'
   | 'elementRect'
   | 'rects'
   | 'links';
@@ -417,6 +497,15 @@ type Command =
   | { type: 'getMeta' }
   /** Answers with `mediaQueries`: the page's media and container queries and whether each applies here. */
   | { type: 'getMediaQueries' }
+  /**
+   * v0.13, the Elements panel. Answers `dom`: the element (null: <html>) with
+   * its children `depth` levels down, and every ancestor of `reveal` opened.
+   */
+  | { type: 'getDom'; selector: string | null; depth: number; reveal?: string | null }
+  /** Answers `styles`: the element's matching rules (the cascade worked out), computed style and box. */
+  | { type: 'getStyles'; selector: string }
+  /** Answers `domSummary`: counts about the page's HTML and CSS. */
+  | { type: 'getDomSummary' }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
   | { type: 'getElementRect'; selector: string; reveal: boolean }
   /** Answer `rects` with where these elements are, at the same moment (the inspector's distance). */

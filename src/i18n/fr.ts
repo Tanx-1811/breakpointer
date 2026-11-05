@@ -2263,4 +2263,87 @@ export const fr: Record<MessageKey, string> = {
   'guide.progress.shareBody':
     'Copiez le score sous forme de badge pour un README, ou téléchargez le rapport HTML depuis Outils.',
   // end v0.12 keys
+  // v0.13 keys
+  'elements.title': 'Éléments',
+  'elements.close': 'Fermer Éléments',
+  'elements.preview': 'Aperçu',
+  'elements.pick': 'Choisir un élément dans un aperçu',
+  'elements.picking': 'Cliquez sur un élément dans un aperçu…',
+  'elements.refresh': 'Relire la page',
+  'elements.tree': 'Le HTML de la page',
+  'elements.loading': 'Lecture de la page…',
+  'elements.noAgent': 'Cet aperçu ne peut pas être lu. Autorisez le site, puis rechargez les aperçus.',
+  'elements.empty': 'Sélectionnez un élément dans l’arbre, ou choisissez-en un dans un aperçu.',
+  'elements.more': 'Seuls les 300 premiers enfants d’un élément sont listés.',
+  'elements.hidden': 'Non affiché à cette taille',
+  'elements.tabs': 'Détails de l’élément',
+  'elements.tab.styles': 'Styles',
+  'elements.tab.computed': 'Calculé',
+  'elements.tab.box': 'Boîte',
+  'elements.tab.summary': 'Résumé',
+  'elements.noRules': 'Aucune règle des feuilles de style lisibles de la page ne correspond à cet élément.',
+  'elements.unreadable':
+    '{count} feuilles de style d’autres sites ne peuvent pas être lues : leurs règles ne sont pas listées.',
+  'elements.unreadableOne': '1 feuille de style d’un autre site ne peut pas être lue : ses règles ne sont pas listées.',
+  'elements.overridden': 'Remplacée par une autre règle',
+  'elements.specificity': 'Spécificité {value}',
+  'elements.copyCss': 'Copier le CSS',
+  'elements.editCss': 'Essayer dans CSS en direct',
+  'elements.compare': 'Comparer à toutes les tailles',
+  'elements.copied': 'Copié dans le presse-papiers',
+  'elements.search': 'Filtrer les propriétés',
+  'elements.showAll': 'Tout afficher',
+  'elements.noMatch': 'Aucune propriété ne correspond.',
+  'elements.boxLabel':
+    'Modèle de boîte : contenu {width} × {height}, marge intérieure {padding}, bordure {border}, marge extérieure {margin} (haut droite bas gauche, px)',
+  'elements.copySummary': 'Copier en Markdown',
+  'elements.summary.title': 'Résumé HTML et CSS',
+  'elements.summary.elements': 'Éléments',
+  'elements.summary.depth': 'Niveau le plus profond',
+  'elements.summary.duplicateIds': 'ids en double',
+  'elements.summary.obsolete': 'Balises obsolètes',
+  'elements.summary.alt': 'Images sans alt',
+  'elements.summary.inline': 'Styles en ligne',
+  'elements.summary.important': 'Déclarations !important',
+  'elements.summary.importantValue': '{important} dans {rules} règles',
+  'elements.summary.tags': 'Balises les plus utilisées',
+  'elements.summary.none': 'Aucun',
+  'elements.summary.sheets': 'Feuilles de style : {count} · {unreadable} d’autres sites ne peuvent pas être lues.',
+  'elements.summary.sizeHint':
+    'Plus de 1 500 éléments ralentissent la mise en page et consomment plus de mémoire (Lighthouse).',
+  'elements.summary.depthHint': 'Plus de 32 niveaux de profondeur ralentissent le calcul des styles (Lighthouse).',
+  'elements.summary.duplicateHint':
+    'Un id doit être unique : les labels, les liens et les scripts peuvent cibler le mauvais élément.',
+  'elements.summary.obsoleteHint': 'Ne font plus partie du HTML : utilisez du CSS ou un élément actuel à la place.',
+  'elements.summary.altHint': 'Donnez à chaque image un texte alt, ou alt="" si elle est décorative.',
+  'elements.summary.inlineHint':
+    'Beaucoup d’attributs style : les media queries ne peuvent pas les modifier à d’autres tailles.',
+  'elements.summary.importantHint': 'Beaucoup de déclarations !important rendent les styles difficiles à remplacer.',
+  'elements.liveCssReady': 'CSS en direct s’est ouvert avec une règle pour cet élément',
+  'tools.elements': 'Éléments (HTML et CSS)',
+  'tools.elementsHint':
+    'Toutes les balises de la page et le CSS de chacune, comme les outils de développement du navigateur',
+  'palette.elements': 'Éléments : HTML et CSS',
+  'help.elements': 'Éléments (HTML et CSS)',
+  'news.elements':
+    'Éléments (J) : le HTML de la page sous forme d’arbre et le CSS de chaque élément (règles correspondantes, déclarations remplacées, valeurs calculées et boîte), comme les outils de développement du navigateur, dans n’importe quel aperçu.',
+  'news.elementsSummary':
+    'Un résumé HTML et CSS : nombre et profondeur des éléments, ids en double, balises obsolètes, styles en ligne et déclarations !important.',
+  'explain.elements':
+    'Toutes les balises de la page et le CSS de chaque élément, comme les outils de développement du navigateur.',
+  'guide.elements.title': 'Lire le HTML et le CSS d’une page',
+  'guide.elements.summary': 'L’arbre des balises, le CSS de chaque élément et un résumé.',
+  'guide.elements.openTitle': 'Ouvrir Éléments',
+  'guide.elements.openBody':
+    'Appuyez sur J ou choisissez Éléments (HTML et CSS) dans Outils : le HTML de la page, comme l’affichent les outils de développement du navigateur.',
+  'guide.elements.treeTitle': 'Parcourir les balises',
+  'guide.elements.treeBody':
+    'Ouvrez l’arbre d’un clic ou avec les flèches du clavier, ou choisissez un élément dans un aperçu. Les balises grisées ne sont pas affichées à cette taille.',
+  'guide.elements.stylesTitle': 'Voir pourquoi il a cet aspect',
+  'guide.elements.stylesBody':
+    'Styles liste les règles correspondantes, les gagnantes d’abord, avec les media queries et les fichiers ; les déclarations remplacées sont barrées. Calculé et Boîte donnent les valeurs finales.',
+  'guide.elements.summaryTitle': 'Auditer le HTML et le CSS',
+  'guide.elements.summaryBody':
+    'Résumé compte les éléments et la profondeur, et signale les ids en double, les balises obsolètes, les images sans alt, les styles en ligne et !important.',
+  // end v0.13 keys
 };

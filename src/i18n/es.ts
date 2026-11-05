@@ -2243,4 +2243,85 @@ export const es: Record<MessageKey, string> = {
   'guide.progress.shareBody':
     'Copia la puntuación como insignia para un README o descarga el informe HTML desde Herramientas.',
   // end v0.12 keys
+  // v0.13 keys
+  'elements.title': 'Elementos',
+  'elements.close': 'Cerrar Elementos',
+  'elements.preview': 'Previsualización',
+  'elements.pick': 'Elegir un elemento en una previsualización',
+  'elements.picking': 'Haz clic en un elemento de una previsualización…',
+  'elements.refresh': 'Volver a leer la página',
+  'elements.tree': 'El HTML de la página',
+  'elements.loading': 'Leyendo la página…',
+  'elements.noAgent':
+    'Esta previsualización no se puede leer. Permite el sitio y vuelve a cargar las previsualizaciones.',
+  'elements.empty': 'Selecciona un elemento en el árbol o elige uno en una previsualización.',
+  'elements.more': 'Solo se muestran los primeros 300 hijos de un elemento.',
+  'elements.hidden': 'No se muestra con este tamaño',
+  'elements.tabs': 'Detalles del elemento',
+  'elements.tab.styles': 'Estilos',
+  'elements.tab.computed': 'Calculado',
+  'elements.tab.box': 'Caja',
+  'elements.tab.summary': 'Resumen',
+  'elements.noRules': 'Ninguna regla de las hojas de estilo legibles de la página coincide con este elemento.',
+  'elements.unreadable': 'No se pueden leer {count} hojas de estilo de otros sitios: sus reglas no aparecen.',
+  'elements.unreadableOne': 'No se puede leer 1 hoja de estilo de otro sitio: sus reglas no aparecen.',
+  'elements.overridden': 'Anulada por otra regla',
+  'elements.specificity': 'Especificidad {value}',
+  'elements.copyCss': 'Copiar CSS',
+  'elements.editCss': 'Probar en CSS en vivo',
+  'elements.compare': 'Comparar en todos los tamaños',
+  'elements.copied': 'Copiado al portapapeles',
+  'elements.search': 'Filtrar propiedades',
+  'elements.showAll': 'Mostrar todo',
+  'elements.noMatch': 'Ninguna propiedad coincide.',
+  'elements.boxLabel':
+    'Modelo de caja: contenido {width} × {height}, relleno {padding}, borde {border}, margen {margin} (arriba derecha abajo izquierda, px)',
+  'elements.copySummary': 'Copiar como Markdown',
+  'elements.summary.title': 'Resumen de HTML y CSS',
+  'elements.summary.elements': 'Elementos',
+  'elements.summary.depth': 'Nivel más profundo',
+  'elements.summary.duplicateIds': 'ids duplicados',
+  'elements.summary.obsolete': 'Etiquetas obsoletas',
+  'elements.summary.alt': 'Imágenes sin alt',
+  'elements.summary.inline': 'Estilos en línea',
+  'elements.summary.important': 'Declaraciones !important',
+  'elements.summary.importantValue': '{important} en {rules} reglas',
+  'elements.summary.tags': 'Etiquetas más usadas',
+  'elements.summary.none': 'Ninguno',
+  'elements.summary.sheets': 'Hojas de estilo: {count} · {unreadable} de otros sitios no se pueden leer.',
+  'elements.summary.sizeHint': 'Más de 1500 elementos hacen el diseño más lento y usan más memoria (Lighthouse).',
+  'elements.summary.depthHint': 'Más de 32 niveles de profundidad hacen más lento el cálculo de estilos (Lighthouse).',
+  'elements.summary.duplicateHint':
+    'Un id debe ser único: las etiquetas, los enlaces y los scripts pueden elegir el elemento equivocado.',
+  'elements.summary.obsoleteHint': 'Ya no forman parte de HTML: usa CSS o un elemento actual en su lugar.',
+  'elements.summary.altHint': 'Da a cada imagen un texto alt, o alt="" si es decorativa.',
+  'elements.summary.inlineHint': 'Muchos atributos style: las media queries no pueden cambiarlos en otros tamaños.',
+  'elements.summary.importantHint': 'Muchas declaraciones !important dificultan anular los estilos.',
+  'elements.liveCssReady': 'CSS en vivo se abrió con una regla para este elemento',
+  'tools.elements': 'Elementos (HTML y CSS)',
+  'tools.elementsHint':
+    'Todas las etiquetas de la página y el CSS de cada una, como las herramientas para desarrolladores del navegador',
+  'palette.elements': 'Elementos: HTML y CSS',
+  'help.elements': 'Elementos (HTML y CSS)',
+  'news.elements':
+    'Elementos (J): el HTML de la página como un árbol y el CSS de cada elemento (reglas que coinciden, declaraciones anuladas, valores calculados y caja), como las herramientas para desarrolladores del navegador, en cualquier previsualización.',
+  'news.elementsSummary':
+    'Un resumen de HTML y CSS: número y profundidad de elementos, ids duplicados, etiquetas obsoletas, estilos en línea y declaraciones !important.',
+  'explain.elements':
+    'Todas las etiquetas de la página y el CSS de cada elemento, como las herramientas para desarrolladores del navegador.',
+  'guide.elements.title': 'Lee el HTML y el CSS de una página',
+  'guide.elements.summary': 'El árbol de etiquetas, el CSS de cada elemento y un resumen.',
+  'guide.elements.openTitle': 'Abrir Elementos',
+  'guide.elements.openBody':
+    'Pulsa J o elige Elementos (HTML y CSS) en Herramientas: el HTML de la página, como lo muestran las herramientas para desarrolladores del navegador.',
+  'guide.elements.treeTitle': 'Recorre las etiquetas',
+  'guide.elements.treeBody':
+    'Abre el árbol con un clic o las teclas de flecha, o elige un elemento en una previsualización. Las etiquetas atenuadas no se muestran con este tamaño.',
+  'guide.elements.stylesTitle': 'Descubre por qué se ve así',
+  'guide.elements.stylesBody':
+    'Estilos lista las reglas que coinciden, las ganadoras primero, con sus media queries y archivos; las declaraciones anuladas aparecen tachadas. Calculado y Caja muestran los valores finales.',
+  'guide.elements.summaryTitle': 'Audita el HTML y el CSS',
+  'guide.elements.summaryBody':
+    'Resumen cuenta elementos y profundidad, y señala ids duplicados, etiquetas obsoletas, imágenes sin alt, estilos en línea y !important.',
+  // end v0.13 keys
 };

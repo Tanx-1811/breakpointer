@@ -10,7 +10,7 @@ This guide covers Breakpointer 0.11. Features marked **New in 0.11** arrive with
 
 1. [Getting started](#getting-started) — install, open a page, site access, the welcome screen, learning as you go
 2. [The workspace](#the-workspace) — viewports, presets, groups, sizes, zoom, layouts, focus, sidebar, status bar, breakpoints, projects
-3. [Finding layout problems](#finding-layout-problems) — sync, checks, score, the audit, the width scanner, inspector, measure, overlays, A/B comparison
+3. [Finding layout problems](#finding-layout-problems) — sync, checks, score, the audit, the width scanner, inspector, Elements (HTML & CSS, New in 0.13), measure, overlays, A/B comparison
 4. [Simulations and stress tests](#simulations-and-stress-tests) — vision, page preferences, touch-screen styles, longer text, right to left
 5. [Manual testing](#manual-testing) — the QA checklist, notes and bug reports
 6. [Whole sites and regressions](#whole-sites-and-regressions) — Check pages, visual check
@@ -118,6 +118,7 @@ On first use, Breakpointer starts with three viewports — **Phone** 375 × 667,
 | Annotate a screenshot             | **New in 0.12** — arrows, boxes, numbered steps, and private details hidden       |
 | Ship responsive images            | **New in 0.12** — right sizes, modern formats and lazy loading                    |
 | Track a page's score              | **New in 0.12** — see the responsive score improve, day by day                    |
+| Read a page's HTML and CSS        | **New in 0.13** — the tree of tags, the CSS of each element, and a summary        |
 
 Throughout this guide, “In the app:” names the guide that covers the same task.
 
@@ -383,6 +384,26 @@ Then:
 - **Go to _viewport_** scrolls to that preview; **Clear** forgets the element.
 
 The inspected element is included in HTML reports. In the app: **Compare one element at every size**.
+
+<a id="elements"></a>
+
+### Elements (HTML & CSS) — New in 0.13
+
+Every tag of the page and the CSS of each, like the browser's developer tools (F12) — but for the preview you choose, at its size.
+
+1. Press `J`, or **Tools → Elements (HTML & CSS)**, or “Elements” in the palette. The panel opens at the side (it takes the place of the inspector, the audit or the QA checklist).
+2. Choose the **Preview** to read when you have several — the same page at 375 px and at 1440 px can have different styles.
+3. Browse the tree: click the arrow, or use `↑` `↓` to move, `→` to open, `←` to close, `Enter` to select. Tags in italics with a crossed eye aren't shown at that size. Or click the **Pick** button in the panel's header and click an element in any preview: the tree opens down to it and switches to that preview.
+4. The selected element is outlined in its preview. Read its details:
+   - **Styles** — `element.style` (its `style` attribute), then every rule that matches, the winning ones first, with the `@media`, `@supports`, `@container` or `@layer` around it and the file it comes from. Declarations that lose to another rule are struck through; hover a selector for its specificity. A rule inside a media query shows only in previews where that query applies.
+   - **Computed** — the final value of each property; the layout ones first, **Show all** for the rest, and a filter.
+   - **Box** — margin, border, padding and content size.
+   - **Summary** — the page's HTML and CSS at a glance (see below).
+5. **Copy CSS** copies the rules as text; **Try in Live CSS** opens [Live CSS](#live-css) with a rule for this element, to change it in every preview at once; **Compare at every size** opens the [inspector](#inspector) with the same element.
+
+**Summary** audits the page: the number of **Elements** and the **Deepest level** (flagged past 1,500 and 32, Lighthouse's limits), **Duplicate ids**, **Obsolete tags** (`center`, `font`, `marquee`…), **Images without alt**, **Inline styles** and **!important declarations**, with the most used tags and the stylesheets. **Copy as Markdown** puts it in a ticket.
+
+Notes: Elements works in previews of sites you allow. Stylesheets from other sites that don't allow it can't be read (the panel says how many), so their rules aren't listed. Whether an `@container` rule applies can't be told from outside: its rules are listed with their condition. In the app: **Read a page's HTML and CSS**.
 
 ### Measure
 
@@ -828,6 +849,7 @@ Single-key shortcuts work in the workspace, not while you type in a field or whi
 | `V`                   | Visual check                                                                                                            |
 | `Q`                   | QA checklist                                                                                                            |
 | `U`                   | CSS toolkit — **New in 0.11**                                                                                           |
+| `J`                   | Elements: HTML and CSS — **New in 0.13**                                                                                |
 | `X`                   | Measure                                                                                                                 |
 | `N`                   | Notes                                                                                                                   |
 | `C`                   | Colour contrast                                                                                                         |

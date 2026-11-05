@@ -395,6 +395,22 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
     ),
   },
   '/long': { body: LONG_PAGE },
+  // v0.13: the Elements panel — rules that compete, a media query, duplicate ids and an obsolete tag.
+  '/elements': {
+    body: page(
+      'Elements page',
+      `<style>
+  .card { color: rgb(0, 0, 200); padding: 8px; }
+  #hero.card { color: rgb(200, 0, 0); }
+  @media (min-width: 768px) { .card { padding: 24px; } }</style>`,
+    ).replace(
+      '</h1>',
+      `</h1>
+  <div id="hero" class="card" style="margin: 4px">Hero card</div>
+  <span class="dup" id="dup">One</span><span class="dup" id="dup">Two</span>
+  <center>Old</center>`,
+    ),
+  },
   // v0.11: touch-screen styles, a paragraph whose lines are too long on wide screens, room to auto-scroll.
   '/v11': {
     body: page(

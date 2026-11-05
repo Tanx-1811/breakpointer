@@ -32,6 +32,7 @@ export type ShortcutAction =
   | 'present'
   | 'qa'
   | 'toolkit'
+  | 'elements'
   | 'escape';
 
 export type ShortcutHandlers = Partial<Record<ShortcutAction, () => void>> & {
@@ -75,6 +76,7 @@ const LETTER_KEYS: Record<string, ShortcutAction> = {
   KeyD: 'present',
   KeyQ: 'qa',
   KeyU: 'toolkit',
+  KeyJ: 'elements',
   Backslash: 'sidebar',
   IntlBackslash: 'sidebar',
   BracketLeft: 'prevViewport',

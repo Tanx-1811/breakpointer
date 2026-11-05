@@ -2,6 +2,24 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.13.0] — 2026-11-05
+
+Every tag and every rule: the page's HTML and CSS, like the browser's developer tools — at the size of each preview.
+
+### Added
+
+- **Elements** (`J`, **Tools → Elements (HTML & CSS)** or the palette): a side panel like the browser's developer tools (F12), for any preview.
+  - **The HTML tree**: every tag of the page with its attributes, opened with a click or the arrow keys (the tree loads as it opens); tags not shown at that size are marked. **Pick** an element in any preview to find it in the tree, which opens down to it; the selected element is outlined in its preview. Choose which preview to read — what the page is at 375 px and at 1440 px can differ.
+  - **Styles**: the rules that match the element, the winning ones first, with the media queries, `@supports`, `@container` and `@layer` around them and the file each comes from, its `style` attribute as `element.style`, and every declaration that loses the cascade struck through — at the size of that preview, so a rule inside `@media (min-width: 768px)` shows in the laptop preview and not in the phone one. **Copy CSS**, **Try in Live CSS** (a rule for the element, to change it in every preview at once) or **Compare at every size** in the inspector.
+  - **Computed**: the final value of every property, the ones that shape a layout first, with a filter and **Show all**.
+  - **Box**: margin, border, padding and content size as a box model.
+  - **Summary**: an audit of the page's HTML and CSS — the number of elements and the deepest level (flagged past Lighthouse's 1,500 and 32), duplicate ids, obsolete tags (`center`, `font`, `marquee`…), images without `alt`, `style` attributes and `!important` declarations, the most used tags and the stylesheets — copied as Markdown.
+- A new guide, **Read a page's HTML and CSS** (eighteen in all).
+
+### Notes
+
+- Rules are read from the page's readable stylesheets; stylesheets from other sites without CORS can't be read, and the panel says how many. Whether an `@container` rule applies isn't known from outside, so its rules are listed with their condition.
+
 ## [0.12.0] — 2026-11-04
 
 Annotate what you find, watch scores improve, and three more CSS tools.

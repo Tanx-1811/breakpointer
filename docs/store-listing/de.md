@@ -12,7 +12,7 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 
 **Schnell zur Vorschau**
 • Klicke auf das Symbol in der Symbolleiste und wähle „Vorschau dieser Seite“, klicke mit der rechten Maustaste auf eine Seite oder einen Link, drücke Alt+Shift+P oder gib „bpt“ und eine URL in die Adressleiste ein.
-• 28 gängige Größen für Smartphones, Foldables, Tablets, Laptops und Desktops (Suche nach Name oder Größe) sowie jede beliebige eigene Größe.
+• 30 gängige Größen für Smartphones, Foldables, Tablets, Laptops und Desktops (Suche nach Name oder Größe) sowie jede beliebige eigene Größe.
 • Ziehe am Rand einer Vorschau, um ihre Größe zu ändern, und sieh live zu, wie sich die Seite neu anordnet — sie rastet an deinen Breakpoints ein.
 • Drücke Ctrl/⌘ + K, um alle Befehle, Größen, Gruppen und Seiten zu durchsuchen.
 • Ein Arbeitsbereich für lange Sitzungen: eine Viewport-Seitenleiste mit Breakpoint-Karte, eine Statusleiste und eine Minimap, drei Layouts (umbrechend, eine Zeile, gestapelt), sechs Akzentfarben und drei Canvas-Stile.
@@ -23,24 +23,31 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 • Seiten prüfen: eine ganze Liste von Seiten — deine gespeicherten Seiten, die Links einer Seite oder die Sitemap der Website — in einem Durchlauf in jedem Viewport geprüft. Sieh, welche Seiten in welchen Größen brechen, und kopiere die Tabelle als Markdown oder lade einen HTML-Bericht herunter.
 • Alle Breiten scannen: Die Seite wird in jeder Breite eines Bereichs geprüft, und die erste und letzte Breite jedes Problems wird pixelgenau ermittelt — in einem Diagramm mit der Seitenhöhe, ihren Breakpoints und deinen Viewports. Füge mit einem Klick einen Viewport in der schlimmsten Breite hinzu.
 • Audit: alle Probleme aller Größen an einem Ort, Seitengewicht, Anfragen, Bildpixel, Largest Contentful Paint und Layout-Verschiebung pro Größe sowie die Typografie-Skala von Überschriften, Text und Buttons — alles als Markdown-Tabelle kopierbar.
-• Responsive Bilder: jedes Bild im Vergleich zur Breite, in der es in jedem Viewport angezeigt wird — zu groß, zu klein oder passend — mit einem vorgeschlagenen sizes-Attribut und srcset-Breiten zum Kopieren.
+• Responsive Bilder: jedes Bild im Vergleich zur Breite, in der es in jedem Viewport angezeigt wird — zu groß, zu klein oder passend — mit einem vorgeschlagenen sizes-Attribut und srcset-Breiten zum Kopieren sowie Tipps zu AVIF/WebP, Lazy Loading und width/height.
 • Audit der Seitenfarben: die Farben von Texten, Hintergründen und Rahmen über alle Größen hinweg, als CSS-Variablen kopierbar.
 • Meta & Social: wie die Seite in Suchergebnissen und Link-Vorschauen (annähernd) erscheint, mit Prüfung von Titel, Beschreibung, Social-Bild, kanonischer Adresse, Robots und Icons sowie der Gliederung ihrer Überschriften.
+• CSS-Werkzeugkasten (Taste U): fließende Typografie mit clamp() — eine Größe oder eine ganze Typo-Skala — berechnet für jeden Viewport, den du dir ansiehst, Einheiten in jeder Größe umgerechnet (px, rem, em, vw, vh …), deine Breakpoints als Code (Media Queries, Sass-Mixins, Tailwind, JavaScript), eine Farbauswahl (HEX, RGB, HSL, OKLCH) und Seitenverhältnisse — dazu ein Auto-fit-Grid-Rechner, Markup für responsive Bilder (<picture>, sizes, srcset) und ein Media-Query-Tester.
+• Media Queries: jede Media Query im CSS der Seite und die Größen, in denen sie gilt — mit markierten Lücken und Überschneidungen zwischen Breakpoints (eine Breite, in der keine der beiden Seiten gilt oder beide gelten) und einem Viewport, der dort mit einem Klick hinzugefügt wird.
+• QA-Checkliste: Hake manuelle Prüfungen — das Menü, Formulare, Bilder, Pop-ups — für jeden Viewport ab, bearbeite die Liste passend zu deinem Projekt und kopiere die Ergebnisse als Markdown-Bericht.
 • Visuelle Prüfung: Speichere eine Baseline jedes Viewports, vergleiche nach einer Änderung und sieh pixelgenau, was sich verschoben hat — nebeneinander, mit Schieberegler oder mit umrahmten Unterschieden.
+• Elemente (Taste J): alle Tags der Seite und das CSS jedes Tags, wie in den Entwicklertools des Browsers (F12): der HTML-Baum, die passenden Regeln mit durchgestrichenen überschriebenen Deklarationen, Media Queries und Quelldateien, berechnete Werte und das Box-Modell, in der Größe jeder Vorschau, dazu eine HTML- & CSS-Zusammenfassung: Anzahl und Tiefe der Elemente, doppelte ids, veraltete Tags, Bilder ohne alt, Inline-Stile und !important.
 • Inspektor: Klicke in einer Vorschau auf ein Element und vergleiche Größe, Display, Schrift, Abstände und Layout in jeder Größe — Änderungen werden hervorgehoben — und miss den Abstand zu einem zweiten Element in jeder Größe.
 • Breakpoints aus dem CSS der Seite selbst, dazu Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation oder deine eigenen — beschrifte jeden Viewport und teste beide Seiten jedes Breakpoints.
 • Hell und dunkel nebeneinander: Zeige jede Vorschau mit den hellen oder dunklen Styles der Seite.
-• Responsive-Prüfungen finden seitliches Scrollen (und das verursachende Element), ein fehlendes Viewport-Tag, winzigen Text, kleine Touch-Ziele, von ihrer Box abgeschnittenen Text, Text mit geringem Kontrast, unscharfe Bilder, Elemente, die den Bildschirm verdecken, und Layout-Verschiebungen — und heben sie direkt in der Seite hervor.
+• Responsive-Prüfungen finden seitliches Scrollen (und das verursachende Element), ein fehlendes Viewport-Tag, winzigen Text, kleine Touch-Ziele, von ihrer Box abgeschnittenen Text, Text mit geringem Kontrast, unscharfe Bilder, Elemente, die den Bildschirm verdecken, Layout-Verschiebungen und Zeilen, die auf breiten Bildschirmen zu lang zum Lesen sind — und heben sie direkt in der Seite hervor.
 • Scrolle in einer Vorschau, und die anderen zeigen denselben Inhalt; klicke auf einen Link, und jede Vorschau öffnet ihn.
 • Layout-Umrisse, ein Spaltenraster, Pixel-Lineale, ausgeblendete Scrollleisten und Live-CSS für alle Größen gleichzeitig — speichere häufig genutztes CSS als Snippets.
 • Zwei Adressen vergleichen: eine zweite Vorschau neben jedem Viewport, z. B. Staging neben Produktion, die denselben Seiten folgt.
-• Simuliere Farbenblindheit und verschwommenes Sehen, reduzierte Bewegung und pausierte Animationen, und setze das Layout mit längerem übersetztem Text, Rechts-nach-links und Text auf 200 % unter Stress.
+• Simuliere Farbenblindheit und verschwommenes Sehen, reduzierte Bewegung und pausierte Animationen, Touchscreen-Styles (hover: none, pointer: coarse), und setze das Layout mit längerem übersetztem Text, Rechts-nach-links und Text auf 200 % unter Stress.
 • Miss in CSS-Pixeln, prüfe den Farbkontrast nach WCAG mit einer Pipette und lege ein Design-Mockup über eine Vorschau, um pixelgenau zu vergleichen.
 • Öffne jeden Viewport als echtes Fenster in seiner exakten Größe (für Websites, die deine Anmeldung brauchen), behalte eine schwebende Vorschau immer im Vordergrund neben deinem Editor oder zeige die Seite, die du gerade besuchst, in der Seitenleiste an.
 • Ganzseitige Screenshots, Textabstände (WCAG), prefers-contrast- und Druck-Styles, Beschriftungen für Bildgrößen und Tab-Reihenfolge sowie ein Grundlinienraster.
 
 **Teile, was du siehst**
 • Showcase-Bild: deine Seite in mehreren Größen in schlichten Geräterahmen vor einem Hintergrund, bereit für ein Portfolio, einen Kunden oder einen Post.
+• Präsentationsmodus: nur die Vorschauen im Vollbild, für Bildschirmfreigabe und Kunden-Demos — mit Auto-Scroll, bei dem jede Vorschau von selbst von oben nach unten scrollt.
+• Score-Badge: kopiere den Responsive-Score als SVG-Badge für eine README oder einen Kundenbericht — und sieh den Score jeder Seite Tag für Tag.
+• Screenshot annotieren: alle Vorschauen in einem Bild mit Pfeilen, Rahmen, nummerierten Schritten und Verpixelung, um private Details zu verbergen.
 • Screenshots einer Vorschau oder des Arbeitsbereichs, alle Viewports in einem beschrifteten Bild, Kopieren in die Zwischenablage und ein HTML-Bericht aller Größen mit ihren Problemen.
 • Öffne jede Vorschau in einem echten Fenster in exakter Größe.
 
@@ -49,7 +56,8 @@ Breakpointer zeigt jede Website in mehreren Viewport-Größen nebeneinander, dir
 • Fokussiere einen Viewport, navigiere zwischen Seiten vor und zurück, markiere häufig getestete Seiten mit einem Stern, zoome mit Ctrl/⌘ + Mausrad und verschiebe mit Leertaste + Ziehen.
 • Beim Neuladen bleibt jede Vorschau an ihrer Scrollposition, auch beim automatischen Neuladen; teile einen Link zum Arbeitsbereich, der die Seite mit deinen Viewports öffnet.
 • Exportiere und importiere dein Setup, um es mit deinem Team zu teilen.
-• Ein klares helles und dunkles Design, Tastenkürzel für alles, auf Englisch, Spanisch, Portugiesisch, Französisch, Deutsch, Japanisch, Indonesisch und Vietnamesisch.
+• Ein klares helles und dunkles Design, Tastenkürzel für alles, auf Englisch, Vietnamesisch, Spanisch, Portugiesisch, Französisch, Deutsch, Russisch, Japanisch, Chinesisch und Indonesisch.
+• Neu hier? Achtzehn Schritt-für-Schritt-Anleitungen, ein vollständiges Benutzerhandbuch, eine Starter-Checkliste, die sich selbst abhakt, und der Modus „Was ist das?“ (H): zeige auf ein beliebiges Bedienelement, um zu sehen, was es tut.
 
 **Breakpointer Pro** (7 Tage kostenlos testen; alles oben Genannte bleibt kostenlos)
 • Barrierefreiheitsprüfungen in jeder Größe: Bilder ohne Alt-Text, unbenannte Buttons und Links (oft der Menü-Button nur mit Icon, der nur auf Smartphones erscheint), unbeschriftete Felder, Tastaturfokus auf versteckten Elementen wie einem geschlossenen Off-Canvas-Menü und eine fehlende Seitensprache.

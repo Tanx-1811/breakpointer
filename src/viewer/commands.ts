@@ -119,6 +119,8 @@ export type CommandActions = {
   toolkit?: (tab: ToolkitTab) => void;
   /** Every preview scrolls from top to bottom in this many seconds; null stops (listed when given). */
   autoScroll?: (seconds: number | null) => void;
+  /** The Elements panel: the page's HTML and CSS (listed when given). */
+  elements?: () => void;
   exportSettings: () => void;
   /** What Breakpointer Pro brings, the trial and buying it (listed when given). */
   pro?: () => void;
@@ -166,6 +168,8 @@ export type CommandContext = {
   qaOpen?: boolean;
   /** Previews are scrolling by themselves. */
   autoScrolling?: boolean;
+  /** The Elements panel is open. */
+  elementsOpen?: boolean;
   actions: CommandActions;
 };
 
@@ -706,6 +710,16 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       checked: ctx.qaOpen,
       keywords: 'qa checklist test manual pass fail matrix quality assurance testing',
       run: actions.qa,
+    });
+  if (actions.elements)
+    named('palette.elements', {
+      id: 'elements',
+      section: section.tools,
+      icon: 'code',
+      shortcut: 'J',
+      checked: ctx.elementsOpen,
+      keywords: 'elements dom html tags css styles computed box model devtools f12 inspect tree source',
+      run: actions.elements,
     });
   const { toolkit } = actions;
   if (toolkit)

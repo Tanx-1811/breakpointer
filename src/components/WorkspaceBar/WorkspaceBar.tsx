@@ -79,6 +79,9 @@ type Props = {
   onQa?: () => void;
   /** The CSS toolkit (in Tools when given). */
   onToolkit?: () => void;
+  /** The Elements panel (in Tools when given). */
+  onElements?: () => void;
+  elementsOpen?: boolean;
   qaOpen?: boolean;
   /** The page colours every visible preview shows ('mixed' when they differ); the options show with the handler. */
   pageColors?: ColorScheme | null | 'mixed';
@@ -391,6 +394,16 @@ export function WorkspaceBar(props: Props) {
     if (props.noteCount)
       utilityEntries.push({ id: 'notes-clear', label: t('notes.clear'), icon: 'trash', onSelect: props.onClearNotes });
   }
+  if (props.onElements)
+    utilityEntries.push({
+      id: 'elements',
+      label: t('tools.elements'),
+      description: t('tools.elementsHint'),
+      icon: 'code',
+      shortcut: 'J',
+      checked: props.elementsOpen,
+      onSelect: props.onElements,
+    });
   if (props.onToolkit)
     utilityEntries.push({
       id: 'toolkit',

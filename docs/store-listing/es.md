@@ -12,7 +12,7 @@ Breakpointer muestra cualquier sitio web en varios tamaños de viewport, uno al 
 
 **Previsualiza en un momento**
 • Haz clic en el botón de la barra de herramientas y elige «Previsualizar esta página», haz clic derecho en cualquier página o enlace, pulsa Alt+Shift+P o escribe «bpt» y una URL en la barra de direcciones.
-• 28 tamaños habituales de teléfonos, plegables, tabletas, portátiles y ordenadores de escritorio (busca por nombre o tamaño), y cualquier tamaño personalizado.
+• 30 tamaños habituales de teléfonos, plegables, tabletas, portátiles y ordenadores de escritorio (busca por nombre o tamaño), y cualquier tamaño personalizado.
 • Arrastra el borde de una vista previa para cambiar su tamaño y mira cómo la página se recoloca en directo; se ajusta a tus breakpoints.
 • Pulsa Ctrl/⌘ + K para buscar cualquier comando, tamaño, grupo o página.
 • Un espacio de trabajo pensado para sesiones largas: una barra lateral de viewports con un mapa de breakpoints, una barra de estado y un minimapa, tres diseños (en varias filas, en una sola fila y apilado), seis colores de acento y tres estilos de lienzo.
@@ -23,24 +23,31 @@ Breakpointer muestra cualquier sitio web en varios tamaños de viewport, uno al 
 • Revisar páginas: una lista entera de páginas (tus páginas guardadas, los enlaces de una página o el sitemap del sitio) revisada en todos los viewports de una sola vez. Mira qué páginas se rompen y en qué tamaños, y copia la tabla como Markdown o descarga un informe HTML.
 • Escanear todos los anchos: la página se comprueba en cada ancho de un rango y se encuentra al píxel el primer y el último ancho de cada problema, en un gráfico con la altura de la página, sus breakpoints y tus viewports. Añade un viewport en el peor ancho con un clic.
 • Auditoría: todos los problemas de todos los tamaños en un solo lugar; el peso de la página, las solicitudes, los píxeles de imagen, el Largest Contentful Paint y el cambio de diseño por tamaño; y la escala tipográfica de títulos, texto y botones. Copia cualquier parte como tabla Markdown.
-• Imágenes responsive: cada imagen frente al ancho al que se muestra en cada viewport (demasiado grande, demasiado pequeña o del tamaño correcto), con un atributo sizes y unos anchos de srcset sugeridos, listos para copiar.
+• Imágenes responsive: cada imagen frente al ancho al que se muestra en cada viewport (demasiado grande, demasiado pequeña o del tamaño correcto), con un atributo sizes y unos anchos de srcset sugeridos, listos para copiar, y consejos sobre AVIF/WebP, la carga diferida y width/height.
 • Auditoría de colores de la página: los colores del texto, los fondos y los bordes en todos los tamaños, para copiarlos como variables CSS.
 • Meta y redes sociales: cómo se muestra la página en los resultados de búsqueda y en las vistas previas de enlaces (de forma aproximada), con su título, descripción, imagen social, dirección canónica, robots e iconos comprobados, y el esquema de sus encabezados.
+• Kit de herramientas CSS (pulsa U): tipografía fluida con clamp() (un tamaño o una escala tipográfica entera) calculada para cada viewport que previsualizas, unidades convertidas en cada tamaño (px, rem, em, vw, vh…), tus breakpoints como código (media queries, mixins de Sass, Tailwind, JavaScript), un selector de color (HEX, RGB, HSL, OKLCH) y proporciones de aspecto; además, una calculadora de cuadrícula auto-fit, marcado de imágenes responsive (<picture>, sizes, srcset) y un probador de media queries.
+• Media queries: todas las media queries del CSS de la página y los tamaños en los que se aplican, con las lagunas y los solapamientos entre breakpoints señalados (un ancho en el que no se aplica ninguno de los dos lados, o se aplican ambos) y un viewport añadido ahí con un clic.
+• Lista de QA: marca las comprobaciones manuales (el menú, los formularios, las imágenes, las ventanas emergentes) para cada viewport, edita la lista para adaptarla a tu proyecto y copia los resultados como informe Markdown.
 • Comprobación visual: guarda una referencia de cada viewport, compara tras un cambio y mira qué se movió, píxel a píxel: en paralelo, con un deslizador o con las diferencias recuadradas.
+• Elementos (pulsa J): todas las etiquetas de la página y el CSS de cada una, como las herramientas para desarrolladores del navegador (F12): el árbol HTML, las reglas que coinciden con las declaraciones anuladas tachadas, media queries y archivos de origen, valores calculados y el modelo de caja, con el tamaño de cualquier previsualización, además de un resumen de HTML y CSS: número y profundidad de elementos, ids duplicados, etiquetas obsoletas, imágenes sin alt, estilos en línea y !important.
 • Inspector: haz clic en un elemento de una vista previa y compara su tamaño, display, fuente, espaciado y diseño en todos los tamaños (lo que cambia queda resaltado) y mide la distancia a un segundo elemento en cada tamaño.
 • Breakpoints leídos del propio CSS de la página, además de Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation o los tuyos: etiqueta cada viewport y prueba ambos lados de cada breakpoint.
 • Claro y oscuro en paralelo: muestra cualquier vista previa con los estilos claros u oscuros de la página.
-• Las comprobaciones responsive detectan el desplazamiento horizontal (y el elemento que lo causa), la falta de etiqueta viewport, el texto diminuto, las áreas táctiles pequeñas, el texto cortado por su caja, el texto con poco contraste, las imágenes borrosas, los elementos que tapan la pantalla y los cambios de diseño, y los resaltan directamente en la página.
+• Las comprobaciones responsive detectan el desplazamiento horizontal (y el elemento que lo causa), la falta de etiqueta viewport, el texto diminuto, las áreas táctiles pequeñas, el texto cortado por su caja, el texto con poco contraste, las imágenes borrosas, los elementos que tapan la pantalla, los cambios de diseño y las líneas demasiado largas para leerlas en pantallas anchas, y los resaltan directamente en la página.
 • Desplázate en una vista previa y las demás muestran el mismo contenido; haz clic en un enlace y todas lo abren.
 • Contornos del diseño, cuadrícula de columnas, reglas en píxeles, barras de desplazamiento ocultas y CSS en vivo aplicado a todos los tamaños a la vez; guarda como fragmentos el CSS que usas a menudo.
 • Compara dos direcciones: una segunda vista previa junto a cada viewport, p. ej. staging junto a producción, siguiendo las mismas páginas.
-• Simula el daltonismo y la visión borrosa, el movimiento reducido y las animaciones en pausa, y pon a prueba el diseño con texto traducido más largo, de derecha a izquierda y con el texto al 200%.
+• Simula el daltonismo y la visión borrosa, el movimiento reducido y las animaciones en pausa, los estilos de pantalla táctil (hover: none, pointer: coarse), y pon a prueba el diseño con texto traducido más largo, de derecha a izquierda y con el texto al 200%.
 • Mide en píxeles CSS, comprueba el contraste de color según WCAG con un cuentagotas y superpón una maqueta de diseño sobre una vista previa para comparar píxel a píxel.
 • Abre cada viewport como una ventana real de su tamaño exacto (para los sitios que requieren iniciar sesión), ten una vista previa flotante siempre visible junto a tu editor o previsualiza en el panel lateral la página que estás viendo.
 • Capturas de página completa, espaciado del texto (WCAG), estilos prefers-contrast y de impresión, etiquetas de tamaño de imagen y de orden de tabulación, y una cuadrícula de línea base.
 
 **Comparte lo que ves**
 • Imagen de presentación: tu página en varios tamaños dentro de marcos de dispositivo sencillos sobre un fondo, lista para un portafolio, un cliente o una publicación.
+• Modo presentación: solo las vistas previas, a pantalla completa, para compartir pantalla y hacer demos a clientes, con desplazamiento automático: cada vista previa se desplaza sola de arriba abajo.
+• Insignia de puntuación: copia la puntuación responsive como una insignia SVG para un README o un informe de cliente, y mira la puntuación de cada página día a día.
+• Anota una captura: todas las vistas previas en una sola imagen con flechas, recuadros, pasos numerados y pixelado para ocultar datos privados.
 • Capturas de una vista previa o del espacio de trabajo, todos los viewports en una sola imagen con etiquetas, copia al portapapeles y un informe HTML de cada tamaño con sus problemas.
 • Abre cualquier vista previa en una ventana real del tamaño exacto.
 
@@ -49,7 +56,8 @@ Breakpointer muestra cualquier sitio web en varios tamaños de viewport, uno al 
 • Enfoca un viewport, navega hacia atrás y hacia adelante entre páginas, marca con una estrella las páginas que pruebas a menudo, haz zoom con Ctrl/⌘ + rueda y desplázate por el espacio de trabajo con Space + arrastrar.
 • Al recargar, cada vista previa conserva su posición de desplazamiento, y la recarga puede ser automática; comparte un enlace del espacio de trabajo que abre la página con tus viewports.
 • Exporta e importa tu configuración para compartirla con tu equipo.
-• Un diseño claro y oscuro limpio, atajos de teclado para todo, en inglés, español, portugués, francés, alemán, japonés, indonesio y vietnamita.
+• Un diseño claro y oscuro limpio, atajos de teclado para todo, en inglés, vietnamita, español, portugués, francés, alemán, ruso, japonés, chino e indonesio.
+• ¿Primera vez? Dieciocho guías paso a paso, una guía de usuario completa, una lista de primeros pasos que se marca sola y el modo «¿Qué es esto?» (H): señala cualquier control para ver qué hace.
 
 **Breakpointer Pro** (prueba gratuita de 7 días; todo lo anterior sigue siendo gratis)
 • Comprobaciones de accesibilidad en todos los tamaños: imágenes sin texto alt, botones y enlaces sin nombre (a menudo el botón de menú con solo un icono que únicamente aparece en teléfonos), campos sin etiqueta, foco del teclado en elementos ocultos, como un menú off-canvas cerrado, y falta del idioma de la página.

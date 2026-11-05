@@ -2241,4 +2241,85 @@ export const de: Record<MessageKey, string> = {
   'guide.progress.shareBody':
     'Kopiere den Score als Badge für ein README oder lade den HTML-Bericht unter Werkzeuge herunter.',
   // end v0.12 keys
+  // v0.13 keys
+  'elements.title': 'Elemente',
+  'elements.close': 'Elemente schließen',
+  'elements.preview': 'Vorschau',
+  'elements.pick': 'Element in einer Vorschau auswählen',
+  'elements.picking': 'Klicke in einer Vorschau auf ein Element…',
+  'elements.refresh': 'Seite erneut lesen',
+  'elements.tree': 'Das HTML der Seite',
+  'elements.loading': 'Seite wird gelesen…',
+  'elements.noAgent': 'Diese Vorschau kann nicht gelesen werden. Erlaube die Website und lade die Vorschauen neu.',
+  'elements.empty': 'Wähle ein Element im Baum aus oder wähle eines in einer Vorschau.',
+  'elements.more': 'Es werden nur die ersten 300 Kindelemente eines Elements aufgelistet.',
+  'elements.hidden': 'Bei dieser Größe nicht sichtbar',
+  'elements.tabs': 'Elementdetails',
+  'elements.tab.styles': 'Stile',
+  'elements.tab.computed': 'Berechnet',
+  'elements.tab.box': 'Box',
+  'elements.tab.summary': 'Zusammenfassung',
+  'elements.noRules': 'Keine Regel aus den lesbaren Stylesheets der Seite trifft auf dieses Element zu.',
+  'elements.unreadable':
+    '{count} Stylesheets von anderen Websites können nicht gelesen werden: Ihre Regeln werden nicht aufgelistet.',
+  'elements.unreadableOne':
+    '1 Stylesheet von einer anderen Website kann nicht gelesen werden: Seine Regeln werden nicht aufgelistet.',
+  'elements.overridden': 'Von einer anderen Regel überschrieben',
+  'elements.specificity': 'Spezifität {value}',
+  'elements.copyCss': 'CSS kopieren',
+  'elements.editCss': 'In Live-CSS ausprobieren',
+  'elements.compare': 'Bei allen Größen vergleichen',
+  'elements.copied': 'In die Zwischenablage kopiert',
+  'elements.search': 'Eigenschaften filtern',
+  'elements.showAll': 'Alle anzeigen',
+  'elements.noMatch': 'Keine Eigenschaft passt.',
+  'elements.boxLabel':
+    'Box-Modell: Inhalt {width} × {height}, Innenabstand {padding}, Rahmen {border}, Außenabstand {margin} (oben rechts unten links, px)',
+  'elements.copySummary': 'Als Markdown kopieren',
+  'elements.summary.title': 'HTML- & CSS-Zusammenfassung',
+  'elements.summary.elements': 'Elemente',
+  'elements.summary.depth': 'Tiefste Ebene',
+  'elements.summary.duplicateIds': 'Doppelte ids',
+  'elements.summary.obsolete': 'Veraltete Tags',
+  'elements.summary.alt': 'Bilder ohne alt',
+  'elements.summary.inline': 'Inline-Stile',
+  'elements.summary.important': '!important-Deklarationen',
+  'elements.summary.importantValue': '{important} in {rules} Regeln',
+  'elements.summary.tags': 'Am häufigsten verwendete Tags',
+  'elements.summary.none': 'Keine',
+  'elements.summary.sheets': 'Stylesheets: {count} · {unreadable} von anderen Websites können nicht gelesen werden.',
+  'elements.summary.sizeHint':
+    'Über 1.500 Elemente machen das Layout langsamer und brauchen mehr Speicher (Lighthouse).',
+  'elements.summary.depthHint': 'Mehr als 32 Ebenen Tiefe verlangsamen die Berechnung der Stile (Lighthouse).',
+  'elements.summary.duplicateHint':
+    'Eine id muss eindeutig sein: Labels, Links und Skripte können das falsche Element erwischen.',
+  'elements.summary.obsoleteHint': 'Nicht mehr Teil von HTML: Nutze stattdessen CSS oder ein aktuelles Element.',
+  'elements.summary.altHint': 'Gib jedem Bild einen alt-Text oder alt="", wenn es nur Dekoration ist.',
+  'elements.summary.inlineHint': 'Viele style-Attribute: Media Queries können sie bei anderen Größen nicht ändern.',
+  'elements.summary.importantHint': 'Viele !important-Deklarationen machen die Stile schwer überschreibbar.',
+  'elements.liveCssReady': 'Live-CSS wurde mit einer Regel für dieses Element geöffnet',
+  'tools.elements': 'Elemente (HTML & CSS)',
+  'tools.elementsHint': 'Alle Tags der Seite und das CSS jedes Tags, wie in den Entwicklertools des Browsers',
+  'palette.elements': 'Elemente: HTML und CSS',
+  'help.elements': 'Elemente (HTML & CSS)',
+  'news.elements':
+    'Elemente (J): das HTML der Seite als Baum und das CSS jedes Elements (passende Regeln, überschriebene Deklarationen, berechnete Werte und Box), wie in den Entwicklertools des Browsers, in jeder Vorschau.',
+  'news.elementsSummary':
+    'Eine HTML- & CSS-Zusammenfassung: Anzahl und Tiefe der Elemente, doppelte ids, veraltete Tags, Inline-Stile und !important-Deklarationen.',
+  'explain.elements': 'Alle Tags der Seite und das CSS jedes Elements, wie in den Entwicklertools des Browsers.',
+  'guide.elements.title': 'HTML und CSS einer Seite lesen',
+  'guide.elements.summary': 'Der Baum der Tags, das CSS jedes Elements und eine Zusammenfassung.',
+  'guide.elements.openTitle': 'Elemente öffnen',
+  'guide.elements.openBody':
+    'Drücke J oder wähle Elemente (HTML & CSS) unter Werkzeuge: das HTML der Seite, wie es die Entwicklertools des Browsers zeigen.',
+  'guide.elements.treeTitle': 'Tags durchsuchen',
+  'guide.elements.treeBody':
+    'Öffne den Baum per Klick oder mit den Pfeiltasten oder wähle ein Element in einer Vorschau. Abgeblendete Tags werden bei dieser Größe nicht angezeigt.',
+  'guide.elements.stylesTitle': 'Sehen, warum es so aussieht',
+  'guide.elements.stylesBody':
+    'Stile listet die passenden Regeln auf, die gewinnenden zuerst, mit Media Queries und Dateien; überschriebene Deklarationen sind durchgestrichen. Berechnet und Box zeigen die endgültigen Werte.',
+  'guide.elements.summaryTitle': 'HTML und CSS prüfen',
+  'guide.elements.summaryBody':
+    'Zusammenfassung zählt Elemente und Tiefe und markiert doppelte ids, veraltete Tags, Bilder ohne alt, Inline-Stile und !important.',
+  // end v0.13 keys
 };

@@ -13,6 +13,9 @@ import { VisualDialog, type VisualRow } from '../components/VisualDialog/VisualD
 import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
 import { ToolkitDialog, type ToolkitBreakpointSet } from '../components/ToolkitDialog/ToolkitDialog';
 import { MarkupDialog, type MarkupImage } from '../components/MarkupDialog/MarkupDialog';
+import { ElementsPanel, type ElementsTab } from '../components/ElementsPanel/ElementsPanel';
+import type { DomNode, DomSummary, ElementStyles } from '../agent/protocol';
+import { findNode, liveCssFor, loadedSelectors, mergeNode } from '../state/elements';
 import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
 import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/FloatingPreview/FloatingPreview';
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
@@ -274,6 +277,36 @@ type ProbeState = 'idle' | 'checking' | 'reachable' | 'unreachable' | 'unknown';
 /** How a navigation is recorded in the workspace tab's history. */
 type HistoryMode = 'push' | 'replace' | 'none';
 
+/** The Elements panel (v0.13): one preview's HTML tree and the CSS of the element selected in it. */
+type ElementsState = {
+  open: boolean;
+  /** The preview read (null: the first). */
+  card: string | null;
+  tree: DomNode | null;
+  /** The last read of the tree (its key: the frame and the read count) and whether an agent answered. */
+  read: { key: string; ok: boolean } | null;
+  expanded: ReadonlySet<string>;
+  selected: string | null;
+  styles: ElementStyles | null;
+  summary: DomSummary | null;
+  tab: ElementsTab;
+  /** The next element picked in a preview is shown here (not in the inspector). */
+  picking: boolean;
+};
+
+const CLOSED_ELEMENTS: ElementsState = {
+  open: false,
+  card: null,
+  tree: null,
+  read: null,
+  expanded: new Set(),
+  selected: null,
+  styles: null,
+  summary: null,
+  tab: 'styles',
+  picking: false,
+};
+
 type InspectorState = {
   open: boolean;
   /** Hovering a preview outlines elements; a click picks one. */
@@ -384,6 +417,9 @@ function Workspace({
   const [helpSection, setHelpSection] = useState<HelpSection>('start');
   // The QA checklist: its panel and this session's results.
   const [qaOpen, setQaOpen] = useState(false);
+  // The Elements panel, and a counter that makes it read the page again.
+  const [elements, setElements] = useState<ElementsState>(CLOSED_ELEMENTS);
+  const [elementsReads, setElementsReads] = useState(0);
   const [qaResults, setQaResults] = useState<QaResults>({});
   // The getting-started checklist, kept on this device (null until read); a screenshot taken this session.
   const [learn, setLearn] = useState<LearnProgress | null>(null);
@@ -1318,6 +1354,7 @@ function Workspace({
     // The inspector, the audit and the QA checklist share the side of the workspace.
     setAudit((state) => (state.open ? { ...state, open: false } : state));
     setQaOpen(false);
+    if (elements.open) closeElements();
     setInspector((state) => ({ ...state, open: true, picking: true, pickingTarget: false }));
     agents.broadcast({ type: 'inspect', on: true });
     hintAccess(t('tools.inspect'));
@@ -1355,6 +1392,7 @@ function Workspace({
     }
     if (inspector.open) closeInspector();
     setQaOpen(false);
+    if (elements.open) closeElements();
     setAudit((state) => ({ open: true, tab: tab ?? state.tab }));
     hintAccess(t('audit.title'));
   };
@@ -1367,6 +1405,7 @@ function Workspace({
   const onEscape = () => {
     if (presenting) exitPresent();
     else if (inspector.picking) stopPicking();
+    else if (elements.picking) pickElement();
     else if (measuring) setMeasuring(false);
     else if (annotating) setAnnotating(false);
     else if (focused) exitFocus();
@@ -1374,6 +1413,7 @@ function Workspace({
     else if (vision !== 'none') setVision('none');
     else if (audit.open) closeAudit();
     else if (qaOpen) closeQa();
+    else if (elements.open) closeElements();
   };
 
   /* ---------- QA checklist ---------- */
@@ -1390,6 +1430,7 @@ function Workspace({
   const openQa = () => {
     if (inspector.open) closeInspector();
     if (audit.open) closeAudit();
+    if (elements.open) closeElements();
     setQaOpen(true);
   };
 
@@ -1511,6 +1552,19 @@ function Workspace({
       const generation = generations[cardId];
       if (!generation) return;
       agents.broadcast({ type: 'inspect', on: false });
+      // Picked for the Elements panel: shown there, in the tree of the preview it was picked in.
+      if (elementsPicking.current) {
+        setElements((state) => ({
+          ...state,
+          picking: false,
+          card: cardId,
+          selected: selector,
+          styles: null,
+          tab: state.tab === 'summary' ? 'styles' : state.tab,
+        }));
+        setElementsReads((count) => count + 1);
+        return;
+      }
       // The second element of a distance: the first stays selected (picking it again measures nothing).
       if (inspector.pickingTarget && inspector.selector) {
         const first = inspector.selector;
@@ -2358,7 +2412,9 @@ function Workspace({
     else if (action === 'toolkit') openToolkit();
     else if (action === 'toolkit-images') openToolkit('images');
     else if (action === 'markup') onCapture('markup');
-    else startExplain();
+    else if (action === 'elements') {
+      if (!elements.open) openElements();
+    } else startExplain();
   };
 
   // Present mode: the page says so (cards drop their controls), full screen ends with it, and the
@@ -3158,6 +3214,7 @@ function Workspace({
     present: () => togglePresent(),
     qa: () => toggleQa(),
     toolkit: () => openToolkit(),
+    elements: () => toggleElements(),
     escape: onEscape,
     // 1–8 show that viewport on its own (again: all of them).
     viewportAt: (index) => {
@@ -3200,6 +3257,7 @@ function Workspace({
         presenting,
         qaOpen,
         autoScrolling,
+        elementsOpen: elements.open,
         actions: {
           reloadAll: reloadKeepingPlace,
           autoReload: setAutoReload,
@@ -3255,6 +3313,7 @@ function Workspace({
           qa: toggleQa,
           toolkit: openToolkit,
           autoScroll,
+          elements: toggleElements,
           exportSettings,
           scrollBottom: scrollAllToBottom,
           copyAddress,
@@ -3437,6 +3496,150 @@ function Workspace({
     }, 4000);
     return () => window.clearTimeout(timer);
   }, [pageScoreKey, scoreValue, scoreSizes]);
+
+  /* ---------- Elements panel ---------- */
+
+  const elementsPicking = useRef(false);
+  const elementsSelected = useRef<string | null>(null);
+  useLayoutEffect(() => {
+    elementsPicking.current = elements.picking;
+    elementsSelected.current = elements.selected;
+  });
+  const elementsCard = elements.open
+    ? cards.some((card) => card.id === elements.card)
+      ? elements.card
+      : (cards[0]?.id ?? null)
+    : null;
+  // The preview's current frame: read again when it changes (a reload, another page).
+  const elementsFrame =
+    elementsCard && agents.frameOf(elementsCard) ? `${elementsCard}:${generations[elementsCard]}` : null;
+  // What the panel reads now (the preview's frame, and how many times Read again was pressed).
+  const elementsReadKey = elementsFrame ? `${elementsFrame}#${elementsReads}` : null;
+  const elementsLoading = elementsReadKey !== null && elements.read?.key !== elementsReadKey;
+  const elementsUnavailable =
+    elementsCard !== null &&
+    (!elementsFrame || (elements.read?.key === elementsReadKey && !elements.read.ok && !elements.tree));
+  // Requests of one kind to one preview replace each other: they go one at a time.
+  const elementsQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const queueElements = <T,>(request: () => Promise<T>): Promise<T> => {
+    const next = elementsQueue.current.then(request, request);
+    elementsQueue.current = next.catch(() => undefined);
+    return next;
+  };
+
+  useEffect(() => {
+    const key = elementsReadKey;
+    if (!elementsCard || !key) return;
+    let current = true;
+    const reveal = elementsSelected.current;
+    void queueElements(() =>
+      agents.ask(elementsCard, { type: 'getDom', selector: null, depth: 2, reveal }, 'dom', 5000),
+    )
+      .then(({ root }) => {
+        if (!current) return;
+        // Opened as they came, but for <head>.
+        const open = loadedSelectors(root).filter((selector) => findNode(root, selector)?.tag !== 'head');
+        setElements((state) => ({ ...state, tree: root, read: { key, ok: true }, expanded: new Set(open) }));
+      })
+      .catch(() => current && setElements((state) => ({ ...state, read: { key, ok: false } })));
+    void queueElements(() => agents.ask(elementsCard, { type: 'getDomSummary' }, 'domSummary', 5000))
+      .then(({ summary }) => current && setElements((state) => ({ ...state, summary })))
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+    // `agents` changes with every message; the frame is what matters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elementsCard, elementsFrame, elementsReads]);
+
+  useEffect(() => {
+    const selector = elements.selected;
+    if (!elementsCard || !elementsFrame || !selector) return;
+    let current = true;
+    agents.send(elementsCard, { type: 'select', selector });
+    void queueElements(() => agents.ask(elementsCard, { type: 'getStyles', selector }, 'styles', 5000))
+      .then(
+        ({ styles }) => current && setElements((state) => (state.selected === selector ? { ...state, styles } : state)),
+      )
+      .catch(() => undefined);
+    return () => {
+      current = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elementsCard, elementsFrame, elements.selected, elementsReads]);
+
+  const openElements = () => {
+    if (inspector.open) closeInspector();
+    if (audit.open) closeAudit();
+    setQaOpen(false);
+    setElements((state) => ({ ...state, open: true }));
+    hintAccess(t('tools.elements'));
+  };
+
+  function closeElements() {
+    const inPanel = document.activeElement?.closest('[data-testid="elements-panel"]');
+    if (elements.picking) agents.broadcast({ type: 'inspect', on: false });
+    if (elementsCard) agents.send(elementsCard, { type: 'select', selector: null });
+    setElements((state) => ({ ...CLOSED_ELEMENTS, card: state.card, tab: state.tab }));
+    if (inPanel) requestAnimationFrame(() => document.querySelector<HTMLElement>('[data-tools-trigger]')?.focus());
+  }
+
+  /** J, Tools and the palette. */
+  const toggleElements = () => (elements.open ? closeElements() : openElements());
+
+  /** The panel's pick button: the next element clicked in a preview is shown in the panel (again: stop). */
+  function pickElement() {
+    if (elements.picking) {
+      agents.broadcast({ type: 'inspect', on: false });
+      setElements((state) => ({ ...state, picking: false }));
+      return;
+    }
+    setMeasuring(false);
+    setAnnotating(false);
+    setElements((state) => ({ ...state, picking: true }));
+    agents.broadcast({ type: 'inspect', on: true });
+  }
+
+  const expandElement = (selector: string, open: boolean) => {
+    setElements((state) => {
+      const expanded = new Set(state.expanded);
+      if (open) expanded.add(selector);
+      else expanded.delete(selector);
+      return { ...state, expanded };
+    });
+    const node = findNode(elements.tree, selector);
+    if (!open || !elementsCard || !node || node.childCount === 0 || node.children) return;
+    const card = elementsCard;
+    void queueElements(() => agents.ask(card, { type: 'getDom', selector, depth: 1 }, 'dom', 5000))
+      .then(
+        ({ root }) =>
+          root && setElements((state) => (state.tree ? { ...state, tree: mergeNode(state.tree, root) } : state)),
+      )
+      .catch(() => undefined);
+  };
+
+  /** The inspector, comparing the element at every size (it takes the side). */
+  const compareElement = (selector: string) => {
+    closeElements();
+    setInspector({ ...CLOSED_INSPECTOR, open: true, selector });
+    agents.broadcast({ type: 'select', selector });
+  };
+
+  /** Live CSS with a rule for the element (its winning declarations as comments, to start from). */
+  const editElementCss = (selector: string) => {
+    setLiveCss((css) => `${css.trim() ? `${css.trimEnd()}\n\n` : ''}${liveCssFor(selector, elements.styles)}\n`);
+    setDialog('css');
+    toast({ message: t('elements.liveCssReady'), tone: 'info', key: 'elements' });
+  };
+
+  const copyElementsText = (text: string) =>
+    void copyText(text).then((copied) =>
+      toast(
+        copied
+          ? { message: t('elements.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
 
   const forgetScoreHistory = () => {
     const previous = scoreHistory;
@@ -3899,6 +4102,8 @@ function Workspace({
           onVisual={openVisual}
           onQa={toggleQa}
           onToolkit={() => openToolkit()}
+          onElements={toggleElements}
+          elementsOpen={elements.open}
           qaOpen={qaOpen}
           measuring={measuring}
           comparing={compare !== null}
@@ -4281,6 +4486,41 @@ function Workspace({
             onTurnOnChecks={() => setChecks(true)}
             onAllowSite={() => void allowSite()}
             onClose={closeAudit}
+          />
+        )}
+        {elements.open && !presenting && (
+          <ElementsPanel
+            cards={cards.map((card) => ({ id: card.id, name: cardTitle(card), width: card.viewport.width }))}
+            card={elementsCard}
+            onCard={(card) => {
+              if (elementsCard && card !== elementsCard) agents.send(elementsCard, { type: 'select', selector: null });
+              setElements((state) => ({ ...state, card, tree: null, summary: null, styles: null }));
+            }}
+            tree={elements.tree}
+            loading={elementsLoading}
+            unavailable={elementsUnavailable}
+            expanded={elements.expanded}
+            onExpand={expandElement}
+            selected={elements.selected}
+            onSelect={(selector) =>
+              setElements((state) =>
+                state.selected === selector
+                  ? state
+                  : { ...state, selected: selector, styles: null, tab: state.tab === 'summary' ? 'styles' : state.tab },
+              )
+            }
+            elementStyles={elements.styles}
+            summary={elements.summary}
+            tab={elements.tab}
+            onTab={(tab) => setElements((state) => ({ ...state, tab }))}
+            picking={elements.picking}
+            onPick={pickElement}
+            onRefresh={() => setElementsReads((count) => count + 1)}
+            onClose={closeElements}
+            onCopyText={copyElementsText}
+            onEditCss={editElementCss}
+            onCompare={compareElement}
+            page={currentUrl?.href ?? null}
           />
         )}
         {qaOpen && !presenting && (

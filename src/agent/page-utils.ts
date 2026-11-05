@@ -769,3 +769,201 @@ const normaliseFormat = (format: string) => {
   const lower = format.toLowerCase();
   return lower === 'jpeg' || lower === 'pjpeg' ? 'jpg' : lower === 'svg+xml' ? 'svg' : lower;
 };
+
+/* ---------- v0.13: the Elements panel ---------- */
+
+/** Splits at top-level commas (not inside parentheses, brackets or strings). */
+export function splitTopLevel(text: string, separator = ','): string[] {
+  const parts: string[] = [];
+  let depth = 0;
+  let quote = '';
+  let current = '';
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index]!;
+    if (quote) {
+      if (char === '\\') {
+        current += char + (text[index + 1] ?? '');
+        index++;
+        continue;
+      }
+      if (char === quote) quote = '';
+    } else if (char === '"' || char === "'") quote = char;
+    else if (char === '(' || char === '[') depth++;
+    else if (char === ')' || char === ']') depth = Math.max(0, depth - 1);
+    else if (char === separator && depth === 0) {
+      parts.push(current.trim());
+      current = '';
+      continue;
+    }
+    current += char;
+  }
+  if (current.trim()) parts.push(current.trim());
+  return parts;
+}
+
+export type Specificity = [number, number, number];
+
+const LEGACY_PSEUDO_ELEMENTS = /^(before|after|first-line|first-letter)$/i;
+
+/**
+ * The specificity of one complex selector, as [ids, classes, types]:
+ * `:where()` counts nothing, `:is()`, `:not()` and `:has()` their most
+ * specific argument, pseudo-elements count as types, `*` and combinators nothing.
+ */
+export function selectorSpecificity(selector: string): Specificity {
+  const result: Specificity = [0, 0, 0];
+  const text = selector.trim();
+  let index = 0;
+  const add = (other: Specificity) => {
+    result[0] += other[0];
+    result[1] += other[1];
+    result[2] += other[2];
+  };
+  const readIdent = () => {
+    const match = /^(?:\\.|[\w-]|[\u0080-\uffff])+/.exec(text.slice(index));
+    index += match ? match[0].length : 0;
+    return match?.[0] ?? '';
+  };
+  /** The text inside parentheses starting at `index` (on the '('). */
+  const readArgument = () => {
+    let depth = 0;
+    const start = index;
+    for (; index < text.length; index++) {
+      if (text[index] === '(') depth++;
+      else if (text[index] === ')' && --depth === 0) {
+        index++;
+        return text.slice(start + 1, index - 1);
+      }
+    }
+    return text.slice(start + 1);
+  };
+  while (index < text.length) {
+    const char = text[index]!;
+    if (char === '#') {
+      index++;
+      readIdent();
+      result[0]++;
+    } else if (char === '.') {
+      index++;
+      readIdent();
+      result[1]++;
+    } else if (char === '[') {
+      const end = text.indexOf(']', index);
+      index = end < 0 ? text.length : end + 1;
+      result[1]++;
+    } else if (char === ':') {
+      const element = text[index + 1] === ':';
+      index += element ? 2 : 1;
+      const name = readIdent().toLowerCase();
+      const argument = text[index] === '(' ? readArgument() : null;
+      if (element || LEGACY_PSEUDO_ELEMENTS.test(name)) result[2]++;
+      else if (name === 'where') continue;
+      else if ((name === 'is' || name === 'not' || name === 'has' || name === 'matches') && argument !== null)
+        add(maxSpecificity(splitTopLevel(argument).map(selectorSpecificity)));
+      else if ((name === 'nth-child' || name === 'nth-last-child') && argument !== null && /\bof\b/i.test(argument)) {
+        result[1]++;
+        add(maxSpecificity(splitTopLevel(argument.replace(/^[\s\S]*?\bof\b/i, '')).map(selectorSpecificity)));
+      } else result[1]++;
+    } else if (/[\w-]|[\u0080-\uffff]|\\/.test(char)) {
+      readIdent();
+      result[2]++;
+    } else index++;
+  }
+  return result;
+}
+
+export const compareSpecificity = (a: Specificity, b: Specificity) => a[0] - b[0] || a[1] - b[1] || a[2] - b[2];
+
+const maxSpecificity = (list: Specificity[]): Specificity =>
+  list.reduce<Specificity>((best, item) => (compareSpecificity(item, best) > 0 ? item : best), [0, 0, 0]);
+
+/** A declaration block's text (`cssText`) as declarations, shorthands kept. */
+export function splitDeclarations(cssText: string): { name: string; value: string; important: boolean }[] {
+  return splitTopLevel(cssText, ';')
+    .map((part) => {
+      const colon = part.indexOf(':');
+      if (colon <= 0) return null;
+      const name = part.slice(0, colon).trim();
+      let value = part.slice(colon + 1).trim();
+      const important = /!\s*important\s*$/i.test(value);
+      if (important) value = value.replace(/!\s*important\s*$/i, '').trim();
+      return name ? { name, value, important } : null;
+    })
+    .filter((item): item is { name: string; value: string; important: boolean } => item !== null);
+}
+
+export type CascadeGroup = {
+  inline: boolean;
+  specificity: Specificity;
+  /** Later in the document wins at equal specificity. */
+  order: number;
+  /** Each declaration with the longhand properties it sets. */
+  declarations: { important: boolean; longhands: string[] }[];
+};
+
+/**
+ * Which declarations lose to others for every property they set:
+ * `!important` first (inline before rules), then inline style, then the
+ * higher specificity, then the later rule, then the later declaration.
+ */
+export function overriddenDeclarations(groups: readonly CascadeGroup[]): boolean[][] {
+  type Contender = { group: number; declaration: number };
+  const rank = (contender: Contender) => {
+    const group = groups[contender.group]!;
+    const declaration = group.declarations[contender.declaration]!;
+    return [
+      declaration.important ? 1 : 0,
+      group.inline ? 1 : 0,
+      ...group.specificity,
+      group.order,
+      contender.declaration,
+    ];
+  };
+  const better = (a: Contender, b: Contender) => {
+    const [ra, rb] = [rank(a), rank(b)];
+    for (let index = 0; index < ra.length; index++) if (ra[index] !== rb[index]) return ra[index]! > rb[index]!;
+    return false;
+  };
+  const winners = new Map<string, Contender>();
+  groups.forEach((group, groupIndex) =>
+    group.declarations.forEach((declaration, declarationIndex) => {
+      const contender = { group: groupIndex, declaration: declarationIndex };
+      for (const property of declaration.longhands) {
+        const current = winners.get(property);
+        if (!current || better(contender, current)) winners.set(property, contender);
+      }
+    }),
+  );
+  return groups.map((group, groupIndex) =>
+    group.declarations.map(
+      (declaration, declarationIndex) =>
+        declaration.longhands.length > 0 &&
+        declaration.longhands.every((property) => {
+          const winner = winners.get(property);
+          return !winner || winner.group !== groupIndex || winner.declaration !== declarationIndex;
+        }),
+    ),
+  );
+}
+
+/** Elements HTML no longer has (shown in the summary when a page still uses them). */
+export const OBSOLETE_TAGS = [
+  'acronym',
+  'applet',
+  'basefont',
+  'big',
+  'blink',
+  'center',
+  'dir',
+  'font',
+  'frame',
+  'frameset',
+  'isindex',
+  'marquee',
+  'nobr',
+  'noframes',
+  'plaintext',
+  'strike',
+  'tt',
+  'xmp',
+] as const;

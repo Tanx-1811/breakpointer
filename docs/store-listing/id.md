@@ -12,7 +12,7 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 
 **Pratinjau dengan cepat**
 • Klik tombol di bilah alat dan pilih “Pratinjau halaman ini”, klik kanan halaman atau tautan mana pun, tekan Alt+Shift+P, atau ketik “bpt” dan URL di bilah alamat.
-• 28 ukuran umum untuk ponsel, ponsel lipat, tablet, laptop, dan desktop (cari menurut nama atau ukuran), plus ukuran kustom apa pun.
+• 30 ukuran umum untuk ponsel, ponsel lipat, tablet, laptop, dan desktop (cari menurut nama atau ukuran), plus ukuran kustom apa pun.
 • Seret tepi pratinjau untuk mengubah ukurannya dan lihat halaman menata ulang secara langsung — ukurannya menempel ke breakpoint Anda.
 • Tekan Ctrl/⌘ + K untuk mencari setiap perintah, ukuran, grup, dan halaman.
 • Ruang kerja yang dirancang untuk sesi panjang: bilah sisi viewport dengan peta breakpoint, bilah status, dan minimap, tiga tata letak (membungkus, satu baris, bertumpuk), enam warna aksen, dan tiga gaya kanvas.
@@ -23,24 +23,31 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 • Periksa halaman: seluruh daftar halaman — halaman tersimpan Anda, tautan di sebuah halaman, atau sitemap situs — diperiksa di setiap viewport dalam sekali jalan. Lihat halaman mana yang rusak dan di ukuran berapa, lalu salin tabelnya sebagai Markdown atau unduh laporan HTML.
 • Pindai setiap lebar: halaman diperiksa di setiap lebar dalam suatu rentang, dan lebar pertama serta terakhir setiap masalah ditemukan tepat sampai ke piksel — pada grafik bersama tinggi halaman, breakpoint-nya, dan viewport Anda. Tambahkan viewport di lebar terburuk dengan sekali klik.
 • Audit: setiap masalah di setiap ukuran dalam satu tempat; bobot halaman, permintaan, piksel gambar, Largest Contentful Paint, dan pergeseran tata letak per ukuran; serta skala tipografi judul, teks, dan tombol — salin bagian mana pun sebagai tabel Markdown.
-• Gambar responsif: setiap gambar dibandingkan dengan lebar tampilnya di setiap viewport — terlalu besar, terlalu kecil, atau ukurannya tepat — beserta atribut sizes dan lebar srcset yang disarankan untuk disalin.
+• Gambar responsif: setiap gambar dibandingkan dengan lebar tampilnya di setiap viewport — terlalu besar, terlalu kecil, atau ukurannya tepat — beserta atribut sizes dan lebar srcset yang disarankan untuk disalin, serta tips tentang AVIF/WebP, lazy loading, dan width/height.
 • Audit warna halaman: warna yang digunakan untuk teks, latar belakang, dan garis batas di semua ukuran, siap disalin sebagai variabel CSS.
 • Meta & sosial: tampilan halaman di hasil pencarian dan pratinjau tautan (perkiraan), dengan judul, deskripsi, gambar sosial, alamat kanonis, robots, dan ikon yang diperiksa, serta kerangka judulnya.
+• Perangkat CSS (tekan U): tipografi fluid dengan clamp() — satu ukuran atau seluruh skala tipografi — dihitung di setiap viewport yang Anda pratinjau, satuan dikonversi di setiap ukuran (px, rem, em, vw, vh…), breakpoint Anda sebagai kode (media query, mixin Sass, Tailwind, JavaScript), pemilih warna (HEX, RGB, HSL, OKLCH) dan rasio aspek — plus kalkulator grid auto-fit, markup gambar responsif (<picture>, sizes, srcset), dan penguji media query.
+• Media query: setiap media query di CSS halaman dan ukuran tempat media query itu berlaku — dengan celah dan tumpang tindih antar-breakpoint ditandai (lebar tempat tidak ada sisi yang berlaku, atau keduanya berlaku), dan viewport ditambahkan di sana dengan sekali klik.
+• Daftar periksa QA: centang pemeriksaan manual — menu, formulir, gambar, pop-up — untuk setiap viewport, sunting daftarnya sesuai proyek Anda, dan salin hasilnya sebagai laporan Markdown.
 • Pemeriksaan visual: simpan acuan setiap viewport, bandingkan setelah ada perubahan, dan lihat apa yang bergeser, piksel demi piksel — berdampingan, dengan penggeser, atau dengan perbedaan yang ditandai kotak.
+• Elemen (tekan J): setiap tag halaman beserta CSS-nya, seperti alat pengembang browser (F12): pohon HTML, aturan yang cocok dengan deklarasi yang ditimpa dicoret, media query dan file sumber, nilai terhitung, dan model kotak, pada ukuran pratinjau mana pun, ditambah ringkasan HTML & CSS: jumlah dan kedalaman elemen, id ganda, tag usang, gaya inline, dan deklarasi !important.
 • Inspektor: klik elemen di satu pratinjau dan bandingkan ukuran, display, font, spasi, dan tata letaknya di setiap ukuran — yang berubah akan disorot — dan ukur jarak ke elemen kedua di setiap ukuran.
 • Breakpoint dibaca dari CSS halaman itu sendiri, plus Tailwind, Bootstrap, Material UI, Chakra UI, Ant Design, Bulma, Foundation, atau milik Anda sendiri — beri label setiap viewport dan uji kedua sisi setiap breakpoint.
 • Terang dan gelap berdampingan: tampilkan pratinjau mana pun dengan gaya terang atau gelap halaman.
-• Pemeriksaan responsif menemukan gulir ke samping (dan elemen penyebabnya), tag viewport yang tidak ada, teks terlalu kecil, target sentuh kecil, teks terpotong oleh kotaknya, teks berkontras rendah, gambar buram, elemen yang menutupi layar, dan pergeseran tata letak — sorot semuanya langsung di halaman.
+• Pemeriksaan responsif menemukan gulir ke samping (dan elemen penyebabnya), tag viewport yang tidak ada, teks terlalu kecil, target sentuh kecil, teks terpotong oleh kotaknya, teks berkontras rendah, gambar buram, elemen yang menutupi layar, pergeseran tata letak, dan baris yang terlalu panjang untuk dibaca di layar lebar — sorot semuanya langsung di halaman.
 • Gulir satu pratinjau dan pratinjau lain menampilkan konten yang sama; klik tautan dan setiap pratinjau membukanya.
 • Garis tepi tata letak, grid kolom, penggaris piksel, bilah gulir tersembunyi, dan CSS langsung yang diterapkan ke semua ukuran sekaligus — simpan CSS yang sering Anda gunakan sebagai cuplikan.
 • Bandingkan dua alamat: pratinjau kedua di samping setiap viewport, mis. staging di samping produksi, mengikuti halaman yang sama.
-• Simulasikan buta warna dan penglihatan kabur, gerakan yang dikurangi dan animasi yang dijeda, serta uji ketahanan tata letak dengan teks terjemahan yang lebih panjang, arah kanan ke kiri, dan teks 200%.
+• Simulasikan buta warna dan penglihatan kabur, gerakan yang dikurangi dan animasi yang dijeda, gaya layar sentuh (hover: none, pointer: coarse), serta uji ketahanan tata letak dengan teks terjemahan yang lebih panjang, arah kanan ke kiri, dan teks 200%.
 • Ukur dalam piksel CSS, periksa kontras warna terhadap WCAG dengan pipet, dan tumpangkan mockup desain di atas pratinjau untuk membandingkan piksel demi piksel.
 • Buka setiap viewport sebagai jendela sungguhan dengan ukuran persis (untuk situs yang mengharuskan Anda masuk), letakkan pratinjau mengambang yang selalu di atas di samping editor Anda, atau pratinjau halaman yang sedang Anda jelajahi di panel samping.
 • Tangkapan layar halaman penuh, spasi teks (WCAG), gaya prefers-contrast dan cetak, label ukuran gambar dan urutan Tab, serta grid garis dasar.
 
 **Bagikan apa yang Anda lihat**
 • Gambar showcase: halaman Anda di beberapa ukuran dalam bingkai perangkat sederhana di atas latar, siap untuk portofolio, klien, atau postingan.
+• Mode presentasi: hanya pratinjau, layar penuh, untuk berbagi layar dan demo klien — dengan gulir otomatis, setiap pratinjau bergulir sendiri dari atas ke bawah.
+• Lencana skor: salin skor responsif sebagai lencana SVG untuk README atau laporan klien — dan lihat skor setiap halaman hari demi hari.
+• Anotasi tangkapan layar: setiap pratinjau dalam satu gambar dengan panah, kotak, langkah bernomor, dan pikselasi untuk menyembunyikan detail pribadi.
 • Tangkapan layar satu pratinjau atau ruang kerja, semua viewport dalam satu gambar berlabel, salin ke papan klip, dan laporan HTML untuk setiap ukuran beserta masalahnya.
 • Buka pratinjau mana pun di jendela sungguhan dengan ukuran persis.
 
@@ -49,7 +56,8 @@ Breakpointer menampilkan situs web apa pun di beberapa ukuran viewport secara be
 • Fokus pada satu viewport, maju dan mundur antarhalaman, beri bintang pada halaman yang sering Anda uji, zoom dengan Ctrl/⌘ + roda mouse, dan geser dengan Space + seret.
 • Muat ulang mempertahankan posisi gulir setiap pratinjau dan dapat berjalan otomatis; bagikan tautan ruang kerja yang membuka halaman dengan viewport Anda.
 • Ekspor dan impor susunan Anda untuk membagikannya kepada tim Anda.
-• Desain terang dan gelap yang bersih, pintasan keyboard untuk semuanya, dalam bahasa Inggris, Spanyol, Portugis, Prancis, Jerman, Jepang, Indonesia, dan Vietnam.
+• Desain terang dan gelap yang bersih, pintasan keyboard untuk semuanya, dalam bahasa Inggris, Vietnam, Spanyol, Portugis, Prancis, Jerman, Rusia, Jepang, Tionghoa, dan Indonesia.
+• Baru di sini? Delapan belas panduan langkah demi langkah, panduan pengguna lengkap, daftar periksa memulai yang mencentang dirinya sendiri, dan mode “Apa ini?” (H): arahkan ke kontrol mana pun untuk melihat fungsinya.
 
 **Breakpointer Pro** (uji coba gratis 7 hari; semua yang di atas tetap gratis)
 • Pemeriksaan aksesibilitas di setiap ukuran: gambar tanpa teks alt, tombol dan tautan tanpa nama (sering kali tombol menu berisi ikon saja yang hanya muncul di ponsel), kolom tanpa label, fokus keyboard pada elemen tersembunyi seperti menu off-canvas yang tertutup, dan bahasa halaman yang tidak ditetapkan.
