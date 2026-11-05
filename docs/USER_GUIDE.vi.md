@@ -14,8 +14,8 @@ Hướng dẫn này áp dụng cho Breakpointer 0.11. Tính năng có nhãn **M�
 4. [Mô phỏng và thử độ bền](#simulations-and-stress-tests) — thị lực, tùy chọn của trang, kiểu cho màn hình cảm ứng, chữ dài hơn, phải sang trái
 5. [Kiểm thử thủ công](#manual-testing) — checklist kiểm thử, ghi chú và báo cáo lỗi
 6. [Cả website và lỗi hồi quy](#whole-sites-and-regressions) — Kiểm tra nhiều trang, Kiểm tra hình ảnh
-7. [Ảnh chụp, báo cáo và chia sẻ](#screenshots-reports-and-sharing) — chụp ảnh, ảnh trình diễn, báo cáo HTML, trình chiếu, tự cuộn, huy hiệu điểm, cửa sổ thật, xem trước nổi, thanh bên Chrome
-8. [Bộ công cụ CSS](#css-toolkit) — Fluid type, đơn vị, breakpoint thành code, màu, tỉ lệ khung (Mới ở 0.11)
+7. [Ảnh chụp, báo cáo và chia sẻ](#screenshots-reports-and-sharing) — chụp ảnh, chú thích ảnh chụp (Mới ở 0.12), ảnh trình diễn, báo cáo HTML, trình chiếu, tự cuộn, huy hiệu và lịch sử điểm, cửa sổ thật, xem trước nổi, thanh bên Chrome
+8. [Bộ công cụ CSS](#css-toolkit) — Fluid type, đơn vị, breakpoint thành code, màu, tỉ lệ khung (Mới ở 0.11); Grid, mã ảnh, thử media query (Mới ở 0.12)
 9. [Cài đặt](#settings)
 10. [Breakpointer Pro](#breakpointer-pro)
 11. [Phím tắt](#keyboard-shortcuts)
@@ -115,6 +115,9 @@ Lần đầu dùng, Breakpointer có sẵn ba viewport — **Điện thoại** 3
 | Thử kiểu cho màn hình cảm ứng     | **Mới ở 0.11** — menu và nút bấm trang hiển thị trên điện thoại, máy tính bảng            |
 | Chữ dễ đọc ở mọi kích thước       | **Mới ở 0.11** — độ dài dòng, chữ nhỏ, phóng to và giãn chữ                               |
 | Trình chiếu bản demo responsive   | **Mới ở 0.11** — bản xem trước toàn màn hình, tự cuộn                                     |
+| Chú thích ảnh chụp                | **Mới ở 0.12** — mũi tên, khung, bước đánh số — và che thông tin riêng tư                 |
+| Đưa ảnh responsive lên trang      | **Mới ở 0.12** — đúng kích thước, định dạng hiện đại và tải lười                          |
+| Theo dõi điểm của trang           | **Mới ở 0.12** — xem điểm responsive tăng lên qua từng ngày                               |
 
 Trong tài liệu này, dòng “Trong ứng dụng:” cho biết hướng dẫn nào đi qua cùng việc đó.
 
@@ -316,13 +319,22 @@ Mở bằng `E`, nút **Rà soát** (có số loại vấn đề tìm thấy), t
 
 Trong ứng dụng: **Rà soát trang ở mọi kích thước**.
 
-**Vấn đề.** Thẻ điểm responsive, rồi từng loại vấn đề cùng các bản xem trước gặp phải (**Ở 2/3**). Chọn một loại để xem phần tử, **Đánh dấu trong _viewport_** hoặc **Đi tới _viewport_**. Từ 0.11, thẻ điểm còn tạo được [huy hiệu điểm](#score-badge).
+**Vấn đề.** Thẻ điểm responsive, rồi từng loại vấn đề cùng các bản xem trước gặp phải (**Ở 2/3**). Chọn một loại để xem phần tử, **Đánh dấu trong _viewport_** hoặc **Đi tới _viewport_**. Từ 0.11, thẻ điểm còn tạo được [huy hiệu điểm](#score-badge), và từ 0.12 có [lịch sử điểm](#score-history) của trang.
 
 **Hiệu năng.** Thanh biểu đồ cho mỗi bản xem trước: **Dung lượng trang** (số byte tải về), **Số yêu cầu**, **Điểm ảnh của ảnh** (so với lượng màn hình cần — ảnh responsive tải ít hơn trên màn hình nhỏ), **Thời gian hiển thị nội dung lớn nhất** (tốt: dưới 2,5 giây), **Xê dịch bố cục** (tốt: dưới 0,1), **Chiều cao trang**, **Phần tử** và **Web font**. Dung lượng tính theo số liệu trình duyệt báo: tệp từ site khác không chia sẻ thông tin thời gian, và tệp lấy từ bộ nhớ đệm, không được tính. Khi đặt **ngân sách hiệu năng (Pro)** trong Cài đặt, mỗi giới hạn được hiện ra và bản xem trước vượt giới hạn được đánh dấu, có tóm tắt ở đầu tab.
 
 **Kiểu chữ.** Cỡ chữ, chiều cao dòng và độ đậm của heading, đoạn văn, liên kết, nút và trường nhập đầu tiên mỗi loại trong từng bản xem trước, đánh dấu những gì thay đổi giữa các kích thước.
 
 **Hình ảnh.** Mọi ảnh mà bản xem trước hiển thị (từ 24 px trở lên), ở từng viewport: chiều rộng hiển thị, chiều rộng của tệp và lượng màn hình cần (chiều rộng hiển thị × tỉ lệ điểm ảnh), được đánh dấu **Quá lớn**, **Quá nhỏ** hoặc **Vừa**, ảnh lãng phí nhất đứng đầu. Với mỗi ảnh có gợi ý `sizes` khớp với các viewport đang xem (dùng `vw` khi ảnh co giãn theo viewport, px khi ảnh ngừng lớn) và các chiều rộng `srcset` cho màn hình 1× và 2× — bấm **Sao chép srcset và sizes**. Thêm viewport để có gợi ý chi tiết hơn.
+
+**Gợi ý ảnh** (Mới ở 0.12) hiện dưới một ảnh khi ngoài kích thước còn điều có thể tốt hơn, và phần tóm tắt của tab đếm chúng:
+
+- tệp JPEG, PNG hoặc GIF hiển thị rộng hơn 160 px — **AVIF hoặc WebP thường nhỏ hơn 30–50%** với cùng chất lượng;
+- **tải lười nhưng nằm ngay màn hình đầu** ở một kích thước nào đó — hãy tải ngay (thêm `fetchpriority="high"` nếu là ảnh chính);
+- **nằm dưới màn hình đầu ở mọi kích thước** nhưng tải ngay — thêm `loading="lazy"`;
+- **thiếu thuộc tính `width` và `height`** — trang bị xô lệch khi ảnh tải; hãy thêm vào (kích thước tệp là đủ).
+
+Để viết mã cho một ảnh mới, dùng công cụ [Ảnh](#toolkit-images) trong Bộ công cụ CSS. Trong ứng dụng: **Đưa ảnh responsive lên trang**.
 
 **Màu sắc.** Các màu trang dùng cho **Chữ**, **Nền** và **Viền** trên các bản xem trước, dạng ô màu kèm số phần tử dùng mỗi màu — **Sao chép thành biến CSS** hoặc chép thành bảng Markdown.
 
@@ -562,11 +574,32 @@ Từ menu **Chụp ảnh** trên thanh trên cùng:
 - **Chụp vùng làm việc đang hiển thị** (`S`) — ảnh PNG đúng như trên màn hình.
 - **Mọi viewport trong một ảnh** — các bản xem trước đang hiện đặt cạnh nhau, kèm tên và kích thước, dưới tiêu đề trang, sẵn cho ticket.
 - **Chép vùng làm việc đang hiển thị** — để dán vào ticket hoặc tin nhắn.
+- **Chú thích ảnh chụp…** — mọi bản xem trước trong một ảnh, mở ra để vẽ (Mới ở 0.12, xem bên dưới).
 - **Ảnh trình diễn…** — xem bên dưới.
 
 Từ một thẻ: nút máy ảnh lưu bản xem trước đó; ⋯ → **Chép ảnh chụp** chép nó; ⋯ → **Chụp toàn trang** chụp toàn bộ trang của bản xem trước đó thành một ảnh PNG dài, từng màn hình một, header cố định và thanh cookie chỉ hiện một lần (trang rất dài dừng sau 30 màn hình).
 
 Ghi chú hiện trong ảnh chụp. Muốn ảnh sạch, hãy thử **Ẩn banner cookie** (Pro) và **Tạm dừng hiệu ứng động**.
+
+<a id="annotate"></a>
+
+### Chú thích ảnh chụp — Mới ở 0.12
+
+Chỉ ra chỗ sai — và che những gì riêng tư — trước khi chia sẻ ảnh chụp.
+
+1. **Chụp ảnh → Chú thích ảnh chụp…** (hoặc “Chú thích ảnh chụp” trong bảng lệnh). Mọi bản xem trước đang hiện được chụp vào một ảnh có nhãn, giống **Mọi viewport trong một ảnh**, rồi mở trong trình chỉnh sửa.
+2. Chọn một công cụ trong **Công cụ vẽ**:
+   - **Mũi tên** và **Khung** — kéo trên ảnh; giữ `Shift` để nét nghiêng 45° và khung vuông.
+   - **Bút** và **Bút dạ quang** — vẽ tự do; bút dạ quang to và trong suốt.
+   - **Chữ** — bấm vào chỗ đặt nhãn, gõ nội dung, nhấn `Enter` (`Esc` để hủy).
+   - **Bước đánh số** — mỗi lần bấm đặt số tiếp theo (1, 2, 3…), khớp với danh sách các bước trong ticket.
+   - **Che (làm mờ điểm ảnh)** — kéo lên tên, email, giá tiền hay bất cứ gì riêng tư: vùng đó bị làm mờ điểm ảnh trong ảnh được lưu.
+   - **Chọn và di chuyển** — bấm một nét để chọn, kéo để di chuyển nét hoặc các điểm điều khiển, `Delete` để xóa.
+3. Chọn **Màu** (đỏ, cam, vàng, xanh lá, xanh dương, đen, trắng) và **Độ dày nét** (**Mảnh**, **Vừa**, **Dày**); khi đang chọn một nét, chúng đổi nét đó.
+4. **Hoàn tác** và **Làm lại** (`Ctrl/⌘ + Z`, `Shift + Ctrl/⌘ + Z`), hoặc **Xóa mọi nét**.
+5. **Lưu PNG** (độ phân giải đầy đủ) hoặc **Chép ảnh**.
+
+Ảnh và các nét vẽ chỉ nằm trong tab Breakpointer cho tới khi bạn lưu hoặc chép. Trong ứng dụng: **Chú thích ảnh chụp**.
 
 ### Ảnh trình diễn
 
@@ -592,6 +625,18 @@ Khoe điểm responsive của trang bằng một huy hiệu — “responsive | 
 
 1. Mở bảng rà soát (`E`) ở tab **Vấn đề**.
 2. Trên thẻ điểm responsive, bấm **Chép huy hiệu** (SVG được đưa vào bộ nhớ tạm: dán vào một tệp hoặc README) hoặc **Tải huy hiệu (SVG)**.
+
+<a id="score-history"></a>
+
+### Lịch sử điểm — Mới ở 0.12
+
+Xem điểm responsive của trang tăng lên khi bạn sửa lỗi.
+
+- Mỗi lần mọi bản xem trước của một trang đã kiểm tra xong, điểm được lưu cho ngày đó (điểm cuối cùng trong ngày) — chỉ trên thiết bị này, dưới một mã tạo từ địa chỉ trang, không bao giờ lưu chính địa chỉ; 30 ngày cho tối đa 200 trang.
+- Từ ngày thứ hai, thẻ điểm trong Rà soát hiện một biểu đồ nhỏ và mức thay đổi so với ngày đầu tiên được lưu — ví dụ **+12 so với 2 thg 11 · 5 ngày** — màu xanh khi điểm tăng.
+- Nút thùng rác trên thẻ xóa toàn bộ lịch sử (có **Hoàn tác**). Lịch sử không nằm trong tệp xuất cài đặt.
+
+Trong ứng dụng: **Theo dõi điểm của trang**.
 
 ### Chế độ trình chiếu
 
@@ -638,7 +683,7 @@ Xem trước trang đang mở trong thanh bên (side panel) của Chrome, ở c�
 
 Kích thước co giãn, đơn vị, breakpoint, màu và tỉ lệ — tính sẵn theo các kích thước bạn đang xem. Mỗi công cụ hiện kết quả ở từng viewport đang hiện, để bạn thấy các con số có ý nghĩa gì trên chính trang của mình, và nút **Chép** đưa CSS vào bộ nhớ tạm.
 
-Mở bằng `U`, **Công cụ → Bộ công cụ CSS**, hoặc lệnh “Bộ công cụ CSS: …” trong bảng lệnh (mở thẳng tab đó). Có năm tab: **Fluid type**, **Đơn vị**, **Breakpoint**, **Màu** và **Tỉ lệ khung**. Hãy hiện một viewport để xem giá trị ở kích thước của nó.
+Mở bằng `U`, **Công cụ → Bộ công cụ CSS**, hoặc lệnh “Bộ công cụ CSS: …” trong bảng lệnh (mở thẳng tab đó). Có tám tab: **Fluid type**, **Đơn vị**, **Breakpoint**, **Màu**, **Tỉ lệ khung** và, mới ở 0.12, **Grid**, **Ảnh** và **Query**. Hãy hiện một viewport để xem giá trị ở kích thước của nó.
 
 Trong ứng dụng: **Fluid type với Bộ công cụ CSS**.
 
@@ -682,6 +727,30 @@ Gõ một **Màu** — `#4f46e5`, `rgb(79 70 229)`, `hsl(243 75% 59%)`, `oklch(5
 ### Tỉ lệ khung
 
 Nhập **Rộng** và **Cao** — hoặc chọn một trong các **Tỉ lệ phổ biến** (1:1, 4:3, 16:9, 21:9, 9:16…), hoặc **Lấy từ một viewport…** — để có **Tỉ lệ** tối giản (và tỉ lệ phổ biến mà nó **Gần với**, ví dụ 1366 × 768 ≈ 16:9) cùng CSS: khai báo `aspect-ratio` kèm phương án dự phòng bằng `padding-top`. Đặt **Độ rộng khối** theo phần trăm viewport (mặc định 100%) để xem **Độ rộng khối** và **Chiều cao khối** **Ở các viewport của bạn**, kèm ghi chú khi khối **Cao hơn viewport**.
+
+### Grid — Mới ở 0.12
+
+`repeat(auto-fit, minmax(…, 1fr))` tạo ra bao nhiêu cột ở từng viewport của bạn — biết trước khi viết.
+
+1. Đặt **Cột hẹp nhất**, **Khoảng cách**, **Lề hai bên** của khung chứa, tùy chọn **Rộng tối đa (tùy chọn)** và **Số cột tối đa (tùy chọn)**, cùng **Số mục** trong grid.
+2. Chọn **Kiểu lặp**: **auto-fit** (các mục giãn ra lấp đầy hàng) hoặc **auto-fill** (cột trống vẫn giữ chỗ).
+3. Xem **Ở các viewport của bạn**: **Số cột**, **Độ rộng mỗi mục**, **Số hàng** và một bản **Xem nhanh**; độ rộng màu hổ phách nghĩa là khung chứa hẹp hơn một cột (`min(100%, …)` trong CSS giữ cho nó không tràn).
+4. **Chép** CSS — không cần media query.
+
+<a id="toolkit-images"></a>
+
+### Ảnh — Mới ở 0.12
+
+Mã ảnh responsive theo cách ảnh được bố trí.
+
+1. Ở **Ảnh được đặt**, chọn **Rộng bằng viewport**, **Trong một cột nội dung** (kèm lề hai bên và độ rộng tối đa), **Một phần của viewport** (theo vw) hoặc **Cùng độ rộng ở mọi nơi**.
+2. Đặt **Tỉ lệ** của ảnh (rộng và cao, ví dụ 16 và 9), **Tên tệp** với `{w}` ở chỗ độ rộng (`photo-{w}.jpg`) và **Văn bản thay thế**.
+3. Bật **Dưới màn hình đầu** để tải lười (tắt thì ảnh chính có `fetchpriority="high"`), và **AVIF và WebP** để có `<picture>` ưu tiên định dạng nhỏ hơn.
+4. Bảng cho thấy ảnh **Hiển thị ở** độ rộng nào và **Tệp cho màn hình 2×** ở từng viewport; **Chép** mã — `sizes`, các độ rộng `srcset` mà viewport của bạn cần ở 1× và 2×, cùng `width` và `height` để trang không bị xô lệch khi tải.
+
+### Query — Mới ở 0.12
+
+Thử một media query với các viewport của bạn: gõ vào **Media query** — hoặc bấm một **Ví dụ** — và xem **Áp dụng ở 2 trên 3 viewport**, mỗi viewport được đánh dấu **Áp dụng**, **Không áp dụng** hoặc **Tùy trình duyệt** (với hover, pointer hay độ phân giải, những thứ tùy thiết bị). Chiều rộng, chiều cao, hướng màn hình và tỉ lệ khung được tính theo từng viewport (em và rem theo 16 px), hỗ trợ min-/max- hoặc cú pháp khoảng, `and`, `or`, `not`, danh sách và loại media; `prefers-color-scheme` theo màu trang của từng bản xem trước. Query không đọc được sẽ được báo.
 
 ---
 
@@ -803,7 +872,7 @@ Phím tắt một phím chạy trong vùng làm việc, không chạy khi bạn 
 ## 12. Quyền riêng tư và quyền truy cập
 
 - Không tài khoản, không máy chủ, không thống kê, không theo dõi. Breakpointer không thu thập và không gửi gì đi đâu cả.
-- Cài đặt nằm trong trình duyệt của bạn (`chrome.storage.local`); ảnh mốc nằm trong cơ sở dữ liệu riêng của tiện ích (IndexedDB).
+- Cài đặt nằm trong trình duyệt của bạn (`chrome.storage.local`); ảnh mốc nằm trong cơ sở dữ liệu riêng của tiện ích (IndexedDB); lịch sử điểm (từ 0.12) được lưu trên thiết bị này dưới một mã tạo từ địa chỉ mỗi trang, không bao giờ lưu chính địa chỉ.
 - Bản xem trước là những lần tải trang bình thường do trình duyệt của bạn thực hiện, như khi bạn mở trang trong một tab.
 - Trên trang bạn đã cho phép, một đoạn script nhỏ đóng gói sẵn trong Breakpointer chạy bên trong bản xem trước khi vùng làm việc đang mở, để đo bố cục cho các công cụ. Nó không bao giờ gửi nội dung chữ của trang; những gì nó đo được chỉ nằm trong tab Breakpointer.
 - Breakpointer Pro không thêm quyền và không gửi yêu cầu nào: khóa giấy phép được kiểm tra ngay trong trình duyệt.

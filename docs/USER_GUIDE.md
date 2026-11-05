@@ -14,8 +14,8 @@ This guide covers Breakpointer 0.11. Features marked **New in 0.11** arrive with
 4. [Simulations and stress tests](#simulations-and-stress-tests) — vision, page preferences, touch-screen styles, longer text, right to left
 5. [Manual testing](#manual-testing) — the QA checklist, notes and bug reports
 6. [Whole sites and regressions](#whole-sites-and-regressions) — Check pages, visual check
-7. [Screenshots, reports and sharing](#screenshots-reports-and-sharing) — captures, showcase, HTML report, present mode, auto-scroll, score badge, real windows, floating preview, side panel
-8. [CSS toolkit](#css-toolkit) — fluid type, units, breakpoints as code, colours, aspect ratio (New in 0.11)
+7. [Screenshots, reports and sharing](#screenshots-reports-and-sharing) — captures, annotating a screenshot (New in 0.12), showcase, HTML report, present mode, auto-scroll, score badge and score history, real windows, floating preview, side panel
+8. [CSS toolkit](#css-toolkit) — fluid type, units, breakpoints as code, colours, aspect ratio (New in 0.11); grid, image markup and media queries (New in 0.12)
 9. [Settings](#settings)
 10. [Breakpointer Pro](#breakpointer-pro)
 11. [Keyboard shortcuts](#keyboard-shortcuts)
@@ -115,6 +115,9 @@ On first use, Breakpointer starts with three viewports — **Phone** 375 × 667,
 | Test touch-screen styles          | **New in 0.11** — the menus and buttons a page shows on phones and tablets        |
 | Readable text at every size       | **New in 0.11** — line length, small text, zoom and spacing                       |
 | Present a responsive demo         | **New in 0.11** — full-screen previews that scroll by themselves                  |
+| Annotate a screenshot             | **New in 0.12** — arrows, boxes, numbered steps, and private details hidden       |
+| Ship responsive images            | **New in 0.12** — right sizes, modern formats and lazy loading                    |
+| Track a page's score              | **New in 0.12** — see the responsive score improve, day by day                    |
 
 Throughout this guide, “In the app:” names the guide that covers the same task.
 
@@ -316,13 +319,22 @@ Open it with `E`, the **Audit** toggle (it shows how many kinds of issue were fo
 
 In the app: **Audit a page at every size**.
 
-**Issues.** The responsive score card, then each kind of issue with the previews that have it (**In 2 of 3**). Select one to see the elements, **Highlight in _viewport_** or **Go to _viewport_**. From 0.11 the score card can also make a [score badge](#score-badge).
+**Issues.** The responsive score card, then each kind of issue with the previews that have it (**In 2 of 3**). Select one to see the elements, **Highlight in _viewport_** or **Go to _viewport_**. From 0.11 the score card can also make a [score badge](#score-badge), and from 0.12 it shows the page's [score history](#score-history).
 
 **Performance.** Bars per preview for **Page weight** (bytes transferred), **Requests**, **Image pixels** (and how they compare with what the screen needs — responsive images load fewer on small screens), **Largest contentful paint** (good: under 2.5 s), **Layout shift** (good: under 0.1), **Page height**, **Elements** and **Web fonts**. Sizes count what the browser reports: files from other sites that don't share their timing, and files from the cache, aren't included. With **performance budgets (Pro)** set in Settings, each limit is shown and every preview over one is marked, with a summary at the top.
 
 **Type.** The font size, line height and weight of the first heading, paragraph, link, button and field of each kind in every preview, with what changes between sizes marked.
 
 **Images.** Every image the previews show (24 px or larger), at every viewport: the width it is shown at, its file's width and what the screen needs (shown width × pixel ratio), marked **Too large**, **Too small** or **Right size**, the most wasteful first. For each image, a suggested `sizes` that matches the viewports previewed (in `vw` where the image follows the viewport, in px where it stops growing) and `srcset` widths for 1× and 2× screens — **Copy srcset and sizes**. Add viewports for a finer suggestion.
+
+**Image tips** (New in 0.12) appear under an image when something besides its size could be better, and the tab's summary counts them:
+
+- a JPEG, PNG or GIF shown wider than 160 px — **AVIF or WebP is usually 30–50% smaller** at the same quality;
+- **lazy-loaded, yet in the first screen** at some size — load it straight away (with `fetchpriority="high"` if it's the main image);
+- **below the first screen at every size** and loaded at once — add `loading="lazy"`;
+- **no `width` and `height` attributes** — the page jumps while it loads; add them (the file's size is enough).
+
+To write the markup for a new image, use the CSS toolkit's [Images](#toolkit-images) tool. In the app: **Ship responsive images**.
 
 **Colours.** The colours the page uses for **Text**, **Backgrounds** and **Borders** across the previews, as swatches with how many elements use each — **Copy as CSS variables** or as a Markdown table.
 
@@ -556,11 +568,32 @@ From the **Screenshots** menu in the top bar:
 - **Capture visible workspace** (`S`) — a PNG of what's on screen.
 - **All viewports in one image** — each visible preview side by side with its name and size, under the page's title, ready for a ticket.
 - **Copy visible workspace** — to paste into a ticket or a chat.
+- **Annotate a screenshot…** — every preview in one image, opened for drawing (New in 0.12, see below).
 - **Showcase image…** — see below.
 
 From a card: the camera button saves that preview; ⋯ → **Copy screenshot** copies it; ⋯ → **Full-page screenshot** captures the whole page of that preview in one tall PNG, screen by screen, with fixed headers and cookie bars shown once (very long pages stop after 30 screens).
 
 Notes show in screenshots. For clean shots, try **Hide cookie banners** (Pro) and **Pause animations**.
+
+<a id="annotate"></a>
+
+### Annotate a screenshot — New in 0.12
+
+Point at what's wrong — and hide what's private — before you share a screenshot.
+
+1. **Screenshots → Annotate a screenshot…** (or “Annotate a screenshot” in the palette). Every visible preview is captured into one labelled image, like **All viewports in one image**, and opens in the editor.
+2. Pick a tool under **Drawing tools**:
+   - **Arrow** and **Box** — drag on the image; hold `Shift` for 45° lines and square boxes.
+   - **Pen** and **Highlighter** — draw freehand; the highlighter is wide and see-through.
+   - **Text** — click where the label goes, type it, press `Enter` (`Esc` cancels).
+   - **Numbered step** — each click places the next number (1, 2, 3…), to match a list of steps in your ticket.
+   - **Hide (pixelate)** — drag over names, emails, prices or anything private: that area is pixelated in the saved image.
+   - **Select and move** — click a mark to select it, drag to move it or its handles, `Delete` removes it.
+3. Choose a **Colour** (red, orange, yellow, green, blue, black, white) and a **Line width** (**Thin**, **Medium**, **Thick**); with a mark selected, they change that mark.
+4. **Undo** and **Redo** (`Ctrl/⌘ + Z`, `Shift + Ctrl/⌘ + Z`), or **Clear all marks**.
+5. **Save PNG** (full resolution) or **Copy image**.
+
+The image and your marks stay in the Breakpointer tab until you save or copy them. In the app: **Annotate a screenshot**.
 
 ### Showcase image
 
@@ -586,6 +619,18 @@ Show off a page's responsive score as a badge — “responsive | 92 A” — in
 
 1. Open the audit (`E`) on the **Issues** tab.
 2. On the responsive score card, click **Copy badge** (the SVG goes on the clipboard: paste it into a file or a README) or **Download the badge (SVG)**.
+
+<a id="score-history"></a>
+
+### Score history — New in 0.12
+
+Watch a page's responsive score improve as you fix it.
+
+- Each time every preview of a page has been checked, its score is kept for the day (the day's last score) — on this device only, under a code made from the page's address, never the address itself; 30 days for up to 200 pages.
+- From the second day, the score card in the audit shows a small chart and the change since the first day kept — for example **+12 since 2 Nov · 5 days** — in green when the score went up.
+- The trash button on the card forgets the whole history (with **Undo**). The history isn't part of exported settings.
+
+In the app: **Track a page's score**.
 
 ### Present mode
 
@@ -632,7 +677,7 @@ Preview the page you're browsing in Chrome's side panel, at a phone (or any pres
 
 Fluid sizes, units, breakpoints, colours and ratios — worked out at the sizes you preview. Each tool shows its result at every visible viewport, so you see what the numbers mean on your page, and **Copy** puts the CSS on the clipboard.
 
-Open it with `U`, **Tools → CSS toolkit**, or “CSS toolkit: …” in the command palette (which opens that tab). It has five tabs: **Fluid type**, **Units**, **Breakpoints**, **Colours** and **Aspect ratio**. Show at least one viewport to see the values at its size.
+Open it with `U`, **Tools → CSS toolkit**, or “CSS toolkit: …” in the command palette (which opens that tab). It has eight tabs: **Fluid type**, **Units**, **Breakpoints**, **Colours**, **Aspect ratio** and, new in 0.12, **Grid**, **Images** and **Queries**. Show at least one viewport to see the values at its size.
 
 In the app: **Fluid type with the CSS toolkit**.
 
@@ -676,6 +721,30 @@ Type a **Colour** — `#4f46e5`, `rgb(79 70 229)`, `hsl(243 75% 59%)`, `oklch(51
 ### Aspect ratio
 
 Enter a **Width** and a **Height** — or choose one of the **Common ratios** (1:1, 4:3, 16:9, 21:9, 9:16…), or **From a viewport…** — to get the simplest **Ratio** (and the common one it's **Close to**, such as 1366 × 768 ≈ 16:9) and the CSS: an `aspect-ratio` declaration with a `padding-top` fallback. Set the **Box width** as a share of the viewport (100% by default) to see the box's width and height **At your viewports**, with a note where the box is **Taller than the viewport**.
+
+### Grid — New in 0.12
+
+How many columns `repeat(auto-fit, minmax(…, 1fr))` makes at each of your viewports — before you write it.
+
+1. Set the **Narrowest column**, the **Gap**, the container's **Side padding**, and optionally its **Max width** and **Max columns**, and how many **Items** the grid holds.
+2. Choose the **Repeat mode**: **auto-fit** (items stretch to fill the row) or **auto-fill** (empty columns keep their room).
+3. Read, **At your viewports**, the **Columns**, the **Item width**, the **Rows** and a small **Preview**; a width in amber means the container is narrower than one column (the CSS's `min(100%, …)` keeps it from overflowing).
+4. **Copy** the CSS — no media queries needed.
+
+<a id="toolkit-images"></a>
+
+### Images — New in 0.12
+
+Responsive image markup for the way an image is laid out.
+
+1. Under **The image is**, choose **As wide as the viewport**, **In a content column** (with its side padding and max width), **A share of the viewport** (in vw) or **The same width everywhere**.
+2. Set the image's **Proportions** (width and height, e.g. 16 and 9), the **File names** with `{w}` where the width goes (`photo-{w}.jpg`) and the **Alternative text**.
+3. Switch **Below the first screen** on to lazy-load it (off gives a main image `fetchpriority="high"`), and **AVIF and WebP** for a `<picture>` with the smaller formats first.
+4. The table shows the width the image is **Shown at** and the **File on a 2× screen** at each viewport; **Copy** the markup — `sizes`, the `srcset` widths your viewports need at 1× and 2×, and `width` and `height` so the page doesn't jump while it loads.
+
+### Queries — New in 0.12
+
+Test a media query against your viewports: type it under **Media query** — or click one of the **Examples** — and see **Applies in 2 of 3 viewports**, with each viewport marked **Applies**, **Doesn't apply** or **Depends on the browser** (for features such as hover, pointer or resolution, which depend on the device). Widths, heights, orientation and aspect ratio are worked out from each viewport (em and rem at 16 px), with min-/max- or range syntax, `and`, `or`, `not`, lists and media types; `prefers-color-scheme` follows each preview's page colours. A query that can't be read says so.
 
 ---
 
@@ -797,7 +866,7 @@ Change the Chrome shortcuts at `chrome://extensions/shortcuts`.
 ## 12. Privacy and permissions
 
 - No account, no server, no analytics, no tracking. Breakpointer collects nothing and sends nothing anywhere.
-- Settings stay in your browser (`chrome.storage.local`); visual baselines in the extension's own database (IndexedDB).
+- Settings stay in your browser (`chrome.storage.local`); visual baselines in the extension's own database (IndexedDB); the score history (from 0.12) is kept on this device under a code made from each page's address, never the address itself.
 - Previews are ordinary page loads by your browser, as if you visited the site in a tab.
 - On sites you allowed, a small script packaged with Breakpointer runs inside the previews while a workspace is open, to measure the layout for its tools. It never sends page text; what it finds stays in the Breakpointer tab.
 - Breakpointer Pro adds no permission and no request: licence keys are checked in your browser.

@@ -128,7 +128,7 @@ export function ToolkitDialog(props: Props) {
       description={t('toolkit.description')}
       icon="code"
       onClose={props.onClose}
-      width={760}
+      width={820}
       concealed={picking}
     >
       <Toolkit {...props} onPicking={setPicking} />

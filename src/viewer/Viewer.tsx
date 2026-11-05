@@ -1006,8 +1006,8 @@ function Workspace({
             if (current) URL.revokeObjectURL(current.url);
             return { url: URL.createObjectURL(sheet), ...size, name };
           });
-          // The progress toast becomes a short note: the editor is open.
-          toast({ message: t('markup.title'), tone: 'info', key: 'sheet' });
+          // The editor shows the result: the progress toast goes.
+          toast({ message: '', key: 'sheet' });
           setDialog('markup');
           return;
         }
