@@ -1,6 +1,6 @@
 # Breakpointer — Product & Delivery Plan
 
-> **Version:** 0.13.0 · **Status:** V1 and every release through v0.8 (inspection toolkit, redesign, find/audit/verify, whole site and sharing, **Breakpointer Pro**, score/notes/projects/languages, images/colours/budgets) and the v0.9 **professional workspace** release, built and tested; **live on the Chrome Web Store** since 0.4.0 (17 Oct 2026; the store has 0.8.0, Pro on sale once the checkout is set up, see [PRO.md](PRO.md)); 0.9.0 is the next upload
+> **Version:** 0.13.1 · **Status:** V1 and every release through v0.8 (inspection toolkit, redesign, find/audit/verify, whole site and sharing, **Breakpointer Pro**, score/notes/projects/languages, images/colours/budgets) and the v0.9 **professional workspace** release, built and tested; **live on the Chrome Web Store** since 0.4.0 (17 Oct 2026; the store has 0.8.0, Pro on sale once the checkout is set up, see [PRO.md](PRO.md)); 0.9.0 is the next upload
 > **Source:** refines the original planning brief (`plan.md`) into a delivery plan with decisions, status and acceptance criteria.
 
 **Product goal:** help people check how a website looks at several viewport sizes, side by side, directly in Chrome — reliably, with minimal permissions, and honest about limits.

@@ -2,6 +2,18 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.13.1] — 2026-11-05
+
+Chrome updates extensions silently; now Breakpointer says when it has.
+
+### Added
+
+- **Update notice**: Chrome installs updates silently, so after one the toolbar button now shows **NEW** (and its tooltip says so), the popup says which version arrived with **See what's new** (it opens the workspace on Help's What's new) or Dismiss, and the workspace shows the same once as a toast. All of it goes when the news are seen. No new permission.
+
+### Fixed
+
+- An end-to-end test of automatic reloads no longer fails when it reads a preview between two loads.
+
 ## [0.13.0] — 2026-11-05
 
 Every tag and every rule: the page's HTML and CSS, like the browser's developer tools — at the size of each preview.
@@ -15,7 +27,6 @@ Every tag and every rule: the page's HTML and CSS, like the browser's developer 
   - **Box**: margin, border, padding and content size as a box model.
   - **Summary**: an audit of the page's HTML and CSS — the number of elements and the deepest level (flagged past Lighthouse's 1,500 and 32), duplicate ids, obsolete tags (`center`, `font`, `marquee`…), images without `alt`, `style` attributes and `!important` declarations, the most used tags and the stylesheets — copied as Markdown.
 - A new guide, **Read a page's HTML and CSS** (eighteen in all).
-- **Update notice.** Chrome installs updates silently, so after one the toolbar button now shows **NEW** (and its tooltip says so), the popup says which version arrived with **See what's new** (it opens the workspace on Help's What's new) or Dismiss, and the workspace shows the same once as a toast. All of it goes when the news are seen. No new permission.
 
 ### Notes
 

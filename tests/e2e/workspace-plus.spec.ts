@@ -84,8 +84,11 @@ test.describe('workspace utilities', () => {
 
   test('previews can reload automatically', async ({ openViewer, server }) => {
     const page = await openViewer({ url: server.url('/counter') });
+    // 0 while the preview is between two loads (its frame is replaced).
     const title = async () =>
-      (await frameAt(page, '/counter', 375)).evaluate(() => Number(document.title.replace('Load ', '')));
+      frameAt(page, '/counter', 375)
+        .then((frame) => frame.evaluate(() => Number(document.title.replace('Load ', ''))))
+        .catch(() => 0);
     await expect.poll(title).toBeGreaterThan(0);
     const first = await title();
     await page.getByTestId('reload-menu').click();
