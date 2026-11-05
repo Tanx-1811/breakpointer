@@ -4,6 +4,7 @@ import { useTheme } from '../hooks/useTheme';
 import { I18nProvider, useI18n } from '../i18n/I18nProvider';
 import type { MessageKey } from '../i18n/en';
 import { resolveLanguage } from '../i18n/translate';
+import { markSeen, minorVersion } from '../services/whats-new';
 import { openSidePanel } from '../shared/side-panel';
 import { openViewer } from '../shared/viewer-url';
 import { builtInGroupName } from '../state/groups';
@@ -30,6 +31,10 @@ type Props = {
   previewShortcut?: string;
   /** The window the popup belongs to (for the side panel). */
   windowId?: number;
+  /** The extension's version. */
+  version?: string;
+  /** This version's news haven't been seen yet (Chrome updated the extension). */
+  news?: boolean;
 };
 
 export function PopupApp(props: Props) {
@@ -63,8 +68,19 @@ function SiteAvatar({ url, size = 'md' }: { url: string; size?: 'md' | 'sm' }) {
   );
 }
 
-function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewShortcut, windowId }: Props) {
+function Popup({
+  settings,
+  tabUrl,
+  restricted,
+  inWorkspace,
+  shortcut,
+  previewShortcut,
+  windowId,
+  version = '',
+  news: initialNews = false,
+}: Props) {
   const { t } = useI18n();
+  const [news, setNews] = useState(initialNews);
   const [address, setAddress] = useState('');
   const [error, setError] = useState<MessageKey | null>(null);
   const [group, setGroup] = useState('');
@@ -75,6 +91,16 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewSho
   const open = async (url?: string) => {
     await openViewer({ url, group: group || undefined });
     window.close();
+  };
+
+  const seeNews = async () => {
+    await openViewer({ news: true });
+    window.close();
+  };
+
+  const dismissNews = () => {
+    setNews(false);
+    void markSeen(version);
   };
 
   const submit = () => {
@@ -101,6 +127,25 @@ function Popup({ settings, tabUrl, restricted, inWorkspace, shortcut, previewSho
           <p className={styles.subtitle}>{t('welcome.title')}</p>
         </div>
       </header>
+
+      {news && (
+        <div className={styles.news} data-testid="popup-news">
+          <Icon name="sparkle" size={16} className={styles.newsIcon} />
+          <p className={styles.newsText}>{t('update.done', { version: minorVersion(version) })}</p>
+          <Button size="sm" className={styles.newsAction} onClick={() => void seeNews()}>
+            {t('update.see')}
+          </Button>
+          <button
+            type="button"
+            className={styles.newsClose}
+            aria-label={t('common.dismiss')}
+            title={t('common.dismiss')}
+            onClick={dismissNews}
+          >
+            <Icon name="close" size={14} />
+          </button>
+        </div>
+      )}
 
       <section className={styles.card} aria-labelledby="current-tab">
         <h2 id="current-tab" className={styles.label}>

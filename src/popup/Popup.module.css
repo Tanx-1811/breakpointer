@@ -31,6 +31,60 @@
   font-size: 12px;
 }
 
+/* After Chrome installed an update: what's new, until it's seen. */
+.news {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: 8px 10px;
+  padding: 10px 8px 10px 12px;
+  border: 1px solid var(--accent-border);
+  border-radius: var(--radius-lg);
+  background: var(--accent-soft);
+}
+
+.newsIcon {
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.newsText {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+}
+
+.newsAction {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: start;
+}
+
+.newsClose {
+  grid-column: 3;
+  grid-row: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.newsClose:hover {
+  color: var(--text);
+}
+
+.newsClose:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
 .card {
   display: flex;
   flex-direction: column;

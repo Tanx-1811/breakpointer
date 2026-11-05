@@ -1195,10 +1195,18 @@ function Workspace({
     announcedNews.current = true;
     toast({
       message: t('update.done', { version: minorVersion(version) }),
-      action: { label: t('update.see'), onAction: () => openHelpAt('news') },
+      action: {
+        label: t('update.see'),
+        onAction: () => {
+          setHelpSection('news');
+          setDialog('help');
+          setNews(false);
+          void markSeen(version);
+        },
+      },
       key: 'news',
     });
-  }, [openHelpAt, t, toast, version, whatsNew]);
+  }, [t, toast, version, whatsNew]);
 
   /** A link that opens this page with these viewports in Breakpointer, for a teammate. */
   const copyWorkspaceLink = () => {
