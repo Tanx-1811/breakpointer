@@ -4,6 +4,8 @@ Copy-ready text and the answers the store asks for. Assets live in `brand/` (see
 
 **Live listing:** [https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh](https://chromewebstore.google.com/detail/naoadcallefanlcneemohjepkficejjh) — “Breakpointer — Responsive Viewport Tester”, id `naoadcallefanlcneemohjepkficejjh`, publisher Tanix; public since 0.4.0 (17 Oct 2026). Link to it directly, adding `?utm_source=…&utm_medium=…&utm_campaign=…` so the dashboard counts each channel: another extension on the store is also named “Breakpointer”.
 
+**Updating to 0.12.0:** no permission changed. Upload `release/breakpointer-0.12.0.zip`, then replace both descriptions with the ones below — the CSS toolkit and Responsive images lines changed, and two lines are new (annotate a screenshot, score history). Paste the updated `scripting` justification if asked (the image list now also says whether each image is lazy-loaded, in the first screen, its file format and whether it has width and height).
+
 **Updating to 0.11.0:** no permission changed. Upload `release/breakpointer-0.11.0.zip`, then replace both descriptions with the ones below — four lines are new (CSS toolkit, touch-screen styles, auto-scroll and the score badge) and the checks line mentions long lines. The translated descriptions in [store-listing/](store-listing/) don't have the 0.10 and 0.11 lines yet: add them, or keep the older text for those languages. Paste the updated `scripting` justification if the store asks (the agent now also measures line lengths of text blocks — numbers only — and can swap hover/pointer media features and scroll the preview on request).
 
 **Updating to 0.10.0:** no permission changed. Upload `release/breakpointer-0.10.0.zip` (packaged with `npm run package`), then replace both descriptions with the ones below — four lines are new (Media queries, QA checklist, Present mode, guides). The eight translated descriptions in [store-listing/](store-listing/) don't have these lines yet: add them before uploading, or keep the 0.9 text for those languages. Paste the updated `scripting` justification if the store asks (the audit now also reads the text of the page's media queries).
@@ -54,10 +56,10 @@ Breakpointer shows any website at several viewport sizes side by side, right in 
 • Check pages: a whole list of pages — your saved pages, the links on a page or the site's sitemap — checked at every viewport in one run. See which pages break and at which sizes, then copy the table as Markdown or download an HTML report.
 • Scan every width: the page is checked at every width of a range, and each issue's first and last width is found to the pixel — on a chart with the page's height, its breakpoints and your viewports. Add a viewport at the worst width in one click.
 • Audit: every issue of every size in one place, the page's weight, requests, image pixels, largest contentful paint and layout shift per size, and the type scale of headings, text and buttons — copy any of it as a Markdown table.
-• Responsive images: every image against the width it is shown at in each viewport — too large, too small or right — with a suggested sizes attribute and srcset widths to copy.
+• Responsive images: every image against the width it is shown at in each viewport — too large, too small or right — with a suggested sizes attribute and srcset widths to copy, and tips on AVIF/WebP, lazy loading and width/height.
 • Page colours audit: the colours used for text, backgrounds and borders across sizes, copied as CSS variables.
 • Meta & social: how the page shows in search results and link previews (approximately), with its title, description, social image, canonical address, robots and icons checked, and the outline of its headings.
-• CSS toolkit (press U): fluid type with clamp() — one size or a whole type scale — worked out at every viewport you preview, units converted at each size (px, rem, em, vw, vh…), your breakpoints as code (media queries, Sass mixins, Tailwind, JavaScript), a colour picker (HEX, RGB, HSL, OKLCH) and aspect ratios.
+• CSS toolkit (press U): fluid type with clamp() — one size or a whole type scale — worked out at every viewport you preview, units converted at each size (px, rem, em, vw, vh…), your breakpoints as code (media queries, Sass mixins, Tailwind, JavaScript), a colour picker (HEX, RGB, HSL, OKLCH) and aspect ratios — plus an auto-fit grid calculator, responsive image markup (<picture>, sizes, srcset) and a media query tester.
 • Media queries: every media query in the page's CSS and the sizes it applies at — with gaps and overlaps between breakpoints flagged (a width where neither side applies, or both do), and a viewport added there in one click.
 • QA checklist: tick off manual checks — the menu, forms, images, pop-ups — for every viewport, edit the list to fit your project, and copy the results as a Markdown report.
 • Visual check: save a baseline of every viewport, compare after a change and see what moved, pixel by pixel — side by side, with a slider, or the differences boxed.
@@ -76,7 +78,8 @@ Breakpointer shows any website at several viewport sizes side by side, right in 
 **Share what you see**
 • Showcase image: your page at several sizes in simple device frames on a backdrop, ready for a portfolio, a client or a post.
 • Present mode: only the previews, full screen, for screen sharing and client demos — with auto-scroll, every preview scrolling from top to bottom by itself.
-• Score badge: copy the responsive score as an SVG badge for a README or a client report.
+• Score badge: copy the responsive score as an SVG badge for a README or a client report — and see each page's score day by day.
+• Annotate a screenshot: every preview in one image with arrows, boxes, numbered steps and pixelation to hide private details.
 • Screenshots of one preview or the workspace, every viewport in one labelled image, copy to the clipboard, and an HTML report of every size with its issues.
 • Open any preview in a real window of the exact size.
 

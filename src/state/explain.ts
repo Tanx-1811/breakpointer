@@ -47,6 +47,8 @@ export const EXPLAIN_TOPICS: readonly ExplainTopic[] = [
   { selector: '[data-testid="viewport-card"]', body: 'explain.card' },
   // Controls inside panels (before the panels themselves).
   { selector: '[data-testid="badge-copy"]', body: 'explain.scoreBadge' },
+  { selector: '[data-testid="score-history"]', body: 'explain.scoreHistory', guide: 'progress' },
+  { selector: '[data-testid="image-tips"]', body: 'explain.imageTips', guide: 'images' },
   { selector: '[data-testid="present-autoscroll"]', body: 'explain.autoScroll', guide: 'demo' },
   // Around the workspace.
   { selector: '[data-testid="learn-button"]', body: 'explain.learn' },

@@ -26,6 +26,10 @@ import {
 } from '../../state/fluid';
 import { addRecentColor, readNumber, TOOLKIT_TABS, type ToolkitState, type ToolkitTab } from '../../state/toolkit';
 import { CSS_UNITS, formatUnit, parseLength, unitMarkdown, unitTable, type CssUnit } from '../../state/units';
+import { gridAt, gridCss, validGrid, type GridSpec } from '../../state/grid-calc';
+import { imageMarkup, shownWidth, srcsetWidths, type ImageLayout } from '../../state/image-markup';
+import { MEDIA_EXAMPLES, testMedia } from '../../state/media-test';
+import { Switch } from '../Switch/Switch';
 import type { Breakpoint, BreakpointSetId } from '../../types';
 import { Button, IconButton } from '../Button/Button';
 import { Dialog } from '../Dialog/Dialog';
@@ -34,7 +38,14 @@ import { Segmented } from '../Segmented/Segmented';
 import { Select } from '../Select/Select';
 import styles from './ToolkitDialog.module.css';
 
-export type ToolkitViewport = { id: string; name: string; width: number; height: number };
+export type ToolkitViewport = {
+  id: string;
+  name: string;
+  width: number;
+  height: number;
+  /** The page colours the preview shows (null: like the browser). */
+  colorScheme?: 'light' | 'dark' | null;
+};
 
 export type ToolkitBreakpointSet = { id: BreakpointSetId; label: string; base: string; breakpoints: Breakpoint[] };
 
@@ -59,6 +70,9 @@ const TAB_KEYS: Record<ToolkitTab, MessageKey> = {
   code: 'toolkit.tab.code',
   colors: 'toolkit.tab.colors',
   aspect: 'toolkit.tab.aspect',
+  grid: 'toolkit.tab.grid',
+  images: 'toolkit.tab.images',
+  queries: 'toolkit.tab.queries',
 };
 
 const TAB_ICONS: Record<ToolkitTab, IconName> = {
@@ -67,6 +81,9 @@ const TAB_ICONS: Record<ToolkitTab, IconName> = {
   code: 'code',
   colors: 'palette',
   aspect: 'fit',
+  grid: 'columns',
+  images: 'image',
+  queries: 'search',
 };
 
 const FORMAT_KEYS: Record<CodeFormat, MessageKey> = {
@@ -174,6 +191,9 @@ function Toolkit(props: Props & { onPicking: (picking: boolean) => void }) {
         {tab === 'code' && <CodeTab {...props} />}
         {tab === 'colors' && <ColorsTab {...props} />}
         {tab === 'aspect' && <AspectTab {...props} />}
+        {tab === 'grid' && <GridTab {...props} />}
+        {tab === 'images' && <ImagesTab {...props} />}
+        {tab === 'queries' && <QueriesTab {...props} />}
       </div>
     </div>
   );
@@ -1064,6 +1084,434 @@ function AspectTab({ state, onChange, viewports, onCopy }: Props) {
             </table>
           )}
           {viewports.length === 0 && <Note>{t('toolkit.noViewports')}</Note>}
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Grid ---------- */
+
+function GridTab({ state, onChange, viewports, onCopy }: Props) {
+  const { t } = useI18n();
+  const grid = state.grid;
+  const set = (patch: Partial<ToolkitState['grid']>) => onChange({ ...state, grid: { ...grid, ...patch } });
+  const optional = (text: string) => (text.trim() === '' ? null : readNumber(text));
+  const spec: GridSpec = {
+    minColumn: readNumber(grid.minColumn) ?? NaN,
+    gap: readNumber(grid.gap) ?? NaN,
+    padding: readNumber(grid.padding) ?? NaN,
+    maxWidth: optional(grid.maxWidth) ?? (grid.maxWidth.trim() ? NaN : null),
+    maxColumns:
+      optional(grid.maxColumns) === null
+        ? grid.maxColumns.trim()
+          ? NaN
+          : null
+        : Math.round(readNumber(grid.maxColumns)!),
+    items: Math.round(readNumber(grid.items) ?? NaN),
+    mode: grid.mode,
+  };
+  const valid = validGrid(spec) && [spec.minColumn, spec.gap, spec.padding, spec.items].every(Number.isFinite);
+  const css = valid ? gridCss(spec) : '';
+
+  return (
+    <div className={styles.stack}>
+      <div className={styles.row}>
+        <Segmented
+          label={t('grid.mode')}
+          size="sm"
+          value={grid.mode}
+          onChange={(mode) => set({ mode })}
+          options={[
+            { value: 'auto-fit', label: 'auto-fit' },
+            { value: 'auto-fill', label: 'auto-fill' },
+          ]}
+        />
+        <span className={styles.label}>{t(grid.mode === 'auto-fit' ? 'grid.fitHint' : 'grid.fillHint')}</span>
+      </div>
+      <div className={styles.grid}>
+        <Field
+          label={t('grid.minColumn')}
+          value={grid.minColumn}
+          suffix="px"
+          invalid={!(spec.minColumn > 0)}
+          onChange={(minColumn) => set({ minColumn })}
+          testId="grid-min"
+        />
+        <Field
+          label={t('grid.gap')}
+          value={grid.gap}
+          suffix="px"
+          invalid={!(spec.gap >= 0)}
+          onChange={(gap) => set({ gap })}
+        />
+        <Field
+          label={t('grid.padding')}
+          value={grid.padding}
+          suffix="px"
+          invalid={!(spec.padding >= 0)}
+          onChange={(padding) => set({ padding })}
+        />
+        <Field
+          label={t('grid.maxWidth')}
+          value={grid.maxWidth}
+          suffix="px"
+          invalid={spec.maxWidth !== null && !(spec.maxWidth > 0)}
+          onChange={(maxWidth) => set({ maxWidth })}
+        />
+        <Field
+          label={t('grid.maxColumns')}
+          value={grid.maxColumns}
+          invalid={spec.maxColumns !== null && !(spec.maxColumns >= 1)}
+          onChange={(maxColumns) => set({ maxColumns })}
+        />
+        <Field
+          label={t('grid.items')}
+          value={grid.items}
+          invalid={!(spec.items >= 1)}
+          onChange={(items) => set({ items })}
+        />
+      </div>
+
+      {!valid ? (
+        <Note tone="warning">{t('grid.invalid')}</Note>
+      ) : (
+        <>
+          {viewports.length > 0 ? (
+            <div className={styles.scroll} tabIndex={0} aria-label={t('fluid.atViewports')}>
+              <table className={styles.table} data-testid="grid-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{t('fluid.atViewports')}</th>
+                    <ViewportHead viewports={viewports} />
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">{t('grid.columns')}</th>
+                    {viewports.map((viewport) => (
+                      <td key={viewport.id} className={styles.num} data-testid="grid-columns">
+                        {gridAt(spec, viewport.width).columns}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th scope="row">{t('grid.itemWidth')}</th>
+                    {viewports.map((viewport) => {
+                      const at = gridAt(spec, viewport.width);
+                      return (
+                        <td
+                          key={viewport.id}
+                          className={styles.num}
+                          data-taller={at.squeezed || undefined}
+                          title={at.squeezed ? t('grid.squeezed') : undefined}
+                        >
+                          {px(at.itemWidth)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                  <tr>
+                    <th scope="row">{t('grid.rows')}</th>
+                    {viewports.map((viewport) => (
+                      <td key={viewport.id} className={styles.num}>
+                        {gridAt(spec, viewport.width).rows}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th scope="row">{t('grid.preview')}</th>
+                    {viewports.map((viewport) => {
+                      const at = gridAt(spec, viewport.width);
+                      return (
+                        <td key={viewport.id} className={styles.num}>
+                          <span className={styles.gridPreview} aria-hidden="true">
+                            {Array.from({ length: Math.min(at.columns, 12) }, (_, index) => (
+                              <span key={index} />
+                            ))}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <Note>{t('toolkit.noViewports')}</Note>
+          )}
+          <Code code={css} label={t('toolkit.tab.grid')} testId="grid-code" onCopy={() => onCopy(css)} />
+          <Note>{t('grid.note')}</Note>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Responsive images ---------- */
+
+const LAYOUT_KEYS = {
+  full: 'images11.layout.full',
+  column: 'images11.layout.column',
+  vw: 'images11.layout.vw',
+  fixed: 'images11.layout.fixed',
+} as const;
+
+function ImagesTab({ state, onChange, viewports, onCopy }: Props) {
+  const { t } = useI18n();
+  const images = state.images;
+  const set = (patch: Partial<ToolkitState['images']>) => onChange({ ...state, images: { ...images, ...patch } });
+  const n = (text: string) => readNumber(text) ?? NaN;
+  const layout: ImageLayout =
+    images.layout === 'full'
+      ? { kind: 'full' }
+      : images.layout === 'column'
+        ? { kind: 'column', padding: n(images.padding), maxWidth: n(images.maxWidth) }
+        : images.layout === 'vw'
+          ? { kind: 'vw', share: n(images.share) }
+          : { kind: 'fixed', width: n(images.width) };
+  const ratio = { width: n(images.ratioWidth), height: n(images.ratioHeight) };
+  const valid =
+    (layout.kind === 'full' ||
+      (layout.kind === 'column' && layout.padding >= 0 && layout.maxWidth > 0) ||
+      (layout.kind === 'vw' && layout.share > 0 && layout.share <= 100) ||
+      (layout.kind === 'fixed' && layout.width > 0)) &&
+    ratio.width > 0 &&
+    ratio.height > 0;
+  const widths = valid ? srcsetWidths(layout, viewports.length ? viewports.map((v) => v.width) : [375, 768, 1440]) : [];
+  const markup = valid
+    ? imageMarkup(
+        { layout, pattern: images.pattern, ratio, alt: images.alt, lazy: images.lazy, modern: images.modern },
+        widths,
+      )
+    : '';
+  /** The file a 2× screen picks: the smallest at least twice the shown width. */
+  const pick = (shown: number) => widths.find((width) => width >= shown * 2) ?? widths.at(-1) ?? 0;
+
+  return (
+    <div className={styles.stack}>
+      <div className={styles.grid}>
+        <SelectField label={t('images11.layout')}>
+          {(id) => (
+            <Select
+              id={id}
+              wide
+              value={images.layout}
+              data-testid="images-layout"
+              onChange={(event) => set({ layout: event.target.value as ToolkitState['images']['layout'] })}
+            >
+              {(Object.keys(LAYOUT_KEYS) as (keyof typeof LAYOUT_KEYS)[]).map((kind) => (
+                <option key={kind} value={kind}>
+                  {t(LAYOUT_KEYS[kind])}
+                </option>
+              ))}
+            </Select>
+          )}
+        </SelectField>
+        {images.layout === 'column' && (
+          <>
+            <Field
+              label={t('grid.padding')}
+              value={images.padding}
+              suffix="px"
+              invalid={!(n(images.padding) >= 0)}
+              onChange={(padding) => set({ padding })}
+            />
+            <Field
+              label={t('grid.maxWidth')}
+              value={images.maxWidth}
+              suffix="px"
+              invalid={!(n(images.maxWidth) > 0)}
+              onChange={(maxWidth) => set({ maxWidth })}
+            />
+          </>
+        )}
+        {images.layout === 'vw' && (
+          <Field
+            label={t('images11.share')}
+            value={images.share}
+            suffix="vw"
+            invalid={!(n(images.share) > 0 && n(images.share) <= 100)}
+            onChange={(share) => set({ share })}
+          />
+        )}
+        {images.layout === 'fixed' && (
+          <Field
+            label={t('aspect.width')}
+            value={images.width}
+            suffix="px"
+            invalid={!(n(images.width) > 0)}
+            onChange={(width) => set({ width })}
+          />
+        )}
+        <Field
+          label={t('images11.ratioWidth')}
+          value={images.ratioWidth}
+          invalid={!(ratio.width > 0)}
+          onChange={(ratioWidth) => set({ ratioWidth })}
+        />
+        <Field
+          label={t('images11.ratioHeight')}
+          value={images.ratioHeight}
+          invalid={!(ratio.height > 0)}
+          onChange={(ratioHeight) => set({ ratioHeight })}
+        />
+        <SelectField label={t('images11.pattern')}>
+          {(id) => (
+            <input
+              id={id}
+              className={`field ${styles.input} ${styles.mono}`}
+              value={images.pattern}
+              spellCheck={false}
+              autoComplete="off"
+              data-testid="images-pattern"
+              onChange={(event) => set({ pattern: event.target.value })}
+            />
+          )}
+        </SelectField>
+        <SelectField label={t('images11.alt')}>
+          {(id) => (
+            <input
+              id={id}
+              className={`field ${styles.input}`}
+              value={images.alt}
+              autoComplete="off"
+              onChange={(event) => set({ alt: event.target.value })}
+            />
+          )}
+        </SelectField>
+      </div>
+      <div className={styles.switches}>
+        <Switch
+          checked={images.lazy}
+          onChange={(lazy) => set({ lazy })}
+          label={t('images11.lazy')}
+          description={t('images11.lazyHint')}
+        />
+        <Switch
+          checked={images.modern}
+          onChange={(modern) => set({ modern })}
+          label={t('images11.modern')}
+          description={t('images11.modernHint')}
+        />
+      </div>
+
+      {!valid ? (
+        <Note tone="warning">{t('images11.invalid')}</Note>
+      ) : (
+        <>
+          {viewports.length > 0 && (
+            <div className={styles.scroll} tabIndex={0} aria-label={t('fluid.atViewports')}>
+              <table className={styles.table} data-testid="images-table">
+                <thead>
+                  <tr>
+                    <th scope="col">{t('fluid.atViewports')}</th>
+                    <ViewportHead viewports={viewports} />
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <th scope="row">{t('images11.shown')}</th>
+                    {viewports.map((viewport) => (
+                      <td key={viewport.id} className={styles.num}>
+                        {px(shownWidth(layout, viewport.width))}
+                      </td>
+                    ))}
+                  </tr>
+                  <tr>
+                    <th scope="row">{t('images11.picked')}</th>
+                    {viewports.map((viewport) => (
+                      <td key={viewport.id} className={`${styles.num} ${styles.mono}`}>
+                        {pick(shownWidth(layout, viewport.width))}w
+                      </td>
+                    ))}
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          )}
+          <Code code={markup} label={t('toolkit.tab.images')} testId="images-code" onCopy={() => onCopy(markup)} />
+          <Note>{t('images11.note')}</Note>
+        </>
+      )}
+    </div>
+  );
+}
+
+/* ---------- Media query tester ---------- */
+
+function QueriesTab({ state, onChange, viewports }: Props) {
+  const { t } = useI18n();
+  const id = useId();
+  const query = state.queries.query;
+  const set = (value: string) => onChange({ ...state, queries: { query: value } });
+  const results = viewports.map((viewport) => ({ viewport, result: testMedia(query, viewport) }));
+  const invalid = query.trim() !== '' && testMedia(query, { width: 1024, height: 768 }).invalid;
+  const matching = results.filter(({ result }) => result.matches === true).length;
+
+  return (
+    <div className={styles.stack}>
+      <div className={styles.field}>
+        <label htmlFor={id} className={styles.label}>
+          {t('queries.label')}
+        </label>
+        <input
+          id={id}
+          className={`field ${styles.input} ${styles.mono}`}
+          value={query}
+          spellCheck={false}
+          autoComplete="off"
+          aria-invalid={invalid || undefined}
+          data-testid="queries-input"
+          onChange={(event) => set(event.target.value)}
+        />
+      </div>
+      <div className={styles.presets} aria-label={t('queries.examples')} role="group">
+        {MEDIA_EXAMPLES.map((example) => (
+          <button
+            key={example}
+            type="button"
+            className={`${styles.preset} ${styles.mono}`}
+            aria-pressed={query === example}
+            onClick={() => set(example)}
+          >
+            {example}
+          </button>
+        ))}
+      </div>
+
+      {invalid ? (
+        <Note tone="warning">{t('queries.invalid')}</Note>
+      ) : viewports.length === 0 ? (
+        <Note>{t('toolkit.noViewports')}</Note>
+      ) : (
+        <>
+          <p className={styles.queriesSummary} role="status" data-testid="queries-summary">
+            {t('queries.summary', { count: matching, total: viewports.length })}
+          </p>
+          <ul className={styles.results} data-testid="queries-results">
+            {results.map(({ viewport, result }) => (
+              <li key={viewport.id} className={styles.result} data-matches={String(result.matches)}>
+                <Icon
+                  name={result.matches === true ? 'check' : result.matches === false ? 'close' : 'help'}
+                  size={15}
+                  className={styles.resultIcon}
+                />
+                <span className={styles.vpName}>{viewport.name}</span>
+                <span className={styles.vpSize}>
+                  {viewport.width} × {viewport.height}
+                </span>
+                <span className={styles.resultText}>
+                  {result.matches === true
+                    ? t('queries.applies')
+                    : result.matches === false
+                      ? t('queries.notApplies')
+                      : t('queries.depends', { features: result.unknown.join(', ') })}
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Note>{t('queries.note')}</Note>
         </>
       )}
     </div>

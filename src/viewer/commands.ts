@@ -178,6 +178,9 @@ const TOOLKIT_TAB_KEYS: Record<ToolkitTab, MessageKey> = {
   code: 'toolkit.tab.code',
   colors: 'toolkit.tab.colors',
   aspect: 'toolkit.tab.aspect',
+  grid: 'toolkit.tab.grid',
+  images: 'toolkit.tab.images',
+  queries: 'toolkit.tab.queries',
 };
 
 const TOOLKIT_ICONS: Record<ToolkitTab, PaletteCommand['icon']> = {
@@ -186,6 +189,9 @@ const TOOLKIT_ICONS: Record<ToolkitTab, PaletteCommand['icon']> = {
   code: 'code',
   colors: 'palette',
   aspect: 'fit',
+  grid: 'columns',
+  images: 'image',
+  queries: 'search',
 };
 
 const TOOLKIT_KEYWORDS: Record<ToolkitTab, string> = {
@@ -194,6 +200,9 @@ const TOOLKIT_KEYWORDS: Record<ToolkitTab, string> = {
   code: 'breakpoints media queries scss sass mixin tailwind screens custom-media javascript matchmedia export code',
   colors: 'colour color picker eyedropper hex rgb hsl oklch convert',
   aspect: 'aspect ratio 16:9 4:3 calculator padding video image height',
+  grid: 'css grid auto-fit auto-fill minmax repeat columns cards layout calculator',
+  images: 'responsive images srcset sizes picture avif webp lazy loading markup html generator',
+  queries: 'media query tester test matches viewport orientation aspect-ratio min-width max-width',
 };
 
 const shortUrl = (url: string) => url.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -942,6 +951,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
     icon: 'clipboard',
     disabled: !ctx.hasUrl,
     run: () => actions.capture('copy'),
+  });
+  named('markup.open', {
+    id: 'capture-markup',
+    section: section.capture,
+    icon: 'pencil',
+    keywords: 'annotate markup draw arrow box highlight redact blur hide pixelate number steps screenshot',
+    disabled: !ctx.hasUrl,
+    run: () => actions.capture('markup'),
   });
   if (actions.showcase)
     named('showcase.title', {

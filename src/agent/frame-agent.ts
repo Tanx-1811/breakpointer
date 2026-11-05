@@ -39,6 +39,7 @@ import {
   formatShift,
   gridTracks,
   imageDensity,
+  imageFormat,
   isLargeText,
   isVectorImage,
   LONG_LINE_MIN_TEXT,
@@ -1979,6 +1980,10 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
           naturalHeight: image.naturalHeight,
           dpr: window.devicePixelRatio || 1,
           responsive: image.hasAttribute('srcset') || image.parentElement?.localName === 'picture',
+          loading: image.loading === 'lazy' ? 'lazy' : 'eager',
+          firstScreen: rect.top + window.scrollY < window.innerHeight,
+          format: imageFormat(image.currentSrc),
+          dimensions: image.hasAttribute('width') && image.hasAttribute('height'),
           area: rect.width * rect.height,
           index,
         });

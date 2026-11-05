@@ -20,7 +20,10 @@ export type GuideAction =
   | 'showcase'
   | 'present'
   | 'explain'
-  | 'toolkit';
+  | 'toolkit'
+  | 'toolkit-images'
+  | 'audit-images'
+  | 'markup';
 
 export type GuideStep = {
   /**
@@ -48,7 +51,10 @@ export type GuideId =
   | 'toolkit'
   | 'touch'
   | 'readable'
-  | 'demo';
+  | 'demo'
+  | 'markup'
+  | 'images'
+  | 'progress';
 
 export type Guide = {
   id: GuideId;
@@ -266,6 +272,47 @@ export const GUIDES: readonly Guide[] = [
       { target: '[data-help="capture"]', title: 'guide.demo.shareTitle', body: 'guide.demo.shareBody' },
     ],
     finish: { label: 'guide.demo.finish', action: 'present' },
+  },
+  {
+    id: 'markup',
+    icon: 'pencil',
+    title: 'guide.markup.title',
+    summary: 'guide.markup.summary',
+    // The editor is a modal dialog: the guide explains it, then offers to open it.
+    steps: [
+      { target: '[data-help="capture"]', title: 'guide.markup.openTitle', body: 'guide.markup.openBody' },
+      { title: 'guide.markup.drawTitle', body: 'guide.markup.drawBody' },
+      { title: 'guide.markup.hideTitle', body: 'guide.markup.hideBody' },
+    ],
+    finish: { label: 'guide.markup.finish', action: 'markup' },
+  },
+  {
+    id: 'images',
+    icon: 'image',
+    title: 'guide.images.title',
+    summary: 'guide.images.summary',
+    steps: [
+      { target: AUDIT, title: 'guide.images.auditTitle', body: 'guide.images.auditBody', action: 'audit-images' },
+      { target: `${AUDIT} [role="tabpanel"]`, title: 'guide.images.tipsTitle', body: 'guide.images.tipsBody' },
+      { title: 'guide.images.markupTitle', body: 'guide.images.markupBody' },
+    ],
+    finish: { label: 'guide.images.finish', action: 'toolkit-images' },
+  },
+  {
+    id: 'progress',
+    icon: 'report',
+    title: 'guide.progress.title',
+    summary: 'guide.progress.summary',
+    steps: [
+      { target: '[data-testid="audit-toggle"]', title: 'guide.progress.scoreTitle', body: 'guide.progress.scoreBody' },
+      {
+        target: '[data-testid="responsive-score"]',
+        title: 'guide.progress.trendTitle',
+        body: 'guide.progress.trendBody',
+        action: 'audit',
+      },
+      { target: '[data-testid="responsive-score"]', title: 'guide.progress.shareTitle', body: 'guide.progress.shareBody' },
+    ],
   },
 ];
 

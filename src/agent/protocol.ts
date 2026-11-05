@@ -161,6 +161,14 @@ export type ImageSample = {
   dpr: number;
   /** The image offers several files (srcset, or sources in a <picture>). */
   responsive: boolean;
+  /** v0.12: its `loading` attribute (eager unless it says lazy). */
+  loading?: 'lazy' | 'eager';
+  /** v0.12: its top is within the first screen of the page at this size. */
+  firstScreen?: boolean;
+  /** v0.12: the file's format, from its name or data URL (`jpg`, `png`, `webp`, `avif`…; '' when unknown). */
+  format?: string;
+  /** v0.12: it has both `width` and `height` attributes, so the page reserves its space. */
+  dimensions?: boolean;
 };
 
 /** A colour and how many elements use it. */

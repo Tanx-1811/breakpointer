@@ -52,12 +52,11 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 
 /** What this version brings, shown in Help's “What's new”. */
 const NEWS: { icon: IconName; text: MessageKey }[] = [
-  { icon: 'code', text: 'news.toolkit' },
-  { icon: 'pointer', text: 'news.touch' },
-  { icon: 'text', text: 'news.longLines' },
-  { icon: 'chevronDown', text: 'news.autoScroll' },
-  { icon: 'report', text: 'news.badge' },
-  { icon: 'book', text: 'news.userGuide' },
+  { icon: 'pencil', text: 'news.markup' },
+  { icon: 'report', text: 'news.scoreHistory' },
+  { icon: 'code', text: 'news.toolkit12' },
+  { icon: 'image', text: 'news.imageTips' },
+  { icon: 'book', text: 'news.guides12' },
 ];
 
 export type HelpSection = 'start' | 'shortcuts' | 'news' | 'support';

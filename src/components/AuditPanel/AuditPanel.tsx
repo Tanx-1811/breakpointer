@@ -12,12 +12,14 @@ import type {
 import { budgetBreaches, budgetLimit, hasBudgets, overBudget, type PerformanceBudgets } from '../../state/budgets';
 import { COLOR_ROLE_KEYS, COLOR_ROLES, mergePalettes, paletteCss, paletteSize } from '../../state/colors';
 import {
+  imageAdvice,
   imageFit,
   imageRows,
   neededWidth,
   srcsetText,
   suggestSizes,
   suggestSrcset,
+  type ImageAdvice,
   type ImageAt,
   type ImageFit,
 } from '../../state/images';
@@ -38,6 +40,7 @@ import {
 } from '../../state/audit';
 import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue, localNumbers } from '../../state/checks';
 import { responsiveScore, type ResponsiveScore } from '../../state/score';
+import { scoreTrend, sparkline, type ScoreEntry } from '../../state/score-history';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
 import { ExportMenu } from '../Plan/ExportMenu';
@@ -96,6 +99,9 @@ type Props = {
   onCopyText?: (text: string) => void;
   /** Copies or downloads the responsive score as an SVG badge (the buttons show when given). */
   onBadge?: (score: ResponsiveScore, action: 'copy' | 'download') => void;
+  /** This page's score on earlier days, kept on this device (null: not known yet). */
+  scoreHistory?: readonly ScoreEntry[] | null;
+  onClearScoreHistory?: () => void;
   /** The page's address (the Meta tab compares the canonical address with it). */
   page?: string | null;
   /** The preview the Meta tab reads (its card id; default: the first that answered). */
@@ -249,7 +255,15 @@ function IssuesTab(props: Props) {
   const score = responsiveScore(checked.map((row) => row.report));
   return (
     <>
-      {score && <ScoreCard score={score} onBadge={props.onBadge} />}
+      {score && (
+        <ScoreCard
+          score={score}
+          onBadge={props.onBadge}
+          history={props.scoreHistory}
+          locale={props.locale}
+          onClearHistory={props.onClearScoreHistory}
+        />
+      )}
       <p className={styles.summary} data-testid="audit-summary" data-issues={groups.length}>
         <Icon name={groups.length ? 'alert' : 'check'} size={15} className={groups.length ? styles.warn : styles.ok} />
         {groups.length === 0
@@ -527,9 +541,15 @@ function TypeTab(props: Props) {
 function ScoreCard({
   score,
   onBadge,
+  history,
+  locale,
+  onClearHistory,
 }: {
   score: ResponsiveScore;
   onBadge?: (score: ResponsiveScore, action: 'copy' | 'download') => void;
+  history?: readonly ScoreEntry[] | null;
+  locale?: string;
+  onClearHistory?: () => void;
 }) {
   const { t } = useI18n();
   return (
@@ -556,6 +576,9 @@ function ScoreCard({
             ))}
           </ul>
         )}
+        {history && history.length > 1 && (
+          <ScoreHistoryLine entries={history} locale={locale} onClear={onClearHistory} />
+        )}
         {onBadge && (
           <span className={styles.scoreBadge}>
             <Button
@@ -577,6 +600,42 @@ function ScoreCard({
         )}
       </div>
     </section>
+  );
+}
+
+/** The page's score on earlier days: a sparkline and the change since the first one kept. */
+function ScoreHistoryLine({
+  entries,
+  locale,
+  onClear,
+}: {
+  entries: readonly ScoreEntry[];
+  locale?: string;
+  onClear?: () => void;
+}) {
+  const { t } = useI18n();
+  const trend = scoreTrend(entries);
+  if (!trend) return null;
+  const [year, month, day] = trend.first.day.split('-').map(Number) as [number, number, number];
+  const date = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' }).format(
+    new Date(year, month - 1, day),
+  );
+  const change =
+    trend.change > 0
+      ? t('score.historyUp', { change: trend.change, date })
+      : trend.change < 0
+        ? t('score.historyDown', { change: -trend.change, date })
+        : t('score.historySame', { date });
+  return (
+    <span className={styles.scoreHistory} data-testid="score-history" data-trend={Math.sign(trend.change)}>
+      <svg className={styles.sparkline} viewBox="0 0 64 20" width="64" height="20" aria-hidden="true">
+        <polyline points={sparkline(entries, 64, 20)} fill="none" />
+      </svg>
+      <span className={styles.scoreHistoryText} title={t('score.historyNote')}>
+        {change} · {t('score.historyDays', { count: entries.length })}
+      </span>
+      {onClear && <IconButton icon="trash" size="xs" label={t('score.historyClear')} onClick={onClear} />}
+    </span>
   );
 }
 
@@ -607,6 +666,7 @@ function ImagesTab(props: Props) {
   const fits = measured.map(({ sample }) => imageFit(sample));
   const large = fits.filter((fit) => fit === 'large').length;
   const small = fits.filter((fit) => fit === 'small').length;
+  const tips = rows.reduce((sum, row) => sum + imageAdvice(row).length, 0);
   const names = new Map(props.rows.map((row) => [row.id, row]));
   return (
     <>
@@ -618,6 +678,7 @@ function ImagesTab(props: Props) {
         />
         {t(rows.length === 1 ? 'images.summaryOne' : 'images.summary', { count: rows.length })}
         {(large > 0 || small > 0) && ` · ${t('images.summaryFits', { large, small })}`}
+        {tips > 0 && ` · ${tips === 1 ? t('images.tipsOne') : t('images.tips', { count: tips })}`}
       </p>
       <ul className={styles.groups}>
         {rows.map((row) => {
@@ -654,6 +715,7 @@ function ImagesTab(props: Props) {
                   );
                 })}
               </ul>
+              <ImageTips advice={imageAdvice(row)} />
               <div className={styles.suggestion}>
                 <span className={styles.suggestionLabel}>{t('images.suggested')}</span>
                 <code className={styles.code} data-testid="image-sizes">{`sizes="${sizes}"`}</code>
@@ -672,6 +734,30 @@ function ImagesTab(props: Props) {
     </>
   );
 }
+
+/** What else could be better about an image: its format, how it loads, reserved space. */
+function ImageTips({ advice }: { advice: ImageAdvice[] }) {
+  const { t } = useI18n();
+  if (advice.length === 0) return null;
+  const text = (tip: ImageAdvice) =>
+    tip.kind === 'format' ? t('images.tip.format', { format: tip.format.toUpperCase() }) : t(TIP_KEYS[tip.kind]);
+  return (
+    <ul className={styles.tips} data-testid="image-tips">
+      {advice.map((tip) => (
+        <li key={tip.kind} className={styles.tip} data-kind={tip.kind}>
+          <Icon name="info" size={13} className={styles.tipIcon} />
+          <span>{text(tip)}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+const TIP_KEYS = {
+  lazyAbove: 'images.tip.lazyAbove',
+  eagerBelow: 'images.tip.eagerBelow',
+  dimensions: 'images.tip.dimensions',
+} as const;
 
 /** The colours the previews show, as swatches by role; copied as CSS custom properties. */
 function ColorsTab(props: Props) {

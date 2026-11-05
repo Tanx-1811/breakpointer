@@ -12,6 +12,7 @@ import { ScanDialog, type ScanResult } from '../components/ScanDialog/ScanDialog
 import { VisualDialog, type VisualRow } from '../components/VisualDialog/VisualDialog';
 import { ContrastDialog, type ContrastColors } from '../components/ContrastDialog/ContrastDialog';
 import { ToolkitDialog, type ToolkitBreakpointSet } from '../components/ToolkitDialog/ToolkitDialog';
+import { MarkupDialog, type MarkupImage } from '../components/MarkupDialog/MarkupDialog';
 import type { DesignOverlayState } from '../components/DesignOverlay/DesignOverlay';
 import { FLOATING_TOOLBAR, FloatingPreview, adoptStyles } from '../components/FloatingPreview/FloatingPreview';
 import { EmbedNotice } from '../components/EmbedNotice/EmbedNotice';
@@ -132,6 +133,8 @@ import { listingUrl, reviewUrl, type Store } from '../state/store-links';
 import { groupIssues, issuesMarkdown, statsMarkdown, typeMarkdown } from '../state/audit';
 import { widthRange } from '../state/breakpoint-map';
 import { badgeFileName, scoreBadgeSvg } from '../state/badge';
+import { dayOf, hasScore, recordScore, type ScoreHistory } from '../state/score-history';
+import { clearScoreHistory, readScoreHistory, scorePageKey, writeScoreHistory } from '../services/score-history';
 import { responsiveScore, type ResponsiveScore } from '../state/score';
 import { DEFAULT_TOOLKIT, type ToolkitState, type ToolkitTab } from '../state/toolkit';
 import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors';
@@ -240,7 +243,8 @@ type DialogName =
   | 'upgrade'
   | 'saveProject'
   | 'manageProjects'
-  | 'toolkit';
+  | 'toolkit'
+  | 'markup';
 
 /** Document Picture-in-Picture (Chrome 116+): an always-on-top window the page fills itself. */
 type PictureInPictureHost = Window & {
@@ -458,6 +462,11 @@ function Workspace({
   // Every preview scrolling from top to bottom by itself (for demos), until the timer says it's done.
   const [autoScrolling, setAutoScrolling] = useState(false);
   const autoScrollTimer = useRef(0);
+  // The screenshot being annotated (an object URL, released when replaced or closed).
+  const [markupImage, setMarkupImage] = useState<MarkupImage | null>(null);
+  // Each page's responsive score per day, kept on this device (null until read), and the current page's key in it.
+  const [scoreHistory, setScoreHistory] = useState<ScoreHistory | null>(null);
+  const [scoreKey, setScoreKey] = useState<{ href: string; key: string } | null>(null);
   // Comparing two addresses: every visible viewport also shows a B preview.
   const [compare, setCompare] = useState<CompareTarget | null>(null);
   // Design mockups laid over previews (object URLs of local files), by card.
@@ -950,8 +959,8 @@ function Workspace({
       .filter(Boolean)
       .join(' · ');
 
-  /** Every visible preview in one labelled image. */
-  const captureAll = () =>
+  /** Every visible preview in one labelled image, for `use` (to save it, or to annotate it). */
+  const captureAll = (use: 'download' | 'markup' = 'download') =>
     withCapture(async () => {
       if (!currentUrl || capturing) return;
       if (visible.length === 0) {
@@ -988,6 +997,20 @@ function Workspace({
           footer: `${imageFooterName(brand)} · ${new Date().toLocaleString(language)}`,
         });
         if (!sheet) throw new Error('Nothing captured');
+        if (use === 'markup') {
+          const bitmap = await createImageBitmap(sheet);
+          const size = { width: bitmap.width, height: bitmap.height };
+          bitmap.close();
+          const name = `breakpointer-annotated_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.png`;
+          setMarkupImage((current) => {
+            if (current) URL.revokeObjectURL(current.url);
+            return { url: URL.createObjectURL(sheet), ...size, name };
+          });
+          // The progress toast becomes a short note: the editor is open.
+          toast({ message: t('markup.title'), tone: 'info', key: 'sheet' });
+          setDialog('markup');
+          return;
+        }
         const fileName = `breakpointer-all_${fileNamePart(displayHost(currentUrl))}_${timestamp()}.png`;
         downloadBlob(sheet, fileName);
         toast({ message: t('capture.saved', { file: fileName }), tone: 'success', key: 'sheet' });
@@ -999,10 +1022,33 @@ function Workspace({
       }
     });
 
+  const closeMarkup = () => {
+    setDialog(null);
+    setMarkupImage((current) => {
+      if (current) URL.revokeObjectURL(current.url);
+      return null;
+    });
+  };
+
+  const saveMarkup = (blob: Blob, fileName: string) => {
+    downloadBlob(blob, fileName);
+    toast({ message: t('markup.saved', { file: fileName }), tone: 'success', key: 'markup' });
+  };
+
+  const copyMarkup = (blob: Blob) =>
+    void copyImageToClipboard(blob).then((copied) =>
+      toast(
+        copied
+          ? { message: t('markup.copied'), tone: 'success', key: 'copy' }
+          : { message: t('capture.copyFailed'), tone: 'error', key: 'copy' },
+      ),
+    );
+
   const onCapture = (kind: CaptureKind) => {
     if (kind !== 'showcase') setCaptured(true);
     if (kind === 'showcase') openShowcase();
     else if (kind === 'all') void captureAll();
+    else if (kind === 'markup') void captureAll('markup');
     else if (kind === 'copy') void copyCapture(workspaceRef.current);
     else void capture(workspaceRef.current, ['workspace']);
   };
@@ -2296,6 +2342,8 @@ function Workspace({
       if (!audit.open) toggleAudit('issues');
     } else if (action === 'audit-media') {
       if (!audit.open || audit.tab !== 'media') toggleAudit('media');
+    } else if (action === 'audit-images') {
+      if (!audit.open || audit.tab !== 'images') toggleAudit('images');
     } else if (action === 'inspect') {
       if (!inspector.open) startPicking();
     } else if (action === 'notes') {
@@ -2308,6 +2356,8 @@ function Workspace({
     else if (action === 'showcase') openShowcase();
     else if (action === 'present') startPresent();
     else if (action === 'toolkit') openToolkit();
+    else if (action === 'toolkit-images') openToolkit('images');
+    else if (action === 'markup') onCapture('markup');
     else startExplain();
   };
 
@@ -3351,6 +3401,63 @@ function Workspace({
   // Kinds of issue found in any preview (shown on the toolbar's Audit button).
   const issueKinds = groupIssues(auditRows).length;
 
+  // Score history: once every preview of the page has checked it (and none has navigated away), its score
+  // becomes the day's entry for the page — a few seconds later, so a page still loading doesn't count.
+  const scoredRows = auditRows.filter((row) => !isCompareCardId(row.id));
+  const scoreNow =
+    settings.checks && currentUrl && scoredRows.length > 0 && scoredRows.every((row) => row.report && !strays[row.id])
+      ? responsiveScore(scoredRows.map((row) => row.report))
+      : null;
+  const scorePage = currentUrl?.href ?? null;
+  useEffect(() => void readScoreHistory().then(setScoreHistory), []);
+  useEffect(() => {
+    if (!scorePage) return;
+    let current = true;
+    void scorePageKey(scorePage).then((key) => current && setScoreKey({ href: scorePage, key }));
+    return () => {
+      current = false;
+    };
+  }, [scorePage]);
+  const pageScoreKey = scoreKey && scoreKey.href === scorePage ? scoreKey.key : null;
+  const scoreValue = scoreNow?.score ?? null;
+  const scoreSizes = scoreNow?.sizes ?? 0;
+  useEffect(() => {
+    if (!pageScoreKey || scoreValue === null) return;
+    const timer = window.setTimeout(async () => {
+      const entry = { day: dayOf(new Date()), score: scoreValue, sizes: scoreSizes };
+      // Read again first: another workspace tab may have written meanwhile.
+      const stored = await readScoreHistory();
+      if (hasScore(stored, pageScoreKey, entry)) {
+        setScoreHistory(stored);
+        return;
+      }
+      const next = recordScore(stored, pageScoreKey, entry);
+      setScoreHistory(next);
+      await writeScoreHistory(next);
+    }, 4000);
+    return () => window.clearTimeout(timer);
+  }, [pageScoreKey, scoreValue, scoreSizes]);
+
+  const forgetScoreHistory = () => {
+    const previous = scoreHistory;
+    void clearScoreHistory();
+    setScoreHistory({});
+    toast({
+      message: t('score.historyCleared'),
+      tone: 'success',
+      key: 'score-history',
+      action: previous
+        ? {
+            label: t('common.undo'),
+            onAction: () => {
+              setScoreHistory(previous);
+              void writeScoreHistory(previous);
+            },
+          }
+        : undefined,
+    });
+  };
+
   // The viewports sidebar and the status bar.
   const activeBreakpoints =
     breakpointSet(settings.breakpoints, settings.customBreakpoints, siteBreakpoints ?? [])?.breakpoints ?? [];
@@ -4155,6 +4262,8 @@ function Workspace({
             onCopy={copyAudit}
             onCopyText={copyAuditText}
             onBadge={scoreBadge}
+            scoreHistory={pageScoreKey && scoreHistory ? (scoreHistory[pageScoreKey] ?? []) : null}
+            onClearScoreHistory={forgetScoreHistory}
             onExport={exportAudit}
             page={currentUrl?.href ?? null}
             metaCard={metaCard}
@@ -4177,7 +4286,13 @@ function Workspace({
         {qaOpen && !presenting && (
           <QaPanel
             items={qaItems}
-            viewports={visible.map(({ id, name, width, height }) => ({ id, name, width, height }))}
+            viewports={visible.map(({ id, name, width, height, colorScheme }) => ({
+              id,
+              name,
+              width,
+              height,
+              colorScheme,
+            }))}
             results={qaResults}
             onResult={(itemId, viewportId, result) =>
               setQaResults((results) => setQaResult(results, itemId, viewportId, result))
@@ -4434,6 +4549,13 @@ function Workspace({
         colors={contrastColors}
         onChange={setContrastColors}
         onClose={() => setDialog(null)}
+      />
+      <MarkupDialog
+        open={dialog === 'markup'}
+        image={markupImage}
+        onClose={closeMarkup}
+        onSave={saveMarkup}
+        onCopy={copyMarkup}
       />
       <ToolkitDialog
         open={dialog === 'toolkit'}

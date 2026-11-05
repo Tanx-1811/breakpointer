@@ -55,7 +55,7 @@ function Harness({ onCopy, initialTab = 'fluid' }: { onCopy: (text: string) => v
 }
 
 describe('CSS toolkit', () => {
-  it('has five tools in a tab list that the arrow keys move through', async () => {
+  it('has its tools in a tab list that the arrow keys move through', async () => {
     wrap(<Harness onCopy={vi.fn()} />);
     const tabs = within(screen.getByRole('tablist', { name: 'Tools' })).getAllByRole('tab');
     expect(tabs.map((tab) => tab.textContent)).toEqual([
@@ -64,10 +64,13 @@ describe('CSS toolkit', () => {
       'Breakpoints',
       'Colours',
       'Aspect ratio',
+      'Grid',
+      'Images',
+      'Queries',
     ]);
     tabs[0]!.focus();
     await userEvent.keyboard('{ArrowLeft}');
-    expect(screen.getByRole('tab', { name: 'Aspect ratio' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('tab', { name: 'Queries' })).toHaveAttribute('aria-selected', 'true');
     await userEvent.keyboard('{Home}');
     expect(screen.getByRole('tab', { name: 'Fluid type' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -220,7 +223,7 @@ describe('help and guides', () => {
         commandShortcuts={{ open: '', preview: '' }}
       />,
     );
-    expect(screen.getByTestId('whats-new')).toHaveTextContent('CSS toolkit (U)');
+    expect(screen.getByTestId('whats-new')).toHaveTextContent('Annotate screenshots');
     expect(
       shortcutFor({
         key: 'u',
@@ -282,7 +285,7 @@ describe('palette', () => {
     expect(units.title).toBe('CSS toolkit: Units');
     units.run();
     expect(toolkit).toHaveBeenCalledWith('units');
-    expect(list.filter((command) => command.id.startsWith('toolkit-'))).toHaveLength(5);
+    expect(list.filter((command) => command.id.startsWith('toolkit-'))).toHaveLength(8);
   });
 
   it('auto-scrolls for 10, 20 or 40 seconds, and stops', () => {

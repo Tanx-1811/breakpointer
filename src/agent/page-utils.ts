@@ -748,3 +748,24 @@ export function collectMeta(doc: Document, isHidden: (element: Element) => boole
     headings,
   };
 }
+
+/**
+ * An image file's format from its address: the extension of its name (`jpeg`
+ * read as `jpg`), or the type of a data URL; '' when it can't be told.
+ */
+export function imageFormat(src: string): string {
+  const data = /^data:image\/([a-z0-9.+-]+)[;,]/i.exec(src);
+  if (data) return normaliseFormat(data[1]!);
+  try {
+    const name = new URL(src).pathname.split('/').pop() ?? '';
+    const extension = /\.([a-z0-9]{2,5})$/i.exec(name)?.[1];
+    return extension ? normaliseFormat(extension) : '';
+  } catch {
+    return '';
+  }
+}
+
+const normaliseFormat = (format: string) => {
+  const lower = format.toLowerCase();
+  return lower === 'jpeg' || lower === 'pjpeg' ? 'jpg' : lower === 'svg+xml' ? 'svg' : lower;
+};

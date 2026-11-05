@@ -2,6 +2,26 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.12.0] — 2026-11-04
+
+Annotate what you find, watch scores improve, and three more CSS tools.
+
+### Added
+
+- **Annotate a screenshot** (screenshot menu, the palette or the new guide): every preview is captured in one image and opened in an editor — **arrows**, **boxes**, a **pen**, a **highlighter**, **text labels**, **numbered steps** (1, 2, 3… placed with a click) and **Hide**, which pixelates names, emails or prices before you share. Seven colours, three line widths, select and move, Delete, undo and redo (`Ctrl/⌘ + Z`, `Shift + Ctrl/⌘ + Z`); save the result as a full-resolution PNG or copy it.
+- **Score history**: each page's responsive score is kept once a day when every preview has checked it — on this device only, under a hash of the address (the address itself isn't stored), 30 days for up to 200 pages. The audit's score card shows a sparkline and the change since the first day kept (“+12 since 2 Nov · 5 days”), and forgets it all in one click (with Undo).
+- **Image tips** in the audit's Images tab: a large JPEG, PNG or GIF that AVIF or WebP would make 30–50% smaller, a lazy-loaded image in the first screen (load it straight away), one below the first screen at every size that loads at once (add `loading="lazy"`), and images without `width` and `height` (the page jumps as they load). The summary counts the tips.
+- **CSS toolkit: three more tools** (eight in all).
+  - **Grid**: how many columns `repeat(auto-fit, minmax(…, 1fr))` makes at each viewport, how wide each item is, how many rows, with a small preview — from the narrowest column, gap, side padding, optional max width and max columns, and the number of items (auto-fit or auto-fill); the CSS uses `min(100%, …)` so a narrow screen never overflows.
+  - **Images**: `<img>` or `<picture>` markup with AVIF and WebP for an image that is as wide as the viewport, in a content column, a share of the viewport or a fixed width — `sizes`, the `srcset` widths your viewports need at 1× and 2×, `width` and `height` from its proportions, and lazy loading or `fetchpriority="high"`. A table shows the width shown and the file a 2× screen picks at each viewport.
+  - **Queries**: type a media query (or pick an example) and see which viewports it applies in — widths, heights, orientation and aspect ratio in px, em or rem, range syntax, `and`/`or`/`not`, lists and media types; page colours follow each preview's setting, and what depends on the device (hover, pointer, resolution) is marked as such.
+- **Three new guides**: Annotate a screenshot, Ship responsive images and Track a page's score (seventeen in all).
+
+### Changed
+
+- The frame agent also reports each image's `loading`, whether it is in the first screen, its format and whether it has `width` and `height` (numbers and names only, like before).
+- Help's “What's new” shows this release; “What's this?” explains the score history and the image tips.
+
 ## [0.11.0] — 2026-11-04
 
 A CSS toolkit worked out at the sizes you preview, touch-screen styles, a check for lines too long to read, and a full user guide.

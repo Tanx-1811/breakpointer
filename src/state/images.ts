@@ -66,6 +66,38 @@ export function imageRows(measured: readonly ImageAt[]): ImageRow[] {
   return [...rows.values()].sort((a, b) => waste(b) - waste(a));
 }
 
+/** v0.12: what could be better about an image, besides its size. */
+export type ImageAdvice =
+  /** A JPEG, PNG or GIF of some size: AVIF or WebP would be smaller. */
+  | { kind: 'format'; format: string }
+  /** Lazy-loaded yet in the first screen at some size: it may be the largest image and load late. */
+  | { kind: 'lazyAbove' }
+  /** Below the first screen at every size, and loaded straight away. */
+  | { kind: 'eagerBelow' }
+  /** No width and height attributes: the page shifts when it loads. */
+  | { kind: 'dimensions' };
+
+const LEGACY_FORMATS = new Set(['jpg', 'png', 'gif', 'bmp']);
+
+/**
+ * Advice for an image across the previews. Only what the agent reported
+ * counts (older previews without the v0.12 fields give none); a format is
+ * only worth changing for images shown wider than 160 px.
+ */
+export function imageAdvice(row: Pick<ImageRow, 'sizes'>): ImageAdvice[] {
+  const samples = row.sizes.map(({ sample }) => sample);
+  const advice: ImageAdvice[] = [];
+  const format = samples.find((sample) => sample.format)?.format ?? '';
+  if (LEGACY_FORMATS.has(format) && samples.some((sample) => sample.width > 160))
+    advice.push({ kind: 'format', format });
+  const known = samples.filter((sample) => sample.firstScreen !== undefined && sample.loading !== undefined);
+  if (known.some((sample) => sample.loading === 'lazy' && sample.firstScreen)) advice.push({ kind: 'lazyAbove' });
+  else if (known.length > 0 && known.every((sample) => !sample.firstScreen && sample.loading === 'eager'))
+    advice.push({ kind: 'eagerBelow' });
+  if (samples.some((sample) => sample.dimensions === false)) advice.push({ kind: 'dimensions' });
+  return advice;
+}
+
 type Part = { from: number; kind: 'vw' | 'px'; value: number };
 
 /**

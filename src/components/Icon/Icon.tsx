@@ -118,6 +118,16 @@ const PATHS = {
   explain: 'M4 4l6.2 15.5 2.3-6.5 6.5-2.3zM15 3.6a2.3 2.3 0 1 1 3.2 2.1c-.5.2-.9.7-.9 1.3v.3',
   /** QA checklist. */
   checklist: 'M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L7.5 5M3.5 12l1.5 1.5 2.5-2.5M3.5 18l1.5 1.5 2.5-2.5',
+  /** Screenshot markup tools: an arrow, a box, a highlighter, a numbered step, a pixelated area. */
+  arrowUpRight: 'M6 18L18 6M9 6h9v9',
+  box: 'M5 5h14a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z',
+  highlighter: 'M9.5 10.5l6-6a1.4 1.4 0 0 1 2 0l2 2a1.4 1.4 0 0 1 0 2l-6 6zM9.5 10.5l-3 4 3 3 4-3M4 20.5h7',
+  step: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10.5 9.3l2-1.3v8',
+  pixelate: 'M4 4h16v16H4z',
+  undo: 'M9 14L4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
+  redo: 'M15 14l5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13',
+  eraser:
+    'M8 20h12M4.7 15.3l9.6-9.6a1.6 1.6 0 0 1 2.3 0l3 3a1.6 1.6 0 0 1 0 2.3L11 19.6a1.4 1.4 0 0 1-1 .4H8.6a1.4 1.4 0 0 1-1-.4l-2.9-2.9a1 1 0 0 1 0-1.4zM9.5 10.5l5 5',
 } as const;
 
 /** Icons made of dots need a wider stroke to read as dots. */
@@ -132,6 +142,8 @@ const DOTS: Partial<Record<IconName, string>> = {
 /** Solid shapes drawn on top of the stroke (e.g. the dark half of "contrast"). */
 const FILLS: Partial<Record<IconName, string>> = {
   contrast: 'M12 3a9 9 0 0 1 0 18z',
+  pixelate:
+    'M4 4h5.33v5.33H4zM14.67 4H20v5.33h-5.33zM9.33 9.33h5.33v5.33H9.33zM4 14.67h5.33V20H4zM14.67 14.67H20V20h-5.33z',
 };
 
 export type IconName = keyof typeof PATHS;

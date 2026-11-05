@@ -7,7 +7,7 @@ import { Menu, type MenuEntry } from '../components/Menu/Menu';
 import type { Entitlement } from '../state/license';
 import styles from './Viewer.module.css';
 
-export type CaptureKind = 'workspace' | 'all' | 'copy' | 'showcase';
+export type CaptureKind = 'workspace' | 'all' | 'copy' | 'showcase' | 'markup';
 
 /** Seconds between automatic reloads offered (0: off). */
 export const AUTO_RELOAD_OPTIONS = [0, 5, 10, 30, 60] as const;
@@ -82,6 +82,13 @@ export function TopBar(props: Props) {
       description: t('capture.copyHint'),
       icon: 'clipboard',
       onSelect: () => props.onCapture('copy'),
+    },
+    {
+      id: 'capture-markup',
+      label: t('markup.open'),
+      description: t('markup.openHint'),
+      icon: 'pencil',
+      onSelect: () => props.onCapture('markup'),
     },
     { kind: 'separator', id: 'capture-sep' },
     {

@@ -499,7 +499,79 @@
   font-size: 12.5px;
 }
 
+.switches {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 16px;
+}
+
+/* A grid's columns at a viewport, drawn small. */
+.gridPreview {
+  display: inline-grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  gap: 2px;
+  width: 64px;
+  height: 14px;
+  vertical-align: middle;
+}
+
+.gridPreview > span {
+  border-radius: 2px;
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-border);
+}
+
+.queriesSummary {
+  margin: 0;
+  font-weight: 600;
+}
+
+.results {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.result {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 140px) 110px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+}
+
+.result .vpName,
+.result .vpSize {
+  display: inline;
+}
+
+.resultIcon {
+  color: var(--text-subtle);
+}
+
+.result[data-matches='true'] .resultIcon {
+  color: var(--success);
+}
+
+.result[data-matches='true'] {
+  border-color: var(--accent-border);
+}
+
+.resultText {
+  color: var(--text-muted);
+}
+
 @media (max-width: 560px) {
+  .switches {
+    grid-template-columns: 1fr;
+  }
+
   .contrast,
   .codeGrid {
     grid-template-columns: 1fr;

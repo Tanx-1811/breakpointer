@@ -8,7 +8,7 @@ import type { CssUnit } from './units';
  * dialog reopens where it was left. Numbers stay as typed (drafts) and are
  * read with `readNumber`.
  */
-export const TOOLKIT_TABS = ['fluid', 'units', 'code', 'colors', 'aspect'] as const;
+export const TOOLKIT_TABS = ['fluid', 'units', 'code', 'colors', 'aspect', 'grid', 'images', 'queries'] as const;
 export type ToolkitTab = (typeof TOOLKIT_TABS)[number];
 
 export type ToolkitState = {
@@ -33,6 +33,32 @@ export type ToolkitState = {
   code: { source: BreakpointSetId | null; format: CodeFormat; unit: QueryUnit };
   colors: { value: string; recent: string[] };
   aspect: { width: string; height: string; share: string };
+  /** v0.12: an auto-fit grid; empty max width or columns mean none. */
+  grid: {
+    minColumn: string;
+    gap: string;
+    padding: string;
+    maxWidth: string;
+    maxColumns: string;
+    items: string;
+    mode: 'auto-fit' | 'auto-fill';
+  };
+  /** v0.12: responsive image markup. */
+  images: {
+    layout: 'full' | 'column' | 'vw' | 'fixed';
+    padding: string;
+    maxWidth: string;
+    share: string;
+    width: string;
+    pattern: string;
+    ratioWidth: string;
+    ratioHeight: string;
+    alt: string;
+    lazy: boolean;
+    modern: boolean;
+  };
+  /** v0.12: the media query tester. */
+  queries: { query: string };
 };
 
 export const DEFAULT_TOOLKIT: ToolkitState = {
@@ -56,6 +82,21 @@ export const DEFAULT_TOOLKIT: ToolkitState = {
   code: { source: null, format: 'css-min', unit: 'px' },
   colors: { value: '#4f46e5', recent: [] },
   aspect: { width: '16', height: '9', share: '100' },
+  grid: { minColumn: '240', gap: '24', padding: '24', maxWidth: '1200', maxColumns: '', items: '6', mode: 'auto-fit' },
+  images: {
+    layout: 'column',
+    padding: '24',
+    maxWidth: '1200',
+    share: '50',
+    width: '400',
+    pattern: 'photo-{w}.jpg',
+    ratioWidth: '16',
+    ratioHeight: '9',
+    alt: '',
+    lazy: true,
+    modern: true,
+  },
+  queries: { query: '(min-width: 768px) and (orientation: landscape)' },
 };
 
 /** At most this many recent colours are kept. */
