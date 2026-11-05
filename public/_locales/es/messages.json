@@ -11,6 +11,20 @@
     "message": "Breakpointer — previsualiza en varios tamaños de pantalla",
     "description": "Texto emergente del botón de la barra de herramientas."
   },
+  "actionTitleNews": {
+    "message": "Breakpointer se ha actualizado a la versión $VERSION$: haz clic para ver las novedades",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "NEW",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Abrir Breakpointer",
     "description": "Atajo de teclado que abre la ventana emergente."

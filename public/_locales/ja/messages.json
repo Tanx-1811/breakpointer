@@ -11,6 +11,20 @@
     "message": "Breakpointer — 複数の画面サイズでプレビュー",
     "description": "ツールバーボタンのツールチップ。"
   },
+  "actionTitleNews": {
+    "message": "Breakpointer を $VERSION$ に更新しました。クリックして新機能を確認",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "新",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Breakpointerを開く",
     "description": "ポップアップを開くキーボードコマンド。"

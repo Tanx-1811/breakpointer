@@ -11,6 +11,20 @@
     "message": "Breakpointer — xem trước ở nhiều kích thước màn hình",
     "description": "Chú thích nút trên thanh công cụ."
   },
+  "actionTitleNews": {
+    "message": "Breakpointer đã được cập nhật lên $VERSION$ — bấm để xem có gì mới",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "MỚI",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Mở Breakpointer",
     "description": "Phím tắt mở popup."

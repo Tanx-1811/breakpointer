@@ -2259,5 +2259,7 @@ export const vi: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': 'Rà soát HTML và CSS',
   'guide.elements.summaryBody':
     'Tổng quan đếm số phần tử và độ sâu, đánh dấu id trùng, thẻ lỗi thời, ảnh thiếu alt, style inline và !important.',
+  'update.done': 'Breakpointer đã được cập nhật lên {version}.',
+  'update.see': 'Xem có gì mới',
   // end v0.13 keys
 };

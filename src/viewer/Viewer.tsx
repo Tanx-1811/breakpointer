@@ -77,7 +77,7 @@ import {
 } from '../services/screenshot';
 import { frameName } from '../services/frame-agents';
 import { loadDismissedNoticeHosts, saveDismissedNoticeHosts } from '../services/session-state';
-import { markSeen } from '../services/whats-new';
+import { markSeen, minorVersion } from '../services/whats-new';
 import { enableEmbeddingForExtensionFrames } from '../services/embed-rules';
 import { forgetSessionGrants } from '../services/session-access';
 import { installStore } from '../services/install-source';
@@ -342,8 +342,10 @@ export type ViewerProps = {
   autoFit: 'none' | 'afterFirstPage' | 'now';
   /** A workspace link replaced these viewports as the workspace opened (it can be undone). */
   replacedViewports?: ViewportConfig[] | null;
-  /** This version has news the user hasn't seen (Help shows a dot until opened). */
+  /** This version has news the user hasn't seen (a toast says so, and Help shows a dot until opened). */
   whatsNew?: boolean;
+  /** Open Help on What's new right away (from the popup's update notice). */
+  showNews?: boolean;
 };
 
 export function ViewerApp(props: ViewerProps) {
@@ -388,6 +390,7 @@ function Workspace({
   autoFit,
   replacedViewports,
   whatsNew,
+  showNews,
   resolvedTheme,
   language,
 }: WorkspaceProps) {
@@ -406,7 +409,7 @@ function Workspace({
   const [cardReloads, setCardReloads] = useState<Record<string, number>>({});
   // Hosts whose blocked-site tip was dismissed, until Chrome closes.
   const [dismissedHosts, setDismissedHosts] = useState<string[]>([]);
-  const [dialog, setDialog] = useState<DialogName | null>(null);
+  const [dialog, setDialog] = useState<DialogName | null>(showNews ? 'help' : null);
   // A guide (the tour of the workspace's controls is the first), started from the welcome screen, Help,
   // the palette or “What's this?”.
   const [guide, setGuide] = useState<GuideId | null>(null);
@@ -414,7 +417,7 @@ function Workspace({
   const [explaining, setExplaining] = useState(false);
   const [presenting, setPresenting] = useState(false);
   // The section Help opens on.
-  const [helpSection, setHelpSection] = useState<HelpSection>('start');
+  const [helpSection, setHelpSection] = useState<HelpSection>(showNews ? 'news' : 'start');
   // The QA checklist: its panel and this session's results.
   const [qaOpen, setQaOpen] = useState(false);
   // The Elements panel, and a counter that makes it read the page again.
@@ -1184,6 +1187,18 @@ function Workspace({
     }
   };
   const openHelp = () => openHelpAt();
+
+  // After an update (Chrome installs it silently), say so once; Help keeps its dot until opened.
+  const announcedNews = useRef(false);
+  useEffect(() => {
+    if (announcedNews.current || !whatsNew) return;
+    announcedNews.current = true;
+    toast({
+      message: t('update.done', { version: minorVersion(version) }),
+      action: { label: t('update.see'), onAction: () => openHelpAt('news') },
+      key: 'news',
+    });
+  }, [openHelpAt, t, toast, version, whatsNew]);
 
   /** A link that opens this page with these viewports in Breakpointer, for a teammate. */
   const copyWorkspaceLink = () => {

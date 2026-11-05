@@ -5,6 +5,8 @@ export type ViewerParams = {
   group?: string;
   /** Raw text that couldn't be parsed as a URL, shown so the user can fix it. */
   input?: string;
+  /** Open Help on What's new (from the popup's update notice). */
+  news?: boolean;
 };
 
 export type ViewerPlacement = {
@@ -24,6 +26,7 @@ export function viewerUrl(params: ViewerParams = {}): string {
   if (params.url) search.set('url', params.url);
   if (params.group) search.set('group', params.group);
   if (params.input) search.set('input', params.input);
+  if (params.news) search.set('news', '1');
   const query = search.toString();
   return query ? `${viewerPage()}?${query}` : viewerPage();
 }
@@ -52,7 +55,7 @@ async function findViewerTab(): Promise<{ tabId: number; windowId: number } | nu
 export async function openViewer(params: ViewerParams = {}, placement: ViewerPlacement = {}): Promise<void> {
   const existing = placement.newTab ? null : await findViewerTab();
   if (existing) {
-    const hasParams = Boolean(params.url || params.group || params.input);
+    const hasParams = Boolean(params.url || params.group || params.input || params.news);
     await chrome.tabs.update(existing.tabId, hasParams ? { active: true, url: viewerUrl(params) } : { active: true });
     await chrome.windows.update(existing.windowId, { focused: true }).catch(() => undefined);
     return;

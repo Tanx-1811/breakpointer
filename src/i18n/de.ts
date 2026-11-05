@@ -2321,5 +2321,7 @@ export const de: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': 'HTML und CSS prüfen',
   'guide.elements.summaryBody':
     'Zusammenfassung zählt Elemente und Tiefe und markiert doppelte ids, veraltete Tags, Bilder ohne alt, Inline-Stile und !important.',
+  'update.done': 'Breakpointer wurde auf {version} aktualisiert.',
+  'update.see': 'Neuerungen ansehen',
   // end v0.13 keys
 };

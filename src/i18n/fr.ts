@@ -2345,5 +2345,7 @@ export const fr: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': 'Auditer le HTML et le CSS',
   'guide.elements.summaryBody':
     'Résumé compte les éléments et la profondeur, et signale les ids en double, les balises obsolètes, les images sans alt, les styles en ligne et !important.',
+  'update.done': 'Breakpointer a été mis à jour vers la version {version}.',
+  'update.see': 'Voir les nouveautés',
   // end v0.13 keys
 };

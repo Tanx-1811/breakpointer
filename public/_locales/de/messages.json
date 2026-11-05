@@ -11,6 +11,20 @@
     "message": "Breakpointer — Vorschau in mehreren Bildschirmgrößen",
     "description": "Tooltip der Schaltfläche in der Symbolleiste."
   },
+  "actionTitleNews": {
+    "message": "Breakpointer wurde auf $VERSION$ aktualisiert – klicken, um die Neuerungen zu sehen",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "NEU",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Breakpointer öffnen",
     "description": "Tastenkürzel, das das Pop-up öffnet."

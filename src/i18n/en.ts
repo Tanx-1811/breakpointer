@@ -2240,6 +2240,8 @@ export const en = {
   'guide.elements.summaryTitle': 'Audit the HTML and CSS',
   'guide.elements.summaryBody':
     'Summary counts elements and depth and flags duplicate ids, obsolete tags, images without alt, inline styles and !important.',
+  'update.done': 'Breakpointer was updated to {version}.',
+  'update.see': 'See what’s new',
   // end v0.13 keys
 } as const;
 

@@ -2114,5 +2114,7 @@ export const zh: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': '审查 HTML 和 CSS',
   'guide.elements.summaryBody':
     '摘要统计元素数量和层级深度，并指出重复的 id、已废弃的标签、缺少 alt 的图片、内联样式和 !important。',
+  'update.done': 'Breakpointer 已更新到 {version}。',
+  'update.see': '查看新功能',
   // end v0.13 keys
 };

@@ -11,6 +11,20 @@
     "message": "Breakpointer — превью в нескольких размерах экрана",
     "description": "Подсказка кнопки на панели инструментов."
   },
+  "actionTitleNews": {
+    "message": "Breakpointer обновлён до версии $VERSION$ — нажмите, чтобы узнать, что нового",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "NEW",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Открыть Breakpointer",
     "description": "Команда клавиатуры, открывающая всплывающее окно."

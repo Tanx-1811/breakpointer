@@ -2290,5 +2290,7 @@ export const ja: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': 'HTMLとCSSを監査する',
   'guide.elements.summaryBody':
     '概要では、要素数と階層の深さを集計し、重複したid、廃止されたタグ、altのない画像、インラインスタイル、!importantを指摘します。',
+  'update.done': 'Breakpointer を {version} に更新しました。',
+  'update.see': '新機能を見る',
   // end v0.13 keys
 };

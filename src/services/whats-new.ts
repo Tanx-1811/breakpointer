@@ -1,7 +1,9 @@
 /**
  * Which version's news the user has seen, kept apart from the settings (it
- * isn't a preference and isn't exported). After an update, the Help button
- * shows a dot until Help is opened.
+ * isn't a preference and isn't exported). After an update — which Chrome
+ * installs silently — the toolbar button says "NEW", the popup and the
+ * workspace say what changed, and the Help button shows a dot, until Help is
+ * opened (or the popup's notice is dismissed).
  */
 const SEEN_KEY = 'breakpointer.seenVersion';
 
@@ -26,5 +28,29 @@ export async function markSeen(version: string): Promise<void> {
     await chrome.storage.local.set({ [SEEN_KEY]: version });
   } catch {
     // Not critical: the dot shows again next time.
+  }
+}
+
+/** Calls `listener` when the seen version changes (Help opened in a workspace, or the popup's notice dismissed). */
+export function onSeenVersionChange(listener: () => void): void {
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && SEEN_KEY in changes) listener();
+  });
+}
+
+/** The toolbar button: "NEW" and a tooltip saying so while this version's news are unseen. */
+export async function updateNewsBadge(): Promise<void> {
+  const version = chrome.runtime.getManifest().version;
+  const news = hasNews(await readSeenVersion(), version);
+  try {
+    await chrome.action.setBadgeBackgroundColor({ color: '#4f46e5' });
+    await chrome.action.setBadgeText({ text: news ? chrome.i18n.getMessage('badgeNew') : '' });
+    await chrome.action.setTitle({
+      title: news
+        ? chrome.i18n.getMessage('actionTitleNews', minorVersion(version))
+        : chrome.i18n.getMessage('actionTitle'),
+    });
+  } catch {
+    // Not critical: the workspace still shows what's new.
   }
 }

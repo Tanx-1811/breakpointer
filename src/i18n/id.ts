@@ -2298,5 +2298,7 @@ export const id: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': 'Audit HTML dan CSS',
   'guide.elements.summaryBody':
     'Ringkasan menghitung elemen dan kedalaman serta menandai id ganda, tag usang, gambar tanpa alt, gaya inline, dan !important.',
+  'update.done': 'Breakpointer telah diperbarui ke {version}.',
+  'update.see': 'Lihat yang baru',
   // end v0.13 keys
 };

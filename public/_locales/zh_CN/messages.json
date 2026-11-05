@@ -11,6 +11,20 @@
     "message": "Breakpointer — 在多种屏幕尺寸下预览",
     "description": "工具栏按钮的提示。"
   },
+  "actionTitleNews": {
+    "message": "Breakpointer 已更新到 $VERSION$ — 点击查看新功能",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "新",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "打开 Breakpointer",
     "description": "打开弹出窗口的快捷键命令。"

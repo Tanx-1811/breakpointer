@@ -11,6 +11,20 @@
     "message": "Breakpointer — pratinjau di berbagai ukuran layar",
     "description": "Tooltip tombol di bilah alat."
   },
+  "actionTitleNews": {
+    "message": "Breakpointer telah diperbarui ke $VERSION$ — klik untuk melihat yang baru",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "BARU",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Buka Breakpointer",
     "description": "Pintasan keyboard yang membuka popup."

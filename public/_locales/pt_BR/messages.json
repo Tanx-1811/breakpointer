@@ -11,6 +11,20 @@
     "message": "Breakpointer — pré-visualizar em vários tamanhos de tela",
     "description": "Dica do botão na barra de ferramentas."
   },
+  "actionTitleNews": {
+    "message": "O Breakpointer foi atualizado para a versão $VERSION$ — clique para ver as novidades",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "NOVO",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Abrir o Breakpointer",
     "description": "Atalho de teclado que abre o pop-up."

@@ -2269,5 +2269,7 @@ export const ru: Record<MessageKey, string> = {
   'guide.elements.summaryTitle': 'Проверьте HTML и CSS',
   'guide.elements.summaryBody':
     '«Сводка» считает элементы и глубину и отмечает повторяющиеся id, устаревшие теги, изображения без alt, встроенные стили и !important.',
+  'update.done': 'Breakpointer обновлён до версии {version}.',
+  'update.see': 'Что нового',
   // end v0.13 keys
 };

@@ -11,6 +11,20 @@
     "message": "Breakpointer — aperçu à plusieurs tailles d’écran",
     "description": "Info-bulle du bouton de la barre d’outils."
   },
+  "actionTitleNews": {
+    "message": "Breakpointer a été mis à jour vers la version $VERSION$ — cliquez pour voir les nouveautés",
+    "description": "Toolbar button tooltip after an update, until its news are seen.",
+    "placeholders": {
+      "version": {
+        "content": "$1",
+        "example": "0.13"
+      }
+    }
+  },
+  "badgeNew": {
+    "message": "NEW",
+    "description": "Toolbar badge after an update (at most 4 characters)."
+  },
   "commandOpen": {
     "message": "Ouvrir Breakpointer",
     "description": "Raccourci clavier qui ouvre la fenêtre contextuelle."

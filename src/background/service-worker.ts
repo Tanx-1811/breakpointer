@@ -1,6 +1,7 @@
 import { disableEmbeddingForTab, tabsWithEmbedding } from '../services/embed-rules';
 import { agentRegistered, ensureAgentRegistered, unregisterAgent } from '../services/frame-agents';
 import { revokeSessionGrants } from '../services/session-access';
+import { markSeen, onSeenVersionChange, updateNewsBadge } from '../services/whats-new';
 import { openSidePanel } from '../shared/side-panel';
 import { openViewer, viewerUrl } from '../shared/viewer-url';
 import { parsePreviewUrl, toSafeHref } from '../utils/url';
@@ -13,7 +14,7 @@ const MENU_PREVIEW_LINK = 'preview-link';
 const MENU_SIDE_PANEL_PAGE = 'side-panel-page';
 const MENU_SIDE_PANEL_LINK = 'side-panel-link';
 
-/* ---------- Install: context menus and a first-run welcome ---------- */
+/* ---------- Install: context menus, a first-run welcome and news after an update ---------- */
 
 chrome.runtime.onInstalled.addListener(({ reason }) => {
   chrome.contextMenus.removeAll(() => {
@@ -42,14 +43,26 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
       targetUrlPatterns: WEB_PAGES,
     });
   });
-  if (reason === chrome.runtime.OnInstalledReason.INSTALL) void openViewer();
+  if (reason === chrome.runtime.OnInstalledReason.INSTALL) {
+    // A fresh install has no news to catch up on (the badge follows the seen version).
+    void markSeen(chrome.runtime.getManifest().version);
+    void openViewer();
+  } else {
+    // Chrome installs updates silently: the toolbar button says there's something new.
+    void updateNewsBadge();
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => {
   void unregisterAgentIfNoWorkspace();
   // Site access given "until Chrome closes" ends now.
   void revokeSessionGrants();
+  // The badge doesn't outlive the browser.
+  void updateNewsBadge();
 });
+
+// Help opened in a workspace, or the popup's notice dismissed: the badge goes.
+onSeenVersionChange(() => void updateNewsBadge());
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   const link = info.menuItemId === MENU_PREVIEW_LINK || info.menuItemId === MENU_SIDE_PANEL_LINK;

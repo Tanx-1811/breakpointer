@@ -66,6 +66,13 @@ async function bootstrap() {
     history.replaceState(null, '', params.size ? `?${params}` : location.pathname);
   }
 
+  // ?news=1 (the popup's update notice) opens Help on What's new, then is dropped from the URL.
+  const showNews = params.has('news');
+  if (showNews) {
+    params.delete('news');
+    history.replaceState(null, '', params.size ? `?${params}` : location.pathname);
+  }
+
   // First run: keep the defaults (in the user's language), so every tab starts from the same workspace.
   if (stored === undefined && !readFailed && !groupId && !replacedViewports)
     await saveSettings(settings).catch(() => {});
@@ -91,8 +98,8 @@ async function bootstrap() {
   // After an update, Help shows what's new (a fresh install has nothing to catch up on).
   const version = chrome.runtime.getManifest().version;
   const firstRun = stored === undefined && !readFailed;
-  if (firstRun) void markSeen(version);
-  const whatsNew = !firstRun && hasNews(await readSeenVersion(), version);
+  if (firstRun || showNews) void markSeen(version);
+  const whatsNew = !firstRun && !showNews && hasNews(await readSeenVersion(), version);
 
   await ready;
   // Known before the first render, so no message from a preview frame is missed.
@@ -113,6 +120,7 @@ async function bootstrap() {
         tabId={tab?.id ?? null}
         version={version}
         whatsNew={whatsNew}
+        showNews={showNews}
         autoFit={fitGroup ? 'now' : stored === undefined ? 'afterFirstPage' : 'none'}
         replacedViewports={replacedViewports}
       />
