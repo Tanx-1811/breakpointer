@@ -124,9 +124,9 @@ const TOOL_SHORTCUTS: Record<MarkupTool, string> = {
   blur: 'B',
 };
 
-const TOOL_FOR_CODE = Object.fromEntries(
-  MARKUP_TOOLS.map((tool) => [`Key${TOOL_SHORTCUTS[tool]}`, tool]),
-) as Partial<Record<string, MarkupTool>>;
+const TOOL_FOR_CODE = Object.fromEntries(MARKUP_TOOLS.map((tool) => [`Key${TOOL_SHORTCUTS[tool]}`, tool])) as Partial<
+  Record<string, MarkupTool>
+>;
 
 const COLOR_KEYS: Record<MarkupColor, MessageKey> = {
   red: 'markup.color.red',
@@ -308,7 +308,8 @@ type Editing = { id: string | null; at: Point; text: string };
 const STAGE_INSET = 26;
 /** The dialog body's width (1000 px dialog) before the stage is measured. */
 const DEFAULT_STAGE_WIDTH = 956 - STAGE_INSET;
-const maxStageHeight = () => Math.max(200, Math.round((typeof window === 'undefined' ? 800 : window.innerHeight) * 0.6));
+const maxStageHeight = () =>
+  Math.max(200, Math.round((typeof window === 'undefined' ? 800 : window.innerHeight) * 0.6));
 
 /** Arrow keys, Home and End in a radio group: the index to move to, or null. */
 function radioTarget(event: ReactKeyboardEvent, index: number, count: number): number | null {
@@ -384,9 +385,7 @@ function Editor(props: EditorProps) {
       const inner = stage.clientWidth - parseFloat(style.paddingLeft || '0') - parseFloat(style.paddingRight || '0');
       if (!(inner > 0)) return;
       const next = { width: Math.max(160, Math.floor(inner)), height: maxStageHeight() - STAGE_INSET };
-      setAvailable((current) =>
-        current.width === next.width && current.height === next.height ? current : next,
-      );
+      setAvailable((current) => (current.width === next.width && current.height === next.height ? current : next));
     };
     const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(measureStage);
     observer?.observe(stage);
@@ -599,7 +598,14 @@ function Editor(props: EditorProps) {
         const mark = findMark(marks, hitTest(marks, point, tolerance, scale, measure));
         setSelectedId(mark?.id ?? null);
         if (!mark) return;
-        gesture.current = { kind: 'move', pointerId: event.pointerId, id: mark.id, start: point, original: mark, preview: mark };
+        gesture.current = {
+          kind: 'move',
+          pointerId: event.pointerId,
+          id: mark.id,
+          start: point,
+          original: mark,
+          preview: mark,
+        };
       }
     } else {
       const mark = newMark(point);

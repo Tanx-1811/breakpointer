@@ -311,7 +311,11 @@ export const GUIDES: readonly Guide[] = [
         body: 'guide.progress.trendBody',
         action: 'audit',
       },
-      { target: '[data-testid="responsive-score"]', title: 'guide.progress.shareTitle', body: 'guide.progress.shareBody' },
+      {
+        target: '[data-testid="responsive-score"]',
+        title: 'guide.progress.shareTitle',
+        body: 'guide.progress.shareBody',
+      },
     ],
   },
 ];
