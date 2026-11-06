@@ -2295,6 +2295,11 @@ export const ja: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': '設定を検索',
+  'settings.searchFound': '{count} 件の設定が見つかりました',
+  'settings.searchFoundOne': '1 件の設定が見つかりました',
+  'settings.searchNone': '「{query}」に一致する設定はありません。',
+  'settings.searchClear': '検索をクリア',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

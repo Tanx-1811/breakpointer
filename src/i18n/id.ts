@@ -2303,6 +2303,11 @@ export const id: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': 'Cari pengaturan',
+  'settings.searchFound': '{count} pengaturan ditemukan',
+  'settings.searchFoundOne': '1 pengaturan ditemukan',
+  'settings.searchNone': 'Tidak ada pengaturan yang cocok dengan “{query}”.',
+  'settings.searchClear': 'Hapus pencarian',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

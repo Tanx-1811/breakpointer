@@ -2350,6 +2350,11 @@ export const fr: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': 'Rechercher dans les paramètres',
+  'settings.searchFound': '{count} paramètres trouvés',
+  'settings.searchFoundOne': '1 paramètre trouvé',
+  'settings.searchNone': 'Aucun paramètre ne correspond à « {query} ».',
+  'settings.searchClear': 'Effacer la recherche',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

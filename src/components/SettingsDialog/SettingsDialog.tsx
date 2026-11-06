@@ -173,7 +173,11 @@ function highlightMatches(root: HTMLElement, words: readonly string[]) {
         ? NodeFilter.FILTER_REJECT
         : NodeFilter.FILTER_ACCEPT,
   });
-  for (let node = walker.nextNode() as Text | null; node && ranges.length < 400; node = walker.nextNode() as Text | null) {
+  for (
+    let node = walker.nextNode() as Text | null;
+    node && ranges.length < 400;
+    node = walker.nextNode() as Text | null
+  ) {
     for (const [start, end] of matchRanges(node.data, words)) {
       const range = new Range();
       range.setStart(node, start);
@@ -330,7 +334,8 @@ function SettingsBody(props: Props) {
   // Ctrl/⌘ + F searches Settings while it is open (the workspace's shortcuts are off under a dialog).
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() !== 'f' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+      if (event.key.toLowerCase() !== 'f' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey)
+        return;
       event.preventDefault();
       searchRef.current?.focus();
       searchRef.current?.select();

@@ -2245,6 +2245,11 @@ export const en = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': 'Search settings',
+  'settings.searchFound': '{count} settings found',
+  'settings.searchFoundOne': '1 setting found',
+  'settings.searchNone': 'No settings match “{query}”.',
+  'settings.searchClear': 'Clear search',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

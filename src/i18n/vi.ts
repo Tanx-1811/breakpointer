@@ -2264,6 +2264,11 @@ export const vi: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': 'Tìm trong cài đặt',
+  'settings.searchFound': 'Tìm thấy {count} cài đặt',
+  'settings.searchFoundOne': 'Tìm thấy 1 cài đặt',
+  'settings.searchNone': 'Không có cài đặt nào khớp với “{query}”.',
+  'settings.searchClear': 'Xóa tìm kiếm',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

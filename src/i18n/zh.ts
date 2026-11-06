@@ -2119,6 +2119,11 @@ export const zh: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': '搜索设置',
+  'settings.searchFound': '找到 {count} 项设置',
+  'settings.searchFoundOne': '找到 1 项设置',
+  'settings.searchNone': '没有与“{query}”匹配的设置。',
+  'settings.searchClear': '清除搜索',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

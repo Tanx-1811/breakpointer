@@ -2274,6 +2274,11 @@ export const ru: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': 'Поиск по настройкам',
+  'settings.searchFound': 'Найдено настроек: {count}',
+  'settings.searchFoundOne': 'Найдена 1 настройка',
+  'settings.searchNone': 'Нет настроек по запросу «{query}».',
+  'settings.searchClear': 'Очистить поиск',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks

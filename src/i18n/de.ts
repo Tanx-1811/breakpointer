@@ -2326,6 +2326,11 @@ export const de: Record<MessageKey, string> = {
   // end v0.13 keys
   // v0.14 keys
   // v0.14 settings
+  'settings.search': 'Einstellungen durchsuchen',
+  'settings.searchFound': '{count} Einstellungen gefunden',
+  'settings.searchFoundOne': '1 Einstellung gefunden',
+  'settings.searchNone': 'Keine Einstellung passt zu „{query}“.',
+  'settings.searchClear': 'Suche löschen',
   // end v0.14 settings
   // v0.14 checks
   // end v0.14 checks
