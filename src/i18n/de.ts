@@ -2324,4 +2324,14 @@ export const de: Record<MessageKey, string> = {
   'update.done': 'Breakpointer wurde auf {version} aktualisiert.',
   'update.see': 'Neuerungen ansehen',
   // end v0.13 keys
+  // v0.14 keys
+  // v0.14 settings
+  // end v0.14 settings
+  // v0.14 checks
+  // end v0.14 checks
+  // v0.14 visibility
+  // end v0.14 visibility
+  // v0.14 release
+  // end v0.14 release
+  // end v0.14 keys
 };

@@ -2319,4 +2319,14 @@ export const pt: Record<MessageKey, string> = {
   'update.done': 'O Breakpointer foi atualizado para a versão {version}.',
   'update.see': 'Ver as novidades',
   // end v0.13 keys
+  // v0.14 keys
+  // v0.14 settings
+  // end v0.14 settings
+  // v0.14 checks
+  // end v0.14 checks
+  // v0.14 visibility
+  // end v0.14 visibility
+  // v0.14 release
+  // end v0.14 release
+  // end v0.14 keys
 };

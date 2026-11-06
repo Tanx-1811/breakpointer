@@ -2262,4 +2262,14 @@ export const vi: Record<MessageKey, string> = {
   'update.done': 'Breakpointer đã được cập nhật lên {version}.',
   'update.see': 'Xem có gì mới',
   // end v0.13 keys
+  // v0.14 keys
+  // v0.14 settings
+  // end v0.14 settings
+  // v0.14 checks
+  // end v0.14 checks
+  // v0.14 visibility
+  // end v0.14 visibility
+  // v0.14 release
+  // end v0.14 release
+  // end v0.14 keys
 };

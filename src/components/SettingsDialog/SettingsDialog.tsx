@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { CHECK_KINDS, type CheckKind } from '../../agent/protocol';
 import { useI18n } from '../../i18n/I18nProvider';
 import { LANGUAGES, LANGUAGE_NAMES } from '../../i18n/translate';
@@ -16,6 +16,7 @@ import {
 import { CHECK_KIND_KEYS } from '../../state/checks';
 import { TRIAL_DAYS, type Entitlement } from '../../state/license';
 import { PRO_FEATURES, PRO_FEATURE_KEYS, isProCheck, type ProFeature } from '../../state/plan';
+import { matchRanges, matchesWords, searchWords } from '../../state/settings-search';
 import type { SnapshotPage } from '../../state/snapshots';
 import { ACCENTS, CANVASES } from '../../services/storage';
 import type {
@@ -129,9 +130,49 @@ function Section({ id, title, icon, children }: { id: SectionId; title: string; 
         <Icon name={icon} size={15} className={styles.headingIcon} />
         {title}
       </h3>
-      <div className={styles.sectionBody}>{children}</div>
+      <div className={styles.sectionBody} data-section-body>
+        {children}
+      </div>
     </section>
   );
+}
+
+/** The CSS highlight that marks what a search found (see `::highlight()` in the styles). */
+const SEARCH_HIGHLIGHT = 'breakpointer-settings-search';
+
+/** Everything a setting can be found by: its text, and the names of controls that show none. */
+function searchableText(item: Element): string {
+  const names = Array.from(item.querySelectorAll('[aria-label], [data-tooltip], [placeholder]'), (element) =>
+    [element.getAttribute('aria-label'), element.getAttribute('data-tooltip'), element.getAttribute('placeholder')]
+      .filter(Boolean)
+      .join(' '),
+  );
+  return `${item.textContent ?? ''} ${names.join(' ')}`;
+}
+
+/** Marks the words found in the settings shown, without changing the DOM (CSS Custom Highlight API). */
+function highlightMatches(root: HTMLElement, words: readonly string[]) {
+  if (typeof Highlight === 'undefined' || typeof CSS === 'undefined' || !('highlights' in CSS)) return;
+  if (words.length === 0) {
+    CSS.highlights.delete(SEARCH_HIGHLIGHT);
+    return;
+  }
+  const ranges: Range[] = [];
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode: (node) =>
+      node.parentElement?.closest('[data-search-hidden], select, option, textarea, .visually-hidden')
+        ? NodeFilter.FILTER_REJECT
+        : NodeFilter.FILTER_ACCEPT,
+  });
+  for (let node = walker.nextNode() as Text | null; node && ranges.length < 400; node = walker.nextNode() as Text | null) {
+    for (const [start, end] of matchRanges(node.data, words)) {
+      const range = new Range();
+      range.setStart(node, start);
+      range.setEnd(node, end);
+      ranges.push(range);
+    }
+  }
+  CSS.highlights.set(SEARCH_HIGHLIGHT, new Highlight(...ranges));
 }
 
 function Row({ label, help, children }: { label: string; help?: string; children: ReactNode }) {
@@ -170,14 +211,31 @@ function SettingsBody(props: Props) {
     (section) => (section.id !== 'plan' || props.plan) && (section.id !== 'brand' || props.onBranding),
   );
   const [active, setActive] = useState<SectionId>(props.initialSection ?? 'appearance');
+  // The section picked in the list stays highlighted while the content scrolls to it,
+  // even when it is too near the end to reach the top; scrolling by hand takes over.
+  const picked = useRef<SectionId | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+  const [query, setQuery] = useState('');
+  const words = useMemo(() => searchWords(query), [query]);
+  // What the search found: the sections and how many settings ("pages data|5").
+  const [found, setFound] = useState('');
+  const [foundIds, foundCount] = found.split('|') as [string, string | undefined];
+  const foundSections = new Set(foundIds.split(' '));
+  const searching = words.length > 0;
+
+  /** Scrolls the content (never the dialog: a section near the end can't reach the top). */
+  const scrollToSection = (id: SectionId, behavior: ScrollBehavior) => {
+    const content = contentRef.current;
+    const section = content?.querySelector<HTMLElement>(`[data-section="${id}"]`);
+    if (content && section) content.scrollTo({ top: Math.max(0, section.offsetTop - 6), behavior });
+  };
 
   // Opened on a section (e.g. "Enter a licence key"): show it.
   const initialSection = props.initialSection;
   useEffect(() => {
     if (!initialSection) return;
-    contentRef.current
-      ?.querySelector<HTMLElement>(`[data-section="${initialSection}"]`)
-      ?.scrollIntoView({ block: 'start' });
+    picked.current = initialSection;
+    scrollToSection(initialSection, 'instant');
   }, [initialSection]);
   // Bumped when the custom list is replaced from outside the editor, so it starts over.
   const [editorKey, setEditorKey] = useState(0);
@@ -187,33 +245,141 @@ function SettingsBody(props: Props) {
     const content = contentRef.current;
     if (!content) return;
     const onScroll = () => {
+      if (picked.current) return;
+      const shown = Array.from(content.querySelectorAll<HTMLElement>('[data-section]:not([data-search-hidden])'));
       const top = content.getBoundingClientRect().top;
-      let current: SectionId = 'appearance';
-      for (const section of content.querySelectorAll<HTMLElement>('[data-section]')) {
+      let current = shown[0]?.dataset.section as SectionId | undefined;
+      for (const section of shown) {
         if (section.getBoundingClientRect().top - top < 80) current = section.dataset.section as SectionId;
       }
       // At the very bottom, the last section is the one being read.
-      if (content.scrollTop + content.clientHeight >= content.scrollHeight - 4) current = 'privacy';
-      setActive(current);
+      if (content.scrollTop + content.clientHeight >= content.scrollHeight - 4)
+        current = (shown[shown.length - 1]?.dataset.section as SectionId | undefined) ?? current;
+      if (current) setActive(current);
+    };
+    const takeOver = () => {
+      picked.current = null;
     };
     content.addEventListener('scroll', onScroll, { passive: true });
-    return () => content.removeEventListener('scroll', onScroll);
+    for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const)
+      content.addEventListener(type, takeOver, { passive: true });
+    return () => {
+      content.removeEventListener('scroll', onScroll);
+      for (const type of ['wheel', 'touchstart', 'pointerdown', 'keydown'] as const)
+        content.removeEventListener(type, takeOver);
+    };
+  }, []);
+
+  // Searching: settings that don't match are hidden (and sections with none), the
+  // words found are highlighted. Done on the DOM, so every row, switch and list is
+  // searchable by what it shows, in the language shown; kept up to date while
+  // settings change under a search.
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+    if (!content) return;
+    const show = (element: HTMLElement, shown: boolean) => {
+      if (shown) element.removeAttribute('data-search-hidden');
+      else element.setAttribute('data-search-hidden', '');
+    };
+    const apply = () => {
+      const ids: string[] = [];
+      let count = 0;
+      for (const section of content.querySelectorAll<HTMLElement>('[data-section]')) {
+        const heading = section.querySelector('h3')?.textContent ?? '';
+        const whole = words.length > 0 && matchesWords(heading, words);
+        let matches = 0;
+        const items = section.querySelector('[data-section-body]')?.children ?? [];
+        for (const item of Array.from(items) as HTMLElement[]) {
+          const shown = whole || matchesWords(searchableText(item), words);
+          show(item, shown);
+          if (shown) matches++;
+        }
+        show(section, matches > 0);
+        if (matches > 0) ids.push(section.dataset.section!);
+        count += matches;
+      }
+      const next = words.length ? `${ids.join(' ')}|${count}` : '';
+      setFound((previous) => (previous === next ? previous : next));
+      highlightMatches(content, words);
+    };
+    apply();
+    if (words.length === 0) return;
+    const observer = new MutationObserver(apply);
+    observer.observe(content, { childList: true, subtree: true, characterData: true });
+    return () => observer.disconnect();
+  }, [words]);
+
+  // A new search starts at the top of what it found.
+  useEffect(() => {
+    if (words.length === 0) return;
+    picked.current = null;
+    contentRef.current?.scrollTo({ top: 0 });
+    const first = contentRef.current?.querySelector<HTMLElement>('[data-section]:not([data-search-hidden])');
+    if (first) setActive(first.dataset.section as SectionId);
+  }, [words]);
+
+  useEffect(
+    () => () => {
+      if (typeof CSS !== 'undefined' && 'highlights' in CSS) CSS.highlights.delete(SEARCH_HIGHLIGHT);
+    },
+    [],
+  );
+
+  // Ctrl/⌘ + F searches Settings while it is open (the workspace's shortcuts are off under a dialog).
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() !== 'f' || !(event.ctrlKey || event.metaKey) || event.altKey || event.shiftKey) return;
+      event.preventDefault();
+      searchRef.current?.focus();
+      searchRef.current?.select();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, []);
 
   const goTo = (id: SectionId) => {
+    picked.current = id;
     setActive(id);
-    contentRef.current
-      ?.querySelector<HTMLElement>(`[data-section="${id}"]`)
-      ?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    scrollToSection(id, 'smooth');
   };
 
   const site = props.siteBreakpoints ?? [];
+  const navSections = searching ? sections.filter((section) => foundSections.has(section.id)) : sections;
 
   return (
     <div className={styles.layout}>
       <nav className={styles.nav} aria-label={t('settings.sections')}>
+        <label className={styles.search}>
+          <Icon name="search" size={14} className={styles.searchIcon} />
+          <span className="visually-hidden">{t('settings.search')}</span>
+          <input
+            ref={searchRef}
+            type="search"
+            value={query}
+            placeholder={t('settings.search')}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              // Escape first clears the search; a second press closes Settings.
+              if (event.key === 'Escape' && query) {
+                event.preventDefault();
+                setQuery('');
+              }
+            }}
+            data-autofocus={props.initialSection ? undefined : true}
+            data-testid="settings-search"
+          />
+        </label>
+        <p className="visually-hidden" role="status">
+          {searching
+            ? foundIds
+              ? Number(foundCount) === 1
+                ? t('settings.searchFoundOne')
+                : t('settings.searchFound', { count: Number(foundCount) })
+              : t('settings.searchNone', { query: query.trim() })
+            : ''}
+        </p>
         <ul className={styles.navList}>
-          {sections.map((section) => (
+          {navSections.map((section) => (
             <li key={section.id}>
               <button
                 type="button"

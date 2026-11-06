@@ -2243,6 +2243,16 @@ export const en = {
   'update.done': 'Breakpointer was updated to {version}.',
   'update.see': 'See what’s new',
   // end v0.13 keys
+  // v0.14 keys
+  // v0.14 settings
+  // end v0.14 settings
+  // v0.14 checks
+  // end v0.14 checks
+  // v0.14 visibility
+  // end v0.14 visibility
+  // v0.14 release
+  // end v0.14 release
+  // end v0.14 keys
 } as const;
 
 export type MessageKey = keyof typeof en;
