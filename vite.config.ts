@@ -67,6 +67,9 @@ export default defineConfig(({ mode }) => ({
     minify: mode === 'production',
     // Chrome supports modulepreload natively; skip Vite's polyfill.
     modulePreload: { polyfill: false },
+    // Extension pages load from disk, not over the network; the shared chunk is
+    // large because it holds all ten UI languages (about 1.4 MB minified).
+    chunkSizeWarningLimit: 2000,
     rolldownOptions: {
       input: {
         popup: resolve(root, 'popup/popup.html'),
@@ -78,7 +81,7 @@ export default defineConfig(({ mode }) => ({
         // The manifest references the worker by a fixed name.
         entryFileNames: (chunk) => (chunk.name === 'service-worker' ? 'service-worker.js' : 'assets/[name]-[hash].js'),
         // Keep third-party code (React) in one clearly named chunk.
-        advancedChunks: { groups: [{ name: 'vendor', test: /node_modules/ }] },
+        codeSplitting: { groups: [{ name: 'vendor', test: /node_modules/ }] },
       },
     },
   },

@@ -1,5 +1,5 @@
 import pkg from '../package.json' with { type: 'json' };
-import { HOMEPAGE_URL } from './utils/links';
+import { HOMEPAGE_URL } from './utils/links.ts';
 
 /**
  * Builds manifest.json at build time so the version always matches package.json.
