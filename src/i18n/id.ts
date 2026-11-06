@@ -1671,7 +1671,8 @@ export const id: Record<MessageKey, string> = {
   'explain.zoom': 'Zoom pratinjau, paskan ke jendela, atau tata dalam beberapa baris, satu baris, atau bertumpuk.',
   'explain.status': 'Ringkasan ruang kerja sekilas; sebagian besar bagiannya bisa diklik sebagai pintasan.',
   'explain.sidebarPanel': 'Semua viewport, posisinya di antara breakpoint, dan skor halaman.',
-  'explain.auditPanel': 'Audit: masalah, performa, tipografi, gambar, warna, tag meta, dan media query.',
+  'explain.auditPanel':
+    'Audit: masalah, performa, tipografi, gambar, warna, tag meta, media query, dan apa yang tampil atau tersembunyi di tiap ukuran.',
   'explain.inspector': 'Elemen yang Anda pilih, dibandingkan di setiap ukuran.',
   'explain.qa': 'Centang pemeriksaan manual di setiap ukuran dan salin hasilnya sebagai laporan.',
   'present.label': 'Mode presentasi',
@@ -1710,9 +1711,9 @@ export const id: Record<MessageKey, string> = {
   'guide.audit.summary': 'Masalah, performa, tipografi, dan lainnya, berdampingan.',
   'guide.audit.openTitle': 'Buka audit',
   'guide.audit.openBody': 'Semua masalah dari setiap pratinjau di satu tempat. Pintasan: E.',
-  'guide.audit.tabsTitle': 'Tujuh tampilan halaman',
+  'guide.audit.tabsTitle': 'Delapan tampilan halaman',
   'guide.audit.tabsBody':
-    'Masalah, performa, tipografi, gambar, warna, meta & sosial, dan media query — masing-masing dibandingkan di semua pratinjau Anda.',
+    'Masalah, performa, tipografi, gambar, warna, meta & sosial, media query, dan apa yang tampil di tiap ukuran — masing-masing dibandingkan di semua pratinjau Anda.',
   'guide.audit.issuesTitle': 'Skor dan masalah',
   'guide.audit.issuesBody':
     'Skor responsif dari 0 hingga 100, lalu setiap jenis masalah beserta ukuran yang mengalaminya. Pilih salah satu untuk menyorotnya di pratinjau.',

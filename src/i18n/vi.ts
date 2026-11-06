@@ -1638,7 +1638,8 @@ export const vi: Record<MessageKey, string> = {
   'explain.zoom': 'Thu phóng các bản xem trước, cho vừa cửa sổ, hoặc xếp theo lưới, hàng hay cột.',
   'explain.status': 'Tóm tắt những gì không gian làm việc đang hiển thị; hầu hết các mục là lối tắt.',
   'explain.sidebarPanel': 'Mọi viewport, vị trí của nó giữa các breakpoint, và điểm của trang.',
-  'explain.auditPanel': 'Bảng rà soát: vấn đề, hiệu năng, kiểu chữ, hình ảnh, màu sắc, thẻ meta và media query.',
+  'explain.auditPanel':
+    'Bảng rà soát: vấn đề, hiệu năng, kiểu chữ, hình ảnh, màu sắc, thẻ meta, media query và phần hiện hay ẩn ở mỗi cỡ.',
   'explain.inspector': 'Phần tử bạn đã chọn, so sánh ở mọi kích thước.',
   'explain.qa': 'Đánh dấu các mục kiểm tra thủ công ở mọi kích thước rồi chép kết quả thành báo cáo.',
   'present.label': 'Chế độ trình chiếu',
@@ -1676,9 +1677,9 @@ export const vi: Record<MessageKey, string> = {
   'guide.audit.summary': 'Vấn đề, hiệu năng, kiểu chữ và hơn nữa, đặt cạnh nhau.',
   'guide.audit.openTitle': 'Mở bảng rà soát',
   'guide.audit.openBody': 'Mọi vấn đề của mọi bản xem trước ở một chỗ. Phím tắt: E.',
-  'guide.audit.tabsTitle': 'Bảy góc nhìn về trang',
+  'guide.audit.tabsTitle': 'Tám góc nhìn về trang',
   'guide.audit.tabsBody':
-    'Vấn đề, hiệu năng, kiểu chữ, hình ảnh, màu sắc, meta & mạng xã hội và media query — mỗi mục so sánh giữa các bản xem trước.',
+    'Vấn đề, hiệu năng, kiểu chữ, hình ảnh, màu sắc, meta & mạng xã hội, media query và phần hiện ở mỗi cỡ — mỗi mục so sánh giữa các bản xem trước.',
   'guide.audit.issuesTitle': 'Điểm và vấn đề',
   'guide.audit.issuesBody':
     'Điểm responsive từ 0 đến 100, rồi từng loại vấn đề kèm các kích thước gặp phải. Chọn một mục để làm nổi bật nó trong bản xem trước.',

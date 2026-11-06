@@ -1694,7 +1694,7 @@ export const fr: Record<MessageKey, string> = {
     'Ce qu’affiche l’espace de travail, en un coup d’œil ; la plupart des éléments sont des raccourcis.',
   'explain.sidebarPanel': 'Tous les viewports, leur position parmi les breakpoints et le score de la page.',
   'explain.auditPanel':
-    'L’audit : problèmes, performances, typographie, images, couleurs, balises meta et media queries.',
+    'L’audit : problèmes, performances, typographie, images, couleurs, balises meta, media queries et ce que chaque taille montre ou masque.',
   'explain.inspector': 'L’élément choisi, comparé à chaque taille.',
   'explain.qa': 'Cochez des vérifications manuelles à chaque taille et copiez les résultats sous forme de rapport.',
   'present.label': 'Mode présentation',
@@ -1734,9 +1734,9 @@ export const fr: Record<MessageKey, string> = {
   'guide.audit.summary': 'Problèmes, performances, typographie et plus encore, côte à côte.',
   'guide.audit.openTitle': 'Ouvrir l’audit',
   'guide.audit.openBody': 'Tous les problèmes de tous les aperçus au même endroit. Raccourci : E.',
-  'guide.audit.tabsTitle': 'Sept vues de la page',
+  'guide.audit.tabsTitle': 'Huit vues de la page',
   'guide.audit.tabsBody':
-    'Problèmes, performances, typographie, images, couleurs, meta et partage, media queries — chacun comparé entre vos aperçus.',
+    'Problèmes, performances, typographie, images, couleurs, meta et partage, media queries et ce que montre chaque taille — chacun comparé entre vos aperçus.',
   'guide.audit.issuesTitle': 'Score et problèmes',
   'guide.audit.issuesBody':
     'Un score responsive de 0 à 100, puis chaque type de problème avec les tailles concernées. Sélectionnez-en un pour le surligner dans les aperçus.',

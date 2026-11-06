@@ -1543,7 +1543,7 @@ export const zh: Record<MessageKey, string> = {
   'explain.zoom': '缩放预览、适应窗口，或以换行、单行或堆叠方式排列。',
   'explain.status': '一眼看清工作区的状态；大部分项目也是快捷入口。',
   'explain.sidebarPanel': '所有视口、它们在断点中的位置以及页面评分。',
-  'explain.auditPanel': '审查：问题、性能、字体排印、图片、颜色、元标签和媒体查询。',
+  'explain.auditPanel': '审查：问题、性能、字体排印、图片、颜色、元标签、媒体查询以及各尺寸显示或隐藏的内容。',
   'explain.inspector': '你选取的元素，在所有尺寸下进行对比。',
   'explain.qa': '在所有尺寸下逐项勾选手动检查，并将结果复制为报告。',
   'present.label': '演示模式',
@@ -1577,9 +1577,9 @@ export const zh: Record<MessageKey, string> = {
   'guide.audit.summary': '问题、性能、字体排印等，并排对比。',
   'guide.audit.openTitle': '打开审查',
   'guide.audit.openBody': '在一处查看每个预览的所有问题。快捷键：E。',
-  'guide.audit.tabsTitle': '页面的七个视图',
+  'guide.audit.tabsTitle': '页面的八个视图',
   'guide.audit.tabsBody':
-    '问题、性能、字体排印、图片、颜色、元数据与社交以及媒体查询——每一项都在你的各个预览之间对比。',
+    '问题、性能、字体排印、图片、颜色、元数据与社交、媒体查询以及各尺寸显示的内容——每一项都在你的各个预览之间对比。',
   'guide.audit.issuesTitle': '评分与问题',
   'guide.audit.issuesBody':
     '先是 0 到 100 的响应式评分，然后列出每类问题及出现该问题的尺寸。选择一项即可在预览中高亮。',

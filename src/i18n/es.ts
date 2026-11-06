@@ -1680,7 +1680,7 @@ export const es: Record<MessageKey, string> = {
   'explain.sidebarPanel':
     'Todos los viewports, dónde queda cada uno entre los breakpoints y la puntuación de la página.',
   'explain.auditPanel':
-    'La auditoría: problemas, rendimiento, tipografía, imágenes, colores, etiquetas meta y media queries.',
+    'La auditoría: problemas, rendimiento, tipografía, imágenes, colores, metaetiquetas, media queries y lo que cada tamaño muestra u oculta.',
   'explain.inspector': 'El elemento que elegiste, comparado en todos los tamaños.',
   'explain.qa': 'Marca comprobaciones manuales en todos los tamaños y copia los resultados como informe.',
   'present.label': 'Modo presentación',
@@ -1719,9 +1719,9 @@ export const es: Record<MessageKey, string> = {
   'guide.audit.summary': 'Problemas, rendimiento, tipografía y más, en paralelo.',
   'guide.audit.openTitle': 'Abre la auditoría',
   'guide.audit.openBody': 'Todos los problemas de todas las vistas previas en un solo lugar. Atajo: E.',
-  'guide.audit.tabsTitle': 'Siete vistas de la página',
+  'guide.audit.tabsTitle': 'Ocho vistas de la página',
   'guide.audit.tabsBody':
-    'Problemas, rendimiento, tipografía, imágenes, colores, meta y redes sociales, y media queries: cada una comparada entre tus vistas previas.',
+    'Problemas, rendimiento, tipografía, imágenes, colores, meta y redes sociales, media queries y lo que muestra cada tamaño: cada una comparada entre tus vistas previas.',
   'guide.audit.issuesTitle': 'Puntuación y problemas',
   'guide.audit.issuesBody':
     'Una puntuación responsive de 0 a 100 y, debajo, cada tipo de problema con los tamaños que lo tienen. Selecciona uno para resaltarlo en las vistas previas.',

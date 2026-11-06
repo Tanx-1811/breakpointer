@@ -1661,7 +1661,8 @@ export const ja: Record<MessageKey, string> = {
   'explain.zoom': 'プレビューをズームしたり、ウィンドウに合わせたり、折り返し・1行・縦積みで並べたりします。',
   'explain.status': 'ワークスペースの状態をひと目で確認できます。ほとんどの項目はショートカットとしても使えます。',
   'explain.sidebarPanel': 'すべてのビューポートと、ブレークポイントの中での位置、ページのスコア。',
-  'explain.auditPanel': '監査: 問題、パフォーマンス、タイポグラフィ、画像、色、メタタグ、メディアクエリ。',
+  'explain.auditPanel':
+    '監査: 問題、パフォーマンス、タイポグラフィ、画像、色、メタタグ、メディアクエリ、各サイズでの表示と非表示。',
   'explain.inspector': '選んだ要素を、すべてのサイズで比較します。',
   'explain.qa': '手動チェックをすべてのサイズで記録し、結果をレポートとしてコピーします。',
   'present.label': 'プレゼンモード',
@@ -1701,9 +1702,9 @@ export const ja: Record<MessageKey, string> = {
   'guide.audit.summary': '問題、パフォーマンス、タイポグラフィなどを並べて比較します。',
   'guide.audit.openTitle': '監査を開く',
   'guide.audit.openBody': 'すべてのプレビューの問題を1か所で確認できます。ショートカット: E',
-  'guide.audit.tabsTitle': 'ページを7つの視点で',
+  'guide.audit.tabsTitle': 'ページを8つの視点で',
   'guide.audit.tabsBody':
-    '問題、パフォーマンス、タイポグラフィ、画像、色、メタ情報とソーシャル、メディアクエリ。それぞれをプレビュー間で比較します。',
+    '問題、パフォーマンス、タイポグラフィ、画像、色、メタ情報とソーシャル、メディアクエリ、各サイズで表示されるもの。それぞれをプレビュー間で比較します。',
   'guide.audit.issuesTitle': 'スコアと問題',
   'guide.audit.issuesBody':
     '0～100のレスポンシブスコアと、問題の種類ごとに該当するサイズが表示されます。1つ選ぶとプレビュー内でハイライトされます。',

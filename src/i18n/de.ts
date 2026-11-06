@@ -1677,7 +1677,8 @@ export const de: Record<MessageKey, string> = {
   'explain.zoom': 'Zoome die Vorschauen, passe sie ans Fenster an oder ordne sie als Raster, Reihe oder Spalte an.',
   'explain.status': 'Was der Arbeitsbereich zeigt, auf einen Blick; die meisten Einträge sind Schnellzugriffe.',
   'explain.sidebarPanel': 'Alle Viewports, wo sie zwischen den Breakpoints liegen, und der Score der Seite.',
-  'explain.auditPanel': 'Das Audit: Probleme, Performance, Typografie, Bilder, Farben, Meta-Tags und Media Queries.',
+  'explain.auditPanel':
+    'Das Audit: Probleme, Performance, Typografie, Bilder, Farben, Meta-Tags, Media Queries und was jede Größe zeigt oder verbirgt.',
   'explain.inspector': 'Das gewählte Element, in jeder Größe verglichen.',
   'explain.qa': 'Hake manuelle Prüfungen in jeder Größe ab und kopiere die Ergebnisse als Bericht.',
   'present.label': 'Präsentationsmodus',
@@ -1717,9 +1718,9 @@ export const de: Record<MessageKey, string> = {
   'guide.audit.summary': 'Probleme, Performance, Typografie und mehr, nebeneinander.',
   'guide.audit.openTitle': 'Das Audit öffnen',
   'guide.audit.openBody': 'Alle Probleme aller Vorschauen an einem Ort. Tastenkürzel: E.',
-  'guide.audit.tabsTitle': 'Sieben Ansichten der Seite',
+  'guide.audit.tabsTitle': 'Acht Ansichten der Seite',
   'guide.audit.tabsBody':
-    'Probleme, Performance, Typografie, Bilder, Farben, Meta & Social und Media Queries — jeweils über deine Vorschauen hinweg verglichen.',
+    'Probleme, Performance, Typografie, Bilder, Farben, Meta & Social, Media Queries und was jede Größe zeigt — jeweils über deine Vorschauen hinweg verglichen.',
   'guide.audit.issuesTitle': 'Score und Probleme',
   'guide.audit.issuesBody':
     'Ein Responsive-Score von 0 bis 100, dann jede Art von Problem mit den betroffenen Größen. Wähle eine aus, um sie in den Vorschauen hervorzuheben.',

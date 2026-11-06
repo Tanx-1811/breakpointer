@@ -57,7 +57,7 @@ test.describe('v0.10', () => {
     await tour.getByRole('button', { name: 'Next' }).click();
     // The step opened the audit and points at its tabs.
     await expect(page.getByTestId('audit')).toBeVisible();
-    await expect(tour).toContainText('Seven views of the page');
+    await expect(tour).toContainText('Eight views of the page');
     expect(await seriousViolations(page)).toEqual([]);
     await page.keyboard.press('Escape');
     await expect(tour).toHaveCount(0);

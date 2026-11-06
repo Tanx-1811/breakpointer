@@ -1626,7 +1626,8 @@ export const en = {
   'explain.zoom': 'Zoom the previews, fit them to the window, or lay them out in a grid, a row or a column.',
   'explain.status': 'What the workspace shows at a glance; most parts are shortcuts.',
   'explain.sidebarPanel': 'Every viewport, where it sits among the breakpoints, and the page’s score.',
-  'explain.auditPanel': 'The audit: issues, performance, type, images, colours, meta tags and media queries.',
+  'explain.auditPanel':
+    'The audit: issues, performance, type, images, colours, meta tags, media queries and what each size shows or hides.',
   'explain.inspector': 'The element you picked, compared at every size.',
   'explain.qa': 'Tick off manual checks at every size and copy the results as a report.',
   'present.label': 'Present mode',
@@ -1664,9 +1665,9 @@ export const en = {
   'guide.audit.summary': 'Issues, performance, type and more, side by side.',
   'guide.audit.openTitle': 'Open the audit',
   'guide.audit.openBody': 'Every issue of every preview in one place. Shortcut: E.',
-  'guide.audit.tabsTitle': 'Seven views of the page',
+  'guide.audit.tabsTitle': 'Eight views of the page',
   'guide.audit.tabsBody':
-    'Issues, performance, type, images, colours, meta & social and media queries — each compared across your previews.',
+    'Issues, performance, type, images, colours, meta & social, media queries and what each size shows — each compared across your previews.',
   'guide.audit.issuesTitle': 'Score and issues',
   'guide.audit.issuesBody':
     'A responsive score from 0 to 100, then each kind of issue with the sizes that have it. Select one to highlight it in the previews.',

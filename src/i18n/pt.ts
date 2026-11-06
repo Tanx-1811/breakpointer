@@ -1677,7 +1677,8 @@ export const pt: Record<MessageKey, string> = {
     'Aplique zoom às pré-visualizações, ajuste-as à janela ou organize-as em várias linhas, uma linha ou uma coluna.',
   'explain.status': 'O que a área de trabalho mostra num relance; a maioria das partes funciona como atalho.',
   'explain.sidebarPanel': 'Todos os viewports, onde cada um fica entre os breakpoints e a pontuação da página.',
-  'explain.auditPanel': 'A auditoria: problemas, desempenho, tipografia, imagens, cores, meta tags e media queries.',
+  'explain.auditPanel':
+    'A auditoria: problemas, desempenho, tipografia, imagens, cores, meta tags, media queries e o que cada tamanho mostra ou oculta.',
   'explain.inspector': 'O elemento que você escolheu, comparado em todos os tamanhos.',
   'explain.qa': 'Marque verificações manuais em todos os tamanhos e copie os resultados como um relatório.',
   'present.label': 'Modo apresentação',
@@ -1716,9 +1717,9 @@ export const pt: Record<MessageKey, string> = {
   'guide.audit.summary': 'Problemas, desempenho, tipografia e mais, lado a lado.',
   'guide.audit.openTitle': 'Abra a auditoria',
   'guide.audit.openBody': 'Todos os problemas de todas as pré-visualizações em um só lugar. Atalho: E.',
-  'guide.audit.tabsTitle': 'Sete visões da página',
+  'guide.audit.tabsTitle': 'Oito visões da página',
   'guide.audit.tabsBody':
-    'Problemas, desempenho, tipografia, imagens, cores, meta e redes sociais e media queries — cada uma comparada entre as suas pré-visualizações.',
+    'Problemas, desempenho, tipografia, imagens, cores, meta e redes sociais, media queries e o que cada tamanho mostra — cada uma comparada entre as suas pré-visualizações.',
   'guide.audit.issuesTitle': 'Pontuação e problemas',
   'guide.audit.issuesBody':
     'Uma pontuação responsiva de 0 a 100 e, em seguida, cada tipo de problema com os tamanhos que o têm. Selecione um para destacá-lo nas pré-visualizações.',
