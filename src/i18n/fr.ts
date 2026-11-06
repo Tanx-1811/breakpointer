@@ -2372,6 +2372,37 @@ export const fr: Record<MessageKey, string> = {
   'checks.value.visualOrderOne': '1 container',
   // end v0.14 checks
   // v0.14 visibility
+  'audit.tab.visibility': 'Visibility',
+  'visibility.palette': 'Audit: what each size shows and hides',
+  'visibility.explain':
+    'Elements shown in some previews and hidden in others, one row each: check that menus, sidebars and banners appear at the sizes you meant.',
+  'visibility.summary': '{count} elements change between sizes',
+  'visibility.summaryOne': '1 element changes between sizes',
+  'visibility.empty': 'No element is shown in some previews and hidden in others.',
+  'visibility.needTwo': 'Only one preview could be read: add or show another size to compare what each one shows.',
+  'visibility.noAgent': 'No preview could be read. Allow the site, then reload the previews.',
+  'visibility.notRead': 'Not read: {names}',
+  'visibility.table': 'What each preview shows',
+  'visibility.colElement': 'Element',
+  'visibility.colSummary': 'When it’s shown',
+  'visibility.colActions': 'Actions',
+  'visibility.legend': 'Legend',
+  'visibility.stateShown': 'shown',
+  'visibility.stateHidden': 'hidden',
+  'visibility.stateMissing': 'not on the page',
+  'visibility.stateUnknown': 'not measured',
+  'visibility.cell': '{name}: {state}',
+  'visibility.shownFrom': 'Shown from {width} px',
+  'visibility.hiddenFrom': 'Hidden from {width} px',
+  'visibility.shownOnlyAt': 'Shown only at {width} px',
+  'visibility.shownOnlyBetween': 'Shown only at {from}–{to} px',
+  'visibility.hiddenOnlyAt': 'Hidden only at {width} px',
+  'visibility.hiddenOnlyBetween': 'Hidden only at {from}–{to} px',
+  'visibility.shownIn': 'Shown in {shown} of {total} previews',
+  'visibility.inspect': 'Inspect {element} at every size',
+  'visibility.markdown': '**Visibility** · {page}',
+  'visibility.note':
+    'Hidden means display: none or visibility: hidden at that size; elements moved off screen, clipped or transparent count as shown. The widths are your previews’: an element switches somewhere between two neighbouring ones.',
   // end v0.14 visibility
   // v0.14 release
   // end v0.14 release

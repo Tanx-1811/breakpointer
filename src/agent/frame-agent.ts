@@ -1166,7 +1166,93 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 11. Images without a text alternative (WCAG 1.1.1): no alt attribute (an
+    // 11. Fields that make iPhones zoom in: Safari on iPhone zooms the page in
+    //     when a field whose text is under 16px gets focus (checked at phone
+    //     widths). Only fields people type in or pick from count: not disabled or
+    //     read-only ones, nor checkboxes, buttons and the like. A viewport tag
+    //     with maximum-scale=1 keeps Safari from zooming in, so its page passes.
+    if (wants('input-zoom') && width <= INPUT_ZOOM_MAX_WIDTH && !(meta && blocksFocusZoom(meta.content))) {
+      const zooming: Element[] = [];
+      const zoomSamples: CheckSample[] = [];
+      let smallest = Infinity;
+      for (const field of Array.from(document.querySelectorAll('input, textarea, select')).slice(0, MAX_SCAN)) {
+        if (field instanceof HTMLInputElement && !takesTypedText(field.type)) continue;
+        if (field.matches(':disabled') || field.closest(`[${OVERLAY_ATTRIBUTE}]`)) continue;
+        if ((field instanceof HTMLInputElement || field instanceof HTMLTextAreaElement) && field.readOnly) continue;
+        const style = getComputedStyle(field);
+        const size = Number.parseFloat(style.fontSize);
+        if (!zoomsOnFocus(size) || !visible(field.getBoundingClientRect(), style)) continue;
+        zooming.push(field);
+        smallest = Math.min(smallest, size);
+        if (zoomSamples.length < MAX_SAMPLES)
+          zoomSamples.push({
+            selector: describeElement(field),
+            detail: `${fieldFontText(size)} · ${field instanceof HTMLInputElement ? field.type : field.localName}`,
+          });
+      }
+      if (zooming.length) {
+        nextFlagged.set('input-zoom', zooming);
+        issues.push({
+          kind: 'input-zoom',
+          count: zooming.length,
+          detail: fieldFontText(smallest),
+          samples: zoomSamples,
+        });
+      }
+    }
+
+    // 12. Order on screen differs from the HTML (WCAG 1.3.2, 2.4.3): flex and grid
+    //     containers that move their items (order, a reversed direction or wrap,
+    //     grid placement, dense packing) so that they show in another order than
+    //     the HTML — which keyboard focus and screen readers follow. Only items
+    //     that are read or focused count: in the flow, drawn, not hidden from
+    //     assistive technology, with text or something focusable inside.
+    if (wants('visual-order')) {
+      const reordered: Element[] = [];
+      const orderSamples: CheckSample[] = [];
+      let containers = MAX_ORDER_CONTAINERS;
+      for (const container of elements) {
+        if (containers <= 0) break;
+        if (container.childElementCount < 2) continue;
+        const style = getComputedStyle(container);
+        if (!isFlexDisplay(style.display) && !isGridDisplay(style.display)) continue;
+        containers--;
+        if (!visible(container.getBoundingClientRect(), style)) continue;
+        const items = Array.from(container.children).slice(0, MAX_ORDER_ITEMS);
+        const itemStyles = items.map((item) => getComputedStyle(item));
+        const causes = reorderCauses(style, itemStyles);
+        if (!causes.length || hiddenFromAssistiveTech(container) || container.closest(`[${OVERLAY_ATTRIBUTE}]`))
+          continue;
+        const rects: DOMRect[] = [];
+        items.forEach((item, index) => {
+          const itemStyle = itemStyles[index]!;
+          if (itemStyle.position === 'absolute' || itemStyle.position === 'fixed') return;
+          if (item.getAttribute('aria-hidden') === 'true') return;
+          const rect = item.getBoundingClientRect();
+          if (!visible(rect, itemStyle)) return;
+          if (!item.textContent?.trim() && !item.matches(ORDER_CONTENT) && !item.querySelector(ORDER_CONTENT)) return;
+          rects.push(rect);
+        });
+        if (rects.length < 2) continue;
+        const order = visualOrder(rects, {
+          rtl: style.direction === 'rtl',
+          columns: isFlexDisplay(style.display) && style.flexDirection.startsWith('column'),
+        });
+        if (!isReordered(order)) continue;
+        reordered.push(container);
+        if (orderSamples.length < MAX_SAMPLES)
+          orderSamples.push({
+            selector: describeElement(container),
+            detail: `${causes.join(' + ')} · ${formatOrder(order)}`,
+          });
+      }
+      if (reordered.length) {
+        nextFlagged.set('visual-order', reordered);
+        issues.push({ kind: 'visual-order', count: reordered.length, samples: orderSamples });
+      }
+    }
+
+    // 13. Images without a text alternative (WCAG 1.1.1): no alt attribute (an
     //     empty one marks a decorative image), or role="img" without a name.
     //     Tracking pixels and images hidden from assistive technology are skipped.
     if (wants('missing-alt')) {
@@ -1189,7 +1275,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 12. Buttons and links without a name (WCAG 4.1.2, 2.4.4): often icon-only
+    // 14. Buttons and links without a name (WCAG 4.1.2, 2.4.4): often icon-only
     //     buttons, such as the menu button that only shows on small screens.
     if (wants('unnamed-control')) {
       const unnamed: Element[] = [];
@@ -1211,7 +1297,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 13. Form fields without a label (WCAG 1.3.1, 4.1.2). A placeholder counts
+    // 15. Form fields without a label (WCAG 1.3.1, 4.1.2). A placeholder counts
     //     as a name here (it is one, if a weak one).
     if (wants('unlabeled-field')) {
       const unlabeled: Element[] = [];
@@ -1233,7 +1319,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 14. Focus that lands on something the user can't see (WCAG 2.4.7, 4.1.2):
+    // 16. Focus that lands on something the user can't see (WCAG 2.4.7, 4.1.2):
     //     elements in the tab order inside aria-hidden, or entirely off the page
     //     (an off-canvas menu that is closed but still focusable), or inside a
     //     transparent box. Links to the same page (skip links appear when focused)
@@ -1280,7 +1366,7 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
       }
     }
 
-    // 15. The page's language isn't set (WCAG 3.1.1): screen readers then read it in the wrong voice.
+    // 17. The page's language isn't set (WCAG 3.1.1): screen readers then read it in the wrong voice.
     if (
       wants('missing-lang') &&
       document.documentElement instanceof HTMLElement &&

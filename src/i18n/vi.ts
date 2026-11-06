@@ -2286,6 +2286,38 @@ export const vi: Record<MessageKey, string> = {
   'checks.value.visualOrderOne': '1 vùng chứa',
   // end v0.14 checks
   // v0.14 visibility
+  'audit.tab.visibility': 'Hiển thị',
+  'visibility.palette': 'Rà soát: mỗi kích thước hiện và ẩn gì',
+  'visibility.explain':
+    'Các phần tử hiện ở một số bản xem trước nhưng ẩn ở bản khác, mỗi phần tử một hàng: kiểm tra menu, thanh bên và banner xuất hiện đúng ở các kích thước bạn muốn.',
+  'visibility.summary': '{count} phần tử thay đổi giữa các kích thước',
+  'visibility.summaryOne': '1 phần tử thay đổi giữa các kích thước',
+  'visibility.empty': 'Không có phần tử nào hiện ở một số bản xem trước mà ẩn ở bản khác.',
+  'visibility.needTwo':
+    'Chỉ đọc được một bản xem trước: thêm hoặc hiện thêm một kích thước để so sánh những gì mỗi bản hiển thị.',
+  'visibility.noAgent': 'Không đọc được bản xem trước nào. Hãy cho phép trang này rồi tải lại các bản xem trước.',
+  'visibility.notRead': 'Chưa đọc được: {names}',
+  'visibility.table': 'Những gì mỗi bản xem trước hiển thị',
+  'visibility.colElement': 'Phần tử',
+  'visibility.colSummary': 'Khi nào hiện',
+  'visibility.colActions': 'Thao tác',
+  'visibility.legend': 'Chú thích',
+  'visibility.stateShown': 'hiện',
+  'visibility.stateHidden': 'ẩn',
+  'visibility.stateMissing': 'không có trên trang',
+  'visibility.stateUnknown': 'chưa đo',
+  'visibility.cell': '{name}: {state}',
+  'visibility.shownFrom': 'Hiện từ {width} px',
+  'visibility.hiddenFrom': 'Ẩn từ {width} px',
+  'visibility.shownOnlyAt': 'Chỉ hiện ở {width} px',
+  'visibility.shownOnlyBetween': 'Chỉ hiện ở {from}–{to} px',
+  'visibility.hiddenOnlyAt': 'Chỉ ẩn ở {width} px',
+  'visibility.hiddenOnlyBetween': 'Chỉ ẩn ở {from}–{to} px',
+  'visibility.shownIn': 'Hiện ở {shown}/{total} bản xem trước',
+  'visibility.inspect': 'Soi {element} ở mọi kích thước',
+  'visibility.markdown': '**Hiển thị** · {page}',
+  'visibility.note':
+    'Ẩn nghĩa là display: none hoặc visibility: hidden ở kích thước đó; phần tử bị đẩy ra ngoài màn hình, bị cắt hoặc trong suốt vẫn tính là hiện. Các độ rộng là của các bản xem trước: phần tử đổi trạng thái ở đâu đó giữa hai bản liền kề.',
   // end v0.14 visibility
   // v0.14 release
   // end v0.14 release

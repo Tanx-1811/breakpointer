@@ -41,6 +41,7 @@ import {
 import { CHECK_HINT_KEYS, CHECK_KIND_KEYS, canHighlight, issueValue, localNumbers } from '../../state/checks';
 import { responsiveScore, type ResponsiveScore } from '../../state/score';
 import { scoreTrend, sparkline, type ScoreEntry } from '../../state/score-history';
+import type { VisibilityReport } from '../../state/visibility';
 import { Button, IconButton } from '../Button/Button';
 import { Icon } from '../Icon/Icon';
 import { ExportMenu } from '../Plan/ExportMenu';
@@ -48,11 +49,21 @@ import { ProBadge, usePlan } from '../Plan/PlanContext';
 import { MediaTab } from './MediaTab';
 import { MetaTab } from './MetaTab';
 import { ViewportName } from './ViewportName';
+import { VisibilityTab } from './VisibilityTab';
 import styles from './AuditPanel.module.css';
 
-export type AuditTab = 'issues' | 'performance' | 'type' | 'images' | 'colors' | 'meta' | 'media';
+export type AuditTab = 'issues' | 'performance' | 'type' | 'images' | 'colors' | 'meta' | 'media' | 'visibility';
 
-export const AUDIT_TABS: AuditTab[] = ['issues', 'performance', 'type', 'images', 'colors', 'meta', 'media'];
+export const AUDIT_TABS: AuditTab[] = [
+  'issues',
+  'performance',
+  'type',
+  'images',
+  'colors',
+  'meta',
+  'media',
+  'visibility',
+];
 
 /** One preview in the audit. `undefined` values: not known yet. */
 export type AuditRow = {
@@ -68,6 +79,8 @@ export type AuditRow = {
   colors?: ColorSample | null | undefined;
   meta?: PageMeta | null | undefined;
   media?: MediaQueryReport | null | undefined;
+  /** v0.14: the elements some preview hides, and their state in this one. */
+  visibility?: VisibilityReport | null | undefined;
 };
 
 type Props = {
@@ -109,6 +122,8 @@ type Props = {
   onMetaCard?: (cardId: string) => void;
   /** Adds a viewport of this width (the Media queries tab, at a gap or an overlap). */
   onAddViewport?: (width: number) => void;
+  /** Compares an element at every size in the inspector (the Visibility tab's rows). */
+  onInspect?: (selector: string) => void;
 };
 
 const TAB_KEYS = {
@@ -119,6 +134,7 @@ const TAB_KEYS = {
   colors: 'audit.tab.colors',
   meta: 'audit.tab.meta',
   media: 'audit.tab.media',
+  visibility: 'audit.tab.visibility',
 } as const;
 
 const TAB_ICONS = {
@@ -129,6 +145,7 @@ const TAB_ICONS = {
   colors: 'palette',
   meta: 'share',
   media: 'ruler',
+  visibility: 'eye',
 } as const;
 
 /** Issues, page stats and the type scale of every preview, side by side. */
@@ -186,7 +203,7 @@ export function AuditPanel(props: Props) {
             aria-controls={`${id}-panel`}
             tabIndex={tab === item ? 0 : -1}
             className={styles.tab}
-            // Seven tabs don't fit the panel: the others show their icon (and their name as a tooltip).
+            // Eight tabs don't fit the panel: the others show their icon (and their name as a tooltip).
             aria-label={t(TAB_KEYS[item])}
             data-tooltip={tab === item ? undefined : t(TAB_KEYS[item])}
             onClick={() => props.onTab(item)}
@@ -224,6 +241,9 @@ export function AuditPanel(props: Props) {
         )}
         {tab === 'media' && (
           <MediaTab rows={props.rows} measuring={props.measuring} onAddViewport={props.onAddViewport} />
+        )}
+        {tab === 'visibility' && (
+          <VisibilityTab rows={props.rows} measuring={props.measuring} onInspect={props.onInspect} />
         )}
       </div>
     </aside>
