@@ -1,0 +1,180 @@
+.tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.waiting {
+  margin: 24px 0;
+  color: var(--text-subtle);
+  font-size: 13px;
+  text-align: center;
+}
+
+.summary {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 0 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.summary > svg {
+  flex: none;
+  margin-top: 1px;
+}
+
+.lead {
+  color: var(--text-muted);
+}
+
+.ok {
+  color: var(--success);
+}
+
+/* ---------- Legend ---------- */
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0 2px;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  list-style: none;
+}
+
+.legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* ---------- Marks ---------- */
+
+.mark {
+  display: block;
+  flex: none;
+  color: var(--text-subtle);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.mark[data-state='shown'] {
+  color: var(--accent);
+}
+
+.mark[data-state='missing'],
+.mark[data-state='unknown'] {
+  width: 14px;
+  text-align: center;
+}
+
+/* ---------- The matrix ---------- */
+
+/* Many previews scroll sideways here; the element column stays put. */
+.tableWrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+}
+
+.tableWrap:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+}
+
+.table th,
+.table td {
+  padding: 6px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: middle;
+}
+
+.table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.table thead th {
+  color: var(--text-subtle);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.elementHead,
+.element {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  min-width: 140px;
+  padding-left: 10px;
+  background: var(--surface);
+  box-shadow: inset -1px 0 0 var(--border-subtle);
+  text-align: left;
+}
+
+.element {
+  font-weight: 400;
+}
+
+.element code {
+  display: block;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.when {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-subtle);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.previewHead {
+  min-width: 36px;
+  text-align: center;
+}
+
+.previewHead > span {
+  justify-content: center;
+}
+
+.cell {
+  text-align: center;
+}
+
+.cell > .mark {
+  margin: 0 auto;
+}
+
+.actionHead,
+.action {
+  width: 1%;
+  padding-right: 6px;
+  text-align: right;
+}
+
+.note {
+  margin: 0 2px;
+  color: var(--text-subtle);
+  font-size: 12px;
+  line-height: 1.45;
+}

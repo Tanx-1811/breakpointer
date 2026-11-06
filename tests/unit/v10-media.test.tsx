@@ -168,16 +168,17 @@ describe('AuditPanel media tab', () => {
     const onAddViewport = vi.fn();
     const onTab = vi.fn();
     wrap(<AuditPanel {...props({ onAddViewport, onTab })} />);
-    expect(AUDIT_TABS).toHaveLength(7);
+    // v0.14 added Visibility after it.
+    expect(AUDIT_TABS.indexOf('media')).toBe(6);
     const tabs = screen.getAllByRole('tab');
-    expect(tabs.at(-1)).toHaveAttribute('aria-label', 'Media queries');
+    expect(tabs[6]).toHaveAttribute('aria-label', 'Media queries');
     expect(screen.getByRole('tab', { name: 'Media queries' })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByTestId('media-tab')).toBeVisible();
     await userEvent.click(screen.getByRole('button', { name: 'Add a viewport at 768 px' }));
     expect(onAddViewport).toHaveBeenCalledWith(768);
-    // Arrow keys wrap around the tabs.
+    // Arrow keys move to the next tab.
     screen.getByRole('tab', { name: 'Media queries' }).focus();
     await userEvent.keyboard('{ArrowRight}');
-    expect(onTab).toHaveBeenCalledWith('issues');
+    expect(onTab).toHaveBeenCalledWith('visibility');
   });
 });

@@ -428,6 +428,38 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   <div id="room"></div>`,
     ),
   },
+  // v0.14 checks: fields under 16px (and ones that don't count), and flex or grid items
+  // moved on screen — at phone widths only for #steps; #tidy and #icons keep their order.
+  '/v14-checks': {
+    body: page(
+      'Version 0.14 checks page',
+      `<style>
+  #email { font-size: 13px; }
+  #size { font-size: 14px; }
+  #name { font-size: 16px; }
+  #steps, #icons { display: flex; gap: 8px; }
+  #steps > div, #tidy > div { padding: 4px 8px; border: 1px solid #ccc; }
+  @media (max-width: 600px) { #steps .last { order: -1; } }
+  #tidy { display: grid; grid-template-columns: 1fr 1fr; }
+  #tidy > :first-child { grid-column: 1; }
+  #icons { flex-direction: row-reverse; }
+  #icons > span { width: 20px; height: 20px; background: #888; }</style>`,
+    ).replace(
+      '</h1>',
+      `</h1>
+  <form>
+    <label>Email <input id="email" type="email"></label>
+    <label>Size <select id="size"><option>M</option></select></label>
+    <label>Name <input id="name" type="text"></label>
+    <label><input id="agree" type="checkbox"> Agree</label>
+    <label>Locked <input id="locked" type="text" readonly></label>
+    <label>Off <input id="off" type="text" disabled></label>
+  </form>
+  <div id="steps"><div>Step one</div><div>Step two</div><div class="last">Step three</div></div>
+  <div id="tidy"><div>Left</div><div>Right</div></div>
+  <div id="icons"><span></span><span></span></div>`,
+    ),
+  },
   '/linked': { body: page('Linked page') },
   '/issues': { body: ISSUES_PAGE },
   '/scheme': { body: SCHEME_PAGE },

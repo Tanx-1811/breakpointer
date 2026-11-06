@@ -94,9 +94,14 @@ function TourCard({
     locate();
     const onResize = () => place(step.target ? shown(step.target) : null);
     window.addEventListener('resize', onResize);
+    // The card can grow after it was measured (its text wraps differently once placed): place it
+    // again, or its bottom ends up below the window.
+    const observer = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(onResize);
+    if (cardRef.current) observer?.observe(cardRef.current);
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener('resize', onResize);
+      observer?.disconnect();
     };
   }, [step]);
 

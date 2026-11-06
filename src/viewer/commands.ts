@@ -616,6 +616,14 @@ export function buildCommands(ctx: CommandContext): PaletteCommand[] {
       keywords: 'media queries css breakpoints gaps overlaps min-width max-width container responsive',
       run: () => audit('media'),
     });
+    named('visibility.palette', {
+      id: 'audit-visibility',
+      section: section.tools,
+      icon: 'eye',
+      keywords:
+        'visibility visible hidden shown hide show display none burger menu sidebar mobile only desktop only disappears',
+      run: () => audit('visibility'),
+    });
   }
   /** A switch; a Pro one is "off" with a Pro hint on the free plan (running it shows what Pro brings). */
   const toggle = (id: ToolToggle, key: MessageKey, checked: boolean, proFeature = false, keywords?: string) => {

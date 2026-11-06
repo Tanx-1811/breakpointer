@@ -144,6 +144,7 @@ import { COLOR_ROLE_KEYS, mergePalettes, paletteMarkdown } from '../state/colors
 import { imageRows, imagesMarkdown } from '../state/images';
 import { metaMarkdown } from '../state/meta';
 import { mediaMarkdown } from '../state/media-queries';
+import { visibilityMarkdown } from '../state/visibility';
 import { activeBranding, imageFooterName } from '../state/branding';
 import { MAX_NOTES, newNote, normalizeNoteText, notesMarkdown, type Note, type NoteCard } from '../state/notes';
 import { canSaveProject, createProject, projectViewports, type ProjectState } from '../state/projects';
@@ -3479,6 +3480,7 @@ function Workspace({
     colors: auditData.colorsOf(card.id),
     meta: auditData.metaOf(card.id),
     media: auditData.mediaOf(card.id),
+    visibility: auditData.visibilityOf(card.id),
   }));
   // Kinds of issue found in any preview (shown on the toolbar's Audit button).
   const issueKinds = groupIssues(auditRows).length;
@@ -3648,6 +3650,13 @@ function Workspace({
     agents.broadcast({ type: 'select', selector });
   };
 
+  /** An element of the audit's Visibility tab, compared at every size in the inspector (it takes the audit's place). */
+  const inspectFromAudit = (selector: string) => {
+    closeAudit();
+    setInspector({ ...CLOSED_INSPECTOR, open: true, selector });
+    agents.broadcast({ type: 'select', selector });
+  };
+
   /** Live CSS with a rule for the element (its winning declarations as comments, to start from). */
   const editElementCss = (selector: string) => {
     setLiveCss((css) => `${css.trim() ? `${css.trimEnd()}\n\n` : ''}${liveCssFor(selector, elements.styles)}\n`);
@@ -3746,19 +3755,21 @@ function Workspace({
               ? metaMarkdownOf(page)
               : audit.tab === 'media'
                 ? mediaMarkdown(page, auditRows, t)
-                : audit.tab === 'colors'
-                  ? paletteMarkdown(
-                      page,
-                      mergePalettes(auditRows.map((row) => row.colors)),
-                      t('colorAudit.heading'),
-                      [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
-                      (role) => t(COLOR_ROLE_KEYS[role]),
-                    )
-                  : typeMarkdown(
-                      page,
-                      auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
-                      t,
-                    );
+                : audit.tab === 'visibility'
+                  ? visibilityMarkdown(page, auditRows, t)
+                  : audit.tab === 'colors'
+                    ? paletteMarkdown(
+                        page,
+                        mergePalettes(auditRows.map((row) => row.colors)),
+                        t('colorAudit.heading'),
+                        [t('colorAudit.colRole'), t('colorAudit.colColor'), t('colorAudit.colCount')],
+                        (role) => t(COLOR_ROLE_KEYS[role]),
+                      )
+                    : typeMarkdown(
+                        page,
+                        auditRows.map((row) => ({ ...row, samples: row.type ?? null })),
+                        t,
+                      );
     void copyText(markdown).then((copied) =>
       toast(
         copied
@@ -4506,6 +4517,7 @@ function Workspace({
                   [...visible].sort((a, b) => Math.abs(a.width - width) - Math.abs(b.width - width))[0]?.height ?? 900,
               })
             }
+            onInspect={inspectFromAudit}
             onTurnOnChecks={() => setChecks(true)}
             onAllowSite={() => void allowSite()}
             onClose={closeAudit}

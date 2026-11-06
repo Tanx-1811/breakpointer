@@ -11,6 +11,7 @@ import type {
   TypeSample,
 } from '../agent/protocol';
 import type { AuditTab } from '../components/AuditPanel/AuditPanel';
+import { unionHidden, type VisibilityReport } from '../state/visibility';
 
 type Ask = <T extends AgentReplyType>(
   cardId: string,
@@ -36,7 +37,7 @@ type Options = {
 };
 
 /** What each tab measures (the issues come with the checks). */
-type Measure = 'stats' | 'type' | 'images' | 'colors' | 'meta' | 'media';
+type Measure = 'stats' | 'type' | 'images' | 'colors' | 'meta' | 'media' | 'visibility';
 const MEASURE_OF: Record<Exclude<AuditTab, 'issues'>, Measure> = {
   performance: 'stats',
   type: 'type',
@@ -44,10 +45,11 @@ const MEASURE_OF: Record<Exclude<AuditTab, 'issues'>, Measure> = {
   colors: 'colors',
   meta: 'meta',
   media: 'media',
+  visibility: 'visibility',
 };
 
 /**
- * The page stats, type samples, images, colours, meta tags and media queries of every preview for the audit panel: asked
+ * The page stats, type samples, images, colours, meta tags, media queries and shown elements of every preview for the audit panel: asked
  * for when their tab is shown, again a moment after previews connect, and on
  * request. Results are kept per frame, so a reloaded preview is never shown
  * with its previous page's numbers.
@@ -59,6 +61,9 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
   const [colors, setColors] = useState<Measured<ColorSample>>({});
   const [meta, setMeta] = useState<Measured<PageMeta>>({});
   const [media, setMedia] = useState<Measured<MediaQueryReport>>({});
+  const [visibility, setVisibility] = useState<Measured<VisibilityReport>>({});
+  /** Only the latest Visibility measurement is kept (it takes two rounds of questions). */
+  const visibilityRun = useRef(0);
   const [pending, setPending] = useState(0);
   const latest = useRef({ cardIds, generations });
   useLayoutEffect(() => {
@@ -70,6 +75,38 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
       const { cardIds: ids, generations: frames } = latest.current;
       setPending((count) => count + 1);
       try {
+        if (which === 'visibility') {
+          // Every preview lists what it hides; then every preview says whether it shows each of those.
+          const run = ++visibilityRun.current;
+          const lists = await Promise.all(
+            ids.map((cardId) =>
+              frames[cardId]
+                ? ask(cardId, { type: 'getHiddenElements' }, 'hiddenElements', 4000)
+                    .then((reply) => reply.items)
+                    .catch(() => null)
+                : null,
+            ),
+          );
+          const items = unionHidden(lists);
+          const selectors = items.map((item) => item.selector);
+          const answers = await Promise.all(
+            ids.map(async (cardId, index): Promise<[string, Measured<VisibilityReport>[string]]> => {
+              const generation = frames[cardId] ?? '';
+              if (!lists[index]) return [cardId, { generation, value: null }];
+              if (items.length === 0) return [cardId, { generation, value: { items, states: [] } }];
+              const value = await ask(cardId, { type: 'getShownStates', selectors }, 'shownStates', 4000)
+                .then((reply) => (reply.states.length === items.length ? { items, states: reply.states } : null))
+                .catch(() => null);
+              return [cardId, { generation, value }];
+            }),
+          );
+          if (run === visibilityRun.current)
+            setVisibility((map) => ({
+              ...map,
+              ...Object.fromEntries(answers.filter(([cardId]) => frames[cardId])),
+            }));
+          return;
+        }
         await Promise.all(
           ids.map(async (cardId) => {
             const generation = frames[cardId];
@@ -158,5 +195,10 @@ export function useAuditData({ open, tab, cardIds, generations, connectedKey, as
     return entry && entry.generation === generations[cardId] ? entry.value : undefined;
   };
 
-  return { statsOf, typeOf, imagesOf, colorsOf, metaOf, mediaOf, measuring: pending > 0, refresh };
+  const visibilityOf = (cardId: string): VisibilityReport | null | undefined => {
+    const entry = visibility[cardId];
+    return entry && entry.generation === generations[cardId] ? entry.value : undefined;
+  };
+
+  return { statsOf, typeOf, imagesOf, colorsOf, metaOf, mediaOf, visibilityOf, measuring: pending > 0, refresh };
 }
