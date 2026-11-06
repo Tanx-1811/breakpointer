@@ -2357,54 +2357,66 @@ export const fr: Record<MessageKey, string> = {
   'settings.searchClear': 'Effacer la recherche',
   // end v0.14 settings
   // v0.14 checks
-  'checks.kind.inputZoom': 'Fields that make iPhones zoom in',
+  'checks.kind.inputZoom': 'Champs qui font zoomer l’iPhone',
   'checks.hint.inputZoom':
-    'Safari on iPhone zooms in when a field with text under 16px gets focus. Use 16px (1rem) or more for fields at phone sizes.',
-  'checks.detail.inputZoom': '{count} form fields with text as small as {size}',
-  'checks.detail.inputZoomOne': '1 form field with {size} text',
-  'checks.value.inputZoom': '{count} · smallest {size}',
-  'checks.kind.visualOrder': 'Order on screen differs from the HTML',
+    'Safari sur iPhone zoome quand un champ dont le texte fait moins de 16px reçoit le focus. Utilisez 16px (1rem) ou plus pour les champs aux tailles de téléphone.',
+  'checks.detail.inputZoom': '{count} champs de formulaire dont le texte descend jusqu’à {size}',
+  'checks.detail.inputZoomOne': '1 champ de formulaire avec un texte de {size}',
+  'checks.value.inputZoom': '{count} · le plus petit : {size}',
+  'checks.kind.visualOrder': 'L’ordre à l’écran diffère du HTML',
   'checks.hint.visualOrder':
-    'Keyboard focus and screen readers follow the HTML, so they jump around when CSS (order, reversed directions, grid placement) moves items on screen (WCAG 1.3.2, 2.4.3).',
-  'checks.detail.visualOrder': '{count} flex or grid containers show their items out of HTML order',
-  'checks.detail.visualOrderOne': '1 flex or grid container shows its items out of HTML order',
-  'checks.value.visualOrder': '{count} containers',
-  'checks.value.visualOrderOne': '1 container',
+    'Le focus clavier et les lecteurs d’écran suivent le HTML : ils sautent d’un endroit à l’autre quand le CSS (order, directions inversées, placement dans la grille) déplace les éléments à l’écran (WCAG 1.3.2, 2.4.3).',
+  'checks.detail.visualOrder':
+    '{count} conteneurs flex ou grid affichent leurs éléments dans un autre ordre que le HTML',
+  'checks.detail.visualOrderOne': '1 conteneur flex ou grid affiche ses éléments dans un autre ordre que le HTML',
+  'checks.value.visualOrder': '{count} conteneurs',
+  'checks.value.visualOrderOne': '1 conteneur',
   // end v0.14 checks
   // v0.14 visibility
-  'audit.tab.visibility': 'Visibility',
-  'visibility.palette': 'Audit: what each size shows and hides',
+  'audit.tab.visibility': 'Visibilité',
+  'visibility.palette': 'Audit : ce que chaque taille montre et masque',
   'visibility.explain':
-    'Elements shown in some previews and hidden in others, one row each: check that menus, sidebars and banners appear at the sizes you meant.',
-  'visibility.summary': '{count} elements change between sizes',
-  'visibility.summaryOne': '1 element changes between sizes',
-  'visibility.empty': 'No element is shown in some previews and hidden in others.',
-  'visibility.needTwo': 'Only one preview could be read: add or show another size to compare what each one shows.',
-  'visibility.noAgent': 'No preview could be read. Allow the site, then reload the previews.',
-  'visibility.notRead': 'Not read: {names}',
-  'visibility.table': 'What each preview shows',
-  'visibility.colElement': 'Element',
-  'visibility.colSummary': 'When it’s shown',
+    'Les éléments affichés dans certains aperçus et masqués dans d’autres, un par ligne : vérifiez que menus, barres latérales et bannières apparaissent aux tailles voulues.',
+  'visibility.summary': '{count} éléments changent entre les tailles',
+  'visibility.summaryOne': '1 élément change entre les tailles',
+  'visibility.empty': 'Aucun élément n’est affiché dans certains aperçus et masqué dans d’autres.',
+  'visibility.needTwo':
+    'Un seul aperçu a pu être lu : ajoutez ou affichez une autre taille pour comparer ce que montre chacun.',
+  'visibility.noAgent': 'Aucun aperçu n’a pu être lu. Autorisez le site, puis rechargez les aperçus.',
+  'visibility.notRead': 'Non lus : {names}',
+  'visibility.table': 'Ce que montre chaque aperçu',
+  'visibility.colElement': 'Élément',
+  'visibility.colSummary': 'Quand il est affiché',
   'visibility.colActions': 'Actions',
-  'visibility.legend': 'Legend',
-  'visibility.stateShown': 'shown',
-  'visibility.stateHidden': 'hidden',
-  'visibility.stateMissing': 'not on the page',
-  'visibility.stateUnknown': 'not measured',
-  'visibility.cell': '{name}: {state}',
-  'visibility.shownFrom': 'Shown from {width} px',
-  'visibility.hiddenFrom': 'Hidden from {width} px',
-  'visibility.shownOnlyAt': 'Shown only at {width} px',
-  'visibility.shownOnlyBetween': 'Shown only at {from}–{to} px',
-  'visibility.hiddenOnlyAt': 'Hidden only at {width} px',
-  'visibility.hiddenOnlyBetween': 'Hidden only at {from}–{to} px',
-  'visibility.shownIn': 'Shown in {shown} of {total} previews',
-  'visibility.inspect': 'Inspect {element} at every size',
-  'visibility.markdown': '**Visibility** · {page}',
+  'visibility.legend': 'Légende',
+  'visibility.stateShown': 'affiché',
+  'visibility.stateHidden': 'masqué',
+  'visibility.stateMissing': 'absent de la page',
+  'visibility.stateUnknown': 'non mesuré',
+  'visibility.cell': '{name} : {state}',
+  'visibility.shownFrom': 'Affiché à partir de {width} px',
+  'visibility.hiddenFrom': 'Masqué à partir de {width} px',
+  'visibility.shownOnlyAt': 'Affiché uniquement à {width} px',
+  'visibility.shownOnlyBetween': 'Affiché uniquement de {from} à {to} px',
+  'visibility.hiddenOnlyAt': 'Masqué uniquement à {width} px',
+  'visibility.hiddenOnlyBetween': 'Masqué uniquement de {from} à {to} px',
+  'visibility.shownIn': 'Affiché dans {shown} aperçus sur {total}',
+  'visibility.inspect': 'Inspecter {element} à chaque taille',
+  'visibility.markdown': '**Visibilité** · {page}',
   'visibility.note':
-    'Hidden means display: none or visibility: hidden at that size; elements moved off screen, clipped or transparent count as shown. The widths are your previews’: an element switches somewhere between two neighbouring ones.',
+    'Masqué signifie display: none ou visibility: hidden à cette taille ; les éléments déplacés hors de l’écran, rognés ou transparents comptent comme affichés. Les largeurs sont celles de vos aperçus : un élément bascule quelque part entre deux largeurs voisines.',
   // end v0.14 visibility
   // v0.14 release
+  'news.settingsSearch':
+    'Recherchez dans les paramètres (Ctrl/⌘ + F) : tapez un mot, avec ou sans accents, et seuls les réglages correspondants restent.',
+  'news.visibility':
+    'Visibilité dans l’audit : chaque élément affiché à certaines tailles et masqué à d’autres, dans un tableau — menus, barres latérales, bannières.',
+  'news.inputZoom':
+    'Une nouvelle vérification repère les champs de formulaire qui font zoomer l’iPhone : texte de moins de 16px aux tailles de téléphone.',
+  'news.visualOrder':
+    'Une autre repère les éléments que le CSS affiche dans un autre ordre que le HTML : le clavier et les lecteurs d’écran sautent d’un endroit à l’autre.',
+  'news.fixes14':
+    'Corrigé : les paramètres ne se décalent plus sur leurs dernières sections, et les cartes des guides restent dans les petites fenêtres.',
   // end v0.14 release
   // end v0.14 keys
 };

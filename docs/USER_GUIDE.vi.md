@@ -316,7 +316,7 @@ Một con số từ 0 đến 100 cho trang ở các kích thước đã kiểm t
 
 ### Bảng rà soát
 
-Mọi vấn đề của mọi bản xem trước trong một bảng, cộng thêm hiệu năng, kiểu chữ, hình ảnh, màu sắc, thẻ meta và media query của trang — tất cả đặt cạnh nhau giữa các bản xem trước.
+Mọi vấn đề của mọi bản xem trước trong một bảng, cộng thêm hiệu năng, kiểu chữ, hình ảnh, màu sắc, thẻ meta, media query của trang và phần hiện hay ẩn ở mỗi kích thước — tất cả đặt cạnh nhau giữa các bản xem trước.
 
 Mở bằng `E`, nút **Rà soát** (có số loại vấn đề tìm thấy), thanh trạng thái hoặc bảng lệnh. Phần đầu bảng có **Đo lại**, **Chép dạng Markdown** (tab hiện tại, dạng bảng để dán vào ticket), **Xuất** (Pro) và nút đóng. Bảng rà soát chạy bên trong bản xem trước của trang bạn cho phép.
 
@@ -351,6 +351,15 @@ Trong ứng dụng: **Rà soát trang ở mọi kích thước**.
 Bấm **Thêm viewport 600 px** để xem chiều rộng có vấn đề. Container query (—) tùy vào khung chứa, không phải viewport. CSS từ site khác không đọc được, nên query của chúng không có trong danh sách.
 
 Trong ứng dụng: **Tìm khoảng hở giữa các breakpoint**.
+
+<a id="visibility"></a>
+
+**Visibility** (Mới ở 0.14). Mọi phần tử hiện ở một số bản xem trước nhưng ẩn ở bản khác — nút menu burger chỉ có trên điện thoại, thanh điều hướng máy tính, thanh bên, banner cho máy tính bảng — trong một bảng: mỗi dòng một phần tử (đường dẫn CSS của nó, như `header > button.burger`), mỗi cột một bản xem trước theo chiều rộng, mỗi ô **hiện** (✓), **ẩn** (–) hoặc **không có trên trang** (∅). Dưới mỗi phần tử là khi nào nó hiện: **Hiện từ 768 px**, **Ẩn từ 768 px**, **Chỉ hiện ở 768 px**, hoặc **Hiện ở 2/4 bản xem trước** khi nó bật tắt qua lại. Kiểm tra rằng mỗi phần tử xuất hiện đúng ở các kích thước bạn muốn và không có gì quan trọng vô tình biến mất ở một kích thước.
+
+- Nút **Soi** (cuối mỗi dòng) mở phần tử trong [trình kiểm tra](#inspector), so sánh ở mọi kích thước.
+- Ẩn nghĩa là `display: none` hoặc `visibility: hidden` ở kích thước đó. Phần tử bị đẩy ra ngoài màn hình, bị cắt hay trong suốt vẫn tính là hiện, để hiệu ứng hiện dần không làm đầy bảng.
+- Các chiều rộng là của các bản xem trước: phần tử đổi trạng thái ở đâu đó giữa hai bản liền kề. Thêm một viewport ở giữa (hoặc [quét mọi chiều rộng](#scan)) để tìm đúng chiều rộng.
+- Bản xem trước chưa được cấp quyền truy cập trang thì không đọc được; tab sẽ ghi tên chúng.
 
 <a id="scan"></a>
 
@@ -782,6 +791,8 @@ Thử một media query với các viewport của bạn: gõ vào **Media query*
 ## 9. Cài đặt
 
 Mở **Cài đặt** bằng nút bánh răng trên thanh trên cùng. Các mục nằm ở cột bên trái; thay đổi được lưu ngay, trên thiết bị này.
+
+**Tìm kiếm** (Mới ở 0.14): gõ vào ô phía trên các mục — hoặc nhấn `Ctrl/⌘ + F` khi Cài đặt đang mở — để chỉ giữ lại các cài đặt có tên, mô tả hoặc lựa chọn khớp, kèm từ tìm thấy được tô màu. Gõ không dấu cũng được (“ngon ngu” tìm ra “Ngôn ngữ”). `Escape` xóa ô tìm; nhấn `Escape` lần nữa để đóng Cài đặt.
 
 | Mục                           | Nội dung                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

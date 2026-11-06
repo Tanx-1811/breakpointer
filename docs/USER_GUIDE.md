@@ -316,7 +316,7 @@ One number from 0 to 100 for the page at the sizes it was checked at, with a gra
 
 ### The audit
 
-Every issue of every preview in one panel, plus how the page performs, its type, images, colours, meta tags and media queries — each compared across your previews.
+Every issue of every preview in one panel, plus how the page performs, its type, images, colours, meta tags, media queries and what each size shows or hides — each compared across your previews.
 
 Open it with `E`, the **Audit** toggle (it shows how many kinds of issue were found), the status bar or the palette. The header has **Measure again**, **Copy as Markdown** (the current tab, as a table for a ticket), **Export** (Pro) and close. The audit runs inside previews of sites you allow.
 
@@ -351,6 +351,15 @@ To write the markup for a new image, use the CSS toolkit's [Images](#toolkit-ima
 Click **Add a viewport at 600 px** to see the problem width. Container queries (—) depend on their container, not the viewport. Stylesheets from other sites can't be read, so their queries aren't listed.
 
 In the app: **Find gaps between breakpoints**.
+
+<a id="visibility"></a>
+
+**Visibility** (New in 0.14). Every element that is shown in some previews and hidden in others — the burger menu that only phones get, the desktop navigation, a sidebar, a banner for tablets — in one table: a row per element (its CSS path, such as `header > button.burger`), a column per preview by width, each cell **shown** (✓), **hidden** (–) or **not on the page** (∅). Under each element, when it shows: **Shown from 768 px**, **Hidden from 768 px**, **Shown only at 768 px**, or **Shown in 2 of 4 previews** when it switches back and forth. Check that each one appears at the sizes you meant and that nothing important disappears at a size by accident.
+
+- **Inspect** (at the end of a row) opens the element in the [inspector](#inspector), compared at every size.
+- Hidden means `display: none` or `visibility: hidden` at that size. Elements moved off screen, clipped or transparent count as shown, so fade-in effects don't fill the table.
+- The widths are your previews': an element switches somewhere between two neighbouring ones. Add a viewport between them (or [scan every width](#scan)) to find the exact width.
+- Previews without site access aren't read; the tab names them.
 
 <a id="scan"></a>
 
@@ -776,6 +785,8 @@ Test a media query against your viewports: type it under **Media query** — or 
 ## 9. Settings
 
 Open **Settings** from the gear in the top bar. Sections are listed on the left; settings are saved as you change them, on this device.
+
+**Search** (New in 0.14): type in the field above the sections — or press `Ctrl/⌘ + F` while Settings is open — to keep only the settings whose name, description or options match, with the words found highlighted. Accents are optional (“ngon ngu” finds “Ngôn ngữ”). `Escape` clears the search; a second `Escape` closes Settings.
 
 | Section              | What's in it                                                                                                                                                                                                                                                                                                                                          |
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

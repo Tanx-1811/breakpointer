@@ -2321,6 +2321,14 @@ export const vi: Record<MessageKey, string> = {
     'Ẩn nghĩa là display: none hoặc visibility: hidden ở kích thước đó; phần tử bị đẩy ra ngoài màn hình, bị cắt hoặc trong suốt vẫn tính là hiện. Các độ rộng là của các bản xem trước: phần tử đổi trạng thái ở đâu đó giữa hai bản liền kề.',
   // end v0.14 visibility
   // v0.14 release
+  'news.settingsSearch':
+    'Tìm trong Cài đặt (Ctrl/⌘ + F): gõ một từ — có dấu hay không đều được — chỉ còn các cài đặt khớp.',
+  'news.visibility':
+    'Tab Visibility trong rà soát: mọi phần tử hiện ở cỡ này nhưng ẩn ở cỡ khác, trong một bảng — menu, thanh bên, banner.',
+  'news.inputZoom': 'Kiểm tra mới tìm ô nhập khiến iPhone tự phóng to: chữ nhỏ hơn 16px ở cỡ điện thoại.',
+  'news.visualOrder':
+    'Một kiểm tra khác tìm các mục bị CSS hiển thị khác thứ tự HTML, khiến bàn phím và trình đọc màn hình nhảy lung tung.',
+  'news.fixes14': 'Đã sửa: Cài đặt không còn bị lệch khi tới các mục cuối, và thẻ hướng dẫn luôn nằm trong cửa sổ nhỏ.',
   // end v0.14 release
   // end v0.14 keys
 };

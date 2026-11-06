@@ -2301,6 +2301,15 @@ export const en = {
     'Hidden means display: none or visibility: hidden at that size; elements moved off screen, clipped or transparent count as shown. The widths are your previews’: an element switches somewhere between two neighbouring ones.',
   // end v0.14 visibility
   // v0.14 release
+  'news.settingsSearch':
+    'Search Settings (Ctrl/⌘ + F): type a word — accents optional — and see only the settings that match.',
+  'news.visibility':
+    'Visibility in the audit: every element shown at some sizes and hidden at others, in one table — menus, sidebars, banners.',
+  'news.inputZoom': 'A new check finds form fields that make iPhones zoom in: text under 16px at phone sizes.',
+  'news.visualOrder':
+    'Another finds items that CSS shows in a different order from the HTML, so the keyboard and screen readers jump around.',
+  'news.fixes14':
+    'Fixed: Settings no longer moves out of place at its last sections, and guide cards stay inside small windows.',
   // end v0.14 release
   // end v0.14 keys
 } as const;

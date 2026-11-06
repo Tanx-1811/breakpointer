@@ -53,13 +53,15 @@ export const WORKSPACE_SHORTCUTS: { keys: string[]; label: MessageKey }[] = [
 
 /** What this version brings, shown in Help's “What's new”. */
 const NEWS: { icon: IconName; text: MessageKey }[] = [
+  { icon: 'search', text: 'news.settingsSearch' },
+  { icon: 'eye', text: 'news.visibility' },
+  { icon: 'phone', text: 'news.inputZoom' },
+  { icon: 'keyboard', text: 'news.visualOrder' },
+  { icon: 'check', text: 'news.fixes14' },
+  // Also new since the last store release (0.13 and 0.12).
   { icon: 'code', text: 'news.elements' },
-  { icon: 'report', text: 'news.elementsSummary' },
   { icon: 'pencil', text: 'news.markup' },
   { icon: 'report', text: 'news.scoreHistory' },
-  { icon: 'code', text: 'news.toolkit12' },
-  { icon: 'image', text: 'news.imageTips' },
-  { icon: 'book', text: 'news.guides12' },
 ];
 
 export type HelpSection = 'start' | 'shortcuts' | 'news' | 'support';

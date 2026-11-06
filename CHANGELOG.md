@@ -2,6 +2,28 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [0.14.0] — 2026-11-06
+
+See what each size hides, find two more responsive problems, and search Settings.
+
+### Added
+
+- **Visibility** in the audit (an eighth tab, also “Audit: what each size shows and hides” in the palette): every element that is shown in some previews and hidden in others, in one table — a column per preview, by width, marked shown, hidden or not on the page — with when each one shows (“Hidden from 768 px”, “Shown only at 768 px”). Check that the burger menu, the desktop navigation, sidebars and banners appear at the sizes you meant, and that nothing disappears at a size by accident. **Inspect** opens an element in the inspector at every size; the table copies as Markdown. Hidden means `display: none` or `visibility: hidden` at that size.
+- **Two new checks** (free, in previews, the audit, the width scanner, Check pages and the score):
+  - **Fields that make iPhones zoom in**: at phone widths (up to 600 px), form fields whose text is under 16px — Safari on iPhone zooms the page in when one gets focus. Pages whose viewport tag stops zooming (`maximum-scale=1`) pass.
+  - **Order on screen differs from the HTML**: flex and grid containers whose items CSS shows in another order than the HTML (`order`, reversed directions, grid placement, `dense`), so keyboard focus and screen readers jump around (WCAG 1.3.2, 2.4.3). The sample says the order seen: “order · 3, 1, 2”.
+- **Search Settings**: a search field at the top of Settings (`Ctrl/⌘ + F` while it is open) keeps only the settings that match — by their names, descriptions and options, accents optional (“ngon ngu” finds “Ngôn ngữ”) — highlights the words found and lists only the sections that have them. Escape clears the search, a second Escape closes Settings. In narrow windows the search sits above the settings.
+
+### Fixed
+
+- Settings no longer moves out of place: going to its last sections (Plan, Privacy & access) pushed the whole dialog up, hiding its title and leaving a blank space below. Dialogs and side panels never scroll themselves any more; only their content scrolls. The section picked in the list stays highlighted, even when it is too near the end to reach the top.
+- Settings keeps the same height and its list of sections scrolls in short windows.
+- A guide's card no longer runs past the bottom of a small window when its text wraps once placed.
+
+### Changed
+
+- Help's “What's new” lists this release; the audit guide and “What's this?” mention the eighth tab.
+
 ## [0.13.1] — 2026-11-05
 
 Chrome updates extensions silently; now Breakpointer says when it has.
