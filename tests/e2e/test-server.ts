@@ -394,6 +394,25 @@ const routes: Record<string, Route | ((req: IncomingMessage) => Route)> = {
   @media (hover: hover) { p { text-decoration: underline; } }</style>`,
     ),
   },
+  // v0.14, the audit's Visibility tab: a burger below 768 px, a navigation from 768 px, a note only at tablet
+  // widths (visibility: hidden elsewhere), and elements hidden at every size that aren't rows.
+  '/visibility': {
+    body: page(
+      'Visibility page',
+      `<style>
+  .desktop-nav { display: none; }
+  .tablet-note { visibility: hidden; }
+  @media (min-width: 768px) { .burger { display: none; } .desktop-nav { display: flex; gap: 16px; } }
+  @media (min-width: 700px) and (max-width: 1023px) { .tablet-note { visibility: visible; } }</style>`,
+    ).replace(
+      '</h1>',
+      `</h1>
+  <header><button class="burger" type="button">Menu</button><nav class="desktop-nav"><a href="#a">Home</a><a href="#b">About</a></nav></header>
+  <p class="tablet-note">Only on tablets</p>
+  <div class="modal" style="display: none">Always hidden</div>
+  <p hidden>Hidden everywhere</p>`,
+    ),
+  },
   '/long': { body: LONG_PAGE },
   // v0.13: the Elements panel — rules that compete, a media query, duplicate ids and an obsolete tag.
   '/elements': {

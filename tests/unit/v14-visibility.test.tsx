@@ -75,14 +75,14 @@ const cells = (...pairs: [number, CellState][]) => pairs.map(([width, state]) =>
 describe('unionHidden', () => {
   it('lists each element once, the first label winning, taking from each preview in turn', () => {
     const a = [burger, modal, { selector: '#a', label: 'div#a' }];
-    const b = [{ ...modal, label: 'other' }, nav];
+    const b = [{ ...burger, label: 'other' }, nav];
     expect(unionHidden([a, null, b]).map((item) => item.selector)).toEqual([
       burger.selector,
       modal.selector,
       nav.selector,
       '#a',
     ]);
-    expect(unionHidden([a, b]).find((item) => item.selector === '#modal')?.label).toBe('div#modal');
+    expect(unionHidden([a, b])[0]).toEqual(burger);
     // Every preview gets its share under the limit.
     expect(unionHidden([a, b], 2).map((item) => item.selector)).toEqual([burger.selector, modal.selector]);
     expect(unionHidden([a, [nav]], 2).map((item) => item.selector)).toEqual([burger.selector, nav.selector]);
