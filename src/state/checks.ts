@@ -13,6 +13,8 @@ export const CHECK_KIND_KEYS: Record<CheckKind, MessageKey> = {
   'low-contrast': 'checks.kind.lowContrast',
   'layout-shift': 'checks.kind.layoutShift',
   'long-lines': 'checks.kind.longLines',
+  'input-zoom': 'checks.kind.inputZoom',
+  'visual-order': 'checks.kind.visualOrder',
   'missing-alt': 'checks.kind.missingAlt',
   'unnamed-control': 'checks.kind.unnamedControl',
   'unlabeled-field': 'checks.kind.unlabeledField',
@@ -32,6 +34,8 @@ export const CHECK_HINT_KEYS: Record<CheckKind, MessageKey> = {
   'low-contrast': 'checks.hint.lowContrast',
   'layout-shift': 'checks.hint.layoutShift',
   'long-lines': 'checks.hint.longLines',
+  'input-zoom': 'checks.hint.inputZoom',
+  'visual-order': 'checks.hint.visualOrder',
   'missing-alt': 'checks.hint.missingAlt',
   'unnamed-control': 'checks.hint.unnamedControl',
   'unlabeled-field': 'checks.hint.unlabeledField',
@@ -65,6 +69,12 @@ export function issueValue(issue: CheckIssue, t: Translate): string {
       return issue.detail ? `${count} · ${localNumbers(issue.detail, t)}:1` : count;
     case 'long-lines':
       return issue.detail ? t('checks.value.longLines', { count, chars: issue.detail }) : count;
+    case 'input-zoom':
+      return issue.detail ? t('checks.value.inputZoom', { count, size: localNumbers(issue.detail, t) }) : count;
+    case 'visual-order':
+      return issue.count === 1
+        ? t('checks.value.visualOrderOne')
+        : t('checks.value.visualOrder', { count: issue.count });
     case 'missing-lang':
       return t('checks.value.missingLang');
     default:
@@ -114,6 +124,18 @@ export function issueDetail(issue: CheckIssue, t: Translate): string {
           ? t('checks.detail.longLinesOne', { chars: issue.detail })
           : t('checks.detail.longLines', { count: issue.count, chars: issue.detail });
       break;
+    case 'input-zoom':
+      if (issue.detail) {
+        const size = localNumbers(issue.detail, t);
+        return issue.count === 1
+          ? t('checks.detail.inputZoomOne', { size })
+          : t('checks.detail.inputZoom', { count: issue.count, size });
+      }
+      break;
+    case 'visual-order':
+      return issue.count === 1
+        ? t('checks.detail.visualOrderOne')
+        : t('checks.detail.visualOrder', { count: issue.count });
   }
   return issue.count === 1 ? t('checks.detail.countOne') : t('checks.detail.count', { count: issue.count });
 }

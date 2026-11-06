@@ -2,7 +2,9 @@
   display: flex;
   flex: 1;
   min-height: 0;
-  max-height: calc(100vh - 140px);
+  /* A fixed height: the dialog doesn't jump as a search hides settings. */
+  height: calc(100vh - 140px);
+  max-height: 860px;
 }
 
 .nav {

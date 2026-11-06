@@ -145,8 +145,9 @@ function severity(issue: CheckIssue): number {
   // The most pixels too wide, of the screen covered, or characters a line.
   if (issue.kind === 'overflow' || issue.kind === 'fixed-cover' || issue.kind === 'long-lines')
     return Number.isFinite(amount) ? amount : issue.count;
-  // The lowest contrast ratio is the worst.
-  if (issue.kind === 'low-contrast') return Number.isFinite(amount) ? -amount : issue.count;
+  // The lowest contrast ratio is the worst, and the smallest field text (Safari zooms in most).
+  if (issue.kind === 'low-contrast' || issue.kind === 'input-zoom')
+    return Number.isFinite(amount) ? -amount : issue.count;
   return issue.count;
 }
 

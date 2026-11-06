@@ -24,6 +24,8 @@ export const SCORE_WEIGHTS: Record<CheckKind, number> = {
   'hidden-focus': 6,
   'upscaled-images': 5,
   'long-lines': 4,
+  'input-zoom': 4,
+  'visual-order': 4,
   'missing-lang': 3,
 };
 

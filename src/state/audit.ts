@@ -37,7 +37,7 @@ export function groupIssues(columns: (AuditColumn & { report: CheckReport | null
   return groups;
 }
 
-/** A short value for a table cell: "+184px", "3 · 2.85:1", "CLS 0.24", "45%", "2 · ~118 ch"… */
+/** A short value for a table cell: "+184px", "3 · 2.85:1", "CLS 0.24", "45%", "2 · ~118 ch", "2 · 14px"… */
 export function issueCell(issue: CheckIssue): string {
   switch (issue.kind) {
     case 'overflow':
@@ -53,6 +53,8 @@ export function issueCell(issue: CheckIssue): string {
       return issue.detail ? `${issue.count} · ${issue.detail}:1` : String(issue.count);
     case 'long-lines':
       return issue.detail ? `${issue.count} · ~${issue.detail} ch` : String(issue.count);
+    case 'input-zoom':
+      return issue.detail ? `${issue.count} · ${issue.detail}` : String(issue.count);
     default:
       return String(issue.count);
   }

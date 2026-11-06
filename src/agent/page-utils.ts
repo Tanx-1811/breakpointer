@@ -967,3 +967,165 @@ export const OBSOLETE_TAGS = [
   'tt',
   'xmp',
 ] as const;
+
+/* ---------- Fields that make iPhones zoom in ---------- */
+
+/** Safari on iPhone zooms the page in when a field whose text is smaller than this gets focus. */
+export const MIN_FIELD_FONT_PX = 16;
+/** The checked previews' widths, at most (phone sizes). */
+export const INPUT_ZOOM_MAX_WIDTH = 600;
+/** Input types that take no typed text: Safari doesn't zoom in on them. */
+export const NO_ZOOM_INPUT_TYPES: readonly string[] = [
+  'hidden',
+  'checkbox',
+  'radio',
+  'range',
+  'color',
+  'file',
+  'submit',
+  'button',
+  'reset',
+  'image',
+];
+
+/**
+ * True when Safari on iPhone zooms in as a field with this computed font size
+ * (px) gets focus: under 16px. 0px text is a hiding technique, not small text.
+ */
+export function zoomsOnFocus(fontSizePx: number): boolean {
+  if (!Number.isFinite(fontSizePx) || fontSizePx < 1) return false;
+  // 1.6rem on a 10px root can compute to 15.999…px.
+  return Math.round(fontSizePx * 100) / 100 < MIN_FIELD_FONT_PX;
+}
+
+/** A field's font size as reported, e.g. "14px", "15.9px": rounded down to tenths, so it never reads 16px. */
+export const fieldFontText = (fontSizePx: number) => `${Math.floor(Math.round(fontSizePx * 100) / 10) / 10}px`;
+
+/** True for an `<input type>` (as the element reports it) that takes typed text. */
+export const takesTypedText = (type: string) => !NO_ZOOM_INPUT_TYPES.includes(type.trim().toLowerCase());
+
+/**
+ * True when a viewport tag's content keeps Safari from zooming in on focus:
+ * `maximum-scale` of 1 or less (Safari on iPhone still lets people pinch-zoom).
+ */
+export function blocksFocusZoom(viewportContent: string): boolean {
+  const match = /(?:^|[\s,;])maximum-scale\s*=\s*([\d.]+)/i.exec(viewportContent);
+  const scale = match ? Number.parseFloat(match[1]!) : Number.NaN;
+  return Number.isFinite(scale) && scale <= 1;
+}
+
+/* ---------- Order on screen and in the HTML ---------- */
+
+/** What makes a flex or grid container show its items in another order than the HTML. */
+export type OrderCause = 'order' | 'row-reverse' | 'column-reverse' | 'wrap-reverse' | 'grid placement' | 'dense';
+
+/** The computed styles of a container that matter to the order of its items. */
+export type OrderContainerStyle = { display: string; flexDirection: string; flexWrap: string; gridAutoFlow: string };
+/** The computed styles of an item that matter to its place. */
+export type OrderItemStyle = { order: string; gridRowStart: string; gridColumnStart: string };
+
+/** A computed `display` that makes a flex container ("flex", "inline-flex", "block flex"…). */
+export const isFlexDisplay = (display: string) => /(^|[\s-])flex$/.test(display.trim());
+/** A computed `display` that makes a grid container ("grid", "inline-grid"…). */
+export const isGridDisplay = (display: string) => /(^|[\s-])grid$/.test(display.trim());
+
+/** A grid line given by number or name (not `auto`, and not only a span). */
+const explicitLine = (value: string) => {
+  const line = value.trim();
+  return line !== '' && line !== 'auto' && !/^span\b/.test(line);
+};
+
+/**
+ * Why a flex or grid container may show its items out of HTML order: an item
+ * with `order` other than 0, a reversed flex direction or wrap, grid items
+ * placed on given lines (`grid-row`, `grid-column`, `grid-area`), or `dense`
+ * packing. Empty for other containers, or when nothing reorders.
+ */
+export function reorderCauses(container: OrderContainerStyle, items: readonly OrderItemStyle[]): OrderCause[] {
+  const flex = isFlexDisplay(container.display);
+  const grid = !flex && isGridDisplay(container.display);
+  if (!flex && !grid) return [];
+  const causes: OrderCause[] = [];
+  if (
+    items.some((item) => {
+      const order = Number(item.order || 0);
+      return Number.isFinite(order) && order !== 0;
+    })
+  )
+    causes.push('order');
+  if (flex) {
+    const direction = container.flexDirection.trim();
+    if (direction === 'row-reverse' || direction === 'column-reverse') causes.push(direction);
+    if (container.flexWrap.trim() === 'wrap-reverse') causes.push('wrap-reverse');
+  } else {
+    if (items.some((item) => explicitLine(item.gridRowStart) || explicitLine(item.gridColumnStart)))
+      causes.push('grid placement');
+    if (/\bdense\b/.test(container.gridAutoFlow)) causes.push('dense');
+  }
+  return causes;
+}
+
+/** A box on screen (viewport pixels). */
+export type OrderRect = { left: number; top: number; right: number; bottom: number };
+
+/**
+ * The order in which the eye reads boxes given in HTML order: the indices of
+ * `rects`, as seen. By rows (top to bottom), each left to right — right to left
+ * when `rtl`; with `columns` (a column flex container), by columns (left to
+ * right, or right to left when `rtl`), each top to bottom. Boxes share a row
+ * while they share a horizontal band: each overlaps the band the row's boxes
+ * have in common by more than half its height (or the band's) — so a box that
+ * spans several rows stays in the first, and boxes moved a few pixels by
+ * negative margins don't join the next. Positions are rounded to whole pixels;
+ * boxes in the same place keep their HTML order.
+ */
+export function visualOrder(rects: readonly OrderRect[], options: { rtl?: boolean; columns?: boolean } = {}): number[] {
+  const { rtl = false, columns = false } = options;
+  // Along `from`…`to` boxes are grouped into lines (rows or columns), read in
+  // ascending order; `along` orders the boxes in a line.
+  const items = rects.map((rect, index) => {
+    const left = Math.round(rect.left);
+    const right = Math.round(rect.right);
+    const top = Math.round(rect.top);
+    const bottom = Math.round(rect.bottom);
+    const x = rtl ? -right : left;
+    return columns
+      ? { index, from: x, to: rtl ? -left : right, along: top }
+      : { index, from: top, to: bottom, along: x };
+  });
+  type Item = (typeof items)[number];
+  const sorted = [...items].sort((a, b) => a.from - b.from || a.along - b.along || a.index - b.index);
+  const lines: Item[][] = [];
+  let line: Item[] = [];
+  let bandFrom = 0;
+  let bandTo = 0;
+  for (const item of sorted) {
+    if (line.length) {
+      const overlap = Math.min(bandTo, item.to) - Math.max(bandFrom, item.from);
+      if (overlap > 0 && overlap > Math.min(item.to - item.from, bandTo - bandFrom) / 2) {
+        line.push(item);
+        bandFrom = Math.max(bandFrom, item.from);
+        bandTo = Math.min(bandTo, item.to);
+        continue;
+      }
+      lines.push(line);
+    }
+    line = [item];
+    bandFrom = item.from;
+    bandTo = item.to;
+  }
+  if (line.length) lines.push(line);
+  return lines.flatMap((boxes) =>
+    boxes.sort((a, b) => a.along - b.along || a.from - b.from || a.index - b.index).map((item) => item.index),
+  );
+}
+
+/** True when a sequence of HTML positions isn't in ascending order: something was moved. */
+export const isReordered = (order: readonly number[]) =>
+  order.some((value, index) => index > 0 && value < order[index - 1]!);
+
+/** The HTML positions (from 1) in the order seen, e.g. "2, 1, 3"; at most `max`, then "…". */
+export function formatOrder(order: readonly number[], max = 8): string {
+  const shown = order.slice(0, max).map((value) => String(value + 1));
+  return order.length > max ? `${shown.join(', ')}, …` : shown.join(', ');
+}

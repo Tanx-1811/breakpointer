@@ -2271,6 +2271,19 @@ export const vi: Record<MessageKey, string> = {
   'settings.searchClear': 'Xóa tìm kiếm',
   // end v0.14 settings
   // v0.14 checks
+  'checks.kind.inputZoom': 'Trường nhập khiến iPhone phóng to',
+  'checks.hint.inputZoom':
+    'Safari trên iPhone tự phóng to khi một trường nhập có chữ nhỏ hơn 16px được chọn. Hãy dùng chữ 16px (1rem) trở lên cho trường nhập ở kích thước điện thoại.',
+  'checks.detail.inputZoom': '{count} trường nhập có chữ nhỏ đến {size}',
+  'checks.detail.inputZoomOne': '1 trường nhập có chữ {size}',
+  'checks.value.inputZoom': '{count} · nhỏ nhất {size}',
+  'checks.kind.visualOrder': 'Thứ tự trên màn hình khác với HTML',
+  'checks.hint.visualOrder':
+    'Tiêu điểm bàn phím và trình đọc màn hình đi theo thứ tự HTML, nên sẽ nhảy lung tung khi CSS (order, hướng đảo ngược, đặt vị trí trong grid) đổi chỗ các mục trên màn hình (WCAG 1.3.2, 2.4.3).',
+  'checks.detail.visualOrder': '{count} vùng chứa flex hoặc grid hiển thị các mục khác thứ tự HTML',
+  'checks.detail.visualOrderOne': '1 vùng chứa flex hoặc grid hiển thị các mục khác thứ tự HTML',
+  'checks.value.visualOrder': '{count} vùng chứa',
+  'checks.value.visualOrderOne': '1 vùng chứa',
   // end v0.14 checks
   // v0.14 visibility
   // end v0.14 visibility

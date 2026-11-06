@@ -8,7 +8,9 @@
  * scroll position, the results of layout checks, the widths used by the page's
  * media queries, the box of an element the user inspects and, for the audit's
  * Meta and Media queries tabs, the page's meta tags and headings and the text of
- * its media and container queries — to the workspace tab only. Stress tests (pseudo-translated text, right-to-left) change the
+ * its media and container queries, for its Visibility tab, which elements aren't
+ * shown at that size (selectors and tag/class labels, never their content) — to
+ * the workspace tab only. Stress tests (pseudo-translated text, right-to-left) change the
  * page only inside the preview and are undone when switched off. With synced
  * interactions on, the user's clicks and field values go to the other previews
  * of the same workspace (never form submissions, passwords or payment fields).
@@ -71,6 +73,17 @@ import {
   turnsText,
   type LineRect,
   type ShiftEntry,
+  blocksFocusZoom,
+  fieldFontText,
+  formatOrder,
+  INPUT_ZOOM_MAX_WIDTH,
+  isFlexDisplay,
+  isGridDisplay,
+  isReordered,
+  reorderCauses,
+  takesTypedText,
+  visualOrder,
+  zoomsOnFocus,
 } from './page-utils';
 import {
   AGENT_SOURCE,
@@ -88,7 +101,9 @@ import {
   type DomSummary,
   type ElementRect,
   type ElementStyles,
+  type HiddenElement,
   type MatchedRule,
+  type ShownState,
   type StyleDeclaration,
   type ImageSample,
   type Interaction,
@@ -115,6 +130,11 @@ const MAX_LONG_LINE_BLOCKS = 300;
 const MAX_LONG_LINE_TEXT_NODES = 3000;
 /** Blocks of running text, checked for long lines (the innermost: a <li> holding a <p> leaves it to the <p>). */
 const LINE_BLOCKS = 'p, li, blockquote, dd, figcaption';
+/** Flex and grid containers looked at for items shown out of HTML order per pass, and items looked at in each. */
+const MAX_ORDER_CONTAINERS = 500;
+const MAX_ORDER_ITEMS = 100;
+/** Inside an item, what makes it read or focused even without text. */
+const ORDER_CONTENT = `${FOCUSABLE_SELECTOR}, img[alt]:not([alt=""]), [aria-label]`;
 /** Core Web Vitals: a cumulative layout shift above 0.1 needs improvement. */
 const MAX_LAYOUT_SHIFT = 0.1;
 /** Layout shifts this soon after the workspace changed the page (a resize, live CSS…) aren't the page's. */
@@ -2299,6 +2319,78 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
     };
   };
 
+  /* ---------- v0.14: the audit's Visibility tab ---------- */
+
+  /** Elements looked at for hidden ones, and hidden ones reported, at most. */
+  const MAX_VISIBILITY_WALK = 5000;
+  const MAX_HIDDEN = 200;
+  const MAX_SHOWN_STATES = 500;
+  /** Never drawn, or not a part of the page worth a row. */
+  const NOT_CONTENT = new Set([
+    'script',
+    'style',
+    'template',
+    'noscript',
+    'meta',
+    'link',
+    'base',
+    'title',
+    'br',
+    'wbr',
+    'source',
+    'track',
+  ]);
+  const notDrawn = (style: CSSStyleDeclaration) =>
+    style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse';
+
+  /**
+   * The outermost elements of the body not shown at this size: display: none or
+   * visibility: hidden, inside a shown parent (their content isn't looked at).
+   * Elements hidden with the `hidden` attribute (usually hidden at every size)
+   * come last when there are too many.
+   */
+  const hiddenElements = (): HiddenElement[] => {
+    const hidden: Element[] = [];
+    const stack = document.body ? Array.from(document.body.children).reverse() : [];
+    for (let looked = 0; stack.length > 0 && looked < MAX_VISIBILITY_WALK; looked++) {
+      const element = stack.pop()!;
+      if (NOT_CONTENT.has(element.localName) || element.hasAttribute(OVERLAY_ATTRIBUTE)) continue;
+      if (element instanceof HTMLInputElement && element.type === 'hidden') continue;
+      if (notDrawn(getComputedStyle(element))) {
+        hidden.push(element);
+        continue;
+      }
+      // The parts of a drawing aren't parts of the page.
+      if (element instanceof SVGElement) continue;
+      for (let index = element.children.length - 1; index >= 0; index--) stack.push(element.children[index]!);
+    }
+    const kept =
+      hidden.length <= MAX_HIDDEN
+        ? hidden
+        : [
+            ...hidden.filter((element) => !element.hasAttribute('hidden')),
+            ...hidden.filter((element) => element.hasAttribute('hidden')),
+          ]
+            .slice(0, MAX_HIDDEN)
+            .sort((a, b) => (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+    return kept.map((element) => ({ selector: cssPath(element), label: describeElement(element) }));
+  };
+
+  /** Whether the element is drawn at this size: no ancestor with display: none, and not visibility: hidden. */
+  const shownState = (selector: string): ShownState => {
+    let element: Element | null;
+    try {
+      element = document.querySelector(selector);
+    } catch {
+      element = null;
+    }
+    if (!element) return 'missing';
+    for (let node: Element | null = element; node && node !== document.documentElement; node = node.parentElement)
+      if (getComputedStyle(node).display === 'none') return 'hidden';
+    // Visibility is inherited: the element's own value says whether it is drawn.
+    return notDrawn(getComputedStyle(element)) ? 'hidden' : 'shown';
+  };
+
   /** The colours of text, backgrounds and borders of the elements shown, and how many use each. */
   const colorSample = (): ColorSample => {
     const text = new Map<string, number>();
@@ -2995,6 +3087,16 @@ function run(runtime: typeof chrome.runtime, frameName: string) {
         break;
       case 'getDomSummary':
         send({ type: 'domSummary', id: command.id, summary: domSummary() });
+        break;
+      case 'getHiddenElements':
+        send({ type: 'hiddenElements', id: command.id, items: hiddenElements() });
+        break;
+      case 'getShownStates':
+        send({
+          type: 'shownStates',
+          id: command.id,
+          states: command.selectors.slice(0, MAX_SHOWN_STATES).map(shownState),
+        });
         break;
       case 'getMediaQueries':
         send({ type: 'mediaQueries', id: command.id, report: mediaQueryReport() });

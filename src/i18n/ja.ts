@@ -2302,6 +2302,19 @@ export const ja: Record<MessageKey, string> = {
   'settings.searchClear': '検索をクリア',
   // end v0.14 settings
   // v0.14 checks
+  'checks.kind.inputZoom': 'Fields that make iPhones zoom in',
+  'checks.hint.inputZoom':
+    'Safari on iPhone zooms in when a field with text under 16px gets focus. Use 16px (1rem) or more for fields at phone sizes.',
+  'checks.detail.inputZoom': '{count} form fields with text as small as {size}',
+  'checks.detail.inputZoomOne': '1 form field with {size} text',
+  'checks.value.inputZoom': '{count} · smallest {size}',
+  'checks.kind.visualOrder': 'Order on screen differs from the HTML',
+  'checks.hint.visualOrder':
+    'Keyboard focus and screen readers follow the HTML, so they jump around when CSS (order, reversed directions, grid placement) moves items on screen (WCAG 1.3.2, 2.4.3).',
+  'checks.detail.visualOrder': '{count} flex or grid containers show their items out of HTML order',
+  'checks.detail.visualOrderOne': '1 flex or grid container shows its items out of HTML order',
+  'checks.value.visualOrder': '{count} containers',
+  'checks.value.visualOrderOne': '1 container',
   // end v0.14 checks
   // v0.14 visibility
   // end v0.14 visibility

@@ -293,13 +293,17 @@ function SettingsBody(props: Props) {
       for (const section of content.querySelectorAll<HTMLElement>('[data-section]')) {
         const heading = section.querySelector('h3')?.textContent ?? '';
         const whole = words.length > 0 && matchesWords(heading, words);
-        let matches = 0;
-        const items = section.querySelector('[data-section-body]')?.children ?? [];
-        for (const item of Array.from(items) as HTMLElement[]) {
-          const shown = whole || matchesWords(searchableText(item), words);
-          show(item, shown);
-          if (shown) matches++;
-        }
+        const items = Array.from(section.querySelector('[data-section-body]')?.children ?? []) as HTMLElement[];
+        const hits = items.map((item) => whole || matchesWords(searchableText(item), words));
+        // The options of a setting (`data-search-follows`) show with it, and it with them.
+        const shown = hits.map(
+          (hit, index) =>
+            hit ||
+            (items[index]!.hasAttribute('data-search-follows') && Boolean(hits[index - 1])) ||
+            (Boolean(items[index + 1]?.hasAttribute('data-search-follows')) && Boolean(hits[index + 1])),
+        );
+        items.forEach((item, index) => show(item, shown[index]!));
+        const matches = shown.filter(Boolean).length;
         show(section, matches > 0);
         if (matches > 0) ids.push(section.dataset.section!);
         count += matches;
@@ -552,7 +556,7 @@ function SettingsBody(props: Props) {
             </Select>
           </Row>
           {settings.breakpoints === 'site' && (
-            <p className={styles.note}>
+            <p className={styles.note} data-search-follows>
               <Icon name="scan" size={15} />
               <span>
                 {site.length
@@ -562,7 +566,7 @@ function SettingsBody(props: Props) {
             </p>
           )}
           {settings.breakpoints === 'custom' && (
-            <div className={styles.subsection} role="group" aria-labelledby={customId}>
+            <div className={styles.subsection} role="group" aria-labelledby={customId} data-search-follows>
               <div className={styles.subsectionHead}>
                 <div className={styles.rowText}>
                   <span id={customId} className={styles.rowLabel}>
@@ -611,7 +615,7 @@ function SettingsBody(props: Props) {
             description={t('settings.recentHelp', { max: MAX_RECENT_URLS })}
           />
           {settings.rememberRecent && settings.recentUrls.length > 0 && (
-            <div>
+            <div data-search-follows>
               <Button size="sm" variant="ghost" icon="trash" onClick={props.onClearRecent}>
                 {t('settings.clearRecent')}
               </Button>
@@ -651,7 +655,7 @@ function SettingsBody(props: Props) {
             description={t('settings.checksHelp')}
           />
           {settings.checks && props.onCheckKind && (
-            <fieldset className={styles.checkKinds} data-testid="check-kinds">
+            <fieldset className={styles.checkKinds} data-testid="check-kinds" data-search-follows>
               <legend className={styles.checkKindsLegend}>{t('settings.checkKinds')}</legend>
               {CHECK_KINDS.map((kind) => {
                 // The accessibility checks come with Pro: on the free plan they are off, and
@@ -679,7 +683,7 @@ function SettingsBody(props: Props) {
             label={t('settings.grid')}
             description={t('settings.gridHelp')}
           />
-          <div className={styles.gridOptions}>
+          <div className={styles.gridOptions} data-search-follows>
             <label className={styles.inlineField}>
               <span>{t('settings.gridColumns')}</span>
               <Select

@@ -29,6 +29,18 @@ export type CheckKind =
    * is the most characters a line found, rounded ("118").
    */
   | 'long-lines'
+  /**
+   * Text fields (input, textarea, select) whose text is under 16px, at phone
+   * widths (600px or less): Safari on iPhone zooms the page in when one gets
+   * focus. `detail` is the smallest font size found ("14px").
+   */
+  | 'input-zoom'
+  /**
+   * Flex and grid containers that show their items in another order than the
+   * HTML (order, reversed directions, grid placement, dense packing): keyboard
+   * focus and screen readers follow the HTML (WCAG 1.3.2, 2.4.3).
+   */
+  | 'visual-order'
   /** Images without a text alternative (no `alt`, and not hidden from assistive technology). Pro. */
   | 'missing-alt'
   /** Buttons and links with no accessible name (icon-only, no label). Pro. */
@@ -52,6 +64,8 @@ export const CHECK_KINDS: readonly CheckKind[] = [
   'fixed-cover',
   'layout-shift',
   'long-lines',
+  'input-zoom',
+  'visual-order',
   'missing-alt',
   'unnamed-control',
   'unlabeled-field',
@@ -242,6 +256,17 @@ export type DomSummary = {
   important: number;
 };
 
+/** v0.14, the audit's Visibility tab: an element not shown at one preview's size. */
+export type HiddenElement = {
+  /** Structural selector, as the inspector's, to find the same element in the other previews. */
+  selector: string;
+  /** Short description, e.g. "header > nav.desktop-nav". */
+  label: string;
+};
+
+/** v0.14: whether an element is shown at a preview's size, hidden (display: none, visibility: hidden), or not on the page. */
+export type ShownState = 'shown' | 'hidden' | 'missing';
+
 /** A colour and how many elements use it. */
 export type ColorCount = { hex: string; count: number };
 
@@ -398,6 +423,10 @@ export type AgentEvent =
   | { type: 'styles'; id?: number; styles: ElementStyles | null }
   /** Answer to `getDomSummary`. */
   | { type: 'domSummary'; id?: number; summary: DomSummary }
+  /** Answer to `getHiddenElements`, in document order. */
+  | { type: 'hiddenElements'; id?: number; items: HiddenElement[] }
+  /** Answer to `getShownStates`: one state per selector asked, in the same order. */
+  | { type: 'shownStates'; id?: number; states: ShownState[] }
   /** Answer to `getElementRect` (null when the element isn't shown). */
   | { type: 'elementRect'; id?: number; rect: ElementRect | null }
   /** Answer to `getRects`: each element's box in the viewport, measured together (null when not shown). */
@@ -422,6 +451,8 @@ export type AgentReplyType =
   | 'dom'
   | 'styles'
   | 'domSummary'
+  | 'hiddenElements'
+  | 'shownStates'
   | 'elementRect'
   | 'rects'
   | 'links';
@@ -506,6 +537,15 @@ type Command =
   | { type: 'getStyles'; selector: string }
   /** Answers `domSummary`: counts about the page's HTML and CSS. */
   | { type: 'getDomSummary' }
+  /**
+   * v0.14, the audit's Visibility tab. Answers `hiddenElements`: the outermost
+   * elements of the body not shown at this size — display: none or visibility:
+   * hidden inside a shown parent — at most 200 (scripts, styles and the like
+   * left out). Never their content.
+   */
+  | { type: 'getHiddenElements' }
+  /** Answers `shownStates`: whether each of these elements is shown here, hidden, or not on the page (at most 500). */
+  | { type: 'getShownStates'; selectors: string[] }
   /** Answer `elementRect` for the element (scrolled into view first with `reveal`). */
   | { type: 'getElementRect'; selector: string; reveal: boolean }
   /** Answer `rects` with where these elements are, at the same moment (the inspector's distance). */

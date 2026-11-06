@@ -225,6 +225,8 @@ export function useFrameAgents(
         case 'dom':
         case 'styles':
         case 'domSummary':
+        case 'hiddenElements':
+        case 'shownStates':
         case 'elementRect':
         case 'rects':
         case 'links': {
