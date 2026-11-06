@@ -9,10 +9,70 @@
   display: flex;
   flex-direction: column;
   flex: none;
+  gap: 10px;
   width: 196px;
   padding: 12px 10px;
   border-right: 1px solid var(--border-subtle);
   background: var(--surface-2);
+  overflow: auto;
+}
+
+.search {
+  position: relative;
+  display: block;
+  flex: none;
+}
+
+.searchIcon {
+  position: absolute;
+  top: 50%;
+  left: 9px;
+  color: var(--text-subtle);
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.search input {
+  width: 100%;
+  height: 32px;
+  padding: 0 10px 0 29px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.search input:focus-visible {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* Settings a search doesn't match, and sections with none of them. */
+.content [data-search-hidden] {
+  display: none !important;
+}
+
+::highlight(breakpointer-settings-search) {
+  background-color: color-mix(in srgb, var(--breakpoint) 32%, transparent);
+  color: var(--text);
+}
+
+.noResults {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin: 40px 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+.noResults p {
+  margin: 0;
 }
 
 .navList {
@@ -65,6 +125,8 @@
 }
 
 .content {
+  /* Positioned, so what is positioned inside (visually hidden labels) scrolls with it. */
+  position: relative;
   flex: 1;
   min-width: 0;
   overflow: auto;
@@ -361,8 +423,20 @@
   white-space: nowrap;
 }
 
+/* Narrow windows: the search above the settings, without the list of sections. */
 @media (max-width: 720px) {
+  .layout {
+    flex-direction: column;
+  }
+
   .nav {
+    width: auto;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .navList,
+  .version {
     display: none;
   }
 }

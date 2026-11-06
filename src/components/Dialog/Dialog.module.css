@@ -6,7 +6,12 @@
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-pop);
-  overflow: hidden;
+  /*
+   * Clipped, not hidden: a hidden overflow is still a scroll container, and
+   * scrollIntoView() or focus could scroll the whole panel out of place
+   * (header gone, blank space below) when something inside overflows it.
+   */
+  overflow: clip;
   transition: transform var(--duration-slow) var(--ease-out);
 }
 

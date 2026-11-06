@@ -137,6 +137,15 @@ function Section({ id, title, icon, children }: { id: SectionId; title: string; 
   );
 }
 
+/**
+ * Scrolls the settings to a section — only the settings: scrollIntoView() would
+ * also move the dialog when a section near the end can't reach the top.
+ */
+function scrollToSection(content: HTMLElement | null, id: SectionId, behavior: ScrollBehavior) {
+  const section = content?.querySelector<HTMLElement>(`[data-section="${id}"]`);
+  if (content && section) content.scrollTo({ top: Math.max(0, section.offsetTop - 6), behavior });
+}
+
 /** The CSS highlight that marks what a search found (see `::highlight()` in the styles). */
 const SEARCH_HIGHLIGHT = 'breakpointer-settings-search';
 
@@ -223,19 +232,12 @@ function SettingsBody(props: Props) {
   const foundSections = new Set(foundIds.split(' '));
   const searching = words.length > 0;
 
-  /** Scrolls the content (never the dialog: a section near the end can't reach the top). */
-  const scrollToSection = (id: SectionId, behavior: ScrollBehavior) => {
-    const content = contentRef.current;
-    const section = content?.querySelector<HTMLElement>(`[data-section="${id}"]`);
-    if (content && section) content.scrollTo({ top: Math.max(0, section.offsetTop - 6), behavior });
-  };
-
   // Opened on a section (e.g. "Enter a licence key"): show it.
   const initialSection = props.initialSection;
   useEffect(() => {
     if (!initialSection) return;
     picked.current = initialSection;
-    scrollToSection(initialSection, 'instant');
+    scrollToSection(contentRef.current, initialSection, 'instant');
   }, [initialSection]);
   // Bumped when the custom list is replaced from outside the editor, so it starts over.
   const [editorKey, setEditorKey] = useState(0);
@@ -340,7 +342,7 @@ function SettingsBody(props: Props) {
   const goTo = (id: SectionId) => {
     picked.current = id;
     setActive(id);
-    scrollToSection(id, 'smooth');
+    scrollToSection(contentRef.current, id, 'smooth');
   };
 
   const site = props.siteBreakpoints ?? [];
@@ -397,6 +399,15 @@ function SettingsBody(props: Props) {
       </nav>
 
       <div ref={contentRef} className={styles.content}>
+        {searching && !foundIds && (
+          <div className={styles.noResults} data-testid="settings-no-results">
+            <Icon name="search" size={18} />
+            <p>{t('settings.searchNone', { query: query.trim() })}</p>
+            <Button size="sm" variant="ghost" onClick={() => setQuery('')}>
+              {t('settings.searchClear')}
+            </Button>
+          </div>
+        )}
         <Section id="appearance" title={t('settings.appearance')} icon="sun">
           <Row label={t('settings.theme')}>
             <Segmented
