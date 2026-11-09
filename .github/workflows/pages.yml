@@ -8,14 +8,12 @@
 # switch them in scripts/build-site.mjs (STORE_URL), or set BREAKPOINTER_STORE_URL on the build step below.
 name: Pages
 
+# Runs only when you ask for it: push a version tag (v1.2.3) or Actions → Pages → Run workflow.
+# A tag deploy needs the github-pages environment to accept tags: Settings → Environments →
+# github-pages → Deployment branches and tags → add a tag rule `v*.*.*`.
 on:
   push:
-    branches: [main]
-    paths:
-      - 'site/**'
-      - 'brand/**'
-      - 'scripts/build-site.mjs'
-      - '.github/workflows/pages.yml'
+    tags: ['v*.*.*']
   workflow_dispatch:
 
 permissions:
